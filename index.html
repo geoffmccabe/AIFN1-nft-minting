@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mint Your AIFN1 NFT</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #1a1a2e; color: white; padding: 50px; }
+    button { padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; }
+    button:hover { background: #45a049; }
+    #status { margin-top: 20px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>Mint Your AIFN1 NFT</h1>
+  <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
+  <br>
+  <button onclick="mintNFT()">Mint NFT</button>
+  <div id="status">Ready to mint...</div>
+  <script>
+    function mintNFT() {
+      document.getElementById('status').innerText = "Minting not yet functional. Coming soon!";
+    }
+  </script>
+</body>
+</html>
