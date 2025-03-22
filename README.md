@@ -1,0 +1,1 @@
+# AIFN1-nft-minting
