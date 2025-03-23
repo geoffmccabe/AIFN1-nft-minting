@@ -4,27 +4,47 @@
   <meta charset="UTF-8">
   <title>Mint Your AIFN1 NFT</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #1a1a2e; color: white; padding: 50px; }
-    button { padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; }
+    body { 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+      background: #1a1a2e; 
+      color: white; 
+      padding: 50px; 
+      position: relative;
+    }
+    button { 
+      padding: 10px 20px; 
+      background: #4CAF50; 
+      color: white; 
+      border: none; 
+      cursor: pointer; 
+      font-size: 16px; 
+      border-radius: 5px; 
+    }
     button:hover { background: #45a049; }
     #status { margin-top: 20px; font-size: 14px; }
     .trait-row { display: flex; align-items: center; margin: 10px 0; }
     .trait-name, .variant-name { width: 150px; }
     .loading { color: #aaa; }
+    /* Version element style */
+    #version { 
+      position: absolute; 
+      top: 10px; 
+      left: 10px; 
+      font-size: 12px; 
+      color: #aaa; 
+    }
   </style>
   <!-- Ethers.js for blockchain communication -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  
-  <!-- Import ag-psd as a module and attach it to the global window object -->
-  <script type="module">
-    import * as AgPsdModule from "https://unpkg.com/ag-psd@15.0.0/dist/ag-psd.browser.min.js";
-    window.AgPsd = AgPsdModule;
-  </script>
-  
+  <!-- Load ag-psd from local copy -->
+  <script src="ag-psd.js"></script>
   <!-- Your configuration file -->
   <script src="config.js"></script>
 </head>
 <body>
+  <!-- Version number with timestamp -->
+  <div id="version">v1.0.10 - 2025-03-23 11:20:00 MDT</div>
   <h1>Mint Your AIFN1 NFT</h1>
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;" onchange="parsePSD()">
   <div id="mintFeeDisplay">Mint Fee: Loading...</div>
@@ -39,6 +59,15 @@
       throw new Error("No Web3 wallet detected"); 
     }
 
+    // Check if AgPsd is defined after loading the local script
+    if (typeof AgPsd === 'undefined') {
+      console.error("AgPsd is undefined after loading ag-psd.js");
+      document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load. Please check that ag-psd.js is correct.";
+    } else {
+      console.log("AgPsd loaded successfully:", AgPsd);
+    }
+
+    // Use settings from config.js
     const { sepolia } = blockchainConfig;
     const contractAddress = sepolia.contractAddress;
     const abi = [/* ABI unchanged */];
@@ -74,7 +103,7 @@
       reader.onload = async (e) => {
         try {
           const arrayBuffer = e.target.result;
-          // Use the imported AgPsd from v15.0.0
+          // Use the imported AgPsd from your local file
           const psd = AgPsd.readPsd(arrayBuffer);
           traitData = processPsd(psd);
           displayTraitSelection(traitData);
