@@ -38,32 +38,15 @@
   </style>
   <!-- Load Ethers.js (for blockchain interactions) -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load config.js (your configuration) -->
+  <!-- Your config.js (should define contractAddress, ABI, etc.) -->
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.28 - 2025-03-23 22:30 MDT</div>
+  <div id="version">v1.0.29 - 2025-03-23 23:00 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
-  <!-- File input for PSD file -->
+  
+  <!-- File input for PSD -->
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
   <div id="mintFeeDisplay">Mint Fee: Loading...</div>
   <div id="traitSelection">Upload a PSD to select traits...</div>
-  <!-- Progress/status display -->
   <div id="status">Awaiting file selection...</div>
-  <br>
-  <!-- Mint button (disabled initially) -->
-  <button id="mintButton" disabled>Mint NFT</button>
-  
-  <!-- Main module script: import Buffer polyfill and psd.js, then run our code -->
-  <script type="module">
-    // Import the Buffer polyfill first
-    import { Buffer } from "https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js";
-    window.Buffer = Buffer;
-    console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", Buffer.TYPED_ARRAY_SUPPORT);
-    
-    // Import psd.js
-    import * as PSDModule from "https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js";
-    window.PSD = PSDModule;
-    console.log("Module import complete. PSD =", window.PSD);
-    
-    document.addEventListener('DOMContentLoaded
