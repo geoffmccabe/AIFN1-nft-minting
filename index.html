@@ -9,6 +9,7 @@
     button:hover { background: #45a049; }
     #status { margin-top: 20px; font-size: 14px; }
   </style>
+  <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
   <h1>Mint Your AIFN1 NFT</h1>
@@ -16,7 +17,6 @@
   <br>
   <button onclick="mintNFT()">Mint NFT</button>
   <div id="status">Ready to mint...</div>
-  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
   <script>
     const contractAddress = "0x94a885Bbfff517958B971478c1Aa4E13ED2CFf64";
     const abi = [
