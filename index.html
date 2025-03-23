@@ -13,12 +13,13 @@
         .loading { color: #aaa; }
     </style>
     <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <script src="https://unpkg.com/ag-psd@15.0.0/dist/ag-psd.browser.min.js"></script>
+    <!-- Updated ag-psd library URL to a more reliable CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-psd@15.0.0/dist/ag-psd.js"></script>
     <script src="config.js"></script>
 </head>
 <body>
     <h1>Mint Your AIFN1 NFT</h1>
-    <input type="file" id="psdFile" accept=".psd" style="margin: 20px;"> <!-- Removed onchange attribute -->
+    <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
     <div id="traitSelection" class="loading">Upload a PSD to select traits...</div>
     <br>
@@ -94,6 +95,12 @@
         fetchMintFee();
 
         async function parsePSD() {
+            // Check if AgPsd is defined before proceeding
+            if (typeof AgPsd === 'undefined') {
+                document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load. Please refresh the page or check your network.";
+                return;
+            }
+
             const fileInput = document.getElementById('psdFile');
             const file = fileInput.files[0];
             // Updated file size limit to 1000MB (1GB) to accommodate large PSD files with traits and layers
