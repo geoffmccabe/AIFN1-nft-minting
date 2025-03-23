@@ -26,7 +26,6 @@
     .trait-row { display: flex; align-items: center; margin: 10px 0; }
     .trait-name, .variant-name { width: 150px; }
     .loading { color: #aaa; }
-    /* Version display style */
     #version { 
       position: absolute; 
       top: 10px; 
@@ -35,21 +34,25 @@
       color: #aaa; 
     }
   </style>
-  <!-- Load Ethers.js for blockchain communication -->
+  <!-- Ethers.js for blockchain communication -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load dependency files (make sure these files are in your folder) -->
+  <!-- Load external dependencies -->
+  <script src="pako.min.js"></script>
+  <script src="psd.js"></script>
+  <script src="additionalInfo.js"></script>
+  <script src="imageResources.js"></script>
+  <!-- Load dependency files for ag-psd -->
   <script src="psdWriter.js"></script>
   <script src="psdReader.js"></script>
   <script src="helpers.js"></script>
   <script src="base64-js.js"></script>
-  <!-- Load your ag-psd code -->
-  <script src="ag-psd.js"></script>
+  <!-- Load your bundled ag-psd code -->
+  <script src="bundle.js"></script>
   <!-- Load your configuration file -->
   <script src="config.js"></script>
 </head>
 <body>
-  <!-- Version number with timestamp -->
-  <div id="version">v1.0.13 - 2025-03-23 13:00 MDT</div>
+  <div id="version">v1.0.14 - 2025-03-23 14:00 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;" onchange="parsePSD()">
   <div id="mintFeeDisplay">Mint Fee: Loading...</div>
@@ -59,16 +62,14 @@
   <div id="status">Ready to mint...</div>
   
   <script>
-    if (!window.ethereum) { 
-      alert("Please install MetaMask or another Web3 wallet!"); 
-      throw new Error("No Web3 wallet detected"); 
+    if (!window.ethereum) {
+      alert("Please install MetaMask or another Web3 wallet!");
+      throw new Error("No Web3 wallet detected");
     }
     
-    // Verify that AgPsd loaded correctly
     if (typeof AgPsd === 'undefined') {
-      console.error("AgPsd is undefined after loading ag-psd.js");
-      document.getElementById('status').innerText =
-        "Error: PSD parsing library (ag-psd) failed to load. Please check your local ag-psd.js file.";
+      console.error("AgPsd is undefined after loading bundle.js");
+      document.getElementById('status').innerText = "Error: PSD parsing library failed to load. Check your bundle.js and external files.";
     } else {
       console.log("AgPsd loaded successfully:", AgPsd);
     }
