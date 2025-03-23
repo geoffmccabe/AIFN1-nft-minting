@@ -20,7 +20,7 @@
 </head>
 <body>
     <!-- Updated version number with timestamp in Mountain Time (MDT) -->
-    <div id="version">v1.0.2 - 2025-03-23 15:00:00 MDT</div>
+    <div id="version">v1.0.8 - 2025-03-23 16:30:00 MDT</div>
     <h1>Mint Your AIFN1 NFT</h1>
     <input type="file" id="psdFile" accept=".psd" style="margin: 20px;" disabled>
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
@@ -31,10 +31,15 @@
     <script>
         if (!window.ethereum) { alert("Please install MetaMask or another Web3 wallet!"); throw new Error("No Web3 wallet detected"); }
 
+        // Debug: Log to confirm ag-psd.js is loading
+        console.log("Checking if ag-psd.js loaded...");
+
         // Check if AgPsd is defined after loading the local script
         if (typeof AgPsd === 'undefined') {
-            document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load: AgPsd is undefined. Please ensure ag-psd.js is correctly included in the repo.";
+            console.error("AgPsd is undefined after loading ag-psd.js");
+            document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load: AgPsd is undefined. Please ensure ag-psd.js is the correct file from https://cdn.jsdelivr.net/npm/ag-psd@13.0.0/dist/ag-psd.js and accessible at https://geoffmccabe.github.io/AIFN1-nft-minting/ag-psd.js.";
         } else {
+            console.log("AgPsd loaded successfully:", AgPsd);
             // Enable file input if AgPsd is loaded
             document.getElementById('psdFile').disabled = false;
             document.getElementById('status').innerText = "Ready to mint...";
@@ -109,7 +114,7 @@
         async function parsePSD() {
             // Check if AgPsd is defined before proceeding
             if (typeof AgPsd === 'undefined') {
-                document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load: AgPsd is undefined. Please ensure ag-psd.js is correctly included in the repo.";
+                document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load: AgPsd is undefined. Please ensure ag-psd.js is the correct file from https://cdn.jsdelivr.net/npm/ag-psd@13.0.0/dist/ag-psd.js and accessible at https://geoffmccabe.github.io/AIFN1-nft-minting/ag-psd.js.";
                 return;
             }
 
