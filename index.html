@@ -4,23 +4,23 @@
     <meta charset="UTF-8">
     <title>Mint Your AIFN1 NFT</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #1a1a2e; color: white; padding: 50px; }
+        body { font-family: Arial, sans-serif; text-align: center; background: #1a1a2e; color: white; padding: 50px; position: relative; }
         button { padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; }
         button:hover { background: #45a049; }
         #status { margin-top: 20px; font-size: 14px; }
         .trait-row { display: flex; align-items: center; margin: 10px 0; }
         .trait-name, .variant-name { width: 150px; }
         .loading { color: #aaa; }
+        #version { position: absolute; top: 10px; left: 10px; font-size: 12px; color: #aaa; }
     </style>
     <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <!-- Load ag-psd with a fallback to unpkg if jsDelivr fails -->
-    <script src="https://cdn.jsdelivr.net/npm/ag-psd@15.0.0/dist/ag-psd.js" 
-            onerror="this.onerror=null; this.src='https://unpkg.com/ag-psd@15.0.0/dist/ag-psd.js';"></script>
     <script src="config.js"></script>
 </head>
 <body>
+    <!-- Added version number with timestamp in Mountain Time (MDT) -->
+    <div id="version">v1.0.1 - 2025-03-23 14:30:00 MDT</div>
     <h1>Mint Your AIFN1 NFT</h1>
-    <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
+    <input type="file" id="psdFile" accept=".psd" style="margin: 20px;" disabled>
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
     <div id="traitSelection" class="loading">Upload a PSD to select traits...</div>
     <br>
@@ -28,6 +28,46 @@
     <div id="status">Ready to mint...</div>
     <script>
         if (!window.ethereum) { alert("Please install MetaMask or another Web3 wallet!"); throw new Error("No Web3 wallet detected"); }
+
+        // Dynamically load ag-psd library
+        function loadAgPsd() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/ag-psd@13.0.0/dist/ag-psd.js';
+                script.onload = () => {
+                    if (typeof AgPsd !== 'undefined') {
+                        resolve();
+                    } else {
+                        reject(new Error('AgPsd not defined after loading from jsDelivr'));
+                    }
+                };
+                script.onerror = () => {
+                    // Fallback to unpkg
+                    const fallbackScript = document.createElement('script');
+                    fallbackScript.src = 'https://unpkg.com/ag-psd@13.0.0/dist/ag-psd.js';
+                    fallbackScript.onload = () => {
+                        if (typeof AgPsd !== 'undefined') {
+                            resolve();
+                        } else {
+                            reject(new Error('AgPsd not defined after loading from unpkg'));
+                        }
+                    };
+                    fallbackScript.onerror = () => reject(new Error('Failed to load ag-psd from both CDNs'));
+                    document.head.appendChild(fallbackScript);
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        // Load ag-psd and enable file input when ready
+        loadAgPsd()
+            .then(() => {
+                document.getElementById('psdFile').disabled = false;
+                document.getElementById('status').innerText = "Ready to mint...";
+            })
+            .catch(error => {
+                document.getElementById('status').innerText = `Error: PSD parsing library (ag-psd) failed to load: ${error.message}. Please refresh the page or check your network.`;
+            });
 
         // Use settings from config.js
         const { sepolia } = blockchainConfig;
@@ -98,7 +138,7 @@
         async function parsePSD() {
             // Check if AgPsd is defined before proceeding
             if (typeof AgPsd === 'undefined') {
-                document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load. Please refresh the page or check your network. If the issue persists, try again later.";
+                document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load: AgPsd is undefined. Please refresh the page or check your network. If the issue persists, try again later.";
                 return;
             }
 
