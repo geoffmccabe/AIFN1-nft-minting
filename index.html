@@ -18,7 +18,7 @@
 </head>
 <body>
     <h1>Mint Your AIFN1 NFT</h1>
-    <input type="file" id="psdFile" accept=".psd" style="margin: 20px;" onchange="parsePSD()">
+    <input type="file" id="psdFile" accept=".psd" style="margin: 20px;"> <!-- Removed onchange attribute -->
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
     <div id="traitSelection" class="loading">Upload a PSD to select traits...</div>
     <br>
@@ -30,7 +30,6 @@
         // Use settings from config.js
         const { sepolia } = blockchainConfig;
         const contractAddress = sepolia.contractAddress;
-        // Updated ABI to include all necessary functions
         const abi = [
             {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},
@@ -89,7 +88,7 @@
                 const fee = await contract.mintFee();
                 document.getElementById('mintFeeDisplay').innerText = `Mint Fee: ${ethers.utils.formatEther(fee)} ETH`;
             } catch (error) {
-                document.getElementById('mintFeeDisplay').innerText = `Mint Fee: Error fetching fee - ${error.message}`; // Improved error message
+                document.getElementById('mintFeeDisplay').innerText = `Mint Fee: Error fetching fee - ${error.message}`;
             }
         }
         fetchMintFee();
@@ -170,4 +169,60 @@
                     `;
                     container.appendChild(row);
                 } else if (category.specialLayers.length > 0) {
-                    category.specialLayers
+                    category.specialLayers.forEach(special => {
+                        const row = document.createElement('div');
+                        row.className = 'trait-row';
+                        row.innerHTML = `<span class="trait-name">Special Layer: ${special}</span>`;
+                        container.appendChild(row);
+                    });
+                }
+            });
+        }
+
+        function changeVariant(catIndex, direction) {
+            const category = traitData[catIndex];
+            selectedVariants[catIndex] = (selectedVariants[catIndex] + direction + category.variants.length) % category.variants.length;
+            document.getElementById(`variant-${catIndex}`).innerText = category.variants[selectedVariants[catIndex]].name;
+        }
+
+        async function mintNFT() {
+            const status = document.getElementById('status');
+            try {
+                await provider.send("eth_requestAccounts", []);
+                const numTraitCategories = traitData.length;
+                const traitCategoryVariants = traitData.map(cat => cat.variants.length);
+                const traitIndices = selectedVariants;
+                const recipient = await signer.getAddress();
+
+                status.innerText = "Estimating gas...";
+                const gasLimit = await contractWithSigner.estimateGas.mintNFT(
+                    recipient,
+                    initialHtmlUri,
+                    numTraitCategories,
+                    traitCategoryVariants,
+                    traitIndices,
+                    { value: ethers.utils.parseEther(sepolia.mintFee) }
+                );
+
+                status.innerText = "Minting...";
+                const tx = await contractWithSigner.mintNFT(
+                    recipient,
+                    initialHtmlUri,
+                    numTraitCategories,
+                    traitCategoryVariants,
+                    traitIndices,
+                    { value: ethers.utils.parseEther(sepolia.mintFee), gasLimit: gasLimit.add(50000) }
+                );
+                const receipt = await tx.wait();
+                const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
+                status.innerText = `Minted! Token ID: ${tokenId}`;
+            } catch (error) {
+                status.innerText = `Error: ${error.message}`;
+            }
+        }
+
+        // Bind the onchange event listener after parsePSD is defined
+        document.getElementById('psdFile').addEventListener('change', parsePSD);
+    </script>
+</body>
+</html>
