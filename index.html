@@ -26,7 +26,7 @@
     .trait-row { display: flex; align-items: center; margin: 10px 0; }
     .trait-name, .variant-name { width: 150px; }
     .loading { color: #aaa; }
-    /* Version display */
+    /* Version display style */
     #version { 
       position: absolute; 
       top: 10px; 
@@ -35,17 +35,22 @@
       color: #aaa; 
     }
   </style>
-  <!-- Ethers.js for blockchain communication -->
+  <!-- Load Ethers.js for blockchain communication -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load the local ag-psd file (the browser build from v13.0.0) -->
+  <!-- Load dependency files (make sure these files are in your folder) -->
+  <script src="psdWriter.js"></script>
+  <script src="psdReader.js"></script>
+  <script src="helpers.js"></script>
+  <script src="base64-js.js"></script>
+  <!-- Load your ag-psd code -->
   <script src="ag-psd.js"></script>
-  <!-- Your configuration file -->
+  <!-- Load your configuration file -->
   <script src="config.js"></script>
 </head>
 <body>
   <!-- Version number with timestamp -->
-  <div id="version">v1.0.10 - 2025-03-23 11:20:00 MDT</div>
-  <h1>Mint Your AIFN1 NFT</h1>
+  <div id="version">v1.0.13 - 2025-03-23 13:00 MDT</div>
+  <h1>Mint Your AIFN NFT</h1>
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;" onchange="parsePSD()">
   <div id="mintFeeDisplay">Mint Fee: Loading...</div>
   <div id="traitSelection" class="loading">Upload a PSD to select traits...</div>
@@ -59,62 +64,60 @@
       throw new Error("No Web3 wallet detected"); 
     }
     
-    // Check if AgPsd is defined
+    // Verify that AgPsd loaded correctly
     if (typeof AgPsd === 'undefined') {
       console.error("AgPsd is undefined after loading ag-psd.js");
-      document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load. Please check that ag-psd.js is correct.";
+      document.getElementById('status').innerText =
+        "Error: PSD parsing library (ag-psd) failed to load. Please check your local ag-psd.js file.";
     } else {
       console.log("AgPsd loaded successfully:", AgPsd);
     }
-
+    
     const { sepolia } = blockchainConfig;
     const contractAddress = sepolia.contractAddress;
     const abi = [/* ABI unchanged */];
     const initialHtmlUri = "https://geoffmccabe.github.io/AIFN1-nft-html/index.html?tokenId=";
     let traitData = null;
     let selectedVariants = [];
-
+    
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const contract = new ethers.Contract(contractAddress, abi, provider);
     const signer = provider.getSigner();
     const contractWithSigner = contract.connect(signer);
-
+    
     async function fetchMintFee() {
       try {
         const fee = await contract.mintFee();
         document.getElementById('mintFeeDisplay').innerText = `Mint Fee: ${ethers.utils.formatEther(fee)} ETH`;
       } catch (error) {
-        document.getElementById('mintFeeDisplay').innerText = `Mint Fee: Error fetching fee`;
+        document.getElementById('mintFeeDisplay').innerText = "Mint Fee: Error fetching fee";
       }
     }
     fetchMintFee();
-
+    
     async function parsePSD() {
-      const fileInput = document.getElementById('psdFile');
-      const file = fileInput.files[0];
+      const file = document.getElementById('psdFile').files[0];
       if (!file || file.size > 10 * 1024 * 1024) {
         document.getElementById('status').innerText = "Please upload a PSD file under 10MB.";
         return;
       }
-
       document.getElementById('traitSelection').innerText = "Parsing PSD...";
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
-          const arrayBuffer = e.target.result;
-          const psd = AgPsd.readPsd(arrayBuffer);
+          const psd = AgPsd.readPsd(e.target.result);
           traitData = processPsd(psd);
           displayTraitSelection(traitData);
           document.getElementById('mintButton').disabled = false;
         } catch (error) {
-          document.getElementById('status').innerText = `Error parsing PSD: ${error.message}`;
+          document.getElementById('status').innerText = "Error parsing PSD: " + error.message;
         }
       };
       reader.readAsArrayBuffer(file);
     }
-
+    
     function processPsd(psd) {
-      const traitCategories = [];
+      const categories = [];
       const processGroup = (group, path = []) => {
         if (group.children) {
           group.children.forEach(child => {
@@ -122,13 +125,12 @@
               processGroup(child, [...path, child.name]);
             } else {
               const categoryName = path.length > 0 ? path[path.length - 1] : 'Default';
-              let category = traitCategories.find(cat => cat.name === categoryName);
+              let category = categories.find(c => c.name === categoryName);
               if (!category) {
                 category = { name: categoryName, variants: [], specialLayers: [] };
-                traitCategories.push(category);
+                categories.push(category);
               }
-              const separators = /[~\/\|\{\}\[\]]+/;
-              const parts = child.name ? child.name.split(separators).filter(part => part) : [''];
+              const parts = child.name ? child.name.split(/[~\/\|\{\}\[\]]+/).filter(Boolean) : [''];
               const variantName = parts[0] || '';
               if (variantName && !category.specialLayers.includes(variantName)) {
                 category.variants.push({
@@ -143,75 +145,74 @@
         }
       };
       processGroup(psd);
-      selectedVariants = traitCategories.map(cat => 0);
-      return traitCategories;
+      selectedVariants = categories.map(() => 0);
+      return categories;
     }
-
-    function displayTraitSelection(traitData) {
+    
+    function displayTraitSelection(data) {
       const container = document.getElementById('traitSelection');
-      container.innerHTML = '';
-      container.classList.remove('loading');
-      traitData.forEach((category, catIndex) => {
-        if (category.variants.length > 0) {
-          const row = document.createElement('div');
-          row.className = 'trait-row';
+      container.innerHTML = "";
+      container.classList.remove("loading");
+      data.forEach((cat, index) => {
+        if (cat.variants.length) {
+          const row = document.createElement("div");
+          row.className = "trait-row";
           row.innerHTML = `
-            <span class="trait-name">${category.name}</span>
-            <span class="variant-name" id="variant-${catIndex}">${category.variants[0].name}</span>
-            <button onclick="changeVariant(${catIndex}, -1)">←</button>
-            <button onclick="changeVariant(${catIndex}, 1)">→</button>
+            <span class="trait-name">${cat.name}</span>
+            <span class="variant-name" id="variant-${index}">${cat.variants[0].name}</span>
+            <button onclick="changeVariant(${index}, -1)">←</button>
+            <button onclick="changeVariant(${index}, 1)">→</button>
           `;
           container.appendChild(row);
-        } else if (category.specialLayers.length > 0) {
-          category.specialLayers.forEach(special => {
-            const row = document.createElement('div');
-            row.className = 'trait-row';
+        } else if (cat.specialLayers.length) {
+          cat.specialLayers.forEach(special => {
+            const row = document.createElement("div");
+            row.className = "trait-row";
             row.innerHTML = `<span class="trait-name">Special Layer: ${special}</span>`;
             container.appendChild(row);
           });
         }
       });
     }
-
-    function changeVariant(catIndex, direction) {
-      const category = traitData[catIndex];
-      selectedVariants[catIndex] = (selectedVariants[catIndex] + direction + category.variants.length) % category.variants.length;
-      document.getElementById(`variant-${catIndex}`).innerText = category.variants[selectedVariants[catIndex]].name;
+    
+    function changeVariant(catIndex, delta) {
+      const cat = traitData[catIndex];
+      selectedVariants[catIndex] = (selectedVariants[catIndex] + delta + cat.variants.length) % cat.variants.length;
+      document.getElementById(`variant-${catIndex}`).innerText = cat.variants[selectedVariants[catIndex]].name;
     }
-
+    
     async function mintNFT() {
       const status = document.getElementById('status');
       try {
         await provider.send("eth_requestAccounts", []);
-        const numTraitCategories = traitData.length;
-        const traitCategoryVariants = traitData.map(cat => cat.variants.length);
-        const traitIndices = selectedVariants;
+        const numCats = traitData.length;
+        const variants = traitData.map(cat => cat.variants.length);
         const recipient = await signer.getAddress();
-
+    
         status.innerText = "Estimating gas...";
         const gasLimit = await contractWithSigner.estimateGas.mintNFT(
           recipient,
           initialHtmlUri,
-          numTraitCategories,
-          traitCategoryVariants,
-          traitIndices,
+          numCats,
+          variants,
+          selectedVariants,
           { value: ethers.utils.parseEther(sepolia.mintFee) }
         );
-
+    
         status.innerText = "Minting...";
         const tx = await contractWithSigner.mintNFT(
           recipient,
           initialHtmlUri,
-          numTraitCategories,
-          traitCategoryVariants,
-          traitIndices,
+          numCats,
+          variants,
+          selectedVariants,
           { value: ethers.utils.parseEther(sepolia.mintFee), gasLimit: gasLimit.add(50000) }
         );
         const receipt = await tx.wait();
         const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
         status.innerText = `Minted! Token ID: ${tokenId}`;
       } catch (error) {
-        status.innerText = `Error: ${error.message}`;
+        status.innerText = "Error: " + error.message;
       }
     }
   </script>
