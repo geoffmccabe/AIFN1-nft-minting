@@ -26,7 +26,7 @@
     .trait-row { display: flex; align-items: center; margin: 10px 0; }
     .trait-name, .variant-name { width: 150px; }
     .loading { color: #aaa; }
-    /* Version element style */
+    /* Version display */
     #version { 
       position: absolute; 
       top: 10px; 
@@ -37,7 +37,7 @@
   </style>
   <!-- Ethers.js for blockchain communication -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load ag-psd from local copy -->
+  <!-- Load the local ag-psd file (the browser build from v13.0.0) -->
   <script src="ag-psd.js"></script>
   <!-- Your configuration file -->
   <script src="config.js"></script>
@@ -58,8 +58,8 @@
       alert("Please install MetaMask or another Web3 wallet!"); 
       throw new Error("No Web3 wallet detected"); 
     }
-
-    // Check if AgPsd is defined after loading the local script
+    
+    // Check if AgPsd is defined
     if (typeof AgPsd === 'undefined') {
       console.error("AgPsd is undefined after loading ag-psd.js");
       document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load. Please check that ag-psd.js is correct.";
@@ -67,7 +67,6 @@
       console.log("AgPsd loaded successfully:", AgPsd);
     }
 
-    // Use settings from config.js
     const { sepolia } = blockchainConfig;
     const contractAddress = sepolia.contractAddress;
     const abi = [/* ABI unchanged */];
@@ -103,7 +102,6 @@
       reader.onload = async (e) => {
         try {
           const arrayBuffer = e.target.result;
-          // Use the imported AgPsd from your local file
           const psd = AgPsd.readPsd(arrayBuffer);
           traitData = processPsd(psd);
           displayTraitSelection(traitData);
