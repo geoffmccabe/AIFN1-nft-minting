@@ -48,7 +48,7 @@
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.22 - 2025-03-23 20:00 MDT</div>
+  <div id="version">v1.0.23 - 2025-03-23 21:00 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
   <!-- File input for PSD file -->
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
@@ -78,7 +78,7 @@
         
         const reader = new FileReader();
         
-        // Show progress in MB.
+        // Show progress in MB
         reader.onprogress = (e) => {
           if (e.lengthComputable) {
             const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
@@ -100,4 +100,23 @@
           window.PSD.fromArrayBuffer(e.target.result).then(psd => {
             psd.parse();
             console.log("Parsed PSD Layers:", psd.tree().descendants());
-            document
+            document.getElementById('status').innerText = "PSD parsed successfully.";
+            const mintBtn = document.getElementById('mintButton');
+            mintBtn.disabled = false;
+            mintBtn.style.backgroundColor = "#4CAF50";
+          }).catch(error => {
+            console.error("Error parsing PSD:", error);
+            document.getElementById('status').innerText = "Error parsing PSD: " + error;
+          });
+        };
+        
+        reader.readAsArrayBuffer(file);
+      });
+      
+      document.getElementById('mintButton').addEventListener('click', () => {
+        alert("Minting NFT... (mint functionality to be implemented)");
+      });
+    });
+  </script>
+</body>
+</html>
