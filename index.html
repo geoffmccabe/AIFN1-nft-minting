@@ -36,20 +36,20 @@
       color: #aaa;
     }
   </style>
-  <!-- Buffer polyfill to support Buffer.TYPED_ARRAY_SUPPORT -->
+  <!-- Buffer polyfill (must load first) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/buffer.min.js"></script>
   <script>
-    // Ensure Buffer is available globally
-    window.Buffer = window.Buffer || buffer.Buffer;
-    console.log("Buffer loaded, TYPED_ARRAY_SUPPORT:", window.Buffer.TYPED_ARRAY_SUPPORT);
+    // Ensure global Buffer is available.
+    window.Buffer = window.Buffer || Buffer;
+    console.log("Buffer loaded. TYPED_ARRAY_SUPPORT:", window.Buffer.TYPED_ARRAY_SUPPORT);
   </script>
   <!-- Load Ethers.js for blockchain interactions -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load config.js (your configuration) -->
+  <!-- Load config.js -->
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.24 - 2025-03-23 21:30 MDT</div>
+  <div id="version">v1.0.26 - 2025-03-23 22:00 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
   <!-- File input for PSD file -->
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
@@ -61,20 +61,21 @@
   <!-- Mint button (disabled initially) -->
   <button id="mintButton" disabled>Mint NFT</button>
   
-  <!-- Module script to import psd.js -->
+  <!-- Consolidated module script: Import psd.js and run main code -->
   <script type="module">
-    import * as PSD from "https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js";
-    window.PSD = PSD;
-    console.log("Module import complete. PSD =", PSD);
-    
+    // Import psd.js from a working CDN link.
+    import * as PSDModule from "https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js";
+    window.PSD = PSDModule;  // Attach to global window.
+    console.log("Module import complete. PSD =", window.PSD);
+
+    // Now that PSD is imported, run our main code after DOM is loaded.
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof window.PSD === 'undefined') {
         console.error("PSD is not defined");
         document.getElementById('status').innerText = "Error: PSD library did not load.";
         return;
-      } else {
-        console.log("PSD loaded successfully:", window.PSD);
       }
+      console.log("PSD loaded successfully:", window.PSD);
       
       const fileInput = document.getElementById('psdFile');
       fileInput.addEventListener('change', (e) => {
@@ -82,6 +83,7 @@
         if (!file) return;
         
         const reader = new FileReader();
+        
         reader.onprogress = (e) => {
           if (e.lengthComputable) {
             const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
@@ -89,15 +91,37 @@
             document.getElementById('status').innerText = `${loadedMB} / ${totalMB} MB uploaded`;
           }
         };
+        
         reader.onloadstart = () => {
           document.getElementById('status').innerText = "Starting upload...";
         };
+        
         reader.onerror = () => {
           document.getElementById('status').innerText = "Error reading file.";
         };
+        
         reader.onload = (e) => {
           document.getElementById('status').innerText = "Upload Complete. Parsing PSD...";
           window.PSD.fromArrayBuffer(e.target.result).then(psd => {
             psd.parse();
             console.log("Parsed PSD Layers:", psd.tree().descendants());
-            document.getElementById('status').
+            document.getElementById('status').innerText = "PSD parsed successfully.";
+            const mintBtn = document.getElementById('mintButton');
+            mintBtn.disabled = false;
+            mintBtn.style.backgroundColor = "#4CAF50";
+          }).catch(error => {
+            console.error("Error parsing PSD:", error);
+            document.getElementById('status').innerText = "Error parsing PSD: " + error;
+          });
+        };
+        
+        reader.readAsArrayBuffer(file);
+      });
+      
+      document.getElementById('mintButton').addEventListener('click', () => {
+        alert("Minting NFT... (mint functionality to be implemented)");
+      });
+    });
+  </script>
+</body>
+</html>
