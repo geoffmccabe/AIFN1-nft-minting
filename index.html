@@ -36,12 +36,16 @@
       color: #aaa;
     }
   </style>
-  <!-- Buffer polyfill (must load first) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/buffer.min.js"></script>
+  <!-- Load Buffer polyfill from unpkg -->
+  <script src="https://unpkg.com/buffer@6.0.3/dist/buffer.min.js"></script>
   <script>
     // Ensure global Buffer is available.
-    window.Buffer = window.Buffer || Buffer;
-    console.log("Buffer loaded. TYPED_ARRAY_SUPPORT:", window.Buffer.TYPED_ARRAY_SUPPORT);
+    if (typeof Buffer === 'undefined') {
+      console.error("Buffer polyfill did not load.");
+    } else {
+      window.Buffer = Buffer;
+      console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", Buffer.TYPED_ARRAY_SUPPORT);
+    }
   </script>
   <!-- Load Ethers.js for blockchain interactions -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
@@ -49,7 +53,7 @@
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.26 - 2025-03-23 22:00 MDT</div>
+  <div id="version">v1.0.27 - 2025-03-23 22:00 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
   <!-- File input for PSD file -->
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
@@ -61,14 +65,12 @@
   <!-- Mint button (disabled initially) -->
   <button id="mintButton" disabled>Mint NFT</button>
   
-  <!-- Consolidated module script: Import psd.js and run main code -->
+  <!-- Module script to import psd.js and run main code -->
   <script type="module">
-    // Import psd.js from a working CDN link.
     import * as PSDModule from "https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js";
-    window.PSD = PSDModule;  // Attach to global window.
+    window.PSD = PSDModule;
     console.log("Module import complete. PSD =", window.PSD);
 
-    // Now that PSD is imported, run our main code after DOM is loaded.
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof window.PSD === 'undefined') {
         console.error("PSD is not defined");
@@ -76,14 +78,15 @@
         return;
       }
       console.log("PSD loaded successfully:", window.PSD);
-      
+
       const fileInput = document.getElementById('psdFile');
       fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        
+
         const reader = new FileReader();
-        
+
+        // Show progress in MB
         reader.onprogress = (e) => {
           if (e.lengthComputable) {
             const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
@@ -91,15 +94,15 @@
             document.getElementById('status').innerText = `${loadedMB} / ${totalMB} MB uploaded`;
           }
         };
-        
+
         reader.onloadstart = () => {
           document.getElementById('status').innerText = "Starting upload...";
         };
-        
+
         reader.onerror = () => {
           document.getElementById('status').innerText = "Error reading file.";
         };
-        
+
         reader.onload = (e) => {
           document.getElementById('status').innerText = "Upload Complete. Parsing PSD...";
           window.PSD.fromArrayBuffer(e.target.result).then(psd => {
@@ -114,10 +117,10 @@
             document.getElementById('status').innerText = "Error parsing PSD: " + error;
           });
         };
-        
+
         reader.readAsArrayBuffer(file);
       });
-      
+
       document.getElementById('mintButton').addEventListener('click', () => {
         alert("Minting NFT... (mint functionality to be implemented)");
       });
