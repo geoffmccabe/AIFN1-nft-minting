@@ -13,8 +13,9 @@
         .loading { color: #aaa; }
     </style>
     <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <!-- Updated ag-psd library URL to a more reliable CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/ag-psd@15.0.0/dist/ag-psd.js"></script>
+    <!-- Load ag-psd with a fallback to unpkg if jsDelivr fails -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-psd@15.0.0/dist/ag-psd.js" 
+            onerror="this.onerror=null; this.src='https://unpkg.com/ag-psd@15.0.0/dist/ag-psd.js';"></script>
     <script src="config.js"></script>
 </head>
 <body>
@@ -97,7 +98,7 @@
         async function parsePSD() {
             // Check if AgPsd is defined before proceeding
             if (typeof AgPsd === 'undefined') {
-                document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load. Please refresh the page or check your network.";
+                document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load. Please refresh the page or check your network. If the issue persists, try again later.";
                 return;
             }
 
