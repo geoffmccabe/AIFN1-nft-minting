@@ -33,29 +33,30 @@
       color: #aaa;
     }
   </style>
-  <!-- Load Ethers.js for blockchain interactions -->
+  <!-- Load Ethers.js (for blockchain interactions) -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load psd.js from jsDelivr (version 3.0.1) -->
-  <script src="https://cdn.jsdelivr.net/npm/psd.js@3.0.1/dist/psd.min.js"></script>
+  <!-- Load the local psd.min.js (downloaded into this folder) -->
+  <script src="psd.min.js"></script>
   <!-- Load your configuration file -->
   <script src="config.js"></script>
 </head>
 <body>
-  <!-- Version number -->
-  <div id="version">v1.0.17 - 2025-03-23 17:30 MDT</div>
+  <!-- Version display -->
+  <div id="version">v1.0.18 - 2025-03-23 18:00 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
-  <!-- File input for PSD file -->
+  <!-- File input for PSD -->
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
   <div id="mintFeeDisplay">Mint Fee: Loading...</div>
   <div id="traitSelection">Upload a PSD to select traits...</div>
-  <!-- Progress/status text -->
+  <!-- Progress/status display -->
   <div id="status">Awaiting file selection...</div>
   <br>
+  <!-- Mint button (disabled and grey initially) -->
   <button id="mintButton" disabled>Mint NFT</button>
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Check that the PSD library loaded and that the global PSD variable is defined.
+      // Check that psd.js loaded correctly (global PSD).
       if (typeof PSD === 'undefined') {
         console.error("PSD is not defined");
         document.getElementById('status').innerText = "Error: PSD library did not load.";
@@ -71,6 +72,7 @@
         
         var reader = new FileReader();
         
+        // Show progress in MB
         reader.onprogress = function(e) {
           if (e.lengthComputable) {
             var loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
@@ -89,12 +91,12 @@
         
         reader.onload = function(e) {
           document.getElementById('status').innerText = "Upload Complete. Parsing PSD...";
-          // Parse the PSD using psd.js API
+          // Parse the PSD file
           PSD.fromArrayBuffer(e.target.result).then(function(psd) {
             psd.parse();
             console.log("Parsed PSD Layers:", psd.tree().descendants());
             document.getElementById('status').innerText = "PSD parsed successfully.";
-            // Change the mint button color to green and enable it.
+            // Enable the mint button and change its color to green
             var mintBtn = document.getElementById('mintButton');
             mintBtn.disabled = false;
             mintBtn.style.backgroundColor = "#4CAF50";
@@ -107,6 +109,7 @@
         reader.readAsArrayBuffer(file);
       });
       
+      // Placeholder mint functionality
       document.getElementById('mintButton').addEventListener('click', function() {
         alert("Minting NFT... (mint functionality to be implemented)");
       });
