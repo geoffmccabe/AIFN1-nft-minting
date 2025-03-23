@@ -1,1 +1,172 @@
-(function(a){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=a();else if("function"==typeof define&&define.amd)define([],a);else{var b;b="undefined"==typeof window?"undefined"==typeof global?"undefined"==typeof self?this:self:global:window,b.base64js=a()}})(function(){return function(){function b(d,e,g){function a(j,i){if(!e[j]){if(!d[j]){var f="function"==typeof require&&require;if(!i&&f)return f(j,!0);if(h)return h(j,!0);var c=new Error("Cannot find module '"+j+"'");throw c.code="MODULE_NOT_FOUND",c}var k=e[j]={exports:{}};d[j][0].call(k.exports,function(b){var c=d[j][1][b];return a(c||b)},k,k.exports,b,d,e,g)}return e[j].exports}for(var h="function"==typeof require&&require,c=0;c<g.length;c++)a(g[c]);return a}return b}()({"/":[function(a,b,c){'use strict';function d(a){var b=a.length;if(0<b%4)throw new Error("Invalid string. Length must be a multiple of 4");var c=a.indexOf("=");-1===c&&(c=b);var d=c===b?0:4-c%4;return[c,d]}function e(a,b,c){return 3*(b+c)/4-c}function f(a){var b,c,f=d(a),g=f[0],h=f[1],j=new m(e(a,g,h)),k=0,n=0<h?g-4:g;for(c=0;c<n;c+=4)b=l[a.charCodeAt(c)]<<18|l[a.charCodeAt(c+1)]<<12|l[a.charCodeAt(c+2)]<<6|l[a.charCodeAt(c+3)],j[k++]=255&b>>16,j[k++]=255&b>>8,j[k++]=255&b;return 2===h&&(b=l[a.charCodeAt(c)]<<2|l[a.charCodeAt(c+1)]>>4,j[k++]=255&b),1===h&&(b=l[a.charCodeAt(c)]<<10|l[a.charCodeAt(c+1)]<<4|l[a.charCodeAt(c+2)]>>2,j[k++]=255&b>>8,j[k++]=255&b),j}function g(a){return k[63&a>>18]+k[63&a>>12]+k[63&a>>6]+k[63&a]}function h(a,b,c){for(var d,e=[],f=b;f<c;f+=3)d=(16711680&a[f]<<16)+(65280&a[f+1]<<8)+(255&a[f+2]),e.push(g(d));return e.join("")}function j(a){for(var b,c=a.length,d=c%3,e=[],f=16383,g=0,j=c-d;g<j;g+=f)e.push(h(a,g,g+f>j?j:g+f));return 1===d?(b=a[c-1],e.push(k[b>>2]+k[63&b<<4]+"==")):2===d&&(b=(a[c-2]<<8)+a[c-1],e.push(k[b>>10]+k[63&b>>4]+k[63&b<<2]+"=")),e.join("")}c.byteLength=function(a){var b=d(a),c=b[0],e=b[1];return 3*(c+e)/4-e},c.toByteArray=f,c.fromByteArray=j;for(var k=[],l=[],m="undefined"==typeof Uint8Array?Array:Uint8Array,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",o=0,p=n.length;o<p;++o)k[o]=n[o],l[n.charCodeAt(o)]=o;l[45]=62,l[95]=63},{}]},{},[])("/")});
+(function (global) {
+  if (typeof exports === "object" && typeof module !== "undefined") {
+    module.exports = factory();
+  } else if (typeof define === "function" && define.amd) {
+    define([], factory);
+  } else {
+    var g;
+    if (typeof window !== "undefined") {
+      g = window;
+    } else if (typeof global !== "undefined") {
+      g = global;
+    } else if (typeof self !== "undefined") {
+      g = self;
+    } else {
+      g = this;
+    }
+    g.base64js = factory();
+  }
+})(this, function () {
+  "use strict";
+
+  // The module loader function (UMD style)
+  function __commonJS(modules) {
+    var installedModules = {};
+    function require(moduleId) {
+      if (installedModules[moduleId]) {
+        return installedModules[moduleId].exports;
+      }
+      var module = installedModules[moduleId] = {
+        exports: {}
+      };
+      modules[moduleId][0].call(
+        module.exports,
+        function (x) {
+          var id = modules[moduleId][1][x];
+          return require(id || x);
+        },
+        module,
+        module.exports
+      );
+      return module.exports;
+    }
+    return require;
+  }
+
+  // Our base64-js module (using the key "/" for our module)
+  var base64Module = __commonJS({
+    "/": [function (require, module, exports) {
+      "use strict";
+      
+      // Helper: parse the base64 string header information
+      function byteLength(str) {
+        var len = str.length;
+        if (len % 4 > 0) {
+          throw new Error("Invalid string. Length must be a multiple of 4");
+        }
+        var pos = str.indexOf("=");
+        if (pos === -1) {
+          pos = len;
+        }
+        var extraBytes = pos === len ? 0 : 4 - pos % 4;
+        return [pos, extraBytes];
+      }
+      
+      // Calculate output length given base64 string info
+      function calcOutputLength(str, pos, extraBytes) {
+        return (3 * (pos + extraBytes) / 4) - extraBytes;
+      }
+      
+      // Convert a base64 string to a byte array
+      function toByteArray(str) {
+        var info = byteLength(str);
+        var pos = info[0];
+        var extraBytes = info[1];
+        var outLen = calcOutputLength(str, pos, extraBytes);
+        var out = new Uint8Array(outLen);
+        var curByte = 0;
+        var len = pos;
+        var i;
+        for (i = 0; i < len; i += 4) {
+          var tmp = (lookup[str.charCodeAt(i)] << 18) |
+                    (lookup[str.charCodeAt(i + 1)] << 12) |
+                    (lookup[str.charCodeAt(i + 2)] << 6) |
+                    (lookup[str.charCodeAt(i + 3)]);
+          out[curByte++] = (tmp >> 16) & 0xff;
+          out[curByte++] = (tmp >> 8) & 0xff;
+          out[curByte++] = tmp & 0xff;
+        }
+        if (extraBytes === 2) {
+          var tmp = (lookup[str.charCodeAt(i)] << 2) |
+                    (lookup[str.charCodeAt(i + 1)] >> 4);
+          out[curByte++] = tmp & 0xff;
+        }
+        if (extraBytes === 1) {
+          var tmp = (lookup[str.charCodeAt(i)] << 10) |
+                    (lookup[str.charCodeAt(i + 1)] << 4) |
+                    (lookup[str.charCodeAt(i + 2)] >> 2);
+          out[curByte++] = (tmp >> 8) & 0xff;
+          out[curByte++] = tmp & 0xff;
+        }
+        return out;
+      }
+      
+      // Encode 24 bits into 4 base64 characters
+      function encodeChunk(num) {
+        return (
+          encodeLookup[(num >> 18) & 0x3f] +
+          encodeLookup[(num >> 12) & 0x3f] +
+          encodeLookup[(num >> 6) & 0x3f] +
+          encodeLookup[num & 0x3f]
+        );
+      }
+      
+      // Convert a byte array to a base64 encoded string
+      function fromByteArray(uint8) {
+        var len = uint8.length;
+        var extraBytes = len % 3; // if we have 1 byte left, pad 2 '='s; 2 bytes, pad 1 '='
+        var parts = [];
+        var maxChunkLength = 16383;
+        var i;
+        for (i = 0; i < len - extraBytes; i += maxChunkLength) {
+          parts.push(encodeChunkForSlice(uint8, i, i + maxChunkLength > len - extraBytes ? len - extraBytes : i + maxChunkLength));
+        }
+        if (extraBytes === 1) {
+          var tmp = uint8[len - 1];
+          parts.push(encodeLookup[tmp >> 2] +
+                     encodeLookup[(tmp << 4) & 0x3f] +
+                     "==");
+        } else if (extraBytes === 2) {
+          var tmp = (uint8[len - 2] << 8) + uint8[len - 1];
+          parts.push(encodeLookup[tmp >> 10] +
+                     encodeLookup[(tmp >> 4) & 0x3f] +
+                     encodeLookup[(tmp << 2) & 0x3f] +
+                     "=");
+        }
+        return parts.join("");
+      }
+      
+      // Helper: encode a slice of the byte array
+      function encodeChunkForSlice(uint8, start, end) {
+        var output = "";
+        for (var i = start; i < end; i += 3) {
+          var tmp = ((uint8[i] << 16) & 0xff0000) +
+                    ((uint8[i + 1] << 8) & 0xff00) +
+                    (uint8[i + 2] & 0xff);
+          output += encodeChunk(tmp);
+        }
+        return output;
+      }
+      
+      // Export functions
+      exports.byteLength = function (str) {
+        var info = byteLength(str);
+        return calcOutputLength(str, info[0], info[1]);
+      };
+      exports.toByteArray = toByteArray;
+      exports.fromByteArray = fromByteArray;
+      
+      // Build lookup tables
+      var encodeLookup = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
+      var lookup = [];
+      for (var i = 0; i < encodeLookup.length; i++) {
+        lookup[encodeLookup[i].charCodeAt(0)] = i;
+      }
+      lookup[45] = 62;
+      lookup[95] = 63;
+      
+    }, {}]
+  });
+  
+  return base64Module("/");
+});
