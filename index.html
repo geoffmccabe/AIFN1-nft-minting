@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mint Your AIFN1 NFT</title>
+  <title>Mint Your AIFN NFT</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -31,16 +31,16 @@
       color: #aaa;
     }
   </style>
-  <!-- Load Ethers.js -->
+  <!-- Load Ethers.js for blockchain interactions -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load psd.js (prebuilt, minified version) from a CDN -->
+  <!-- Load psd.js (prebuilt, minified version) from unpkg -->
   <script src="https://unpkg.com/psd.js@3.0.0/dist/psd.min.js"></script>
-  <!-- Load your configuration -->
+  <!-- Load your configuration file -->
   <script src="config.js"></script>
 </head>
 <body>
-  <!-- Version number with timestamp (update as needed) -->
-  <div id="version">v1.0.0 - 2025-03-23 15:00 MDT</div>
+  <!-- Version number with timestamp -->
+  <div id="version">v1.0.14 - 2025-03-23 16:30 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
   <div id="mintFeeDisplay">Mint Fee: Loading...</div>
@@ -50,24 +50,34 @@
   <div id="status">Ready to mint...</div>
   
   <script>
-    // When a file is selected, use psd.js to parse it.
-    document.getElementById('psdFile').addEventListener('change', function(e) {
-      var file = e.target.files[0];
-      if (!file) return;
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if the psd.js library loaded properly and exposes the global PSD variable
+      if (typeof PSD === 'undefined') {
+        console.error("PSD is not defined");
+        document.getElementById('status').innerText = "Error: PSD library did not load.";
+        return;
+      } else {
+        console.log("PSD loaded successfully:", PSD);
+      }
       
-      // Use psd.js API: load and parse the PSD file.
-      PSD.fromFile(file).then(function(psd) {
-        psd.parse();
-        // For example, log the layer tree to the console:
-        console.log("Parsed PSD Layers:", psd.tree().descendants());
-        document.getElementById('status').innerText = "PSD parsed successfully.";
-        // Enable the mint button (you can add more processing here).
-        document.getElementById('mintButton').disabled = false;
-      }).catch(function(error) {
-        console.error("Error parsing PSD:", error);
-        document.getElementById('status').innerText = "Error parsing PSD: " + error;
+      // When a user selects a PSD file, parse it using psd.js
+      document.getElementById('psdFile').addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        PSD.fromFile(file).then(function(psd) {
+          psd.parse();
+          console.log("Parsed PSD Layers:", psd.tree().descendants());
+          document.getElementById('status').innerText = "PSD parsed successfully.";
+          // Enable mint button (here you can add further processing as needed)
+          document.getElementById('mintButton').disabled = false;
+        }).catch(function(error) {
+          console.error("Error parsing PSD:", error);
+          document.getElementById('status').innerText = "Error parsing PSD: " + error;
+        });
       });
-    });
-  </script>
-</body>
-</html>
+      
+      // For demonstration: the mint button currently shows an alert.
+      // You can integrate blockchain minting logic here later.
+      document.getElementById('mintButton').addEventListener('click', function() {
+        alert("Minting NFT... (mint functionality to be implemented)");
+      });
