@@ -4,218 +4,70 @@
   <meta charset="UTF-8">
   <title>Mint Your AIFN1 NFT</title>
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      text-align: center; 
-      background: #1a1a2e; 
-      color: white; 
-      padding: 50px; 
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #1a1a2e;
+      color: white;
+      padding: 50px;
       position: relative;
     }
-    button { 
-      padding: 10px 20px; 
-      background: #4CAF50; 
-      color: white; 
-      border: none; 
-      cursor: pointer; 
-      font-size: 16px; 
-      border-radius: 5px; 
+    button {
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 5px;
     }
     button:hover { background: #45a049; }
     #status { margin-top: 20px; font-size: 14px; }
-    .trait-row { display: flex; align-items: center; margin: 10px 0; }
-    .trait-name, .variant-name { width: 150px; }
-    .loading { color: #aaa; }
-    #version { 
-      position: absolute; 
-      top: 10px; 
-      left: 10px; 
-      font-size: 12px; 
-      color: #aaa; 
+    #version {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 12px;
+      color: #aaa;
     }
   </style>
-  <!-- Ethers.js for blockchain communication -->
+  <!-- Load Ethers.js -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load external dependencies -->
-  <script src="pako.min.js"></script>
-  <script src="psd.js"></script>
-  <script src="additionalInfo.js"></script>
-  <script src="imageResources.js"></script>
-  <!-- Load dependency files for ag-psd -->
-  <script src="psdWriter.js"></script>
-  <script src="psdReader.js"></script>
-  <script src="helpers.js"></script>
-  <script src="base64-js.js"></script>
-  <!-- Load your bundled ag-psd code -->
-  <script src="bundle.js"></script>
-  <!-- Load your configuration file -->
+  <!-- Load psd.js (prebuilt, minified version) from a CDN -->
+  <script src="https://unpkg.com/psd.js@3.0.0/dist/psd.min.js"></script>
+  <!-- Load your configuration -->
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.14 - 2025-03-23 14:00 MDT</div>
+  <!-- Version number with timestamp (update as needed) -->
+  <div id="version">v1.0.0 - 2025-03-23 15:00 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
-  <input type="file" id="psdFile" accept=".psd" style="margin: 20px;" onchange="parsePSD()">
+  <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
   <div id="mintFeeDisplay">Mint Fee: Loading...</div>
-  <div id="traitSelection" class="loading">Upload a PSD to select traits...</div>
+  <div id="traitSelection">Upload a PSD to select traits...</div>
   <br>
-  <button onclick="mintNFT()" id="mintButton" disabled>Mint NFT</button>
+  <button id="mintButton" disabled>Mint NFT</button>
   <div id="status">Ready to mint...</div>
   
   <script>
-    if (!window.ethereum) {
-      alert("Please install MetaMask or another Web3 wallet!");
-      throw new Error("No Web3 wallet detected");
-    }
-    
-    if (typeof AgPsd === 'undefined') {
-      console.error("AgPsd is undefined after loading bundle.js");
-      document.getElementById('status').innerText = "Error: PSD parsing library failed to load. Check your bundle.js and external files.";
-    } else {
-      console.log("AgPsd loaded successfully:", AgPsd);
-    }
-    
-    const { sepolia } = blockchainConfig;
-    const contractAddress = sepolia.contractAddress;
-    const abi = [/* ABI unchanged */];
-    const initialHtmlUri = "https://geoffmccabe.github.io/AIFN1-nft-html/index.html?tokenId=";
-    let traitData = null;
-    let selectedVariants = [];
-    
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const contract = new ethers.Contract(contractAddress, abi, provider);
-    const signer = provider.getSigner();
-    const contractWithSigner = contract.connect(signer);
-    
-    async function fetchMintFee() {
-      try {
-        const fee = await contract.mintFee();
-        document.getElementById('mintFeeDisplay').innerText = `Mint Fee: ${ethers.utils.formatEther(fee)} ETH`;
-      } catch (error) {
-        document.getElementById('mintFeeDisplay').innerText = "Mint Fee: Error fetching fee";
-      }
-    }
-    fetchMintFee();
-    
-    async function parsePSD() {
-      const file = document.getElementById('psdFile').files[0];
-      if (!file || file.size > 10 * 1024 * 1024) {
-        document.getElementById('status').innerText = "Please upload a PSD file under 10MB.";
-        return;
-      }
-      document.getElementById('traitSelection').innerText = "Parsing PSD...";
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const psd = AgPsd.readPsd(e.target.result);
-          traitData = processPsd(psd);
-          displayTraitSelection(traitData);
-          document.getElementById('mintButton').disabled = false;
-        } catch (error) {
-          document.getElementById('status').innerText = "Error parsing PSD: " + error.message;
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    }
-    
-    function processPsd(psd) {
-      const categories = [];
-      const processGroup = (group, path = []) => {
-        if (group.children) {
-          group.children.forEach(child => {
-            if (child.children) {
-              processGroup(child, [...path, child.name]);
-            } else {
-              const categoryName = path.length > 0 ? path[path.length - 1] : 'Default';
-              let category = categories.find(c => c.name === categoryName);
-              if (!category) {
-                category = { name: categoryName, variants: [], specialLayers: [] };
-                categories.push(category);
-              }
-              const parts = child.name ? child.name.split(/[~\/\|\{\}\[\]]+/).filter(Boolean) : [''];
-              const variantName = parts[0] || '';
-              if (variantName && !category.specialLayers.includes(variantName)) {
-                category.variants.push({
-                  name: variantName,
-                  png: child.canvas ? child.canvas.toDataURL() : null
-                });
-              } else {
-                category.specialLayers.push(child.name || '');
-              }
-            }
-          });
-        }
-      };
-      processGroup(psd);
-      selectedVariants = categories.map(() => 0);
-      return categories;
-    }
-    
-    function displayTraitSelection(data) {
-      const container = document.getElementById('traitSelection');
-      container.innerHTML = "";
-      container.classList.remove("loading");
-      data.forEach((cat, index) => {
-        if (cat.variants.length) {
-          const row = document.createElement("div");
-          row.className = "trait-row";
-          row.innerHTML = `
-            <span class="trait-name">${cat.name}</span>
-            <span class="variant-name" id="variant-${index}">${cat.variants[0].name}</span>
-            <button onclick="changeVariant(${index}, -1)">←</button>
-            <button onclick="changeVariant(${index}, 1)">→</button>
-          `;
-          container.appendChild(row);
-        } else if (cat.specialLayers.length) {
-          cat.specialLayers.forEach(special => {
-            const row = document.createElement("div");
-            row.className = "trait-row";
-            row.innerHTML = `<span class="trait-name">Special Layer: ${special}</span>`;
-            container.appendChild(row);
-          });
-        }
+    // When a file is selected, use psd.js to parse it.
+    document.getElementById('psdFile').addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      
+      // Use psd.js API: load and parse the PSD file.
+      PSD.fromFile(file).then(function(psd) {
+        psd.parse();
+        // For example, log the layer tree to the console:
+        console.log("Parsed PSD Layers:", psd.tree().descendants());
+        document.getElementById('status').innerText = "PSD parsed successfully.";
+        // Enable the mint button (you can add more processing here).
+        document.getElementById('mintButton').disabled = false;
+      }).catch(function(error) {
+        console.error("Error parsing PSD:", error);
+        document.getElementById('status').innerText = "Error parsing PSD: " + error;
       });
-    }
-    
-    function changeVariant(catIndex, delta) {
-      const cat = traitData[catIndex];
-      selectedVariants[catIndex] = (selectedVariants[catIndex] + delta + cat.variants.length) % cat.variants.length;
-      document.getElementById(`variant-${catIndex}`).innerText = cat.variants[selectedVariants[catIndex]].name;
-    }
-    
-    async function mintNFT() {
-      const status = document.getElementById('status');
-      try {
-        await provider.send("eth_requestAccounts", []);
-        const numCats = traitData.length;
-        const variants = traitData.map(cat => cat.variants.length);
-        const recipient = await signer.getAddress();
-    
-        status.innerText = "Estimating gas...";
-        const gasLimit = await contractWithSigner.estimateGas.mintNFT(
-          recipient,
-          initialHtmlUri,
-          numCats,
-          variants,
-          selectedVariants,
-          { value: ethers.utils.parseEther(sepolia.mintFee) }
-        );
-    
-        status.innerText = "Minting...";
-        const tx = await contractWithSigner.mintNFT(
-          recipient,
-          initialHtmlUri,
-          numCats,
-          variants,
-          selectedVariants,
-          { value: ethers.utils.parseEther(sepolia.mintFee), gasLimit: gasLimit.add(50000) }
-        );
-        const receipt = await tx.wait();
-        const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
-        status.innerText = `Minted! Token ID: ${tokenId}`;
-      } catch (error) {
-        status.innerText = "Error: " + error.message;
-      }
-    }
+    });
   </script>
 </body>
 </html>
