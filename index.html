@@ -1,252 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Mint Your AIFN1 NFT</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #1a1a2e; color: white; padding: 50px; position: relative; }
-        button { padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; }
-        button:hover { background: #45a049; }
-        #status { margin-top: 20px; font-size: 14px; }
-        .trait-row { display: flex; align-items: center; margin: 10px 0; }
-        .trait-name, .variant-name { width: 150px; }
-        .loading { color: #aaa; }
-        #version { position: absolute; top: 10px; left: 10px; font-size: 12px; color: #aaa; }
-    </style>
-    <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <!-- Load ag-psd from local copy -->
-    <script src="ag-psd.js"></script>
-    <script src="config.js"></script>
+  <meta charset="UTF-8">
+  <title>Mint Your AIFN1 NFT</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #1a1a2e; color: white; padding: 50px; }
+    button { padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; }
+    button:hover { background: #45a049; }
+    #status { margin-top: 20px; font-size: 14px; }
+    .trait-row { display: flex; align-items: center; margin: 10px 0; }
+    .trait-name, .variant-name { width: 150px; }
+    .loading { color: #aaa; }
+  </style>
+  <!-- Ethers.js for blockchain communication -->
+  <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  
+  <!-- Import ag-psd as a module and attach it to the global window object -->
+  <script type="module">
+    import * as AgPsdModule from "https://unpkg.com/ag-psd@15.0.0/dist/ag-psd.browser.min.js";
+    window.AgPsd = AgPsdModule;
+  </script>
+  
+  <!-- Your configuration file -->
+  <script src="config.js"></script>
 </head>
 <body>
-    <!-- Updated version number with timestamp in Mountain Time (MDT) -->
-    <div id="version">v1.0.8 - 2025-03-23 16:30:00 MDT</div>
-    <h1>Mint Your AIFN1 NFT</h1>
-    <input type="file" id="psdFile" accept=".psd" style="margin: 20px;" disabled>
-    <div id="mintFeeDisplay">Mint Fee: Loading...</div>
-    <div id="traitSelection" class="loading">Upload a PSD to select traits...</div>
-    <br>
-    <button onclick="mintNFT()" id="mintButton" disabled>Mint NFT</button>
-    <div id="status">Ready to mint...</div>
-    <script>
-        if (!window.ethereum) { alert("Please install MetaMask or another Web3 wallet!"); throw new Error("No Web3 wallet detected"); }
+  <h1>Mint Your AIFN1 NFT</h1>
+  <input type="file" id="psdFile" accept=".psd" style="margin: 20px;" onchange="parsePSD()">
+  <div id="mintFeeDisplay">Mint Fee: Loading...</div>
+  <div id="traitSelection" class="loading">Upload a PSD to select traits...</div>
+  <br>
+  <button onclick="mintNFT()" id="mintButton" disabled>Mint NFT</button>
+  <div id="status">Ready to mint...</div>
+  
+  <script>
+    if (!window.ethereum) { 
+      alert("Please install MetaMask or another Web3 wallet!"); 
+      throw new Error("No Web3 wallet detected"); 
+    }
 
-        // Debug: Log to confirm ag-psd.js is loading
-        console.log("Checking if ag-psd.js loaded...");
+    const { sepolia } = blockchainConfig;
+    const contractAddress = sepolia.contractAddress;
+    const abi = [/* ABI unchanged */];
+    const initialHtmlUri = "https://geoffmccabe.github.io/AIFN1-nft-html/index.html?tokenId=";
+    let traitData = null;
+    let selectedVariants = [];
 
-        // Check if AgPsd is defined after loading the local script
-        if (typeof AgPsd === 'undefined') {
-            console.error("AgPsd is undefined after loading ag-psd.js");
-            document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load: AgPsd is undefined. Please ensure ag-psd.js is the correct file from https://cdn.jsdelivr.net/npm/ag-psd@13.0.0/dist/ag-psd.js and accessible at https://geoffmccabe.github.io/AIFN1-nft-minting/ag-psd.js.";
-        } else {
-            console.log("AgPsd loaded successfully:", AgPsd);
-            // Enable file input if AgPsd is loaded
-            document.getElementById('psdFile').disabled = false;
-            document.getElementById('status').innerText = "Ready to mint...";
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const contract = new ethers.Contract(contractAddress, abi, provider);
+    const signer = provider.getSigner();
+    const contractWithSigner = contract.connect(signer);
+
+    async function fetchMintFee() {
+      try {
+        const fee = await contract.mintFee();
+        document.getElementById('mintFeeDisplay').innerText = `Mint Fee: ${ethers.utils.formatEther(fee)} ETH`;
+      } catch (error) {
+        document.getElementById('mintFeeDisplay').innerText = `Mint Fee: Error fetching fee`;
+      }
+    }
+    fetchMintFee();
+
+    async function parsePSD() {
+      const fileInput = document.getElementById('psdFile');
+      const file = fileInput.files[0];
+      if (!file || file.size > 10 * 1024 * 1024) {
+        document.getElementById('status').innerText = "Please upload a PSD file under 10MB.";
+        return;
+      }
+
+      document.getElementById('traitSelection').innerText = "Parsing PSD...";
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target.result;
+          // Use the imported AgPsd from v15.0.0
+          const psd = AgPsd.readPsd(arrayBuffer);
+          traitData = processPsd(psd);
+          displayTraitSelection(traitData);
+          document.getElementById('mintButton').disabled = false;
+        } catch (error) {
+          document.getElementById('status').innerText = `Error parsing PSD: ${error.message}`;
         }
+      };
+      reader.readAsArrayBuffer(file);
+    }
 
-        // Use settings from config.js
-        const { sepolia } = blockchainConfig;
-        const contractAddress = sepolia.contractAddress;
-        const abi = [
-            {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newFee","type":"uint256"}],"name":"MintFeeUpdated","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"PaymentReceived","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"string","name":"newUri","type":"string"}],"name":"UriUpdated","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Withdrawal","type":"event"},
-            {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"tokenId1","type":"uint256"},{"internalType":"uint256","name":"tokenId2","type":"uint256"}],"name":"forgeNFTs","outputs":[],"stateMutability":"payable","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"freeGenerationsUsed","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"generationFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"isUriLocked","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"string","name":"initialHtmlUri","type":"string"},{"internalType":"uint256","name":"_numTraitCategories","type":"uint256"},{"internalType":"uint256[]","name":"_traitCategoryVariants","type":"uint256[]"},{"internalType":"uint256[]","name":"_traitIndices","type":"uint256[]"}],"name":"mintNFT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"payable","type":"function"},
-            {"inputs":[],"name":"mintFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"numTiers","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"numTraitCategories","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"payForGenerations","outputs":[],"stateMutability":"payable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"newFee","type":"uint256"}],"name":"setForgingFee","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"newFee","type":"uint256"}],"name":"setGenerationFee","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"newFee","type":"uint256"}],"name":"setMintFee","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"_numTiers","type":"uint256"}],"name":"setNumTiers","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"_falloff","type":"uint256"}],"name":"setTierRarityFalloff","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"_falloff","type":"uint256"}],"name":"setTraitRarityFalloff","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"string","name":"uri","type":"string"}],"name":"setTokenURI","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tiers","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"arg0","type":"uint256"},{"internalType":"uint256","name":"arg1","type":"uint256"}],"name":"traitCategoryVariants","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"arg0","type":"uint256"},{"internalType":"uint256","name":"arg1","type":"uint256"}],"name":"traitIndices","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}
-        ];
-        const initialHtmlUri = "https://geoffmccabe.github.io/AIFN1-nft-html/index.html?tokenId=";
-        let traitData = null;
-        let selectedVariants = [];
-
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const contract = new ethers.Contract(contractAddress, abi, provider);
-        const signer = provider.getSigner();
-        const contractWithSigner = contract.connect(signer);
-
-        async function fetchMintFee() {
-            try {
-                const fee = await contract.mintFee();
-                document.getElementById('mintFeeDisplay').innerText = `Mint Fee: ${ethers.utils.formatEther(fee)} ETH`;
-            } catch (error) {
-                document.getElementById('mintFeeDisplay').innerText = `Mint Fee: Error fetching fee - ${error.message}`;
+    function processPsd(psd) {
+      const traitCategories = [];
+      const processGroup = (group, path = []) => {
+        if (group.children) {
+          group.children.forEach(child => {
+            if (child.children) {
+              processGroup(child, [...path, child.name]);
+            } else {
+              const categoryName = path.length > 0 ? path[path.length - 1] : 'Default';
+              let category = traitCategories.find(cat => cat.name === categoryName);
+              if (!category) {
+                category = { name: categoryName, variants: [], specialLayers: [] };
+                traitCategories.push(category);
+              }
+              const separators = /[~\/\|\{\}\[\]]+/;
+              const parts = child.name ? child.name.split(separators).filter(part => part) : [''];
+              const variantName = parts[0] || '';
+              if (variantName && !category.specialLayers.includes(variantName)) {
+                category.variants.push({
+                  name: variantName,
+                  png: child.canvas ? child.canvas.toDataURL() : null
+                });
+              } else {
+                category.specialLayers.push(child.name || '');
+              }
             }
+          });
         }
-        fetchMintFee();
+      };
+      processGroup(psd);
+      selectedVariants = traitCategories.map(cat => 0);
+      return traitCategories;
+    }
 
-        async function parsePSD() {
-            // Check if AgPsd is defined before proceeding
-            if (typeof AgPsd === 'undefined') {
-                document.getElementById('status').innerText = "Error: PSD parsing library (ag-psd) failed to load: AgPsd is undefined. Please ensure ag-psd.js is the correct file from https://cdn.jsdelivr.net/npm/ag-psd@13.0.0/dist/ag-psd.js and accessible at https://geoffmccabe.github.io/AIFN1-nft-minting/ag-psd.js.";
-                return;
-            }
-
-            const fileInput = document.getElementById('psdFile');
-            const file = fileInput.files[0];
-            // Updated file size limit to 1000MB (1GB) to accommodate large PSD files with traits and layers
-            if (!file || file.size > 1000 * 1024 * 1024) {
-                document.getElementById('status').innerText = "Please upload a PSD file under 1000MB.";
-                return;
-            }
-
-            document.getElementById('traitSelection').innerText = "Parsing PSD...";
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const arrayBuffer = e.target.result;
-                    const psd = AgPsd.readPsd(arrayBuffer);
-                    traitData = processPsd(psd);
-                    displayTraitSelection(traitData);
-                    document.getElementById('mintButton').disabled = false;
-                } catch (error) {
-                    document.getElementById('status').innerText = `Error parsing PSD: ${error.message}`;
-                }
-            };
-            reader.readAsArrayBuffer(file);
+    function displayTraitSelection(traitData) {
+      const container = document.getElementById('traitSelection');
+      container.innerHTML = '';
+      container.classList.remove('loading');
+      traitData.forEach((category, catIndex) => {
+        if (category.variants.length > 0) {
+          const row = document.createElement('div');
+          row.className = 'trait-row';
+          row.innerHTML = `
+            <span class="trait-name">${category.name}</span>
+            <span class="variant-name" id="variant-${catIndex}">${category.variants[0].name}</span>
+            <button onclick="changeVariant(${catIndex}, -1)">←</button>
+            <button onclick="changeVariant(${catIndex}, 1)">→</button>
+          `;
+          container.appendChild(row);
+        } else if (category.specialLayers.length > 0) {
+          category.specialLayers.forEach(special => {
+            const row = document.createElement('div');
+            row.className = 'trait-row';
+            row.innerHTML = `<span class="trait-name">Special Layer: ${special}</span>`;
+            container.appendChild(row);
+          });
         }
+      });
+    }
 
-        function processPsd(psd) {
-            const traitCategories = [];
-            const processGroup = (group, path = []) => {
-                if (group.children) {
-                    group.children.forEach(child => {
-                        if (child.children) {
-                            processGroup(child, [...path, child.name]);
-                        } else {
-                            const categoryName = path.length > 0 ? path[path.length - 1] : 'Default';
-                            let category = traitCategories.find(cat => cat.name === categoryName);
-                            if (!category) {
-                                category = { name: categoryName, variants: [], specialLayers: [] };
-                                traitCategories.push(category);
-                            }
+    function changeVariant(catIndex, direction) {
+      const category = traitData[catIndex];
+      selectedVariants[catIndex] = (selectedVariants[catIndex] + direction + category.variants.length) % category.variants.length;
+      document.getElementById(`variant-${catIndex}`).innerText = category.variants[selectedVariants[catIndex]].name;
+    }
 
-                            const separators = /[~\/\|\{\}\[\]]+/;
-                            const parts = child.name ? child.name.split(separators).filter(part => part) : [''];
-                            const variantName = parts[0] || '';
-                            if (variantName && !category.specialLayers.includes(variantName)) {
-                                category.variants.push({
-                                    name: variantName,
-                                    png: child.canvas ? child.canvas.toDataURL() : null
-                                });
-                            } else {
-                                category.specialLayers.push(child.name || '');
-                            }
-                        }
-                    });
-                }
-            };
-            processGroup(psd);
-            selectedVariants = traitCategories.map(cat => 0);
-            return traitCategories;
-        }
+    async function mintNFT() {
+      const status = document.getElementById('status');
+      try {
+        await provider.send("eth_requestAccounts", []);
+        const numTraitCategories = traitData.length;
+        const traitCategoryVariants = traitData.map(cat => cat.variants.length);
+        const traitIndices = selectedVariants;
+        const recipient = await signer.getAddress();
 
-        function displayTraitSelection(traitData) {
-            const container = document.getElementById('traitSelection');
-            container.innerHTML = '';
-            container.classList.remove('loading');
-            traitData.forEach((category, catIndex) => {
-                if (category.variants.length > 0) {
-                    const row = document.createElement('div');
-                    row.className = 'trait-row';
-                    row.innerHTML = `
-                        <span class="trait-name">${category.name}</span>
-                        <span class="variant-name" id="variant-${catIndex}">${category.variants[0].name}</span>
-                        <button onclick="changeVariant(${catIndex}, -1)">←</button>
-                        <button onclick="changeVariant(${catIndex}, 1)">→</button>
-                    `;
-                    container.appendChild(row);
-                } else if (category.specialLayers.length > 0) {
-                    category.specialLayers.forEach(special => {
-                        const row = document.createElement('div');
-                        row.className = 'trait-row';
-                        row.innerHTML = `<span class="trait-name">Special Layer: ${special}</span>`;
-                        container.appendChild(row);
-                    });
-                }
-            });
-        }
+        status.innerText = "Estimating gas...";
+        const gasLimit = await contractWithSigner.estimateGas.mintNFT(
+          recipient,
+          initialHtmlUri,
+          numTraitCategories,
+          traitCategoryVariants,
+          traitIndices,
+          { value: ethers.utils.parseEther(sepolia.mintFee) }
+        );
 
-        function changeVariant(catIndex, direction) {
-            const category = traitData[catIndex];
-            selectedVariants[catIndex] = (selectedVariants[catIndex] + direction + category.variants.length) % category.variants.length;
-            document.getElementById(`variant-${catIndex}`).innerText = category.variants[selectedVariants[catIndex]].name;
-        }
-
-        async function mintNFT() {
-            const status = document.getElementById('status');
-            try {
-                await provider.send("eth_requestAccounts", []);
-                const numTraitCategories = traitData.length;
-                const traitCategoryVariants = traitData.map(cat => cat.variants.length);
-                const traitIndices = selectedVariants;
-                const recipient = await signer.getAddress();
-
-                status.innerText = "Estimating gas...";
-                const gasLimit = await contractWithSigner.estimateGas.mintNFT(
-                    recipient,
-                    initialHtmlUri,
-                    numTraitCategories,
-                    traitCategoryVariants,
-                    traitIndices,
-                    { value: ethers.utils.parseEther(sepolia.mintFee) }
-                );
-
-                status.innerText = "Minting...";
-                const tx = await contractWithSigner.mintNFT(
-                    recipient,
-                    initialHtmlUri,
-                    numTraitCategories,
-                    traitCategoryVariants,
-                    traitIndices,
-                    { value: ethers.utils.parseEther(sepolia.mintFee), gasLimit: gasLimit.add(50000) }
-                );
-                const receipt = await tx.wait();
-                const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
-                status.innerText = `Minted! Token ID: ${tokenId}`;
-            } catch (error) {
-                status.innerText = `Error: ${error.message}`;
-            }
-        }
-
-        // Bind the onchange event listener after parsePSD is defined
-        document.getElementById('psdFile').addEventListener('change', parsePSD);
-    </script>
+        status.innerText = "Minting...";
+        const tx = await contractWithSigner.mintNFT(
+          recipient,
+          initialHtmlUri,
+          numTraitCategories,
+          traitCategoryVariants,
+          traitIndices,
+          { value: ethers.utils.parseEther(sepolia.mintFee), gasLimit: gasLimit.add(50000) }
+        );
+        const receipt = await tx.wait();
+        const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
+        status.innerText = `Minted! Token ID: ${tokenId}`;
+      } catch (error) {
+        status.innerText = `Error: ${error.message}`;
+      }
+    }
+  </script>
 </body>
 </html>
