@@ -1,47 +1,30 @@
 // entry.js
 
-// Dummy globals to satisfy CommonJS code
-if (typeof require === 'undefined') {
-  window.require = function() {
-    console.warn("Dummy require called with arguments:", arguments);
-    return {};
-  };
-}
-if (typeof exports === 'undefined') {
-  window.exports = {};
-}
-if (typeof module === 'undefined') {
-  window.module = { exports: window.exports };
-}
+// Provide dummy globals to satisfy any leftover CommonJS calls:
+globalThis.require = () => {
+  console.warn("Dummy require called.");
+  return {};
+};
+globalThis.exports = {};
+globalThis.module = { exports: {} };
 
-// Import Buffer polyfill from cdnjs (using ES module syntax)
-import * as bufferModule from "https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js";
-window.Buffer = bufferModule.Buffer;
-console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", window.Buffer.TYPED_ARRAY_SUPPORT);
+// Import Ethers.js (we use the UMD version loaded via index.html, so no need to import here)
 
-// Import Ethers.js from unpkg (we assume it attaches to window.ethers)
-import "https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js";
-console.log("Ethers.js loaded:", typeof window.ethers);
-
-// (Optional) Import your config file if needed; if config.js is a plain script, you might load it via a <script> tag in index.html instead
-// import "./config.js"; // If config.js uses modules, otherwise load it via index.html
-
-// Import psd.js from jsDelivr (using classic script style is problematic in a module bundle, so we import it as an ES module)
+// Import your application code:
 import * as PSDModule from "https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js";
 window.PSD = PSDModule;
 console.log("psd.js loaded:", window.PSD);
 
-// Main application code
+// Main code: Set up file input and UI
 document.addEventListener('DOMContentLoaded', () => {
   console.log("DOM fully loaded. Setting up file input...");
 
-  // Update Mint Fee display (placeholder)
+  // (Optional) Update mint fee display; this is a placeholder:
   const mintFeeDisplay = document.getElementById('mintFeeDisplay');
   if (mintFeeDisplay) {
     mintFeeDisplay.innerText = "Mint Fee: 0.001 ETH";
   }
 
-  // Set up file input listener
   const fileInput = document.getElementById('psdFile');
   fileInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
@@ -53,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('status').innerText = `File chosen: ${file.name}`;
 
     const reader = new FileReader();
-
     reader.onprogress = (e) => {
       if (e.lengthComputable) {
         const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
@@ -65,17 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('status').innerText = "Reading file (unknown size)...";
       }
     };
-
     reader.onloadstart = () => {
       console.log("File reading started.");
       document.getElementById('status').innerText = "Starting file read...";
     };
-
     reader.onerror = () => {
       console.error("Error reading file.");
       document.getElementById('status').innerText = "Error reading file.";
     };
-
     reader.onload = (e) => {
       console.log("File reading complete. Parsing PSD...");
       document.getElementById('status').innerText = "File read complete. Parsing PSD...";
@@ -92,12 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('status').innerText = "Error parsing PSD: " + error;
       });
     };
-
     console.log("Initiating file read as ArrayBuffer...");
     reader.readAsArrayBuffer(file);
   });
 
-  // Mint button functionality (placeholder)
   const mintBtn = document.getElementById('mintButton');
   mintBtn.addEventListener('click', () => {
     console.log("Mint button clicked.");
