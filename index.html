@@ -38,25 +38,24 @@
       color: #aaa;
     }
   </style>
-  <!-- Dummy require function to avoid "require is not defined" errors -->
+  <!-- Dummy require to suppress Node-specific require calls -->
   <script>
     if (typeof require === 'undefined') {
       window.require = function() {
         console.warn("Dummy require called with arguments:", arguments);
-        return {}; // Return an empty object for any require call.
+        return {}; // Return an empty object.
       };
     }
   </script>
   <!-- Load Ethers.js for blockchain interactions -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load config.js (your configuration) -->
+  <!-- Load config.js (your configuration, e.g., contract details) -->
   <script src="config.js"></script>
   <!-- Load psd.js as a classic script from jsDelivr -->
   <script src="https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js"></script>
-  <!-- At this point, psd.js should attach PSD to window -->
 </head>
 <body>
-  <div id="version">v1.0.34 - 2025-03-24 01:30 MDT</div>
+  <div id="version">v1.0.35 - 2025-03-24 01:00 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
   
   <!-- File input for PSD file -->
@@ -74,14 +73,18 @@
   <!-- Mint NFT button -->
   <button id="mintButton" disabled>Mint NFT</button>
   
-  <!-- Main module script for your custom code -->
+  <!-- Main module script for custom code -->
   <script type="module">
-    // Import Buffer polyfill from jsDelivr.
+    /***************************************
+     * 1. Import Buffer polyfill using namespace import
+     ***************************************/
     import * as bufferModule from "https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js";
     window.Buffer = bufferModule.Buffer;
     console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", window.Buffer.TYPED_ARRAY_SUPPORT);
     
-    // No need to import psd.js here because it was loaded as a classic script.
+    /***************************************
+     * 2. Check that psd.js (loaded as classic script) attached PSD to window
+     ***************************************/
     if (typeof window.PSD === 'undefined') {
       console.error("PSD is not defined. psd.js did not load properly.");
       document.getElementById('status').innerText = "Error: PSD library did not load.";
@@ -89,10 +92,13 @@
       console.log("psd.js is defined:", window.PSD);
     }
     
+    /***************************************
+     * 3. Main Code: Set up file input listener and UI updates
+     ***************************************/
     document.addEventListener('DOMContentLoaded', () => {
       console.log("DOM fully loaded. Setting up file input...");
       
-      // Set up the file input listener.
+      // Update status immediately when a file is chosen.
       const fileInput = document.getElementById('psdFile');
       fileInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
@@ -105,9 +111,57 @@
         
         const reader = new FileReader();
         
-        // onprogress: update progress in MB (if file is large).
+        // Update progress if available.
         reader.onprogress = (e) => {
           if (e.lengthComputable) {
             const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
             const totalMB = (e.total / (1024 * 1024)).toFixed(2);
-            console.log(`Reading file: ${loadedMB} / ${totalMB
+            console.log(`Reading file: ${loadedMB} / ${totalMB} MB`);
+            document.getElementById('status').innerText = `Reading file: ${loadedMB} / ${totalMB} MB`;
+          } else {
+            console.log("onprogress fired, but length not computable.");
+            document.getElementById('status').innerText = "Reading file (unknown size)...";
+          }
+        };
+        
+        reader.onloadstart = () => {
+          console.log("File reading started.");
+          document.getElementById('status').innerText = "Starting file read...";
+        };
+        
+        reader.onerror = () => {
+          console.error("Error reading file.");
+          document.getElementById('status').innerText = "Error reading file.";
+        };
+        
+        reader.onload = (e) => {
+          console.log("File reading complete. Parsing PSD...");
+          document.getElementById('status').innerText = "File read complete. Parsing PSD...";
+          
+          window.PSD.fromArrayBuffer(e.target.result).then(psd => {
+            psd.parse();
+            console.log("Parsed PSD Layers:", psd.tree().descendants());
+            document.getElementById('status').innerText = "PSD parsed successfully. Ready to mint!";
+            const mintBtn = document.getElementById('mintButton');
+            mintBtn.disabled = false;
+            mintBtn.style.backgroundColor = "#4CAF50";
+          }).catch(error => {
+            console.error("Error parsing PSD:", error);
+            document.getElementById('status').innerText = "Error parsing PSD: " + error;
+          });
+        };
+        
+        console.log("Initiating file read as ArrayBuffer...");
+        reader.readAsArrayBuffer(file);
+      });
+      
+      // Mint button placeholder functionality.
+      const mintBtn = document.getElementById('mintButton');
+      mintBtn.addEventListener('click', () => {
+        console.log("Mint button clicked.");
+        alert("Minting NFT... (placeholder functionality)");
+      });
+    });
+  </script>
+</body>
+</html>
