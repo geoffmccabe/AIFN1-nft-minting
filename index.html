@@ -20,9 +20,11 @@
       cursor: pointer;
       font-size: 16px;
       border-radius: 5px;
+      margin: 10px;
     }
     button:disabled {
       cursor: not-allowed;
+      opacity: 0.6;
     }
     #status {
       margin-top: 20px;
@@ -36,17 +38,109 @@
       color: #aaa;
     }
   </style>
-  <!-- Load Ethers.js (for blockchain interactions) -->
-  <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Your config.js (should define contractAddress, ABI, etc.) -->
-  <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.29 - 2025-03-23 23:00 MDT</div>
+  <!-- Version Label -->
+  <div id="version">v1.0.30 - 2025-03-23 23:30 MDT</div>
+  
   <h1>Mint Your AIFN NFT</h1>
   
-  <!-- File input for PSD -->
+  <!-- File input for PSD file -->
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
+  
+  <!-- Show a placeholder Mint Fee -->
   <div id="mintFeeDisplay">Mint Fee: Loading...</div>
+  
+  <!-- Some placeholder text about uploading a PSD -->
   <div id="traitSelection">Upload a PSD to select traits...</div>
+  
+  <!-- Status display for reading progress or errors -->
   <div id="status">Awaiting file selection...</div>
+  
+  <!-- The Mint NFT button, always visible -->
+  <button id="mintButton" disabled>Mint NFT</button>
+  
+  <!-- Single module script that does everything -->
+  <script type="module">
+    /***********************************
+     * 1) Buffer polyfill (for psd.js)
+     ***********************************/
+    import { Buffer } from "https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js";
+    window.Buffer = Buffer;
+    console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", Buffer.TYPED_ARRAY_SUPPORT);
+    
+    /***********************************
+     * 2) Import psd.js
+     ***********************************/
+    import * as PSDModule from "https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js";
+    window.PSD = PSDModule;
+    console.log("psd.js loaded:", PSDModule);
+    
+    /***********************************
+     * 3) Main Code
+     ***********************************/
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log("DOM fully loaded. Setting up file input...");
+      
+      // Double-check PSD is loaded
+      if (typeof window.PSD === 'undefined') {
+        console.error("PSD is not defined. Possibly psd.js didn't load.");
+        document.getElementById('status').innerText = "Error: PSD library did not load.";
+        return;
+      } else {
+        console.log("PSD is defined. We can parse PSD files if they're large enough to see progress.");
+      }
+      
+      // Just a placeholder for Mint Fee
+      // If you want real data, add your contract calls here.
+      document.getElementById('mintFeeDisplay').innerText = "Mint Fee: 0.001 ETH";
+      
+      // Set up the file input listener
+      const fileInput = document.getElementById('psdFile');
+      fileInput.addEventListener('change', (event) => {
+        console.log("File input changed. Let's read the PSD file...");
+        
+        const file = event.target.files[0];
+        if (!file) {
+          console.log("No file chosen.");
+          document.getElementById('status').innerText = "No file selected.";
+          return;
+        }
+        
+        console.log(`Selected file: ${file.name} (${file.size} bytes)`);
+        document.getElementById('status').innerText = "File chosen: " + file.name;
+        
+        const reader = new FileReader();
+        
+        // onprogress: can show partial progress for large files
+        reader.onprogress = (e) => {
+          console.log("onprogress event fired.");
+          if (e.lengthComputable) {
+            const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
+            const totalMB = (e.total / (1024 * 1024)).toFixed(2);
+            console.log(`Reading: ${loadedMB} / ${totalMB} MB`);
+            document.getElementById('status').innerText = `Reading PSD: ${loadedMB} / ${totalMB} MB`;
+          } else {
+            console.log("onprogress fired, but lengthComputable = false.");
+            document.getElementById('status').innerText = "Reading PSD (unknown size)";
+          }
+        };
+        
+        reader.onloadstart = () => {
+          console.log("onloadstart event fired.");
+          document.getElementById('status').innerText = "Starting to read file...";
+        };
+        
+        reader.onerror = () => {
+          console.log("onerror event fired. Possibly user canceled or read failed.");
+          document.getElementById('status').innerText = "Error reading file.";
+        };
+        
+        reader.onload = (e) => {
+          console.log("onload event fired. File reading complete, now parsing PSD...");
+          document.getElementById('status').innerText = "Reading complete. Parsing PSD...";
+          
+          // Parse with psd.js
+          window.PSD.fromArrayBuffer(e.target.result).then(psd => {
+            psd.parse();
+            console.log("Parsed
