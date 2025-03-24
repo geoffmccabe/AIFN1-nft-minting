@@ -38,131 +38,123 @@
       color: #aaa;
     }
   </style>
+  <!-- Load Ethers.js for blockchain interactions -->
+  <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <!-- Load config.js (your configuration) -->
+  <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.32 - 2025-03-24 00:00 MDT</div>
+  <div id="version">v1.0.33 - 2025-03-24 00:30 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
   
-  <!-- File input for PSD -->
+  <!-- File input for PSD file -->
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
   
-  <!-- Show a placeholder Mint Fee -->
+  <!-- Placeholder Mint Fee -->
   <div id="mintFeeDisplay">Mint Fee: 0.001 ETH</div>
   
-  <!-- Some placeholder text about uploading a PSD -->
+  <!-- Instruction for PSD selection -->
   <div id="traitSelection">Upload a PSD to select traits...</div>
   
   <!-- Status display for reading progress or errors -->
   <div id="status">No file selected.</div>
   
-  <!-- The Mint NFT button, always visible but disabled initially -->
+  <!-- Mint NFT button -->
   <button id="mintButton" disabled>Mint NFT</button>
   
+  <!-- Main module script -->
   <script type="module">
-    /************************************************************
-     * 1) Import buffer as default, then reference .Buffer
-     ************************************************************/
-    import bufferModule from "https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js";
+    /***************************************
+     * 1. Import Buffer polyfill using namespace import
+     ***************************************/
+    import * as bufferModule from "https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js";
     window.Buffer = bufferModule.Buffer;
     console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", window.Buffer.TYPED_ARRAY_SUPPORT);
 
-    /************************************************************
-     * 2) Import psd.js
-     ************************************************************/
+    /***************************************
+     * 2. Import psd.js
+     ***************************************/
     import * as PSDModule from "https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js";
     window.PSD = PSDModule;
-    console.log("psd.js loaded:", PSDModule);
+    console.log("psd.js loaded:", window.PSD);
 
-    /************************************************************
-     * 3) Main Code
-     ************************************************************/
+    /***************************************
+     * 3. Main Code
+     ***************************************/
     document.addEventListener('DOMContentLoaded', () => {
       console.log("DOM fully loaded. Setting up file input...");
 
-      // Double-check PSD is loaded
+      // Check that PSD is loaded.
       if (typeof window.PSD === 'undefined') {
         console.error("PSD is not defined. Possibly psd.js didn't load.");
         document.getElementById('status').innerText = "Error: PSD library did not load.";
         return;
-      } else {
-        console.log("PSD is defined. Ready to parse PSD files if they're big enough to see progress.");
       }
+      console.log("PSD is defined. Ready to parse PSD files.");
 
-      // Just a placeholder for the mint fee display
-      // Real logic would fetch from your contract
+      // Placeholder: mint fee display (update if you have real contract logic)
+      document.getElementById('mintFeeDisplay').innerText = "Mint Fee: 0.001 ETH";
 
-      // Set up the file input listener
+      // Set up the file input listener.
       const fileInput = document.getElementById('psdFile');
       fileInput.addEventListener('change', (event) => {
-        console.log("File input changed. Checking selected file...");
-
         const file = event.target.files[0];
         if (!file) {
-          console.log("No file chosen or user canceled.");
           document.getElementById('status').innerText = "No file selected.";
           return;
         }
-
-        console.log(`User selected file: ${file.name} (${file.size} bytes)`);
+        console.log(`File selected: ${file.name}, size: ${file.size} bytes`);
         document.getElementById('status').innerText = `File chosen: ${file.name}`;
 
         const reader = new FileReader();
 
-        // Show partial progress if possible
+        // Update progress (in MB)
         reader.onprogress = (e) => {
-          console.log("FileReader onprogress event fired.");
           if (e.lengthComputable) {
             const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
             const totalMB = (e.total / (1024 * 1024)).toFixed(2);
             console.log(`Reading file: ${loadedMB} / ${totalMB} MB`);
             document.getElementById('status').innerText = `Reading file: ${loadedMB} / ${totalMB} MB`;
           } else {
-            console.log("onprogress fired, but lengthComputable=false. Can't show exact MB.");
+            console.log("onprogress fired, but length not computable.");
             document.getElementById('status').innerText = "Reading file (unknown size)...";
           }
         };
 
         reader.onloadstart = () => {
-          console.log("FileReader onloadstart fired. Starting to read...");
-          document.getElementById('status').innerText = "Reading file...";
+          console.log("File reading started.");
+          document.getElementById('status').innerText = "Starting file read...";
         };
 
         reader.onerror = () => {
-          console.log("FileReader onerror fired. Possibly user canceled or read failed.");
+          console.error("Error reading file.");
           document.getElementById('status').innerText = "Error reading file.";
         };
 
-        reader.onload = (ev) => {
-          console.log("FileReader onload fired. File reading complete. Parsing now...");
-          document.getElementById('status').innerText = "File reading complete. Parsing PSD...";
-
-          window.PSD.fromArrayBuffer(ev.target.result).then(psd => {
+        reader.onload = (e) => {
+          console.log("File reading complete. Parsing PSD...");
+          document.getElementById('status').innerText = "File read complete. Parsing PSD...";
+          window.PSD.fromArrayBuffer(e.target.result).then(psd => {
             psd.parse();
             console.log("Parsed PSD Layers:", psd.tree().descendants());
-
             document.getElementById('status').innerText = "PSD parsed successfully. Ready to mint!";
-
-            // Enable the mint button
             const mintBtn = document.getElementById('mintButton');
             mintBtn.disabled = false;
             mintBtn.style.backgroundColor = "#4CAF50";
-
           }).catch(error => {
             console.error("Error parsing PSD:", error);
             document.getElementById('status').innerText = "Error parsing PSD: " + error;
           });
         };
 
-        // Start reading the file
-        console.log("Calling readAsArrayBuffer on the file now...");
         reader.readAsArrayBuffer(file);
       });
 
-      // The Mint button
+      // Mint button placeholder functionality.
       const mintBtn = document.getElementById('mintButton');
       mintBtn.addEventListener('click', () => {
-        console.log("Mint button clicked. (Placeholder functionality)");
-        alert("Minting NFT... (placeholder)");
+        console.log("Mint button clicked.");
+        alert("Minting NFT... (mint functionality to be implemented)");
       });
     });
   </script>
