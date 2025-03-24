@@ -38,24 +38,38 @@
       color: #aaa;
     }
   </style>
-  <!-- Dummy require to suppress Node-specific require calls -->
+  
+  <!-- Dummy global definitions to satisfy CommonJS code -->
   <script>
+    // Define a dummy require function
     if (typeof require === 'undefined') {
       window.require = function() {
-        console.warn("Dummy require called with arguments:", arguments);
-        return {}; // Return an empty object.
+         console.warn("Dummy require called with arguments:", arguments);
+         return {};
       };
     }
+    // Define dummy exports and module objects
+    if (typeof exports === 'undefined') {
+      window.exports = {};
+    }
+    if (typeof module === 'undefined') {
+      window.module = { exports: window.exports };
+    }
   </script>
+  
   <!-- Load Ethers.js for blockchain interactions -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load config.js (your configuration, e.g., contract details) -->
+  
+  <!-- Load config.js (your configuration) -->
   <script src="config.js"></script>
-  <!-- Load psd.js as a classic script from jsDelivr -->
+  
+  <!-- Load psd.js as a classic script from jsDelivr.
+       This should attach PSD to the global window object. -->
   <script src="https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js"></script>
+  
 </head>
 <body>
-  <div id="version">v1.0.35 - 2025-03-24 01:00 MDT</div>
+  <div id="version">v1.0.36 - 2025-03-24 02:00 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
   
   <!-- File input for PSD file -->
@@ -67,24 +81,25 @@
   <!-- Instructional text -->
   <div id="traitSelection">Upload a PSD to select traits...</div>
   
-  <!-- Status display for file reading progress -->
+  <!-- Status display for reading progress or errors -->
   <div id="status">No file selected.</div>
   
-  <!-- Mint NFT button -->
+  <!-- Mint NFT button (always visible, initially disabled) -->
   <button id="mintButton" disabled>Mint NFT</button>
   
-  <!-- Main module script for custom code -->
+  <!-- Main module script -->
   <script type="module">
-    /***************************************
-     * 1. Import Buffer polyfill using namespace import
-     ***************************************/
+    /********************************************
+     * 1. Import Buffer polyfill using namespace
+     ********************************************/
     import * as bufferModule from "https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js";
     window.Buffer = bufferModule.Buffer;
     console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", window.Buffer.TYPED_ARRAY_SUPPORT);
     
-    /***************************************
-     * 2. Check that psd.js (loaded as classic script) attached PSD to window
-     ***************************************/
+    /********************************************
+     * 2. Check that psd.js (loaded as a classic script)
+     *    attached PSD to window.
+     ********************************************/
     if (typeof window.PSD === 'undefined') {
       console.error("PSD is not defined. psd.js did not load properly.");
       document.getElementById('status').innerText = "Error: PSD library did not load.";
@@ -92,9 +107,9 @@
       console.log("psd.js is defined:", window.PSD);
     }
     
-    /***************************************
+    /********************************************
      * 3. Main Code: Set up file input listener and UI updates
-     ***************************************/
+     ********************************************/
     document.addEventListener('DOMContentLoaded', () => {
       console.log("DOM fully loaded. Setting up file input...");
       
@@ -142,6 +157,8 @@
             psd.parse();
             console.log("Parsed PSD Layers:", psd.tree().descendants());
             document.getElementById('status').innerText = "PSD parsed successfully. Ready to mint!";
+            
+            // Enable the Mint NFT button.
             const mintBtn = document.getElementById('mintButton');
             mintBtn.disabled = false;
             mintBtn.style.backgroundColor = "#4CAF50";
