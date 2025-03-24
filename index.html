@@ -4,29 +4,74 @@
   <meta charset="UTF-8">
   <title>Mint Your AIFN NFT</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #1a1a2e; color: white; padding: 50px; position: relative; }
-    button { padding: 10px 20px; background: grey; color: white; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; margin: 10px; }
-    button:disabled { cursor: not-allowed; opacity: 0.6; }
-    #status { margin-top: 20px; font-size: 14px; }
-    #version { position: absolute; top: 10px; left: 10px; font-size: 12px; color: #aaa; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #1a1a2e;
+      color: white;
+      padding: 50px;
+      position: relative;
+    }
+    button {
+      padding: 10px 20px;
+      background: grey;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 5px;
+      margin: 10px;
+    }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    #version {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 12px;
+      color: #aaa;
+    }
   </style>
-  <!-- Load Buffer polyfill from cdn.jsdelivr.net -->
+  
+  <!-- Load Buffer polyfill separately from cdn.jsdelivr.net -->
   <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js"></script>
-  <!-- Load Ethers.js for blockchain interactions -->
+  <script>
+    window.Buffer = Buffer;
+    console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", Buffer.TYPED_ARRAY_SUPPORT);
+  </script>
+  
+  <!-- Load Ethers.js -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load config.js (your configuration) -->
+  
+  <!-- Load config.js -->
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.XX - [your version timestamp]</div>
+  <div id="version">v1.0.38 - 2025-03-24 03:30 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
+  
+  <!-- File input for PSD -->
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
+  
+  <!-- Placeholder for Mint Fee -->
   <div id="mintFeeDisplay">Mint Fee: 0.001 ETH</div>
+  
+  <!-- Instructional text -->
   <div id="traitSelection">Upload a PSD to select traits...</div>
+  
+  <!-- Status display for file reading progress -->
   <div id="status">No file selected.</div>
+  
+  <!-- Mint NFT button -->
   <button id="mintButton" disabled>Mint NFT</button>
   
-  <!-- Load your bundled JavaScript -->
+  <!-- Load the bundled JavaScript -->
   <script src="bundle.js"></script>
 </body>
 </html>
