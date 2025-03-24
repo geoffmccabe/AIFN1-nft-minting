@@ -41,44 +41,44 @@
 </head>
 <body>
   <!-- Version Label -->
-  <div id="version">v1.0.30 - 2025-03-23 23:30 MDT</div>
+  <div id="version">v1.0.31 - 2025-03-23 23:45 MDT</div>
   
   <h1>Mint Your AIFN NFT</h1>
   
-  <!-- File input for PSD file -->
+  <!-- File input for PSD -->
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
   
   <!-- Show a placeholder Mint Fee -->
-  <div id="mintFeeDisplay">Mint Fee: Loading...</div>
+  <div id="mintFeeDisplay">Mint Fee: 0.001 ETH</div>
   
   <!-- Some placeholder text about uploading a PSD -->
   <div id="traitSelection">Upload a PSD to select traits...</div>
   
   <!-- Status display for reading progress or errors -->
-  <div id="status">Awaiting file selection...</div>
+  <div id="status">No file selected.</div>
   
-  <!-- The Mint NFT button, always visible -->
+  <!-- The Mint NFT button, always visible but disabled initially -->
   <button id="mintButton" disabled>Mint NFT</button>
   
   <!-- Single module script that does everything -->
   <script type="module">
-    /***********************************
-     * 1) Buffer polyfill (for psd.js)
-     ***********************************/
+    /*****************************************************
+     * 1) Import Buffer polyfill (for psd.js/lodash)
+     *****************************************************/
     import { Buffer } from "https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js";
     window.Buffer = Buffer;
     console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", Buffer.TYPED_ARRAY_SUPPORT);
     
-    /***********************************
+    /*****************************************************
      * 2) Import psd.js
-     ***********************************/
+     *****************************************************/
     import * as PSDModule from "https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js";
     window.PSD = PSDModule;
     console.log("psd.js loaded:", PSDModule);
     
-    /***********************************
+    /*****************************************************
      * 3) Main Code
-     ***********************************/
+     *****************************************************/
     document.addEventListener('DOMContentLoaded', () => {
       console.log("DOM fully loaded. Setting up file input...");
       
@@ -88,59 +88,92 @@
         document.getElementById('status').innerText = "Error: PSD library did not load.";
         return;
       } else {
-        console.log("PSD is defined. We can parse PSD files if they're large enough to see progress.");
+        console.log("PSD is defined. Ready to parse PSD files if they're big enough to see progress.");
       }
       
-      // Just a placeholder for Mint Fee
-      // If you want real data, add your contract calls here.
-      document.getElementById('mintFeeDisplay').innerText = "Mint Fee: 0.001 ETH";
-      
-      // Set up the file input listener
+      // If you have a real contract/ABI, you can set up your mint fee fetching here.
+      // For now, we show a placeholder "Mint Fee: 0.001 ETH" above.
+
+      // 3a) Setup the file input listener
       const fileInput = document.getElementById('psdFile');
       fileInput.addEventListener('change', (event) => {
-        console.log("File input changed. Let's read the PSD file...");
+        console.log("File input changed. Checking selected file...");
         
         const file = event.target.files[0];
         if (!file) {
-          console.log("No file chosen.");
+          console.log("No file chosen or user canceled.");
           document.getElementById('status').innerText = "No file selected.";
           return;
         }
         
-        console.log(`Selected file: ${file.name} (${file.size} bytes)`);
-        document.getElementById('status').innerText = "File chosen: " + file.name;
+        // Show a message that we recognized the file
+        console.log(`User selected file: ${file.name} (${file.size} bytes)`);
+        document.getElementById('status').innerText = `File chosen: ${file.name}`;
         
+        // 3b) Create a FileReader to read the local PSD
         const reader = new FileReader();
         
-        // onprogress: can show partial progress for large files
+        // 3c) Show partial progress if possible
         reader.onprogress = (e) => {
-          console.log("onprogress event fired.");
+          console.log("FileReader onprogress event fired.");
           if (e.lengthComputable) {
             const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
             const totalMB = (e.total / (1024 * 1024)).toFixed(2);
-            console.log(`Reading: ${loadedMB} / ${totalMB} MB`);
-            document.getElementById('status').innerText = `Reading PSD: ${loadedMB} / ${totalMB} MB`;
+            console.log(`Reading file: ${loadedMB} / ${totalMB} MB`);
+            document.getElementById('status').innerText = `Reading file: ${loadedMB} / ${totalMB} MB`;
           } else {
-            console.log("onprogress fired, but lengthComputable = false.");
-            document.getElementById('status').innerText = "Reading PSD (unknown size)";
+            console.log("onprogress fired, but lengthComputable=false. Can't show exact MB.");
+            document.getElementById('status').innerText = "Reading file (unknown size)...";
           }
         };
         
+        // 3d) onloadstart
         reader.onloadstart = () => {
-          console.log("onloadstart event fired.");
-          document.getElementById('status').innerText = "Starting to read file...";
+          console.log("FileReader onloadstart fired. Starting to read...");
+          document.getElementById('status').innerText = "Reading file...";
         };
         
+        // 3e) onerror
         reader.onerror = () => {
-          console.log("onerror event fired. Possibly user canceled or read failed.");
+          console.log("FileReader onerror fired. Possibly user canceled or read failed.");
           document.getElementById('status').innerText = "Error reading file.";
         };
         
-        reader.onload = (e) => {
-          console.log("onload event fired. File reading complete, now parsing PSD...");
-          document.getElementById('status').innerText = "Reading complete. Parsing PSD...";
+        // 3f) onload: reading complete => parse the PSD
+        reader.onload = (ev) => {
+          console.log("FileReader onload fired. File reading complete. Parsing now...");
+          document.getElementById('status').innerText = "File reading complete. Parsing PSD...";
           
-          // Parse with psd.js
-          window.PSD.fromArrayBuffer(e.target.result).then(psd => {
+          window.PSD.fromArrayBuffer(ev.target.result).then(psd => {
             psd.parse();
-            console.log("Parsed
+            console.log("Parsed PSD Layers:", psd.tree().descendants());
+            
+            // Show success in UI
+            document.getElementById('status').innerText = "PSD parsed successfully. Ready to mint!";
+            
+            // Enable the mint button
+            const mintBtn = document.getElementById('mintButton');
+            mintBtn.disabled = false;
+            mintBtn.style.backgroundColor = "#4CAF50";
+            
+          }).catch(error => {
+            console.error("Error parsing PSD:", error);
+            document.getElementById('status').innerText = "Error parsing PSD: " + error;
+          });
+        };
+        
+        // 3g) Start reading the file
+        console.log("Calling readAsArrayBuffer on the file now...");
+        reader.readAsArrayBuffer(file);
+      });
+      
+      // 3h) Mint button
+      const mintBtn = document.getElementById('mintButton');
+      mintBtn.addEventListener('click', () => {
+        console.log("Mint button clicked. (Placeholder functionality)");
+        alert("Minting NFT... (placeholder)");
+      });
+    });
+  </script>
+</body>
+</html>
