@@ -94,7 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
     positionHistory.push({
       traitIndex,
       variationName,
-      position: previousPosition
+      previousPosition,
+      newPosition: position
     });
     // Save to localStorage
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
@@ -355,16 +356,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       e.preventDefault(); // Prevent browser undo behavior
       if (positionHistory.length > 0) {
-        const lastMove = positionHistory.pop();
-        const { traitIndex, variationName, position } = lastMove;
+        const lastMove = positionHistory[positionHistory.length - 1];
+        const { traitIndex, variationName, previousPosition } = lastMove;
         const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
         if (previewImage && traits[traitIndex].variations[traits[traitIndex].selected].name === variationName) {
-          previewImage.style.left = `${position.left}px`;
-          previewImage.style.top = `${position.top}px`;
+          positionHistory.pop(); // Remove the last move from history
+          previewImage.style.left = `${previousPosition.left}px`;
+          previewImage.style.top = `${previousPosition.top}px`;
           updateCoordinates(previewImage);
-          localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
+          localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(previousPosition));
           // Update subsequent traits if they haven't been manually moved
-          updateSubsequentTraits(traitIndex, variationName, position);
+          updateSubsequentTraits(traitIndex, variationName, previousPosition);
         }
       }
     }
