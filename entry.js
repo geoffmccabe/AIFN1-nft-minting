@@ -30,6 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('background-metadata').innerText = background.metadata;
     } catch (error) {
       document.getElementById('status').innerText = `Error fetching background: ${error.message}`;
+      // Reset to placeholder on error
+      const placeholder = 'https://archive.org/download/placeholder-image/placeholder-image.jpg';
+      document.getElementById('background-image').src = placeholder;
+      document.getElementById('preview-background').src = placeholder;
+      document.getElementById('background-metadata').innerText = 'Failed to load background';
     }
   }
   fetchBackground();
