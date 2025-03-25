@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch background with user prompt
   async function fetchBackground() {
     try {
-      const userPrompt = document.getElementById('user-prompt').value.trim();
+      const userPrompt = document.getElementById('user-prompt') ? document.getElementById('user-prompt').value.trim() : '';
       const url = `https://aifn-1-api.vercel.app/api/generate-background${userPrompt ? `?prompt=${encodeURIComponent(userPrompt)}` : ''}`;
       const response = await fetch(url);
       if (!response.ok) {
@@ -29,8 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('preview-background').src = background.url;
       document.getElementById('background-metadata').innerText = background.metadata;
     } catch (error) {
-      document.getElementById('status').innerText = `Error fetching background: ${error.message}`;
-      // Reset to placeholder on error
+      console.error('Error fetching background:', error);
       const placeholder = 'https://archive.org/download/placeholder-image/placeholder-image.jpg';
       document.getElementById('background-image').src = placeholder;
       document.getElementById('preview-background').src = placeholder;
@@ -144,23 +143,4 @@ document.addEventListener('DOMContentLoaded', () => {
         numTraitCategories,
         traitCategoryVariants,
         traitIndices,
-        { value: ethers.utils.parseEther(config.sepolia.mintFee) }
-      );
-
-      status.innerText = "Minting...";
-      const tx = await contractWithSigner.mintNFT(
-        recipient,
-        initialHtmlUri,
-        numTraitCategories,
-        traitCategoryVariants,
-        traitIndices,
-        { value: ethers.utils.parseEther(config.sepolia.mintFee), gasLimit: gasLimit.add(50000) }
-      );
-      const receipt = await tx.wait();
-      const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
-      status.innerText = `Minted! Token ID: ${tokenId}`;
-    } catch (error) {
-      status.innerText = `Error: ${error.message}`;
-    }
-  };
-});
+        { value: ethers.utils.parseEther(config.sepolia.mintFee) 
