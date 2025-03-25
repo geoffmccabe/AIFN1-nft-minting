@@ -60,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (backgroundMetadata) backgroundMetadata.innerText = 'Failed to load background';
     }
   }
-  fetchBackground();
 
   // Mock the mint fee for now
   function fetchMintFee() {
@@ -304,10 +303,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Add event listener for Test New Background button
-  const testBackgroundButton = document.getElementById('test-background');
-  if (testBackgroundButton) {
-    testBackgroundButton.addEventListener('click', fetchBackground);
+  // Add event listener for Generate Bkgd button
+  const generateBackgroundButton = document.getElementById('generate-background');
+  if (generateBackgroundButton) {
+    generateBackgroundButton.addEventListener('click', fetchBackground);
   }
 
   window.mintNFT = async function() {
