@@ -136,6 +136,11 @@
       height: 50px;
       resize: none;
     }
+    #prompt-section label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
   </style>
   <!-- Load Ethers.js for blockchain interactions -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
@@ -143,5 +148,63 @@
   <script src="config.js"></script>
   <!-- Load the application code -->
   <script src="entry.js"></script>
+</head>
+<body>
+  <div id="version">v1.0.63 - 2025-03-24 17:15:00 MDT</div>
+  <div id="left-panel">
+    <h1>Mint Your AIFN NFT</h1>
+    <div id="mintFeeDisplay">Mint Fee: Loading...</div>
+    <div id="trait1" class="trait-section">
+      <h2>Trait 1</h2>
+      <input type="text" id="trait1-name" placeholder="Trait Name (e.g., Eyes)">
+      <input type="file" id="trait1-files" accept="image/png,image/webp" multiple>
+      <div id="trait1-grid" class="trait-grid"></div>
+    </div>
+    <div id="trait2" class="trait-section">
+      <h2>Trait 2</h2>
+      <input type="text" id="trait2-name" placeholder="Trait Name (e.g., Hair)">
+      <input type="file" id="trait2-files" accept="image/png,image/webp" multiple>
+      <div id="trait2-grid" class="trait-grid"></div>
+    </div>
+    <div id="trait3" class="trait-section">
+      <h2>Trait 3</h2>
+      <input type="text" id="trait3-name" placeholder="Trait Name (e.g., Accessories)">
+      <input type="file" id="trait3-files" accept="image/png,image/webp" multiple>
+      <div id="trait3-grid" class="trait-grid"></div>
+    </div>
+    <div id="background-section">
+      <h2>AI Background</h2>
+      <div id="prompt-section">
+        <label for="base-prompt">Basic Prompt:</label>
+        <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
+        <label for="user-prompt">User Prompt:</label>
+        <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
+      </div>
+      <button id="generate-background">Generate Bkgd</button>
+      <div id="background-details">
+        <img id="background-image" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="AI Background">
+        <p id="background-metadata">Loading...</p>
+      </div>
+    </div>
+    <button id="mintButton" disabled>Mint NFT</button>
+    <div id="status">Select traits to begin.</div>
+  </div>
+  <div id="right-panel">
+    <h2>Preview</h2>
+    <div id="preview">
+      <img id="preview-background" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Background">
+      <img id="preview-trait1" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 1">
+      <img id="preview-trait2" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 2">
+      <img id="preview-trait3" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 3">
+    </div>
+    <div id="controls">
+      <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
+      <span>   </span>
+      <span class="direction-emoji" data-direction="up">⬆️</span>
+      <span class="direction-emoji" data-direction="down">⬇️</span>
+      <span class="direction-emoji" data-direction="left">⬅️</span>
+      <span class="direction-emoji" data-direction="right">➡️</span>
+    </div>
+  </div>
 </body>
 </html>
