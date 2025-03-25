@@ -77,6 +77,7 @@
     }
     #controls {
       display: flex;
+      justify-content: center;
       align-items: center;
       gap: 10px;
       margin-top: 5px;
@@ -84,18 +85,18 @@
     #coordinates {
       font-size: 14px;
     }
-    .direction-button {
-      width: 24px;
-      height: 24px;
+    #coordinates strong {
+      font-weight: bold;
+    }
+    .direction-emoji {
       font-size: 16px;
       cursor: pointer;
+      background: none;
       border: none;
-      background: #444;
-      color: white;
-      border-radius: 3px;
+      padding: 0;
     }
-    .direction-button:hover {
-      background: #555;
+    .direction-emoji:hover {
+      opacity: 0.8;
     }
     button {
       padding: 10px 20px;
@@ -137,7 +138,7 @@
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.55 - 2025-03-24 15:15:00 MDT</div>
+  <div id="version">v1.0.56 - 2025-03-24 15:30:00 MDT</div>
   <div id="left-panel">
     <h1>Mint Your AIFN NFT</h1>
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
@@ -183,11 +184,12 @@
       <img id="preview-trait3" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 3">
     </div>
     <div id="controls">
-      <span id="coordinates">Coordinates: (1, 1)</span>
-      <button class="direction-button" data-direction="up">⬆️</button>
-      <button class="direction-button" data-direction="down">⬇️</button>
-      <button class="direction-button" data-direction="left">⬅️</button>
-      <button class="direction-button" data-direction="right">➡️</button>
+      <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
+      <span>&nbsp;&nbsp;&nbsp;</span>
+      <span class="direction-emoji" data-direction="up">⬆️</span>
+      <span class="direction-emoji" data-direction="down">⬇️</span>
+      <span class="direction-emoji" data-direction="left">⬅️</span>
+      <span class="direction-emoji" data-direction="right">➡️</span>
     </div>
   </div>
   <!-- Load the application code directly -->
@@ -202,7 +204,7 @@
         document.getElementById('preview-trait3')
       ];
       const coordinates = document.getElementById('coordinates');
-      const directionButtons = document.querySelectorAll('.direction-button');
+      const directionEmojis = document.querySelectorAll('.direction-emoji');
 
       let isDragging = false;
       let currentImage = null;
@@ -224,7 +226,7 @@
       function updateCoordinates(img) {
         const left = parseFloat(img.style.left) || 0;
         const top = parseFloat(img.style.top) || 0;
-        coordinates.textContent = `Coordinates: (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
+        coordinates.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
       }
 
       traitImages.forEach((img, index) => {
@@ -297,11 +299,11 @@
         }
       });
 
-      // Directional button movement
-      directionButtons.forEach(button => {
-        const direction = button.getAttribute('data-direction');
+      // Directional emoji movement
+      directionEmojis.forEach(emoji => {
+        const direction = emoji.getAttribute('data-direction');
 
-        button.addEventListener('mousedown', () => {
+        emoji.addEventListener('mousedown', () => {
           if (!currentImage || currentImage.src.includes('placeholder-image.jpg')) return;
           moveInterval = setInterval(() => {
             let left = parseFloat(currentImage.style.left) || 0;
@@ -321,7 +323,7 @@
           }, 50); // 20 pixels per second = 1 pixel every 50ms
         });
 
-        button.addEventListener('mouseup', () => {
+        emoji.addEventListener('mouseup', () => {
           if (moveInterval) {
             clearInterval(moveInterval);
             moveInterval = null;
@@ -336,7 +338,7 @@
           }
         });
 
-        button.addEventListener('mouseleave', () => {
+        emoji.addEventListener('mouseleave', () => {
           if (moveInterval) {
             clearInterval(moveInterval);
             moveInterval = null;
