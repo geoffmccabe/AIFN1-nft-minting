@@ -115,20 +115,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const nextVariationName = currentTrait.variations[i].name;
         const manuallyMoved = localStorage.getItem(`trait${currentTraitIndex + 1}-${nextVariationName}-manuallyMoved`);
         if (!manuallyMoved) {
+          console.log(`Updating position for Trait ${currentTraitIndex + 1} variant ${nextVariationName} to ${position.left}, ${position.top}`);
           localStorage.setItem(`trait${currentTraitIndex + 1}-${nextVariationName}-position`, JSON.stringify(position));
         } else {
+          console.log(`Stopping propagation at Trait ${currentTraitIndex + 1} variant ${nextVariationName} because it was manually moved`);
           break; // Stop if a variant has been manually moved
         }
       }
+    } else {
+      console.log(`Trait ${currentTraitIndex + 1} has only one variant, skipping intra-trait propagation`);
     }
 
     // Update positions for subsequent traits
     for (let traitIndex = currentTraitIndex + 1; traitIndex < traits.length; traitIndex++) {
       const nextTrait = traits[traitIndex];
-      if (nextTrait.variations.length === 0) continue; // Skip if no variations
+      if (nextTrait.variations.length === 0) {
+        console.log(`Trait ${traitIndex + 1} has no variations, skipping`);
+        continue; // Skip if no variations
+      }
       const nextVariationName = nextTrait.variations[nextTrait.selected].name;
       const manuallyMoved = localStorage.getItem(`trait${traitIndex + 1}-${nextVariationName}-manuallyMoved`);
       if (!manuallyMoved) {
+        console.log(`Updating position for Trait ${traitIndex + 1} variant ${nextVariationName} to ${position.left}, ${position.top}`);
         localStorage.setItem(`trait${traitIndex + 1}-${nextVariationName}-position`, JSON.stringify(position));
         // If the currently selected variant is being viewed, update its position
         const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
@@ -137,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
           previewImage.style.top = `${position.top}px`;
         }
       } else {
+        console.log(`Stopping propagation at Trait ${traitIndex + 1} variant ${nextVariationName} because it was manually moved`);
         break; // Stop if a variant has been manually moved
       }
     }
