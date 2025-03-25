@@ -143,7 +143,7 @@
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.62 - 2025-03-24 17:00:00 MDT</div>
+  <div id="version">v1.0.63 - 2025-03-24 17:15:00 MDT</div>
   <div id="left-panel">
     <h1>Mint Your AIFN NFT</h1>
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
@@ -155,7 +155,7 @@
     </div>
     <div id="trait2" class="trait-section">
       <h2>Trait 2</h2>
-      <input type="text" id="trait1-name" placeholder="Trait Name (e.g., Hair)">
+      <input type="text" id="trait2-name" placeholder="Trait Name (e.g., Hair)">
       <input type="file" id="trait2-files" accept="image/png,image/webp" multiple>
       <div id="trait2-grid" class="trait-grid"></div>
     </div>
@@ -232,6 +232,70 @@
         const left = parseFloat(img.style.left) || 0;
         const top = parseFloat(img.style.top) || 0;
         coordinates.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
+      }
+
+      // Handle trait uploads
+      for (let i = 1; i <= 3; i++) {
+        const traitIndex = i - 1;
+        const nameInput = document.getElementById(`trait${i}-name`);
+        const fileInput = document.getElementById(`trait${i}-files`);
+        const grid = document.getElementById(`trait${i}-grid`);
+
+        fileInput.addEventListener('change', async (event) => {
+          const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
+          if (!files.length) return;
+
+          const traitName = nameInput.value.trim() || `Trait ${i}`;
+          traits[traitIndex].name = traitName;
+          traits[traitIndex].variations = [];
+
+          grid.innerHTML = '';
+          for (const file of files) {
+            const variationName = file.name.split('.').slice(0, -1).join('.');
+            const url = URL.createObjectURL(file);
+            traits[traitIndex].variations.push({ name: variationName, url });
+
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = variationName;
+            img.className = 'variation';
+            img.style.width = '100px';
+            img.style.height = '100px';
+            img.style.objectFit = 'contain';
+            img.addEventListener('click', () => selectVariation(traitIndex, variationName));
+            grid.appendChild(img);
+          }
+
+          // Select the first variation by default
+          if (traits[traitIndex].variations.length > 0) {
+            selectVariation(traitIndex, traits[traitIndex].variations[0].name);
+          }
+
+          updateMintButton();
+        });
+      }
+
+      function selectVariation(traitIndex, variationName) {
+        const trait = traits[traitIndex];
+        const variationIndex = trait.variations.findIndex(v => v.name === variationName);
+        trait.selected = variationIndex;
+
+        const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
+        Array.from(grid.children).forEach((child, idx) => {
+          child.classList.toggle('selected', idx === variationIndex);
+        });
+
+        const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
+        previewImage.src = trait.variations[variationIndex].url;
+        updateCoordinates(previewImage);
+      }
+
+      document.getElementById('test-background').addEventListener('click', fetchBackground);
+
+      function updateMintButton() {
+        const allTraitsSet = traits.every(trait => trait.name && trait.variations.length > 0);
+        const mintBtn = document.getElementById('mintButton');
+        mintBtn.disabled = !allTraitsSet;
       }
 
       traitImages.forEach((img, index) => {
