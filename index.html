@@ -56,18 +56,17 @@
     }
     #preview {
       position: relative;
-      width: 100%;
+      width: 300px;
       height: 300px;
       background: #333;
       margin-bottom: 20px;
+      overflow: hidden;
     }
     #preview img {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+      max-width: 300px;
+      max-height: 300px;
+      object-fit: none;
     }
     #preview-background { z-index: 1; }
     #preview-trait1 { z-index: 4; }
@@ -116,7 +115,7 @@
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.51 - 2025-03-24 14:15:00 MDT</div>
+  <div id="version">v1.0.52 - 2025-03-24 14:30:00 MDT</div>
   <div id="left-panel">
     <h1>Mint Your AIFN NFT</h1>
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
@@ -164,5 +163,63 @@
   </div>
   <!-- Load the application code directly -->
   <script src="entry.js"></script>
+  <!-- Add drag-and-drop functionality -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const preview = document.getElementById('preview');
+      const traitImages = [
+        document.getElementById('preview-trait1'),
+        document.getElementById('preview-trait2'),
+        document.getElementById('preview-trait3')
+      ];
+
+      let isDragging = false;
+      let currentImage = null;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      traitImages.forEach(img => {
+        img.addEventListener('mousedown', (e) => {
+          if (img.src.includes('placeholder-image.jpg')) return; // Don't drag placeholder
+          isDragging = true;
+          currentImage = img;
+          const rect = img.getBoundingClientRect();
+          offsetX = e.clientX - rect.left;
+          offsetY = e.clientY - rect.top;
+          img.style.cursor = 'grabbing';
+        });
+      });
+
+      preview.addEventListener('mousemove', (e) => {
+        if (!isDragging || !currentImage) return;
+        const rect = preview.getBoundingClientRect();
+        let newLeft = e.clientX - rect.left - offsetX;
+        let newTop = e.clientY - rect.top - offsetY;
+
+        // Keep within preview bounds
+        newLeft = Math.max(0, Math.min(newLeft, 300 - currentImage.width));
+        newTop = Math.max(0, Math.min(newTop, 300 - currentImage.height));
+
+        currentImage.style.left = `${newLeft}px`;
+        currentImage.style.top = `${newTop}px`;
+      });
+
+      preview.addEventListener('mouseup', () => {
+        isDragging = false;
+        if (currentImage) {
+          currentImage.style.cursor = 'grab';
+          currentImage = null;
+        }
+      });
+
+      preview.addEventListener('mouseleave', () => {
+        isDragging = false;
+        if (currentImage) {
+          currentImage.style.cursor = 'grab';
+          currentImage = null;
+        }
+      });
+    });
+  </script>
 </body>
 </html>
