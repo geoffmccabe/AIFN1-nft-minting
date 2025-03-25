@@ -70,18 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   fetchMintFee();
 
-  // Load saved positions from localStorage
-  traitImages.forEach((img, index) => {
-    if (img) {
-      const savedPosition = localStorage.getItem(`trait${index + 1}-position`);
-      if (savedPosition) {
-        const { left, top } = JSON.parse(savedPosition);
-        img.style.left = `${left}px`;
-        img.style.top = `${top}px`;
-      }
-    }
-  });
-
   // Update coordinates display
   function updateCoordinates(img) {
     if (img && coordinates) {
@@ -149,6 +137,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
     if (previewImage) {
       previewImage.src = trait.variations[variationIndex].url;
+      // Load the saved position for this specific variant
+      const savedPosition = localStorage.getItem(`trait${traitIndex + 1}-${variationName}-position`);
+      if (savedPosition) {
+        const { left, top } = JSON.parse(savedPosition);
+        previewImage.style.left = `${left}px`;
+        previewImage.style.top = `${top}px`;
+      } else {
+        // Reset position if no saved position exists
+        previewImage.style.left = '0px';
+        previewImage.style.top = '0px';
+      }
       updateCoordinates(previewImage);
     }
   }
@@ -179,11 +178,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       img.addEventListener('mouseup', () => {
         if (isDragging && currentImage === img) {
+          const traitIndex = traitImages.indexOf(currentImage);
+          const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
           const position = {
             left: parseFloat(img.style.left) || 0,
             top: parseFloat(img.style.top) || 0
           };
-          localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+          localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
           isDragging = false;
           currentImage.style.cursor = 'grab';
           currentImage = null;
@@ -209,12 +210,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     preview.addEventListener('mouseup', () => {
       if (isDragging && currentImage) {
-        const index = traitImages.indexOf(currentImage);
+        const traitIndex = traitImages.indexOf(currentImage);
+        const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
         const position = {
           left: parseFloat(currentImage.style.left) || 0,
           top: parseFloat(currentImage.style.top) || 0
         };
-        localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+        localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage = null;
@@ -223,12 +225,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     preview.addEventListener('mouseleave', () => {
       if (isDragging && currentImage) {
-        const index = traitImages.indexOf(currentImage);
+        const traitIndex = traitImages.indexOf(currentImage);
+        const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
         const position = {
           left: parseFloat(currentImage.style.left) || 0,
           top: parseFloat(currentImage.style.top) || 0
         };
-        localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+        localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage = null;
@@ -265,12 +268,13 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(moveInterval);
         moveInterval = null;
         if (currentImage) {
-          const index = traitImages.indexOf(currentImage);
+          const traitIndex = traitImages.indexOf(currentImage);
+          const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
           const position = {
             left: parseFloat(currentImage.style.left) || 0,
             top: parseFloat(currentImage.style.top) || 0
           };
-          localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+          localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
         }
       }
     });
@@ -280,12 +284,13 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(moveInterval);
         moveInterval = null;
         if (currentImage) {
-          const index = traitImages.indexOf(currentImage);
+          const traitIndex = traitImages.indexOf(currentImage);
+          const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
           const position = {
             left: parseFloat(currentImage.style.left) || 0,
             top: parseFloat(currentImage.style.top) || 0
           };
-          localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+          localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
         }
       }
     });
