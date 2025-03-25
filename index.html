@@ -6,11 +6,63 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
       background: #1a1a2e;
       color: white;
-      padding: 50px;
+      padding: 20px;
+      margin: 0;
+      display: flex;
       position: relative;
+    }
+    #version {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 12px;
+      color: #aaa;
+    }
+    #left-panel {
+      flex: 1;
+      padding-right: 20px;
+    }
+    #right-panel {
+      width: 300px;
+      padding-left: 20px;
+      border-left: 1px solid #444;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .trait-section {
+      margin-bottom: 20px;
+    }
+    .trait-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .variation {
+      cursor: pointer;
+      border: 2px solid transparent;
+      padding: 5px;
+    }
+    .variation.selected {
+      border-color: #4CAF50;
+    }
+    #preview {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      background: #333;
+      margin-bottom: 20px;
+    }
+    #preview img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     button {
       padding: 10px 20px;
@@ -20,78 +72,68 @@
       cursor: pointer;
       font-size: 16px;
       border-radius: 5px;
-      margin: 10px;
+      margin: 10px 0;
     }
     button:disabled {
       cursor: not-allowed;
       opacity: 0.6;
     }
+    button:not(:disabled) {
+      background: #4CAF50;
+    }
     #status {
       margin-top: 20px;
       font-size: 14px;
-    }
-    #version {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      font-size: 12px;
-      color: #aaa;
+      text-align: center;
     }
   </style>
-  
-  <!-- Dummy globals to satisfy any leftover CommonJS calls -->
-  <script>
-    if (typeof require === 'undefined') {
-      window.require = function() {
-         console.warn("Dummy require called with arguments:", arguments);
-         return {};
-      };
-    }
-    if (typeof exports === 'undefined') {
-      window.exports = {};
-    }
-    if (typeof module === 'undefined') {
-      window.module = { exports: window.exports };
-    }
-  </script>
-  
-  <!-- Load Buffer polyfill from cdn.jsdelivr.net -->
-  <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js"></script>
-  <script>
-    window.Buffer = Buffer;
-    console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", Buffer.TYPED_ARRAY_SUPPORT);
-  </script>
-  
   <!-- Load Ethers.js for blockchain interactions -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  
-  <!-- Load config.js (your configuration: contract address, ABI, etc.) -->
+  <!-- Load config.js -->
   <script src="config.js"></script>
-  
-  <!-- Load psd.js as a classic script from jsDelivr (specific version) -->
-  <script src="https://cdn.jsdelivr.net/npm/psd.js@3.4.0/dist/psd.min.js"></script>
-  <!-- psd.js attaches PSD to window -->
-  
 </head>
 <body>
-  <div id="version">v1.0.41 - 2025-03-24 11:45:00 MDT</div>
-  <h1>Mint Your AIFN NFT</h1>
-  
-  <!-- File input for PSD -->
-  <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
-  
-  <!-- Placeholder for Mint Fee -->
-  <div id="mintFeeDisplay">Mint Fee: Loading...</div>
-  
-  <!-- Instructional text -->
-  <div id="traitSelection">Upload a PSD to select traits...</div>
-  
-  <!-- Status display for file reading progress -->
-  <div id="status">No file selected.</div>
-  
-  <!-- Mint NFT button (visible, initially disabled) -->
-  <button id="mintButton" disabled>Mint NFT</button>
-  
+  <div id="version">v1.0.44 - 2025-03-24 12:30:00 MDT</div>
+  <div id="left-panel">
+    <h1>Mint Your AIFN NFT</h1>
+    <div id="trait1" class="trait-section">
+      <h2>Trait 1</h2>
+      <input type="text" id="trait1-name" placeholder="Trait Name (e.g., Eyes)">
+      <input type="file" id="trait1-files" accept="image/png,image/webp" multiple>
+      <div id="trait1-grid" class="trait-grid"></div>
+    </div>
+    <div id="trait2" class="trait-section">
+      <h2>Trait 2</h2>
+      <input type="text" id="trait2-name" placeholder="Trait Name (e.g., Hair)">
+      <input type="file" id="trait2-files" accept="image/png,image/webp" multiple>
+      <div id="trait2-grid" class="trait-grid"></div>
+    </div>
+    <div id="trait3" class="trait-section">
+      <h2>Trait 3</h2>
+      <input type="text" id="trait3-name" placeholder="Trait Name (e.g., Accessories)">
+      <input type="file" id="trait3-files" accept="image/png,image/webp" multiple>
+      <div id="trait3-grid" class="trait-grid"></div>
+    </div>
+    <div id="background-section">
+      <h2>AI Background</h2>
+      <div id="background-details">
+        <img id="background-image" src="" alt="AI Background">
+        <p id="background-metadata">Loading...</p>
+      </div>
+      <button id="test-background">Test New Background</button>
+    </div>
+    <button id="mintButton" disabled>Mint NFT</button>
+    <div id="status">Select traits to begin.</div>
+  </div>
+  <div id="right-panel">
+    <h2>Preview</h2>
+    <div id="preview">
+      <img id="preview-background" src="" alt="Background">
+      <img id="preview-trait1" src="" alt="Trait 1">
+      <img id="preview-trait2" src="" alt="Trait 2">
+      <img id="preview-trait3" src="" alt="Trait 3">
+    </div>
+  </div>
   <!-- Load the bundled application code -->
   <script src="bundle.js"></script>
 </body>
