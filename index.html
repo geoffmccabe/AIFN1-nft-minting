@@ -115,7 +115,7 @@
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.52 - 2025-03-24 14:30:00 MDT</div>
+  <div id="version">v1.0.54 - 2025-03-24 15:00:00 MDT</div>
   <div id="left-panel">
     <h1>Mint Your AIFN NFT</h1>
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
@@ -173,12 +173,24 @@
         document.getElementById('preview-trait3')
       ];
 
+      // Load saved positions from localStorage
+      traitImages.forEach((img, index) => {
+        const savedPosition = localStorage.getItem(`trait${index + 1}-position`);
+        if (savedPosition) {
+          const { left, top } = JSON.parse(savedPosition);
+          img.style.left = `${left}px`;
+          img.style.top = `${top}px`;
+        }
+      });
+
       let isDragging = false;
       let currentImage = null;
       let offsetX = 0;
       let offsetY = 0;
 
-      traitImages.forEach(img => {
+      traitImages.forEach((img, index) => {
+        img.addEventListener('dragstart', (e) => e.preventDefault()); // Prevent default drag behavior
+
         img.addEventListener('mousedown', (e) => {
           if (img.src.includes('placeholder-image.jpg')) return; // Don't drag placeholder
           isDragging = true;
@@ -187,6 +199,20 @@
           offsetX = e.clientX - rect.left;
           offsetY = e.clientY - rect.top;
           img.style.cursor = 'grabbing';
+        });
+
+        img.addEventListener('mouseup', () => {
+          if (isDragging && currentImage === img) {
+            // Save position to localStorage
+            const position = {
+              left: parseFloat(img.style.left) || 0,
+              top: parseFloat(img.style.top) || 0
+            };
+            localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+            isDragging = false;
+            currentImage.style.cursor = 'grab';
+            currentImage = null;
+          }
         });
       });
 
@@ -205,16 +231,28 @@
       });
 
       preview.addEventListener('mouseup', () => {
-        isDragging = false;
-        if (currentImage) {
+        if (isDragging && currentImage) {
+          const index = traitImages.indexOf(currentImage);
+          const position = {
+            left: parseFloat(currentImage.style.left) || 0,
+            top: parseFloat(currentImage.style.top) || 0
+          };
+          localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+          isDragging = false;
           currentImage.style.cursor = 'grab';
           currentImage = null;
         }
       });
 
       preview.addEventListener('mouseleave', () => {
-        isDragging = false;
-        if (currentImage) {
+        if (isDragging && currentImage) {
+          const index = traitImages.indexOf(currentImage);
+          const position = {
+            left: parseFloat(currentImage.style.left) || 0,
+            top: parseFloat(currentImage.style.top) || 0
+          };
+          localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+          isDragging = false;
           currentImage.style.cursor = 'grab';
           currentImage = null;
         }
