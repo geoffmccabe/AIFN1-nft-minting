@@ -59,7 +59,7 @@
       width: 300px;
       height: 300px;
       background: #333;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       overflow: hidden;
     }
     #preview img {
@@ -74,6 +74,28 @@
     #preview-trait3 { z-index: 2; }
     #preview img[src="https://archive.org/download/placeholder-image/placeholder-image.jpg"] {
       z-index: 1 !important;
+    }
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 5px;
+    }
+    #coordinates {
+      font-size: 14px;
+    }
+    .direction-button {
+      width: 24px;
+      height: 24px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      background: #444;
+      color: white;
+      border-radius: 3px;
+    }
+    .direction-button:hover {
+      background: #555;
     }
     button {
       padding: 10px 20px;
@@ -115,7 +137,7 @@
   <script src="config.js"></script>
 </head>
 <body>
-  <div id="version">v1.0.54 - 2025-03-24 15:00:00 MDT</div>
+  <div id="version">v1.0.55 - 2025-03-24 15:15:00 MDT</div>
   <div id="left-panel">
     <h1>Mint Your AIFN NFT</h1>
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
@@ -160,10 +182,17 @@
       <img id="preview-trait2" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 2">
       <img id="preview-trait3" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 3">
     </div>
+    <div id="controls">
+      <span id="coordinates">Coordinates: (1, 1)</span>
+      <button class="direction-button" data-direction="up">⬆️</button>
+      <button class="direction-button" data-direction="down">⬇️</button>
+      <button class="direction-button" data-direction="left">⬅️</button>
+      <button class="direction-button" data-direction="right">➡️</button>
+    </div>
   </div>
   <!-- Load the application code directly -->
   <script src="entry.js"></script>
-  <!-- Add drag-and-drop functionality -->
+  <!-- Add drag-and-drop and directional movement functionality -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const preview = document.getElementById('preview');
@@ -172,6 +201,14 @@
         document.getElementById('preview-trait2'),
         document.getElementById('preview-trait3')
       ];
+      const coordinates = document.getElementById('coordinates');
+      const directionButtons = document.querySelectorAll('.direction-button');
+
+      let isDragging = false;
+      let currentImage = null;
+      let offsetX = 0;
+      let offsetY = 0;
+      let moveInterval = null;
 
       // Load saved positions from localStorage
       traitImages.forEach((img, index) => {
@@ -183,27 +220,29 @@
         }
       });
 
-      let isDragging = false;
-      let currentImage = null;
-      let offsetX = 0;
-      let offsetY = 0;
+      // Update coordinates display
+      function updateCoordinates(img) {
+        const left = parseFloat(img.style.left) || 0;
+        const top = parseFloat(img.style.top) || 0;
+        coordinates.textContent = `Coordinates: (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
+      }
 
       traitImages.forEach((img, index) => {
-        img.addEventListener('dragstart', (e) => e.preventDefault()); // Prevent default drag behavior
+        img.addEventListener('dragstart', (e) => e.preventDefault());
 
         img.addEventListener('mousedown', (e) => {
-          if (img.src.includes('placeholder-image.jpg')) return; // Don't drag placeholder
+          if (img.src.includes('placeholder-image.jpg')) return;
           isDragging = true;
           currentImage = img;
           const rect = img.getBoundingClientRect();
           offsetX = e.clientX - rect.left;
           offsetY = e.clientY - rect.top;
           img.style.cursor = 'grabbing';
+          updateCoordinates(img);
         });
 
         img.addEventListener('mouseup', () => {
           if (isDragging && currentImage === img) {
-            // Save position to localStorage
             const position = {
               left: parseFloat(img.style.left) || 0,
               top: parseFloat(img.style.top) || 0
@@ -222,12 +261,12 @@
         let newLeft = e.clientX - rect.left - offsetX;
         let newTop = e.clientY - rect.top - offsetY;
 
-        // Keep within preview bounds
         newLeft = Math.max(0, Math.min(newLeft, 300 - currentImage.width));
         newTop = Math.max(0, Math.min(newTop, 300 - currentImage.height));
 
         currentImage.style.left = `${newLeft}px`;
         currentImage.style.top = `${newTop}px`;
+        updateCoordinates(currentImage);
       });
 
       preview.addEventListener('mouseup', () => {
@@ -256,6 +295,71 @@
           currentImage.style.cursor = 'grab';
           currentImage = null;
         }
+      });
+
+      // Directional button movement
+      directionButtons.forEach(button => {
+        const direction = button.getAttribute('data-direction');
+
+        button.addEventListener('mousedown', () => {
+          if (!currentImage || currentImage.src.includes('placeholder-image.jpg')) return;
+          moveInterval = setInterval(() => {
+            let left = parseFloat(currentImage.style.left) || 0;
+            let top = parseFloat(currentImage.style.top) || 0;
+
+            if (direction === 'up') top -= 1;
+            if (direction === 'down') top += 1;
+            if (direction === 'left') left -= 1;
+            if (direction === 'right') left += 1;
+
+            left = Math.max(0, Math.min(left, 300 - currentImage.width));
+            top = Math.max(0, Math.min(top, 300 - currentImage.height));
+
+            currentImage.style.left = `${left}px`;
+            currentImage.style.top = `${top}px`;
+            updateCoordinates(currentImage);
+          }, 50); // 20 pixels per second = 1 pixel every 50ms
+        });
+
+        button.addEventListener('mouseup', () => {
+          if (moveInterval) {
+            clearInterval(moveInterval);
+            moveInterval = null;
+            if (currentImage) {
+              const index = traitImages.indexOf(currentImage);
+              const position = {
+                left: parseFloat(currentImage.style.left) || 0,
+                top: parseFloat(currentImage.style.top) || 0
+              };
+              localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+            }
+          }
+        });
+
+        button.addEventListener('mouseleave', () => {
+          if (moveInterval) {
+            clearInterval(moveInterval);
+            moveInterval = null;
+            if (currentImage) {
+              const index = traitImages.indexOf(currentImage);
+              const position = {
+                left: parseFloat(currentImage.style.left) || 0,
+                top: parseFloat(currentImage.style.top) || 0
+              };
+              localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+            }
+          }
+        });
+      });
+
+      // Update coordinates when selecting a new image
+      traitImages.forEach(img => {
+        img.addEventListener('click', () => {
+          if (!img.src.includes('placeholder-image.jpg')) {
+            currentImage = img;
+            updateCoordinates(img);
+          }
+        });
       });
     });
   </script>
