@@ -143,4 +143,23 @@ document.addEventListener('DOMContentLoaded', () => {
         numTraitCategories,
         traitCategoryVariants,
         traitIndices,
-        { value: ethers.utils.parseEther(config.sepolia.mintFee) 
+        { value: ethers.utils.parseEther(config.sepolia.mintFee) }
+      );
+
+      status.innerText = "Minting...";
+      const tx = await contractWithSigner.mintNFT(
+        recipient,
+        initialHtmlUri,
+        numTraitCategories,
+        traitCategoryVariants,
+        traitIndices,
+        { value: ethers.utils.parseEther(config.sepolia.mintFee), gasLimit: gasLimit.add(50000) }
+      );
+      const receipt = await tx.wait();
+      const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
+      status.innerText = `Minted! Token ID: ${tokenId}`;
+    } catch (error) {
+      status.innerText = `Error: ${error.message}`;
+    }
+  };
+});
