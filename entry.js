@@ -13,13 +13,24 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
   let background = { url: '', metadata: '' };
 
-  // Mock the background for now
-  function fetchBackground() {
-    background.url = 'https://via.placeholder.com/300x300.webp?text=AI+Background';
-    background.metadata = 'Mock AI Background';
-    document.getElementById('background-image').src = background.url;
-    document.getElementById('preview-background').src = background.url;
-    document.getElementById('background-metadata').innerText = background.metadata;
+  // Fetch background with user prompt
+  async function fetchBackground() {
+    try {
+      const userPrompt = document.getElementById('user-prompt').value.trim();
+      const url = `https://aifn-1-api.vercel.app/api/generate-background${userPrompt ? `?prompt=${encodeURIComponent(userPrompt)}` : ''}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch background: ${response.statusText}`);
+      }
+      const data = await response.json();
+      background.url = data.imageUrl;
+      background.metadata = data.metadata;
+      document.getElementById('background-image').src = background.url;
+      document.getElementById('preview-background').src = background.url;
+      document.getElementById('background-metadata').innerText = background.metadata;
+    } catch (error) {
+      document.getElementById('status').innerText = `Error fetching background: ${error.message}`;
+    }
   }
   fetchBackground();
 
