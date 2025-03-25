@@ -13,6 +13,21 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
   let background = { url: '', metadata: '' };
 
+  const preview = document.getElementById('preview');
+  const traitImages = [
+    document.getElementById('preview-trait1'),
+    document.getElementById('preview-trait2'),
+    document.getElementById('preview-trait3')
+  ];
+  const coordinates = document.getElementById('coordinates');
+  const directionEmojis = document.querySelectorAll('.direction-emoji');
+
+  let isDragging = false;
+  let currentImage = null;
+  let offsetX = 0;
+  let offsetY = 0;
+  let moveInterval = null;
+
   // Fetch background with user prompt
   async function fetchBackground() {
     try {
@@ -43,6 +58,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mintFeeDisplay').innerText = `Mint Fee: 0.001 ETH (Mock)`;
   }
   fetchMintFee();
+
+  // Load saved positions from localStorage
+  traitImages.forEach((img, index) => {
+    const savedPosition = localStorage.getItem(`trait${index + 1}-position`);
+    if (savedPosition) {
+      const { left, top } = JSON.parse(savedPosition);
+      img.style.left = `${left}px`;
+      img.style.top = `${top}px`;
+    }
+  });
+
+  // Update coordinates display
+  function updateCoordinates(img) {
+    const left = parseFloat(img.style.left) || 0;
+    const top = parseFloat(img.style.top) || 0;
+    coordinates.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
+  }
 
   // Handle trait uploads
   for (let i = 1; i <= 3; i++) {
@@ -95,16 +127,155 @@ document.addEventListener('DOMContentLoaded', () => {
       child.classList.toggle('selected', idx === variationIndex);
     });
 
-    document.getElementById(`preview-trait${traitIndex + 1}`).src = trait.variations[variationIndex].url;
+    const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
+    previewImage.src = trait.variations[variationIndex].url;
+    updateCoordinates(previewImage);
   }
-
-  document.getElementById('test-background').addEventListener('click', fetchBackground);
 
   function updateMintButton() {
     const allTraitsSet = traits.every(trait => trait.name && trait.variations.length > 0);
     const mintBtn = document.getElementById('mintButton');
     mintBtn.disabled = !allTraitsSet;
   }
+
+  // Drag-and-drop and directional movement functionality
+  traitImages.forEach((img, index) => {
+    img.addEventListener('dragstart', (e) => e.preventDefault());
+
+    img.addEventListener('mousedown', (e) => {
+      if (img.src.includes('placeholder-image.jpg')) return;
+      isDragging = true;
+      currentImage = img;
+      const rect = img.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      img.style.cursor = 'grabbing';
+      updateCoordinates(img);
+    });
+
+    img.addEventListener('mouseup', () => {
+      if (isDragging && currentImage === img) {
+        const position = {
+          left: parseFloat(img.style.left) || 0,
+          top: parseFloat(img.style.top) || 0
+        };
+        localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+        isDragging = false;
+        currentImage.style.cursor = 'grab';
+        currentImage = null;
+      }
+    });
+  });
+
+  preview.addEventListener('mousemove', (e) => {
+    if (!isDragging || !currentImage) return;
+    const rect = preview.getBoundingClientRect();
+    let newLeft = e.clientX - rect.left - offsetX;
+    let newTop = e.clientY - rect.top - offsetY;
+
+    newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
+    newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
+
+    currentImage.style.left = `${newLeft}px`;
+    currentImage.style.top = `${newTop}px`;
+    updateCoordinates(currentImage);
+  });
+
+  preview.addEventListener('mouseup', () => {
+    if (isDragging && currentImage) {
+      const index = traitImages.indexOf(currentImage);
+      const position = {
+        left: parseFloat(currentImage.style.left) || 0,
+        top: parseFloat(currentImage.style.top) || 0
+      };
+      localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+      isDragging = false;
+      currentImage.style.cursor = 'grab';
+      currentImage = null;
+    }
+  });
+
+  preview.addEventListener('mouseleave', () => {
+    if (isDragging && currentImage) {
+      const index = traitImages.indexOf(currentImage);
+      const position = {
+        left: parseFloat(currentImage.style.left) || 0,
+        top: parseFloat(currentImage.style.top) || 0
+      };
+      localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+      isDragging = false;
+      currentImage.style.cursor = 'grab';
+      currentImage = null;
+    }
+  });
+
+  // Directional emoji movement
+  directionEmojis.forEach(emoji => {
+    const direction = emoji.getAttribute('data-direction');
+
+    emoji.addEventListener('mousedown', () => {
+      if (!currentImage || currentImage.src.includes('placeholder-image.jpg')) return;
+      moveInterval = setInterval(() => {
+        let left = parseFloat(currentImage.style.left) || 0;
+        let top = parseFloat(currentImage.style.top) || 0;
+
+        if (direction === 'up') top -= 1;
+        if (direction === 'down') top += 1;
+        if (direction === 'left') left -= 1;
+        if (direction === 'right') left += 1;
+
+        left = Math.max(0, Math.min(left, 600 - currentImage.width));
+        top = Math.max(0, Math.min(top, 600 - currentImage.height));
+
+        currentImage.style.left = `${left}px`;
+        currentImage.style.top = `${top}px`;
+        updateCoordinates(currentImage);
+      }, 50); // 20 pixels per second = 1 pixel every 50ms
+    });
+
+    emoji.addEventListener('mouseup', () => {
+      if (moveInterval) {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (currentImage) {
+          const index = traitImages.indexOf(currentImage);
+          const position = {
+            left: parseFloat(currentImage.style.left) || 0,
+            top: parseFloat(currentImage.style.top) || 0
+          };
+          localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+        }
+      }
+    });
+
+    emoji.addEventListener('mouseleave', () => {
+      if (moveInterval) {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (currentImage) {
+          const index = traitImages.indexOf(currentImage);
+          const position = {
+            left: parseFloat(currentImage.style.left) || 0,
+            top: parseFloat(currentImage.style.top) || 0
+          };
+          localStorage.setItem(`trait${index + 1}-position`, JSON.stringify(position));
+        }
+      }
+    });
+  });
+
+  // Update coordinates when selecting a new image
+  traitImages.forEach(img => {
+    img.addEventListener('click', () => {
+      if (!img.src.includes('placeholder-image.jpg')) {
+        currentImage = img;
+        updateCoordinates(img);
+      }
+    });
+  });
+
+  // Add event listener for Test New Background button
+  document.getElementById('test-background').addEventListener('click', fetchBackground);
 
   window.mintNFT = async function() {
     const status = document.getElementById('status');
