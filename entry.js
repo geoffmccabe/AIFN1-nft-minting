@@ -82,6 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Save position to localStorage and update history
   function savePosition(img, traitIndex, variationName) {
+    const previousPosition = {
+      left: parseFloat(img.style.left) || 0,
+      top: parseFloat(img.style.top) || 0
+    };
     const position = {
       left: parseFloat(img.style.left) || 0,
       top: parseFloat(img.style.top) || 0
@@ -90,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     positionHistory.push({
       traitIndex,
       variationName,
-      position: { left: position.left, top: position.top }
+      position: previousPosition
     });
     // Save to localStorage
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
@@ -103,15 +107,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateSubsequentTraits(currentTraitIndex, currentVariationName, position) {
     const currentTrait = traits[currentTraitIndex];
     const currentVariationIndex = currentTrait.variations.findIndex(v => v.name === currentVariationName);
-    
+
     // Update positions for subsequent variants in the same trait
-    for (let i = currentVariationIndex + 1; i < currentTrait.variations.length; i++) {
-      const nextVariationName = currentTrait.variations[i].name;
-      const manuallyMoved = localStorage.getItem(`trait${currentTraitIndex + 1}-${nextVariationName}-manuallyMoved`);
-      if (!manuallyMoved) {
-        localStorage.setItem(`trait${currentTraitIndex + 1}-${nextVariationName}-position`, JSON.stringify(position));
-      } else {
-        break; // Stop if a variant has been manually moved
+    if (currentTrait.variations.length > 1) { // Only if the trait has multiple variants
+      for (let i = currentVariationIndex + 1; i < currentTrait.variations.length; i++) {
+        const nextVariationName = currentTrait.variations[i].name;
+        const manuallyMoved = localStorage.getItem(`trait${currentTraitIndex + 1}-${nextVariationName}-manuallyMoved`);
+        if (!manuallyMoved) {
+          localStorage.setItem(`trait${currentTraitIndex + 1}-${nextVariationName}-position`, JSON.stringify(position));
+        } else {
+          break; // Stop if a variant has been manually moved
+        }
       }
     }
 
@@ -344,9 +350,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Add event listener for Ctrl-Z to undo movement
+  // Add event listener for Ctrl-Z (PC) or Cmd-Z (Mac) to undo movement
   document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'z') {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      e.preventDefault(); // Prevent browser undo behavior
       if (positionHistory.length > 0) {
         const lastMove = positionHistory.pop();
         const { traitIndex, variationName, position } = lastMove;
@@ -355,10 +362,10 @@ document.addEventListener('DOMContentLoaded', () => {
           previewImage.style.left = `${position.left}px`;
           previewImage.style.top = `${position.top}px`;
           updateCoordinates(previewImage);
+          localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
+          // Update subsequent traits if they haven't been manually moved
+          updateSubsequentTraits(traitIndex, variationName, position);
         }
-        localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
-        // Update subsequent traits if they haven't been manually moved
-        updateSubsequentTraits(traitIndex, variationName, position);
       }
     }
   });
