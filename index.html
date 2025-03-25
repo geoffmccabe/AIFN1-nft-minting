@@ -39,28 +39,49 @@
     }
   </style>
   
-  <!-- Load Buffer polyfill separately from cdn.jsdelivr.net -->
+  <!-- Dummy globals to satisfy any leftover CommonJS calls -->
+  <script>
+    if (typeof require === 'undefined') {
+      window.require = function() {
+         console.warn("Dummy require called with arguments:", arguments);
+         return {};
+      };
+    }
+    if (typeof exports === 'undefined') {
+      window.exports = {};
+    }
+    if (typeof module === 'undefined') {
+      window.module = { exports: window.exports };
+    }
+  </script>
+  
+  <!-- Load Buffer polyfill from cdn.jsdelivr.net -->
   <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js"></script>
   <script>
     window.Buffer = Buffer;
     console.log("Buffer polyfill loaded. TYPED_ARRAY_SUPPORT:", Buffer.TYPED_ARRAY_SUPPORT);
   </script>
   
-  <!-- Load Ethers.js -->
+  <!-- Load Ethers.js for blockchain interactions -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   
-  <!-- Load config.js -->
+  <!-- Load config.js (your configuration: contract address, ABI, etc.) -->
   <script src="config.js"></script>
+  
+  <!-- Load psd.js as a classic script from jsDelivr -->
+  <script src="https://cdn.jsdelivr.net/npm/psd.js/dist/psd.min.js"></script>
+  <!-- psd.js attaches PSD to window -->
+  
 </head>
 <body>
-  <div id="version">v1.0.38 - 2025-03-24 03:30 MDT</div>
+  <div id="version">v1.0.40 - 2025-03-24 11:30:00 MDT</div>
   <h1>Mint Your AIFN NFT</h1>
   
   <!-- File input for PSD -->
   <input type="file" id="psdFile" accept=".psd" style="margin: 20px;">
   
   <!-- Placeholder for Mint Fee -->
-  <div id="mintFeeDisplay">Mint Fee: 0.001 ETH</div>
+  <div id="mintFeeDisplay">Mint Fee: Loading...</div>
   
   <!-- Instructional text -->
   <div id="traitSelection">Upload a PSD to select traits...</div>
@@ -68,10 +89,10 @@
   <!-- Status display for file reading progress -->
   <div id="status">No file selected.</div>
   
-  <!-- Mint NFT button -->
+  <!-- Mint NFT button (visible, initially disabled) -->
   <button id="mintButton" disabled>Mint NFT</button>
   
-  <!-- Load the bundled JavaScript -->
+  <!-- Load the bundled application code -->
   <script src="bundle.js"></script>
 </body>
 </html>
