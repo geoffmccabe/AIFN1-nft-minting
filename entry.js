@@ -258,6 +258,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Applying last moved position to Trait ${traitIndex + 1} variant ${variationName}: ${lastMovedPosition.left}, ${lastMovedPosition.top}`);
         previewImage.style.left = `${lastMovedPosition.left}px`;
         previewImage.style.top = `${lastMovedPosition.top}px`;
+        // Save this position to localStorage to ensure consistency
+        localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(lastMovedPosition));
       } else {
         // Reset position if no saved position exists
         previewImage.style.left = '0px';
