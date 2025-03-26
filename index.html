@@ -48,6 +48,12 @@
       max-width: 600px;
       height: auto;
     }
+    /* Adjust logo size for high-DPI screens */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      #logo {
+        width: 300px; /* 600px / 2 to account for DPR 2 */
+      }
+    }
     .trait-section {
       margin-bottom: 20px;
     }
@@ -70,6 +76,7 @@
     .trait-controls span {
       cursor: pointer;
       font-size: 16px;
+      color: #666; /* Grey color for arrows */
     }
     .trait-controls span:hover {
       opacity: 0.8;
@@ -129,6 +136,7 @@
       background: none;
       border: none;
       padding: 0;
+      color: #666; /* Grey color for arrows */
     }
     .direction-emoji:hover {
       opacity: 0.8;
@@ -166,11 +174,9 @@
     }
     #preview-samples-grid img {
       position: absolute;
-      width: 140px;
-      height: 140px;
+      max-width: 140px;
+      max-height: 140px;
       object-fit: contain;
-      transform: scale(0.2333); /* 140/600 = 0.2333 */
-      transform-origin: top left;
     }
     #update-previews {
       padding: 5px 10px;
@@ -208,11 +214,6 @@
     }
     #mintFeeDisplay {
       font-size: 14px;
-    }
-    #status {
-      margin-top: 20px;
-      font-size: 14px;
-      text-align: center;
     }
     #prompt-section {
       margin-top: 10px;
@@ -322,7 +323,6 @@
       <button id="mintButton" disabled>Mint NFT</button>
       <div id="mintFeeDisplay">Mint Fee: Loading...</div>
     </div>
-    <div id="status">Select traits to begin.</div>
   </div>
   <div id="right-panel">
     <h2>Preview</h2>
