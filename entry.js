@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     traitImages.forEach(img => {
-      if (img.style.display === 'block') {
+      if (img && img.style.display === 'block') {
         const clonedImg = img.cloneNode(true);
         clonedImg.style.display = 'block';
         clonedImg.style.width = `${img.width * scale}px`;
@@ -155,9 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Set up drag-and-drop for initial trait images
-  traitImages.forEach((img, index) => setupDragAndDrop(img, index));
-
   // Set up preview panel drag events
   if (preview) {
     preview.addEventListener('mousemove', (e) => {
@@ -194,11 +191,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Set up drag-and-drop for initial trait images (moved to the end to ensure all traits are added)
+  traitImages.forEach((img, index) => {
+    console.log(`Setting up drag-and-drop for trait ${index + 1}, image:`, img);
+    setupDragAndDrop(img, index);
+  });
 });
-
-
-
-
 
 
 
@@ -278,10 +277,20 @@ function addTrait(traitIndex, initial = false) {
   newTraitImage.alt = `Trait ${traitIndex + 1}`;
   newTraitImage.style.zIndex = traits[traitIndex].zIndex;
   if (preview) preview.appendChild(newTraitImage);
-  traitImages[traitIndex] = newTraitImage;
+  // Use push to ensure contiguous array
+  traitImages.push(newTraitImage);
+
+  // Update z-indices after adding the trait
+  for (let i = 0; i < traits.length; i++) {
+    traits[i].zIndex = traits.length - i;
+  }
 
   setupTraitListeners(traitIndex);
-  setupDragAndDrop(newTraitImage, traitIndex);
+  // Defer drag-and-drop setup to ensure DOM is ready
+  requestAnimationFrame(() => {
+    console.log(`Setting up drag-and-drop for new trait ${traitIndex + 1}, image:`, newTraitImage);
+    setupDragAndDrop(newTraitImage, traitIndex);
+  });
   updateZIndices();
   updatePreviewSamples();
 }
@@ -303,12 +312,17 @@ function removeTrait(traitIndex) {
   noButton.textContent = 'N';
 
   yesButton.addEventListener('click', () => {
+    // Remove the trait from traits array
     traits.splice(traitIndex, 1);
+    // Remove the DOM element
     document.getElementById(`trait${traitIndex + 1}`).remove();
+    // Remove the preview image
     const traitImage = document.getElementById(`preview-trait${traitIndex + 1}`);
     if (traitImage) traitImage.remove();
+    // Remove from traitImages
     traitImages.splice(traitIndex, 1);
 
+    // Shift remaining traits' DOM elements and traitImages
     for (let i = traitIndex; i < traits.length; i++) {
       const section = document.getElementById(`trait${i + 2}`);
       if (section) {
@@ -323,45 +337,62 @@ function removeTrait(traitIndex) {
         section.querySelector('.add-trait').setAttribute('data-trait', `${i + 1}`);
         section.querySelector('.remove-trait').setAttribute('data-trait', `${i + 1}`);
       }
-      const oldTraitImage = document.getElementById(`preview-trait${i + 2}`);
-      if (oldTraitImage) {
-        oldTraitImage.id = `preview-trait${i + 1}`;
-        traitImages[i] = oldTraitImage;
+      if (traitImages[i]) {
+        traitImages[i].id = `preview-trait${i + 1}`;
       }
     }
 
-    for (let i = 0; i < traits.length; i++) traits[i].zIndex = traits.length + 1 - i;
+    // Update z-indices
+    for (let i = 0; i < traits.length; i++) {
+      traits[i].zIndex = traits.length - i;
+    }
 
+    // Update variantHistories
     const newVariantHistories = {};
     Object.keys(variantHistories).forEach(key => {
       const [oldIndex, variationName] = key.split('-');
       const oldIndexNum = parseInt(oldIndex);
-      if (oldIndexNum > traitIndex) newVariantHistories[`${oldIndexNum - 1}-${variationName}`] = variantHistories[key];
-      else if (oldIndexNum < traitIndex) newVariantHistories[key] = variantHistories[key];
+      if (oldIndexNum > traitIndex) {
+        newVariantHistories[`${oldIndexNum - 1}-${variationName}`] = variantHistories[key];
+      } else if (oldIndexNum < traitIndex) {
+        newVariantHistories[key] = variantHistories[key];
+      }
     });
     variantHistories = newVariantHistories;
 
-    for (let i = 0; i <= traits.length; i++) {
-      const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
-      oldKeys.forEach(oldKey => {
-        const value = localStorage.getItem(oldKey);
-        const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
-        if (oldKey !== newKey) {
-          localStorage.setItem(newKey, value);
-          localStorage.removeItem(oldKey);
-        }
-      });
-    }
-
+    // Clear localStorage for the deleted trait
     Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('trait')) {
-        const index = parseInt(key.match(/trait(\d+)/)[1]);
-        if (index > traits.length) localStorage.removeItem(key);
+      if (key.startsWith(`trait${traitIndex + 1}-`)) {
+        localStorage.removeItem(key);
       }
     });
 
+    // Shift localStorage keys for remaining traits
+    for (let i = traitIndex; i < traits.length; i++) {
+      const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 2}-`));
+      oldKeys.forEach(oldKey => {
+        const value = localStorage.getItem(oldKey);
+        const newKey = oldKey.replace(`trait${i + 2}-`, `trait${i + 1}-`);
+        localStorage.setItem(newKey, value);
+        localStorage.removeItem(oldKey);
+      });
+    }
+
+    // Remove any stale localStorage keys
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('trait')) {
+        const index = parseInt(key.match(/trait(\d+)/)[1]);
+        if (index > traits.length) {
+          localStorage.removeItem(key);
+        }
+      }
+    });
+
+    // Update autoPositioned
     autoPositioned.splice(traitIndex, 1);
-    autoPositioned.push(false);
+    if (autoPositioned.length < traits.length + 1) {
+      autoPositioned.push(false);
+    }
 
     updateZIndices();
     updatePreviewSamples();
@@ -433,6 +464,7 @@ function setupTraitListeners(traitIndex) {
         if (!variantHistories[key]) {
           variantHistories[key] = [{ left: 0, top: 0 }];
           localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify({ left: 0, top: 0 }));
+          localStorage.removeItem(`trait${traitIndex + 1}-${variationName}-manuallyMoved`);
         }
       }
 
@@ -490,13 +522,22 @@ function setupTraitListeners(traitIndex) {
         const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
         oldKeys.forEach(oldKey => {
           const value = localStorage.getItem(oldKey);
-          const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
-          if (oldKey !== newKey) {
-            localStorage.setItem(newKey, value);
-            localStorage.removeItem(oldKey);
-          }
+          const newKey = oldKey.replace(`trait${i + 1}-`, `trait${i + 1}-temp-`);
+          localStorage.setItem(newKey, value);
+          localStorage.removeItem(oldKey);
         });
       }
+      for (let i = 0; i < traits.length; i++) {
+        const tempKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-temp-`));
+        tempKeys.forEach(tempKey => {
+          const value = localStorage.getItem(tempKey);
+          const newKey = tempKey.replace(`trait${i + 1}-temp-`, `trait${i + 1}-`);
+          localStorage.setItem(newKey, value);
+          localStorage.removeItem(tempKey);
+        });
+      }
+      const tempKeys = Object.keys(localStorage).filter(key => key.startsWith('trait') && key.includes('-temp-'));
+      tempKeys.forEach(key => localStorage.removeItem(key));
 
       const tempAutoPositioned = autoPositioned[traitIndex];
       autoPositioned[traitIndex] = autoPositioned[lastIndex];
@@ -536,13 +577,22 @@ function setupTraitListeners(traitIndex) {
         const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
         oldKeys.forEach(oldKey => {
           const value = localStorage.getItem(oldKey);
-          const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
-          if (oldKey !== newKey) {
-            localStorage.setItem(newKey, value);
-            localStorage.removeItem(oldKey);
-          }
+          const newKey = oldKey.replace(`trait${i + 1}-`, `trait${i + 1}-temp-`);
+          localStorage.setItem(newKey, value);
+          localStorage.removeItem(oldKey);
         });
       }
+      for (let i = 0; i < traits.length; i++) {
+        const tempKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-temp-`));
+        tempKeys.forEach(tempKey => {
+          const value = localStorage.getItem(tempKey);
+          const newKey = tempKey.replace(`trait${i + 1}-temp-`, `trait${i + 1}-`);
+          localStorage.setItem(newKey, value);
+          localStorage.removeItem(tempKey);
+        });
+      }
+      const tempKeys = Object.keys(localStorage).filter(key => key.startsWith('trait') && key.includes('-temp-'));
+      tempKeys.forEach(key => localStorage.removeItem(key));
 
       const tempAutoPositioned = autoPositioned[traitIndex];
       autoPositioned[traitIndex] = autoPositioned[traitIndex - 1];
@@ -591,13 +641,22 @@ function setupTraitListeners(traitIndex) {
         const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
         oldKeys.forEach(oldKey => {
           const value = localStorage.getItem(oldKey);
-          const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
-          if (oldKey !== newKey) {
-            localStorage.setItem(newKey, value);
-            localStorage.removeItem(oldKey);
-          }
+          const newKey = oldKey.replace(`trait${i + 1}-`, `trait${i + 1}-temp-`);
+          localStorage.setItem(newKey, value);
+          localStorage.removeItem(oldKey);
         });
       }
+      for (let i = 0; i < traits.length; i++) {
+        const tempKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-temp-`));
+        tempKeys.forEach(tempKey => {
+          const value = localStorage.getItem(tempKey);
+          const newKey = tempKey.replace(`trait${i + 1}-temp-`, `trait${i + 1}-`);
+          localStorage.setItem(newKey, value);
+          localStorage.removeItem(tempKey);
+        });
+      }
+      const tempKeys = Object.keys(localStorage).filter(key => key.startsWith('trait') && key.includes('-temp-'));
+      tempKeys.forEach(key => localStorage.removeItem(key));
 
       const tempAutoPositioned = autoPositioned[traitIndex];
       autoPositioned[traitIndex] = autoPositioned[firstIndex];
@@ -637,13 +696,22 @@ function setupTraitListeners(traitIndex) {
         const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
         oldKeys.forEach(oldKey => {
           const value = localStorage.getItem(oldKey);
-          const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
-          if (oldKey !== newKey) {
-            localStorage.setItem(newKey, value);
-            localStorage.removeItem(oldKey);
-          }
+          const newKey = oldKey.replace(`trait${i + 1}-`, `trait${i + 1}-temp-`);
+          localStorage.setItem(newKey, value);
+          localStorage.removeItem(oldKey);
         });
       }
+      for (let i = 0; i < traits.length; i++) {
+        const tempKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-temp-`));
+        tempKeys.forEach(tempKey => {
+          const value = localStorage.getItem(tempKey);
+          const newKey = tempKey.replace(`trait${i + 1}-temp-`, `trait${i + 1}-`);
+          localStorage.setItem(newKey, value);
+          localStorage.removeItem(tempKey);
+        });
+      }
+      const tempKeys = Object.keys(localStorage).filter(key => key.startsWith('trait') && key.includes('-temp-'));
+      tempKeys.forEach(key => localStorage.removeItem(key));
 
       const tempAutoPositioned = autoPositioned[traitIndex];
       autoPositioned[traitIndex] = autoPositioned[traitIndex + 1];
@@ -659,8 +727,7 @@ function setupTraitListeners(traitIndex) {
 
   addTraitBtn.addEventListener('click', () => {
     if (traits.length < 20) {
-      traits.push({ name: '', variations: [], selected: 0, zIndex: 2 });
-      for (let i = 0; i < traits.length; i++) traits[i].zIndex = traits.length + 1 - i;
+      traits.push({ name: '', variations: [], selected: 0, zIndex: 0 }); // zIndex will be set in addTrait
       addTrait(traits.length - 1);
     }
   });
@@ -746,14 +813,14 @@ function updateMintButton() {
 
 
 
-
-
 /* Section 3 - PREVIEW AND POSITION MANAGEMENT */
 
 
 function updateZIndices() {
   traitImages.forEach((img, index) => {
-    if (img && img !== currentImage) img.style.zIndex = traits[index].zIndex;
+    if (img && img !== currentImage) {
+      img.style.zIndex = traits[index].zIndex;
+    }
   });
 }
 
@@ -801,10 +868,12 @@ function selectVariation(traitIndex, variationName) {
     }
     currentImage = previewImage;
     traitImages.forEach(img => {
-      if (img === previewImage) img.style.zIndex = 1000;
-      else {
-        const idx = traitImages.indexOf(img);
-        img.style.zIndex = traits[idx].zIndex;
+      if (img) {
+        if (img === previewImage) img.style.zIndex = 1000;
+        else {
+          const idx = traitImages.indexOf(img);
+          img.style.zIndex = traits[idx].zIndex;
+        }
       }
     });
     updateCoordinates(previewImage);
@@ -1005,8 +1074,6 @@ function updatePreviewSamples() {
     previewSamplesGrid.appendChild(sampleContainer);
   }
 }
-
-
 
 
 
