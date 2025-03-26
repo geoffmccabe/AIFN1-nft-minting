@@ -1,4 +1,4 @@
-// Section 1 - GLOBAL SETUP AND INITIALIZATION //
+/* Section 1 - GLOBAL SETUP AND INITIALIZATION */
 document.addEventListener('DOMContentLoaded', () => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-// Section 2 - TRAIT MANAGEMENT FUNCTIONS //
+/* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
 function addTrait(traitIndex, initial = false) {
   const traitSection = document.createElement('div');
   traitSection.id = `trait${traitIndex + 1}`;
@@ -580,7 +580,7 @@ function updateMintButton() {
 
 
 
-// Section 3 - PREVIEW AND POSITION MANAGEMENT //
+/* Section 3 - PREVIEW AND POSITION MANAGEMENT */
 function updateZIndices() {
   traitImages.forEach((img, index) => {
     if (img && img !== currentImage) img.style.zIndex = traits[index].zIndex;
@@ -979,7 +979,7 @@ function updatePreviewSamples() {
 
 
 
-// Section 4 - BACKGROUND GENERATION //
+/* Section 4 - BACKGROUND GENERATION */
 async function fetchBackground() {
   try {
     clickSound.play().catch(error => console.error('Error playing click sound:', error));
@@ -1028,7 +1028,7 @@ fetchMintFee();
 
 
 
-// Section 5 - MINTING FUNCTION //
+// Section 5 - MINTING FUNCTION */
 window.mintNFT = async function() {
   const status = document.getElementById('status');
   if (!status) return;
