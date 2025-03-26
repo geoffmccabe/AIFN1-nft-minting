@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let background = { url: '', metadata: '' };
 
   const preview = document.getElementById('preview');
-  const traitImages = [
+  let traitImages = [
     document.getElementById('preview-trait1'),
     document.getElementById('preview-trait2'),
     document.getElementById('preview-trait3')
@@ -57,21 +57,17 @@ document.addEventListener('DOMContentLoaded', () => {
       background.metadata = data.metadata;
 
       const backgroundImage = document.getElementById('background-image');
-      const previewBackground = document.getElementById('preview-background');
       const backgroundMetadata = document.getElementById('background-metadata');
 
       if (backgroundImage) backgroundImage.src = background.url;
-      if (previewBackground) previewBackground.src = background.url;
       if (backgroundMetadata) backgroundMetadata.innerText = background.metadata;
     } catch (error) {
       console.error('Error fetching background:', error);
       const placeholder = 'https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp';
       const backgroundImage = document.getElementById('background-image');
-      const previewBackground = document.getElementById('preview-background');
       const backgroundMetadata = document.getElementById('background-metadata');
 
       if (backgroundImage) backgroundImage.src = placeholder;
-      if (previewBackground) previewBackground.src = placeholder;
       if (backgroundMetadata) backgroundMetadata.innerText = 'Failed to load background: ' + error.message;
     } finally {
       clearInterval(timerInterval);
@@ -125,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem(`trait${currentTraitIndex + 1}-${nextVariationName}-position`, JSON.stringify(position));
           if (traits[currentTraitIndex].selected === i) {
             const previewImage = document.getElementById(`preview-trait${currentTraitIndex + 1}`);
-            if (previewImage && !previewImage.src.includes('placeholder-image.jpg')) {
+            if (previewImage && previewImage.src) {
               previewImage.style.left = `${position.left}px`;
               previewImage.style.top = `${position.top}px`;
             }
@@ -146,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem(`trait${traitIndex + 1}-${nextVariationName}-position`, JSON.stringify(position));
           if (traits[traitIndex].selected === i) {
             const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
-            if (previewImage && !previewImage.src.includes('placeholder-image.jpg')) {
+            if (previewImage && previewImage.src) {
               previewImage.style.left = `${position.left}px`;
               previewImage.style.top = `${position.top}px`;
             }
@@ -210,12 +206,15 @@ document.addEventListener('DOMContentLoaded', () => {
     traitSection.appendChild(grid);
     traitContainer.appendChild(traitSection);
 
-    traitImages.push(document.createElement('img'));
-    traitImages[newTraitIndex].id = `preview-trait${newTraitIndex + 1}`;
-    traitImages[newTraitIndex].src = '';
-    traitImages[newTraitIndex].alt = `Trait ${newTraitIndex + 1}`;
-    traitImages[newTraitIndex].style.zIndex = newTraitIndex + 2;
-    preview.appendChild(traitImages[newTraitIndex]);
+    const newTraitImage = document.createElement('img');
+    newTraitImage.id = `preview-trait${newTraitIndex + 1}`;
+    newTraitImage.src = '';
+    newTraitImage.alt = `Trait ${newTraitIndex + 1}`;
+    newTraitImage.style.zIndex = newTraitIndex + 2;
+    if (preview) {
+      preview.appendChild(newTraitImage);
+    }
+    traitImages.push(newTraitImage);
 
     setupTraitListeners(newTraitIndex);
     updateZIndices();
@@ -227,9 +226,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const traitIndex = traits.length - 1;
     traits.pop();
     const traitSection = document.getElementById(`trait${traitIndex + 1}`);
-    traitSection.remove();
+    if (traitSection) {
+      traitSection.remove();
+    }
     const traitImage = document.getElementById(`preview-trait${traitIndex + 1}`);
-    traitImage.remove();
+    if (traitImage) {
+      traitImage.remove();
+    }
     traitImages.pop();
     updateZIndices();
     updateMintButton();
@@ -279,27 +282,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const addRemove = document.querySelector(`.add-remove-trait[data-trait="${traitIndex + 1}"]`);
 
     upArrow.addEventListener('click', () => {
-      const currentZIndex = traits[traitIndex].zIndex;
-      const maxZIndex = traits.length + 1;
-      if (currentZIndex < maxZIndex) {
-        const otherTrait = traits.find(t => t.zIndex === currentZIndex + 1);
-        if (otherTrait) {
-          otherTrait.zIndex--;
-          traits[traitIndex].zIndex++;
-          updateZIndices();
-        }
+      const currentTrait = traits[traitIndex];
+      const currentZIndex = currentTrait.zIndex;
+      const higherTrait = traits.find(t => t.zIndex === currentZIndex + 1);
+      if (higherTrait) {
+        higherTrait.zIndex = currentZIndex;
+        currentTrait.zIndex = currentZIndex + 1;
+        updateZIndices();
       }
     });
 
     downArrow.addEventListener('click', () => {
-      const currentZIndex = traits[traitIndex].zIndex;
-      if (currentZIndex > 2) {
-        const otherTrait = traits.find(t => t.zIndex === currentZIndex - 1);
-        if (otherTrait) {
-          otherTrait.zIndex++;
-          traits[traitIndex].zIndex--;
-          updateZIndices();
-        }
+      const currentTrait = traits[traitIndex];
+      const currentZIndex = currentTrait.zIndex;
+      const lowerTrait = traits.find(t => t.zIndex === currentZIndex - 1);
+      if (lowerTrait) {
+        lowerTrait.zIndex = currentZIndex;
+        currentTrait.zIndex = currentZIndex - 1;
+        updateZIndices();
       }
     });
 
