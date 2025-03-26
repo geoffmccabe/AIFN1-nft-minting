@@ -62,11 +62,12 @@
       position: relative;
       width: 600px;
       height: 600px;
-      background: #333;
+      background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+      background-size: cover;
       margin-bottom: 10px;
       overflow: hidden;
       border: 1px solid black;
-      border-radius: 5px;
+      border-radius: 10px; /* Increased from 5px to 10px */
     }
     #preview img {
       position: absolute;
@@ -145,6 +146,16 @@
       margin-bottom: 5px;
       font-weight: bold;
     }
+    #background-details {
+      text-align: center;
+    }
+    #background-image {
+      width: 600px; /* Set to 600x600 */
+      height: 600px;
+      background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+      background-size: cover;
+      border-radius: 10px; /* Increased from 5px to 10px */
+    }
   </style>
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="config.js"></script>
@@ -183,7 +194,7 @@
       </div>
       <button id="generate-background">Generate Bkgd</button>
       <div id="background-details">
-        <img id="background-image" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="AI Background">
+        <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
         <p id="background-metadata">Loading...</p>
       </div>
     </div>
@@ -193,7 +204,7 @@
   <div id="right-panel">
     <h2>Preview</h2>
     <div id="preview">
-      <img id="preview-background" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Background">
+      <img id="preview-background" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="Background">
       <img id="preview-trait1" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 1">
       <img id="preview-trait2" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 2">
       <img id="preview-trait3" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 3">
