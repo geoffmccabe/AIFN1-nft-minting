@@ -7,9 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const contractWithSigner = contract.connect(signer);
 
   let traits = [
-    { name: '', variations: [], selected: 0 },
-    { name: '', variations: [], selected: 0 },
-    { name: '', variations: [], selected: 0 }
+    { name: '', variations: [], selected: 0, zIndex: 2 },
+    { name: '', variations: [], selected: 0, zIndex: 3 },
+    { name: '', variations: [], selected: 0, zIndex: 4 }
   ];
   let background = { url: '', metadata: '' };
 
@@ -22,13 +22,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const coordinates = document.getElementById('coordinates');
   const directionEmojis = document.querySelectorAll('.direction-emoji');
   const generateButton = document.getElementById('generate-background');
+  const traitContainer = document.getElementById('trait-container');
 
   let isDragging = false;
   let currentImage = null;
   let offsetX = 0;
   let offsetY = 0;
   let moveInterval = null;
-  let variantHistories = {}; // History registry: { "traitIndex-variationName": [{left, top}, ...] }
+  let variantHistories = {};
   let timerInterval = null;
   let lastUndoTime = 0;
 
@@ -64,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (backgroundMetadata) backgroundMetadata.innerText = background.metadata;
     } catch (error) {
       console.error('Error fetching background:', error);
-      const placeholder = 'https://archive.org/download/placeholder-image/placeholder-image.jpg';
+      const placeholder = 'https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp';
       const backgroundImage = document.getElementById('background-image');
       const previewBackground = document.getElementById('preview-background');
       const backgroundMetadata = document.getElementById('background-metadata');
@@ -155,18 +156,96 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  for (let i = 1; i <= 3; i++) {
-    const traitIndex = i - 1;
-    const nameInput = document.getElementById(`trait${i}-name`);
-    const fileInput = document.getElementById(`trait${i}-files`);
-    const grid = document.getElementById(`trait${i}-grid`);
+  function addTrait() {
+    if (traits.length >= 20) return; // Maximum 20 traits
+    const newTraitIndex = traits.length;
+    traits.push({ name: '', variations: [], selected: 0, zIndex: newTraitIndex + 2 });
+
+    const traitSection = document.createElement('div');
+    traitSection.id = `trait${newTraitIndex + 1}`;
+    traitSection.className = 'trait-section';
+
+    const traitHeader = document.createElement('div');
+    traitHeader.className = 'trait-header';
+    const title = document.createElement('h2');
+    title.textContent = `Trait ${newTraitIndex + 1}`;
+    const controls = document.createElement('div');
+    controls.className = 'trait-controls';
+    const upArrow = document.createElement('span');
+    upArrow.className = 'up-arrow';
+    upArrow.setAttribute('data-trait', `${newTraitIndex + 1}`);
+    upArrow.textContent = '⬆️';
+    const downArrow = document.createElement('span');
+    downArrow.className = 'down-arrow';
+    downArrow.setAttribute('data-trait', `${newTraitIndex + 1}`);
+    downArrow.textContent = '⬇️';
+    const addRemove = document.createElement('span');
+    addRemove.className = 'add-remove-trait';
+    addRemove.setAttribute('data-trait', `${newTraitIndex + 1}`);
+    addRemove.textContent = '➕';
+    controls.appendChild(upArrow);
+    controls.appendChild(downArrow);
+    controls.appendChild(addRemove);
+    traitHeader.appendChild(title);
+    traitHeader.appendChild(controls);
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = `trait${newTraitIndex + 1}-name`;
+    nameInput.placeholder = `Trait Name (e.g., ${newTraitIndex === 0 ? 'Eyes' : newTraitIndex === 1 ? 'Hair' : 'Accessories'})`;
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.id = `trait${newTraitIndex + 1}-files`;
+    fileInput.accept = 'image/png,image/webp';
+    fileInput.multiple = true;
+
+    const grid = document.createElement('div');
+    grid.id = `trait${newTraitIndex + 1}-grid`;
+    grid.className = 'trait-grid';
+
+    traitSection.appendChild(traitHeader);
+    traitSection.appendChild(nameInput);
+    traitSection.appendChild(fileInput);
+    traitSection.appendChild(grid);
+    traitContainer.appendChild(traitSection);
+
+    traitImages.push(document.createElement('img'));
+    traitImages[newTraitIndex].id = `preview-trait${newTraitIndex + 1}`;
+    traitImages[newTraitIndex].src = '';
+    traitImages[newTraitIndex].alt = `Trait ${newTraitIndex + 1}`;
+    traitImages[newTraitIndex].style.zIndex = newTraitIndex + 2;
+    preview.appendChild(traitImages[newTraitIndex]);
+
+    setupTraitListeners(newTraitIndex);
+    updateZIndices();
+    updateMintButton();
+  }
+
+  function removeTrait() {
+    if (traits.length <= 1) return; // Minimum 1 trait
+    const traitIndex = traits.length - 1;
+    traits.pop();
+    const traitSection = document.getElementById(`trait${traitIndex + 1}`);
+    traitSection.remove();
+    const traitImage = document.getElementById(`preview-trait${traitIndex + 1}`);
+    traitImage.remove();
+    traitImages.pop();
+    updateZIndices();
+    updateMintButton();
+  }
+
+  function setupTraitListeners(traitIndex) {
+    const nameInput = document.getElementById(`trait${traitIndex + 1}-name`);
+    const fileInput = document.getElementById(`trait${traitIndex + 1}-files`);
+    const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
 
     if (fileInput && nameInput && grid) {
       fileInput.addEventListener('change', async (event) => {
         const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
         if (!files.length) return;
 
-        const traitName = nameInput.value.trim() || `Trait ${i}`;
+        const traitName = nameInput.value.trim() || `Trait ${traitIndex + 1}`;
         traits[traitIndex].name = traitName;
         traits[traitIndex].variations = [];
 
@@ -194,6 +273,55 @@ document.addEventListener('DOMContentLoaded', () => {
         updateMintButton();
       });
     }
+
+    const upArrow = document.querySelector(`.up-arrow[data-trait="${traitIndex + 1}"]`);
+    const downArrow = document.querySelector(`.down-arrow[data-trait="${traitIndex + 1}"]`);
+    const addRemove = document.querySelector(`.add-remove-trait[data-trait="${traitIndex + 1}"]`);
+
+    upArrow.addEventListener('click', () => {
+      const currentZIndex = traits[traitIndex].zIndex;
+      const maxZIndex = traits.length + 1;
+      if (currentZIndex < maxZIndex) {
+        const otherTrait = traits.find(t => t.zIndex === currentZIndex + 1);
+        if (otherTrait) {
+          otherTrait.zIndex--;
+          traits[traitIndex].zIndex++;
+          updateZIndices();
+        }
+      }
+    });
+
+    downArrow.addEventListener('click', () => {
+      const currentZIndex = traits[traitIndex].zIndex;
+      if (currentZIndex > 2) {
+        const otherTrait = traits.find(t => t.zIndex === currentZIndex - 1);
+        if (otherTrait) {
+          otherTrait.zIndex++;
+          traits[traitIndex].zIndex--;
+          updateZIndices();
+        }
+      }
+    });
+
+    addRemove.addEventListener('click', () => {
+      if (traits.length < 20) {
+        addTrait();
+      } else {
+        removeTrait();
+      }
+    });
+  }
+
+  function updateZIndices() {
+    traitImages.forEach((img, index) => {
+      if (img) {
+        img.style.zIndex = traits[index].zIndex;
+      }
+    });
+  }
+
+  for (let i = 0; i < traits.length; i++) {
+    setupTraitListeners(i);
   }
 
   function selectVariation(traitIndex, variationName) {
@@ -221,7 +349,6 @@ document.addEventListener('DOMContentLoaded', () => {
           variantHistories[key] = [{ left, top }];
         }
       } else {
-        // Find the last position from another variant in the same trait group
         let lastPosition = null;
         for (let i = 0; i < trait.variations.length; i++) {
           if (i === variationIndex) continue;
@@ -246,10 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
       currentImage = previewImage;
       traitImages.forEach(img => {
         if (img === previewImage) {
-          img.style.zIndex = traitIndex === 0 ? 2 : traitIndex === 1 ? 3 : 4;
-        } else if (!img.src.includes('placeholder-image.jpg')) {
-          const otherIndex = traitImages.indexOf(img);
-          img.style.zIndex = otherIndex === 0 ? 2 : otherIndex === 1 ? 3 : 4;
+          img.style.zIndex = traits[traitIndex].zIndex;
         }
       });
       updateCoordinates(previewImage);
@@ -269,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
       img.addEventListener('dragstart', (e) => e.preventDefault());
 
       img.addEventListener('mousedown', (e) => {
-        if (img.src.includes('placeholder-image.jpg')) return;
+        if (img.src === '') return;
         if (img !== currentImage) return;
         isDragging = true;
         currentImage = img;
@@ -336,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const direction = emoji.getAttribute('data-direction');
 
     emoji.addEventListener('mousedown', () => {
-      if (!currentImage || currentImage.src.includes('placeholder-image.jpg')) return;
+      if (!currentImage || currentImage.src === '') return;
       moveInterval = setInterval(() => {
         let left = parseFloat(currentImage.style.left) || 0;
         let top = parseFloat(currentImage.style.top) || 0;
@@ -386,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
   traitImages.forEach(img => {
     if (img) {
       img.addEventListener('click', () => {
-        if (!img.src.includes('placeholder-image.jpg')) {
+        if (img.src !== '') {
           currentImage = img;
           updateCoordinates(img);
         }
@@ -406,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
       const key = `${traitIndex}-${variationName}`;
       if (variantHistories[key] && variantHistories[key].length > 1) {
-        variantHistories[key].pop(); // Remove the current position
+        variantHistories[key].pop();
         const previousPosition = variantHistories[key][variantHistories[key].length - 1];
         currentImage.style.left = `${previousPosition.left}px`;
         currentImage.style.top = `${previousPosition.top}px`;
