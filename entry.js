@@ -367,6 +367,9 @@ document.addEventListener('DOMContentLoaded', () => {
           container.dataset.traitIndex = traitIndex;
           container.dataset.variationName = variationName;
 
+          const imageWrapper = document.createElement('div');
+          imageWrapper.className = 'variation-image-wrapper';
+
           const img = document.createElement('img');
           img.src = url;
           img.alt = variationName;
@@ -376,14 +379,15 @@ document.addEventListener('DOMContentLoaded', () => {
           filename.className = 'variation-filename';
           filename.textContent = file.name;
 
-          container.appendChild(img);
+          imageWrapper.appendChild(img);
+          container.appendChild(imageWrapper);
           container.appendChild(filename);
           container.addEventListener('click', () => {
-            // Remove 'selected' class from all containers in this trait
-            const allContainers = grid.querySelectorAll('.variation-container');
-            allContainers.forEach(c => c.classList.remove('selected'));
-            // Add 'selected' class to the clicked container
-            container.classList.add('selected');
+            // Remove 'selected' class from all image wrappers in this trait
+            const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
+            allWrappers.forEach(w => w.classList.remove('selected'));
+            // Add 'selected' class to the clicked image wrapper
+            imageWrapper.classList.add('selected');
             selectVariation(traitIndex, variationName);
           });
 
@@ -393,9 +397,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (traits[traitIndex].variations.length > 0) {
           selectVariation(traitIndex, traits[traitIndex].variations[0].name);
           // Set the first variant as selected by default
-          const firstContainer = grid.querySelector('.variation-container');
-          if (firstContainer) {
-            firstContainer.classList.add('selected');
+          const firstWrapper = grid.querySelector('.variation-image-wrapper');
+          if (firstWrapper) {
+            firstWrapper.classList.add('selected');
           }
         }
 
@@ -427,12 +431,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // Renumber sections
       renumberTraits();
 
-      // Swap trait images
+      // Swap trait images and update their IDs
       const tempImage = traitImages[traitIndex];
       traitImages[traitIndex] = traitImages[traitIndex - 1];
       traitImages[traitIndex - 1] = tempImage;
-      traitImages[traitIndex].id = `preview-trait${traitIndex + 1}`;
-      traitImages[traitIndex - 1].id = `preview-trait${traitIndex}`;
+      traitImages.forEach((img, idx) => {
+        if (img) img.id = `preview-trait${idx + 1}`;
+      });
 
       // Update variantHistories keys
       const newVariantHistories = {};
@@ -485,12 +490,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // Renumber sections
       renumberTraits();
 
-      // Swap trait images
+      // Swap trait images and update their IDs
       const tempImage = traitImages[traitIndex];
       traitImages[traitIndex] = traitImages[traitIndex + 1];
       traitImages[traitIndex + 1] = tempImage;
-      traitImages[traitIndex].id = `preview-trait${traitIndex + 1}`;
-      traitImages[traitIndex + 1].id = `preview-trait${traitIndex + 2}`;
+      traitImages.forEach((img, idx) => {
+        if (img) img.id = `preview-trait${idx + 1}`;
+      });
 
       // Update variantHistories keys
       const newVariantHistories = {};
