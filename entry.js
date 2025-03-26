@@ -257,7 +257,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTraitListeners(traitIndex);
     setupDragAndDrop(newTraitImage, traitIndex); // Add drag-and-drop for the new trait
     updateZIndices();
-    updateMintButton();
     updatePreviewSamples(); // Update preview samples when a new trait is added
   }
 
@@ -426,6 +425,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectedWrapper) {
       selectedWrapper.classList.add('selected');
     }
+
+    // Reapply positions to the preview images
+    const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
+    if (previewImage && previewImage.src && trait.variations[trait.selected]) {
+      const key = `${traitIndex}-${trait.variations[trait.selected].name}`;
+      const savedPosition = localStorage.getItem(`trait${traitIndex + 1}-${trait.variations[trait.selected].name}-position`);
+      if (savedPosition) {
+        const { left, top } = JSON.parse(savedPosition);
+        previewImage.style.left = `${left}px`;
+        previewImage.style.top = `${top}px`;
+      }
+    }
   }
 
   function setupTraitListeners(traitIndex) {
@@ -513,124 +524,260 @@ document.addEventListener('DOMContentLoaded', () => {
     const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitIndex + 1}"]`);
 
     upArrow.addEventListener('click', () => {
-      if (traitIndex === 0) return; // Already at the top (Trait 1)
-      const currentTrait = traits[traitIndex];
-      const prevTrait = traits[traitIndex - 1];
-      const tempZIndex = currentTrait.zIndex;
-      currentTrait.zIndex = prevTrait.zIndex;
-      prevTrait.zIndex = tempZIndex;
-      traits[traitIndex] = prevTrait;
-      traits[traitIndex - 1] = currentTrait;
+      if (traitIndex === 0) {
+        // Special case: swap with the last trait
+        const lastIndex = traits.length - 1;
+        if (lastIndex === 0) return; // Only one trait, nothing to swap with
+        const currentTrait = traits[traitIndex];
+        const lastTrait = traits[lastIndex];
+        const tempZIndex = currentTrait.zIndex;
+        currentTrait.zIndex = lastTrait.zIndex;
+        lastTrait.zIndex = tempZIndex;
+        traits[traitIndex] = lastTrait;
+        traits[lastIndex] = currentTrait;
 
-      // Swap DOM elements
-      const currentSection = document.getElementById(`trait${traitIndex + 1}`);
-      const prevSection = document.getElementById(`trait${traitIndex}`);
-      traitContainer.insertBefore(currentSection, prevSection);
+        // Swap DOM elements
+        const currentSection = document.getElementById(`trait${traitIndex + 1}`);
+        const lastSection = document.getElementById(`trait${lastIndex + 1}`);
+        traitContainer.insertBefore(lastSection, currentSection);
+
+        // Swap trait images and update their IDs
+        const tempImage = traitImages[traitIndex];
+        traitImages[traitIndex] = traitImages[lastIndex];
+        traitImages[lastIndex] = tempImage;
+        traitImages.forEach((img, idx) => {
+          if (img) img.id = `preview-trait${idx + 1}`;
+        });
+
+        // Update variantHistories keys
+        const newVariantHistories = {};
+        Object.keys(variantHistories).forEach(key => {
+          const [oldIndex, variationName] = key.split('-');
+          const oldIndexNum = parseInt(oldIndex);
+          if (oldIndexNum === traitIndex) {
+            newVariantHistories[`${lastIndex}-${variationName}`] = variantHistories[key];
+          } else if (oldIndexNum === lastIndex) {
+            newVariantHistories[`${traitIndex}-${variationName}`] = variantHistories[key];
+          } else {
+            newVariantHistories[key] = variantHistories[key];
+          }
+        });
+        variantHistories = newVariantHistories;
+
+        // Update localStorage keys
+        for (let i = 0; i < traits.length; i++) {
+          const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
+          oldKeys.forEach(oldKey => {
+            const value = localStorage.getItem(oldKey);
+            const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
+            if (oldKey !== newKey) {
+              localStorage.setItem(newKey, value);
+              localStorage.removeItem(oldKey);
+            }
+          });
+        }
+
+        // Swap autoPositioned flags
+        const tempAutoPositioned = autoPositioned[traitIndex];
+        autoPositioned[traitIndex] = autoPositioned[lastIndex];
+        autoPositioned[lastIndex] = tempAutoPositioned;
+
+        // Refresh the DOM for the affected traits
+        refreshTraitGrid(traitIndex);
+        refreshTraitGrid(lastIndex);
+      } else {
+        // Normal case: swap with the previous trait
+        const currentTrait = traits[traitIndex];
+        const prevTrait = traits[traitIndex - 1];
+        const tempZIndex = currentTrait.zIndex;
+        currentTrait.zIndex = prevTrait.zIndex;
+        prevTrait.zIndex = tempZIndex;
+        traits[traitIndex] = prevTrait;
+        traits[traitIndex - 1] = currentTrait;
+
+        // Swap DOM elements
+        const currentSection = document.getElementById(`trait${traitIndex + 1}`);
+        const prevSection = document.getElementById(`trait${traitIndex}`);
+        traitContainer.insertBefore(currentSection, prevSection);
+
+        // Swap trait images and update their IDs
+        const tempImage = traitImages[traitIndex];
+        traitImages[traitIndex] = traitImages[traitIndex - 1];
+        traitImages[traitIndex - 1] = tempImage;
+        traitImages.forEach((img, idx) => {
+          if (img) img.id = `preview-trait${idx + 1}`;
+        });
+
+        // Update variantHistories keys
+        const newVariantHistories = {};
+        Object.keys(variantHistories).forEach(key => {
+          const [oldIndex, variationName] = key.split('-');
+          const oldIndexNum = parseInt(oldIndex);
+          if (oldIndexNum === traitIndex) {
+            newVariantHistories[`${traitIndex - 1}-${variationName}`] = variantHistories[key];
+          } else if (oldIndexNum === traitIndex - 1) {
+            newVariantHistories[`${traitIndex}-${variationName}`] = variantHistories[key];
+          } else {
+            newVariantHistories[key] = variantHistories[key];
+          }
+        });
+        variantHistories = newVariantHistories;
+
+        // Update localStorage keys
+        for (let i = 0; i < traits.length; i++) {
+          const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
+          oldKeys.forEach(oldKey => {
+            const value = localStorage.getItem(oldKey);
+            const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
+            if (oldKey !== newKey) {
+              localStorage.setItem(newKey, value);
+              localStorage.removeItem(oldKey);
+            }
+          });
+        }
+
+        // Swap autoPositioned flags
+        const tempAutoPositioned = autoPositioned[traitIndex];
+        autoPositioned[traitIndex] = autoPositioned[traitIndex - 1];
+        autoPositioned[traitIndex - 1] = tempAutoPositioned;
+
+        // Refresh the DOM for the affected traits
+        refreshTraitGrid(traitIndex - 1);
+        refreshTraitGrid(traitIndex);
+      }
 
       // Renumber sections
       renumberTraits();
-
-      // Swap trait images and update their IDs
-      const tempImage = traitImages[traitIndex];
-      traitImages[traitIndex] = traitImages[traitIndex - 1];
-      traitImages[traitIndex - 1] = tempImage;
-      traitImages.forEach((img, idx) => {
-        if (img) img.id = `preview-trait${idx + 1}`;
-      });
-
-      // Update variantHistories keys
-      const newVariantHistories = {};
-      Object.keys(variantHistories).forEach(key => {
-        const [oldIndex, variationName] = key.split('-');
-        const oldIndexNum = parseInt(oldIndex);
-        if (oldIndexNum === traitIndex) {
-          newVariantHistories[`${traitIndex - 1}-${variationName}`] = variantHistories[key];
-        } else if (oldIndexNum === traitIndex - 1) {
-          newVariantHistories[`${traitIndex}-${variationName}`] = variantHistories[key];
-        } else {
-          newVariantHistories[key] = variantHistories[key];
-        }
-      });
-      variantHistories = newVariantHistories;
-
-      // Update localStorage keys
-      for (let i = 0; i < traits.length; i++) {
-        const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
-        oldKeys.forEach(oldKey => {
-          const value = localStorage.getItem(oldKey);
-          const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
-          if (oldKey !== newKey) {
-            localStorage.setItem(newKey, value);
-            localStorage.removeItem(oldKey);
-          }
-        });
-      }
-
-      // Refresh the DOM for the affected traits
-      refreshTraitGrid(traitIndex - 1);
-      refreshTraitGrid(traitIndex);
 
       updateZIndices();
       updatePreviewSamples(); // Update preview samples when trait order changes
     });
 
     downArrow.addEventListener('click', () => {
-      if (traitIndex === traits.length - 1) return; // Already at the bottom
-      const currentTrait = traits[traitIndex];
-      const nextTrait = traits[traitIndex + 1];
-      const tempZIndex = currentTrait.zIndex;
-      currentTrait.zIndex = nextTrait.zIndex;
-      nextTrait.zIndex = tempZIndex;
-      traits[traitIndex] = nextTrait;
-      traits[traitIndex + 1] = currentTrait;
+      if (traitIndex === traits.length - 1) {
+        // Special case: swap with the first trait
+        const firstIndex = 0;
+        if (traits.length === 1) return; // Only one trait, nothing to swap with
+        const currentTrait = traits[traitIndex];
+        const firstTrait = traits[firstIndex];
+        const tempZIndex = currentTrait.zIndex;
+        currentTrait.zIndex = firstTrait.zIndex;
+        firstTrait.zIndex = tempZIndex;
+        traits[traitIndex] = firstTrait;
+        traits[firstIndex] = currentTrait;
 
-      // Swap DOM elements
-      const currentSection = document.getElementById(`trait${traitIndex + 1}`);
-      const nextSection = document.getElementById(`trait${traitIndex + 2}`);
-      traitContainer.insertBefore(nextSection, currentSection);
+        // Swap DOM elements
+        const currentSection = document.getElementById(`trait${traitIndex + 1}`);
+        const firstSection = document.getElementById(`trait${firstIndex + 1}`);
+        traitContainer.insertBefore(currentSection, firstSection);
+
+        // Swap trait images and update their IDs
+        const tempImage = traitImages[traitIndex];
+        traitImages[traitIndex] = traitImages[firstIndex];
+        traitImages[firstIndex] = tempImage;
+        traitImages.forEach((img, idx) => {
+          if (img) img.id = `preview-trait${idx + 1}`;
+        });
+
+        // Update variantHistories keys
+        const newVariantHistories = {};
+        Object.keys(variantHistories).forEach(key => {
+          const [oldIndex, variationName] = key.split('-');
+          const oldIndexNum = parseInt(oldIndex);
+          if (oldIndexNum === traitIndex) {
+            newVariantHistories[`${firstIndex}-${variationName}`] = variantHistories[key];
+          } else if (oldIndexNum === firstIndex) {
+            newVariantHistories[`${traitIndex}-${variationName}`] = variantHistories[key];
+          } else {
+            newVariantHistories[key] = variantHistories[key];
+          }
+        });
+        variantHistories = newVariantHistories;
+
+        // Update localStorage keys
+        for (let i = 0; i < traits.length; i++) {
+          const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
+          oldKeys.forEach(oldKey => {
+            const value = localStorage.getItem(oldKey);
+            const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
+            if (oldKey !== newKey) {
+              localStorage.setItem(newKey, value);
+              localStorage.removeItem(oldKey);
+            }
+          });
+        }
+
+        // Swap autoPositioned flags
+        const tempAutoPositioned = autoPositioned[traitIndex];
+        autoPositioned[traitIndex] = autoPositioned[firstIndex];
+        autoPositioned[firstIndex] = tempAutoPositioned;
+
+        // Refresh the DOM for the affected traits
+        refreshTraitGrid(firstIndex);
+        refreshTraitGrid(traitIndex);
+      } else {
+        // Normal case: swap with the next trait
+        const currentTrait = traits[traitIndex];
+        const nextTrait = traits[traitIndex + 1];
+        const tempZIndex = currentTrait.zIndex;
+        currentTrait.zIndex = nextTrait.zIndex;
+        nextTrait.zIndex = tempZIndex;
+        traits[traitIndex] = nextTrait;
+        traits[traitIndex + 1] = currentTrait;
+
+        // Swap DOM elements
+        const currentSection = document.getElementById(`trait${traitIndex + 1}`);
+        const nextSection = document.getElementById(`trait${traitIndex + 2}`);
+        traitContainer.insertBefore(nextSection, currentSection);
+
+        // Swap trait images and update their IDs
+        const tempImage = traitImages[traitIndex];
+        traitImages[traitIndex] = traitImages[traitIndex + 1];
+        traitImages[traitIndex + 1] = tempImage;
+        traitImages.forEach((img, idx) => {
+          if (img) img.id = `preview-trait${idx + 1}`;
+        });
+
+        // Update variantHistories keys
+        const newVariantHistories = {};
+        Object.keys(variantHistories).forEach(key => {
+          const [oldIndex, variationName] = key.split('-');
+          const oldIndexNum = parseInt(oldIndex);
+          if (oldIndexNum === traitIndex) {
+            newVariantHistories[`${traitIndex + 1}-${variationName}`] = variantHistories[key];
+          } else if (oldIndexNum === traitIndex + 1) {
+            newVariantHistories[`${traitIndex}-${variationName}`] = variantHistories[key];
+          } else {
+            newVariantHistories[key] = variantHistories[key];
+          }
+        });
+        variantHistories = newVariantHistories;
+
+        // Update localStorage keys
+        for (let i = 0; i < traits.length; i++) {
+          const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
+          oldKeys.forEach(oldKey => {
+            const value = localStorage.getItem(oldKey);
+            const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
+            if (oldKey !== newKey) {
+              localStorage.setItem(newKey, value);
+              localStorage.removeItem(oldKey);
+            }
+          });
+        }
+
+        // Swap autoPositioned flags
+        const tempAutoPositioned = autoPositioned[traitIndex];
+        autoPositioned[traitIndex] = autoPositioned[traitIndex + 1];
+        autoPositioned[traitIndex + 1] = tempAutoPositioned;
+
+        // Refresh the DOM for the affected traits
+        refreshTraitGrid(traitIndex);
+        refreshTraitGrid(traitIndex + 1);
+      }
 
       // Renumber sections
       renumberTraits();
-
-      // Swap trait images and update their IDs
-      const tempImage = traitImages[traitIndex];
-      traitImages[traitIndex] = traitImages[traitIndex + 1];
-      traitImages[traitIndex + 1] = tempImage;
-      traitImages.forEach((img, idx) => {
-        if (img) img.id = `preview-trait${idx + 1}`;
-      });
-
-      // Update variantHistories keys
-      const newVariantHistories = {};
-      Object.keys(variantHistories).forEach(key => {
-        const [oldIndex, variationName] = key.split('-');
-        const oldIndexNum = parseInt(oldIndex);
-        if (oldIndexNum === traitIndex) {
-          newVariantHistories[`${traitIndex + 1}-${variationName}`] = variantHistories[key];
-        } else if (oldIndexNum === traitIndex + 1) {
-          newVariantHistories[`${traitIndex}-${variationName}`] = variantHistories[key];
-        } else {
-          newVariantHistories[key] = variantHistories[key];
-        }
-      });
-      variantHistories = newVariantHistories;
-
-      // Update localStorage keys
-      for (let i = 0; i < traits.length; i++) {
-        const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i + 1}-`));
-        oldKeys.forEach(oldKey => {
-          const value = localStorage.getItem(oldKey);
-          const newKey = oldKey.replace(/trait\d+-/, `trait${i + 1}-`);
-          if (oldKey !== newKey) {
-            localStorage.setItem(newKey, value);
-            localStorage.removeItem(oldKey);
-          }
-        });
-      }
-
-      // Refresh the DOM for the affected traits
-      refreshTraitGrid(traitIndex);
-      refreshTraitGrid(traitIndex + 1);
 
       updateZIndices();
       updatePreviewSamples(); // Update preview samples when trait order changes
@@ -679,7 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateZIndices() {
     traitImages.forEach((img, index) => {
-      if (img) {
+      if (img && img !== currentImage) { // Don't update z-index of the currently selected image
         img.style.zIndex = traits[index].zIndex;
       }
     });
@@ -730,9 +877,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
       currentImage = previewImage;
+      // Set the z-index of the selected image to a high value to ensure it's on top
       traitImages.forEach(img => {
         if (img === previewImage) {
-          img.style.zIndex = traits[traitIndex].zIndex;
+          img.style.zIndex = 1000; // High z-index to bring it to the front
+        } else {
+          const idx = traitImages.indexOf(img);
+          img.style.zIndex = traits[idx].zIndex; // Reset others to their trait z-index
         }
       });
       updateCoordinates(previewImage);
@@ -1033,8 +1184,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentImage.style.top = `${previousPosition.top}px`;
         localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(previousPosition));
         updateCoordinates(currentImage);
-        updateSubsequentTraits(traitIndex, variationName, previousPosition);
         updateSamplePositions(traitIndex, variationName, previousPosition);
+        updateSubsequentTraits(traitIndex, variationName, previousPosition);
       }
     }
   });
