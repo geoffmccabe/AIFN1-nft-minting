@@ -627,6 +627,20 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = variant.url;
         img.alt = `Sample ${i + 1} - Trait ${j + 1}`;
         img.style.zIndex = traits[j].zIndex;
+
+        // Apply the same positioning as in the main preview panel, scaled down
+        const key = `${j}-${variant.name}`;
+        const savedPosition = localStorage.getItem(`trait${j + 1}-${variant.name}-position`);
+        if (savedPosition) {
+          const { left, top } = JSON.parse(savedPosition);
+          const scale = 140 / 600; // Scale factor from 600px to 140px
+          img.style.left = `${left * scale}px`;
+          img.style.top = `${top * scale}px`;
+        } else {
+          img.style.left = '0px';
+          img.style.top = '0px';
+        }
+
         sampleContainer.appendChild(img);
       }
 
