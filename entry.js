@@ -203,6 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
 /* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
 
 
@@ -228,7 +230,7 @@ function addTrait(traitIndex, initial = false) {
   const addTraitBtn = document.createElement('span');
   addTraitBtn.className = 'add-trait';
   addTraitBtn.setAttribute('data-trait', `${traitIndex + 1}`);
-  addTraitBtn.setAttribute('title', 'Insert New Trait Here'); // Tooltip for hover
+  addTraitBtn.setAttribute('title', 'Insert New Trait Here'); // Native tooltip
   addTraitBtn.textContent = '➕';
   const removeTraitBtn = document.createElement('span');
   removeTraitBtn.className = 'remove-trait';
@@ -272,7 +274,14 @@ function addTrait(traitIndex, initial = false) {
   traitSection.appendChild(fileInputLabel);
   traitSection.appendChild(variantCountSpan);
   traitSection.appendChild(grid);
-  traitContainer.appendChild(traitSection);
+
+  // Insert the trait section at the correct position
+  const nextSection = traitContainer.querySelector(`#trait${traitIndex + 2}`);
+  if (nextSection) {
+    traitContainer.insertBefore(traitSection, nextSection);
+  } else {
+    traitContainer.appendChild(traitSection);
+  }
 
   const newTraitImage = document.createElement('img');
   newTraitImage.id = `preview-trait${traitIndex + 1}`;
@@ -280,8 +289,7 @@ function addTrait(traitIndex, initial = false) {
   newTraitImage.alt = `Trait ${traitIndex + 1}`;
   newTraitImage.style.zIndex = traits[traitIndex].zIndex;
   if (preview) preview.appendChild(newTraitImage);
-  // Use push to ensure contiguous array
-  traitImages.push(newTraitImage);
+  traitImages[traitIndex] = newTraitImage;
 
   // Update z-indices after adding the trait
   for (let i = 0; i < traits.length; i++) {
@@ -330,7 +338,7 @@ function removeTrait(traitIndex) {
       const section = document.getElementById(`trait${i + 2}`);
       if (section) {
         section.id = `trait${i + 1}`;
-        section.querySelector('h2').textContent = `Trait ${i + 1}`;
+        section.querySelector('h2').textContent = `Trait ${i + 1}${traits[i].name ? ` - ${traits[i].name}` : ''}`;
         section.querySelector('input[type="text"]').id = `trait${i + 1}-name`;
         section.querySelector('input[type="file"]').id = `trait${i + 1}-files`;
         section.querySelector('.file-input-label').htmlFor = `trait${i + 1}-files`;
@@ -417,6 +425,18 @@ function setupTraitListeners(traitIndex) {
   const fileInputLabel = document.querySelector(`label[for="trait${traitIndex + 1}-files"]`);
   const variantCountSpan = document.getElementById(`trait${traitIndex + 1}-variant-count`);
   const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
+
+  if (nameInput) {
+    // Update title when the user types a name
+    nameInput.addEventListener('input', () => {
+      const traitName = nameInput.value.trim();
+      traits[traitIndex].name = traitName;
+      const title = document.querySelector(`#trait${traitIndex + 1} h2`);
+      if (title) {
+        title.textContent = `Trait ${traitIndex + 1}${traitName ? ` - ${traitName}` : ''}`;
+      }
+    });
+  }
 
   if (fileInput && nameInput && grid && fileInputLabel && variantCountSpan) {
     fileInput.addEventListener('change', async (event) => {
@@ -509,7 +529,6 @@ function setupTraitListeners(traitIndex) {
       const tempImage = traitImages[traitIndex];
       traitImages[traitIndex] = traitImages[lastIndex];
       traitImages[lastIndex] = tempImage;
-      traitImages.forEach((img, idx) => { if (img) img.id = `preview-trait${idx + 1}`; });
 
       const newVariantHistories = {};
       Object.keys(variantHistories).forEach(key => {
@@ -546,6 +565,7 @@ function setupTraitListeners(traitIndex) {
       autoPositioned[traitIndex] = autoPositioned[lastIndex];
       autoPositioned[lastIndex] = tempAutoPositioned;
 
+      renumberTraits();
       refreshTraitGrid(traitIndex);
       refreshTraitGrid(lastIndex);
     } else {
@@ -564,7 +584,6 @@ function setupTraitListeners(traitIndex) {
       const tempImage = traitImages[traitIndex];
       traitImages[traitIndex] = traitImages[traitIndex - 1];
       traitImages[traitIndex - 1] = tempImage;
-      traitImages.forEach((img, idx) => { if (img) img.id = `preview-trait${idx + 1}`; });
 
       const newVariantHistories = {};
       Object.keys(variantHistories).forEach(key => {
@@ -601,10 +620,10 @@ function setupTraitListeners(traitIndex) {
       autoPositioned[traitIndex] = autoPositioned[traitIndex - 1];
       autoPositioned[traitIndex - 1] = tempAutoPositioned;
 
+      renumberTraits();
       refreshTraitGrid(traitIndex - 1);
       refreshTraitGrid(traitIndex);
     }
-    renumberTraits();
     updateZIndices();
     updatePreviewSamples();
   });
@@ -628,7 +647,6 @@ function setupTraitListeners(traitIndex) {
       const tempImage = traitImages[traitIndex];
       traitImages[traitIndex] = traitImages[firstIndex];
       traitImages[firstIndex] = tempImage;
-      traitImages.forEach((img, idx) => { if (img) img.id = `preview-trait${idx + 1}`; });
 
       const newVariantHistories = {};
       Object.keys(variantHistories).forEach(key => {
@@ -665,6 +683,7 @@ function setupTraitListeners(traitIndex) {
       autoPositioned[traitIndex] = autoPositioned[firstIndex];
       autoPositioned[firstIndex] = tempAutoPositioned;
 
+      renumberTraits();
       refreshTraitGrid(firstIndex);
       refreshTraitGrid(traitIndex);
     } else {
@@ -683,7 +702,6 @@ function setupTraitListeners(traitIndex) {
       const tempImage = traitImages[traitIndex];
       traitImages[traitIndex] = traitImages[traitIndex + 1];
       traitImages[traitIndex + 1] = tempImage;
-      traitImages.forEach((img, idx) => { if (img) img.id = `preview-trait${idx + 1}`; });
 
       const newVariantHistories = {};
       Object.keys(variantHistories).forEach(key => {
@@ -720,10 +738,10 @@ function setupTraitListeners(traitIndex) {
       autoPositioned[traitIndex] = autoPositioned[traitIndex + 1];
       autoPositioned[traitIndex + 1] = tempAutoPositioned;
 
+      renumberTraits();
       refreshTraitGrid(traitIndex);
       refreshTraitGrid(traitIndex + 1);
     }
-    renumberTraits();
     updateZIndices();
     updatePreviewSamples();
   });
@@ -732,18 +750,37 @@ function setupTraitListeners(traitIndex) {
     if (traits.length < 20) {
       // Insert new trait at the current index, shifting others down
       traits.splice(traitIndex, 0, { name: '', variations: [], selected: 0, zIndex: 0 });
-      // Shift traitImages
       traitImages.splice(traitIndex, 0, null);
-      // Shift autoPositioned
       autoPositioned.splice(traitIndex, 0, false);
-      // Update DOM: remove all trait sections and re-add them
-      const existingSections = Array.from(traitContainer.querySelectorAll('.trait-section'));
-      existingSections.forEach(section => section.remove());
-      // Clear traitImages DOM elements
-      traitImages.forEach(img => { if (img) img.remove(); });
-      traitImages = [];
-      // Re-add all traits
-      traits.forEach((_, idx) => addTrait(idx));
+
+      // Shift variantHistories and localStorage keys
+      const newVariantHistories = {};
+      Object.keys(variantHistories).forEach(key => {
+        const [oldIndex, variationName] = key.split('-');
+        const oldIndexNum = parseInt(oldIndex);
+        if (oldIndexNum >= traitIndex) {
+          newVariantHistories[`${oldIndexNum + 1}-${variationName}`] = variantHistories[key];
+        } else {
+          newVariantHistories[key] = variantHistories[key];
+        }
+      });
+      variantHistories = newVariantHistories;
+
+      for (let i = traits.length - 1; i >= traitIndex; i--) {
+        const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i}-`));
+        oldKeys.forEach(oldKey => {
+          const value = localStorage.getItem(oldKey);
+          const newKey = oldKey.replace(`trait${i}-`, `trait${i + 1}-`);
+          localStorage.setItem(newKey, value);
+          localStorage.removeItem(oldKey);
+        });
+      }
+
+      // Add the new trait at the correct position
+      addTrait(traitIndex);
+      renumberTraits();
+      updateZIndices();
+      updatePreviewSamples();
     }
   });
 
@@ -808,7 +845,7 @@ function renumberTraits() {
   const sections = traitContainer.querySelectorAll('.trait-section');
   sections.forEach((section, index) => {
     section.id = `trait${index + 1}`;
-    section.querySelector('h2').textContent = `Trait ${index + 1}`;
+    section.querySelector('h2').textContent = `Trait ${index + 1}${traits[index].name ? ` - ${traits[index].name}` : ''}`;
     section.querySelector('input[type="text"]').id = `trait${index + 1}-name`;
     section.querySelector('input[type="file"]').id = `trait${index + 1}-files`;
     section.querySelector('.file-input-label').htmlFor = `trait${index + 1}-files`;
@@ -830,20 +867,21 @@ function updateMintButton() {
 
 
 
+
+
 /* Section 3 - PREVIEW AND POSITION MANAGEMENT */
 
 
 function updateZIndices() {
   traitImages.forEach((img, index) => {
     if (img) {
+      const baseZIndex = (traits.length - index) * 100; // Scale z-indices (e.g., 300, 200, 100)
       if (img.classList.contains('dragging')) {
-        // Temporarily increase z-index for dragging, but respect trait order
-        const baseZIndex = traits[index].zIndex;
-        img.style.zIndex = baseZIndex + 100; // Higher than its normal z-index but lower than higher traits
+        img.style.zIndex = baseZIndex + 10; // Dragging: just above its own trait (e.g., 110 for Trait 2)
       } else if (img === currentImage) {
-        img.style.zIndex = traits[index].zIndex + 50; // Selected but not dragging
+        img.style.zIndex = baseZIndex + 5; // Selected: slightly above its own trait (e.g., 105 for Trait 2)
       } else {
-        img.style.zIndex = traits[index].zIndex;
+        img.style.zIndex = baseZIndex; // Normal: base z-index (e.g., 100 for Trait 2)
       }
     }
   });
@@ -1050,7 +1088,7 @@ function updatePreviewSamples() {
       const img = document.createElement('img');
       img.src = variant.url;
       img.alt = `Sample ${i + 1} - Trait ${j + 1}`;
-      img.style.zIndex = traits[j].zIndex;
+      img.style.zIndex = (traits.length - j) * 100;
 
       const key = `${j}-${variant.name}`;
       const savedPosition = localStorage.getItem(`trait${j + 1}-${variant.name}-position`);
