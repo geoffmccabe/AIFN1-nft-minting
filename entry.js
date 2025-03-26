@@ -555,6 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
     if (previewImage) {
       previewImage.src = trait.variations[variationIndex].url;
+      previewImage.style.display = 'block'; // Show the image when a variant is selected
       const key = `${traitIndex}-${variationName}`;
       const savedPosition = localStorage.getItem(`trait${traitIndex + 1}-${variationName}-position`);
       if (savedPosition) {
