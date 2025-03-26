@@ -613,9 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Generate 20 random combinations (5 rows x 4 columns)
     for (let i = 0; i < 20; i++) {
       const sampleContainer = document.createElement('div');
-      sampleContainer.style.position = 'relative';
-      sampleContainer.style.width = '140px';
-      sampleContainer.style.height = '140px';
+      sampleContainer.className = 'sample-container';
 
       // For each trait, select a random variant
       for (let j = 0; j < traits.length; j++) {
@@ -628,7 +626,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const img = document.createElement('img');
         img.src = variant.url;
         img.alt = `Sample ${i + 1} - Trait ${j + 1}`;
-        img.style.position = 'absolute';
         img.style.zIndex = traits[j].zIndex;
         sampleContainer.appendChild(img);
       }
