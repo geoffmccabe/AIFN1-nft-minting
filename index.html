@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Mint Your AIFN NFT</title>
-  <!-- Point to the uploaded favicon -->
   <link rel="icon" type="image/x-icon" href="/AIFN1-nft-minting/favicon.ico">
   <style>
     body {
@@ -76,14 +75,14 @@
       object-fit: contain;
     }
     #preview-background { z-index: 1; }
-    #preview-trait1 { z-index: 4; }
-    #preview-trait2 { z-index: 3; }
-    #preview-trait3 { z-index: 2; }
+    #preview-trait1 { z-index: 2; } /* Bottom layer */
+    #preview-trait2 { z-index: 3; } /* Middle layer */
+    #preview-trait3 { z-index: 4; } /* Top layer */
     #preview img[src="https://archive.org/download/placeholder-image/placeholder-image.jpg"] {
       z-index: 1 !important;
     }
     #preview img.dragging {
-      box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5); /* Light glow effect while dragging */
+      box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
     }
     #controls {
       display: flex;
@@ -138,7 +137,7 @@
     }
     #prompt-section textarea {
       width: 100%;
-      height: 140px; /* Increased from 100px to 140px for two more lines */
+      height: 140px;
       resize: none;
     }
     #prompt-section label {
@@ -147,11 +146,8 @@
       font-weight: bold;
     }
   </style>
-  <!-- Load Ethers.js for blockchain interactions -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Load config.js -->
   <script src="config.js"></script>
-  <!-- Load the application code -->
   <script src="entry.js"></script>
 </head>
 <body>
