@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
   const coordinates = document.getElementById('coordinates');
   const directionEmojis = document.querySelectorAll('.direction-emoji');
+  const generateButton = document.getElementById('generate-background');
 
   let isDragging = false;
   let currentImage = null;
@@ -28,10 +29,27 @@ document.addEventListener('DOMContentLoaded', () => {
   let offsetY = 0;
   let moveInterval = null;
   let positionHistory = []; // Stack to store position history for undo
+  let timerInterval = null; // For the processing timer
+  let lastMovedPosition = null; // Store the last moved position for propagation
+
+  // Create click sound
+  const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 
   // Fetch background with user prompt
   async function fetchBackground() {
     try {
+      // Play click sound
+      clickSound.play().catch(error => console.error('Error playing click sound:', error));
+
+      // Start timer
+      let seconds = 0;
+      generateButton.disabled = true;
+      generateButton.innerText = `Processing ${seconds}...`;
+      timerInterval = setInterval(() => {
+        seconds++;
+        generateButton.innerText = `Processing ${seconds}...`;
+      }, 1000);
+
       const userPrompt = document.getElementById('user-prompt') ? document.getElementById('user-prompt').value.trim() : '';
       const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background${userPrompt ? `?prompt=${encodeURIComponent(userPrompt)}` : ''}`;
       const response = await fetch(url);
@@ -59,6 +77,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (backgroundImage) backgroundImage.src = placeholder;
       if (previewBackground) previewBackground.src = placeholder;
       if (backgroundMetadata) backgroundMetadata.innerText = 'Failed to load background';
+    } finally {
+      // Stop timer and reset button
+      clearInterval(timerInterval);
+      generateButton.innerText = 'Generate Bkgd';
+      generateButton.disabled = false;
     }
   }
 
@@ -100,6 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save to localStorage
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-manuallyMoved`, 'true');
+    // Update last moved position
+    lastMovedPosition = position;
     // Update subsequent traits if they haven't been manually moved
     updateSubsequentTraits(traitIndex, variationName, position);
   }
@@ -117,9 +142,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!manuallyMoved) {
           console.log(`Updating position for Trait ${currentTraitIndex + 1} variant ${nextVariationName} to ${position.left}, ${position.top}`);
           localStorage.setItem(`trait${currentTraitIndex + 1}-${nextVariationName}-position`, JSON.stringify(position));
+          // If the currently selected variant is being viewed, update its position
+          if (traits[currentTraitIndex].selected === i) {
+            const previewImage = document.getElementById(`preview-trait${currentTraitIndex + 1}`);
+            if (previewImage && !previewImage.src.includes('placeholder-image.jpg')) {
+              previewImage.style.left = `${position.left}px`;
+              previewImage.style.top = `${position.top}px`;
+            }
+          }
         } else {
           console.log(`Stopping propagation at Trait ${currentTraitIndex + 1} variant ${nextVariationName} because it was manually moved`);
-          break; // Stop if a variant has been manually moved
         }
       }
     } else {
@@ -133,20 +165,23 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Trait ${traitIndex + 1} has no variations, skipping`);
         continue; // Skip if no variations
       }
-      const nextVariationName = nextTrait.variations[nextTrait.selected].name;
-      const manuallyMoved = localStorage.getItem(`trait${traitIndex + 1}-${nextVariationName}-manuallyMoved`);
-      if (!manuallyMoved) {
-        console.log(`Updating position for Trait ${traitIndex + 1} variant ${nextVariationName} to ${position.left}, ${position.top}`);
-        localStorage.setItem(`trait${traitIndex + 1}-${nextVariationName}-position`, JSON.stringify(position));
-        // If the currently selected variant is being viewed, update its position
-        const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
-        if (previewImage && !previewImage.src.includes('placeholder-image.jpg')) {
-          previewImage.style.left = `${position.left}px`;
-          previewImage.style.top = `${position.top}px`;
+      for (let i = 0; i < nextTrait.variations.length; i++) {
+        const nextVariationName = nextTrait.variations[i].name;
+        const manuallyMoved = localStorage.getItem(`trait${traitIndex + 1}-${nextVariationName}-manuallyMoved`);
+        if (!manuallyMoved) {
+          console.log(`Updating position for Trait ${traitIndex + 1} variant ${nextVariationName} to ${position.left}, ${position.top}`);
+          localStorage.setItem(`trait${traitIndex + 1}-${nextVariationName}-position`, JSON.stringify(position));
+          // If the currently selected variant is being viewed, update its position
+          if (traits[traitIndex].selected === i) {
+            const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
+            if (previewImage && !previewImage.src.includes('placeholder-image.jpg')) {
+              previewImage.style.left = `${position.left}px`;
+              previewImage.style.top = `${position.top}px`;
+            }
+          }
+        } else {
+          console.log(`Trait ${traitIndex + 1} variant ${nextVariationName} was manually moved, but continuing to next variants`);
         }
-      } else {
-        console.log(`Stopping propagation at Trait ${traitIndex + 1} variant ${nextVariationName} because it was manually moved`);
-        break; // Stop if a variant has been manually moved
       }
     }
   }
@@ -215,11 +250,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const { left, top } = JSON.parse(savedPosition);
         previewImage.style.left = `${left}px`;
         previewImage.style.top = `${top}px`;
+      } else if (lastMovedPosition) {
+        // Use the last moved position if no specific position is set
+        previewImage.style.left = `${lastMovedPosition.left}px`;
+        previewImage.style.top = `${lastMovedPosition.top}px`;
       } else {
         // Reset position if no saved position exists
         previewImage.style.left = '0px';
         previewImage.style.top = '0px';
       }
+      // Set the current image to the selected variant and adjust z-index
+      currentImage = previewImage;
+      traitImages.forEach(img => {
+        if (img === previewImage) {
+          img.style.zIndex = 10; // Bring the selected variant to the front
+        } else if (!img.src.includes('placeholder-image.jpg')) {
+          img.style.zIndex = parseInt(img.style.zIndex || 0) - 1; // Lower others
+        }
+      });
       updateCoordinates(previewImage);
     }
   }
@@ -239,12 +287,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       img.addEventListener('mousedown', (e) => {
         if (img.src.includes('placeholder-image.jpg')) return;
+        if (img !== currentImage) return; // Only allow dragging the currently selected image
         isDragging = true;
         currentImage = img;
         const rect = img.getBoundingClientRect();
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
         img.style.cursor = 'grabbing';
+        img.classList.add('dragging'); // Add glow effect
         updateCoordinates(img);
       });
 
@@ -255,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
           savePosition(currentImage, traitIndex, variationName);
           isDragging = false;
           currentImage.style.cursor = 'grab';
-          currentImage = null;
+          currentImage.classList.remove('dragging'); // Remove glow effect
         }
       });
     }
@@ -283,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
         savePosition(currentImage, traitIndex, variationName);
         isDragging = false;
         currentImage.style.cursor = 'grab';
-        currentImage = null;
+        currentImage.classList.remove('dragging'); // Remove glow effect
       }
     });
 
@@ -294,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         savePosition(currentImage, traitIndex, variationName);
         isDragging = false;
         currentImage.style.cursor = 'grab';
-        currentImage = null;
+        currentImage.classList.remove('dragging'); // Remove glow effect
       }
     });
   }
@@ -319,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         currentImage.style.left = `${left}px`;
         currentImage.style.top = `${top}px`;
+        currentImage.classList.add('dragging'); // Add glow effect
         updateCoordinates(currentImage);
       }, 50); // 20 pixels per second = 1 pixel every 50ms
     });
@@ -331,6 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const traitIndex = traitImages.indexOf(currentImage);
           const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
           savePosition(currentImage, traitIndex, variationName);
+          currentImage.classList.remove('dragging'); // Remove glow effect
         }
       }
     });
@@ -343,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const traitIndex = traitImages.indexOf(currentImage);
           const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
           savePosition(currentImage, traitIndex, variationName);
+          currentImage.classList.remove('dragging'); // Remove glow effect
         }
       }
     });
@@ -362,21 +415,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Add event listener for Ctrl-Z (PC) or Cmd-Z (Mac) to undo movement
   document.addEventListener('keydown', (e) => {
+    console.log('Keydown event:', e.key, 'Ctrl:', e.ctrlKey, 'Meta:', e.metaKey);
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       e.preventDefault(); // Prevent browser undo behavior
+      console.log('Undo triggered, positionHistory length:', positionHistory.length);
       if (positionHistory.length > 0) {
         const lastMove = positionHistory[positionHistory.length - 1];
         const { traitIndex, variationName, previousPosition } = lastMove;
         const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
         if (previewImage && traits[traitIndex].variations[traits[traitIndex].selected].name === variationName) {
+          console.log(`Undoing move for Trait ${traitIndex + 1} variant ${variationName} to ${previousPosition.left}, ${previousPosition.top}`);
           positionHistory.pop(); // Remove the last move from history
           previewImage.style.left = `${previousPosition.left}px`;
           previewImage.style.top = `${previousPosition.top}px`;
           updateCoordinates(previewImage);
           localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(previousPosition));
+          // Update last moved position
+          lastMovedPosition = previousPosition;
           // Update subsequent traits if they haven't been manually moved
           updateSubsequentTraits(traitIndex, variationName, previousPosition);
+        } else {
+          console.log(`Cannot undo: Current variant does not match last moved variant (Trait ${traitIndex + 1}, Variant ${variationName})`);
         }
+      } else {
+        console.log('No moves to undo');
       }
     }
   });
