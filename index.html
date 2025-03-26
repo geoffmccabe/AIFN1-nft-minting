@@ -144,7 +144,9 @@
     line-height: 22px;
     box-sizing: border-box;
     text-align: center;
-    width: 120px;
+    min-width: 120px; /* Minimum width for "Choose Files" */
+    width: auto; /* Allow width to grow */
+    white-space: nowrap; /* Prevent text wrapping */
     vertical-align: middle; /* Ensure alignment with input */
   }
   .file-input-label:hover {
@@ -393,7 +395,7 @@
 
 <!-- Section 5 - BODY OPENING AND LEFT PANEL -->
 <body>
-  <div id="version">Version 75</div>
+  <div id="version">Version 77</div>
   <div id="left-panel">
     <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
     <div id="trait-container">
