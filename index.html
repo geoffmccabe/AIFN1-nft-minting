@@ -91,9 +91,11 @@
       cursor: pointer;
     }
     .variation-image-wrapper {
+      width: 100px; /* Match the image width */
+      height: 100px; /* Match the image height */
       border: 1px solid #ccc;
       border-radius: 5px;
-      padding: 5px;
+      box-sizing: border-box; /* Ensure border is included in width/height */
     }
     .variation-image-wrapper.selected {
       border: 5px solid #f4c149; /* Orange border when selected */
@@ -312,7 +314,7 @@
   <script src="entry.js"></script>
 </head>
 <body>
-  <div id="version">Version 69</div>
+  <div id="version">Version 70</div>
   <div id="left-panel">
     <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
     <div id="trait-container">
