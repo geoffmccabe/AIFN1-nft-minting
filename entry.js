@@ -32,8 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let timerInterval = null; // For the processing timer
   let lastMovedPosition = null; // Store the last moved position for propagation
 
-  // Create click sound
+  // Create click sound and set volume
   const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
+  clickSound.volume = 0.25; // Reduce volume to 25%
 
   // Fetch background with user prompt
   async function fetchBackground() {
@@ -47,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
       generateButton.innerText = `Processing ${seconds}...`;
       timerInterval = setInterval(() => {
         seconds++;
+        console.log(`Timer update: ${seconds} seconds`);
         generateButton.innerText = `Processing ${seconds}...`;
       }, 1000);
 
@@ -151,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
         } else {
-          console.log(`Stopping propagation at Trait ${currentTraitIndex + 1} variant ${nextVariationName} because it was manually moved`);
+          console.log(`Trait ${currentTraitIndex + 1} variant ${nextVariationName} was manually moved, but continuing to next variants`);
         }
       }
     } else {
@@ -413,9 +415,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Add event listener for Ctrl-Z (PC) or Cmd-Z (Mac) to undo movement
+  // Add event listener for Cmd-Z (Mac) to undo movement
   document.addEventListener('keydown', (e) => {
-    console.log('Keydown event:', e.key, 'Ctrl:', e.ctrlKey, 'Meta:', e.metaKey);
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       e.preventDefault(); // Prevent browser undo behavior
       console.log('Undo triggered, positionHistory length:', positionHistory.length);
