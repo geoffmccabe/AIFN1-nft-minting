@@ -1,3 +1,4 @@
+// Section 1 - HTML HEADER AND METADATA //
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +9,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
   <!-- Include Poppins font for modern look -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
+  <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="entry.js"></script>
+</head>
+
+
+
+// Section 2 - STYLE/CSS //
+<style>
   body {
     font-family: 'Poppins', sans-serif;
     background-image: url('/AIFN1-nft-minting/images/background.webp');
@@ -20,7 +29,7 @@
     margin: 0;
     display: flex;
     position: relative;
-    min-height: 100vh; /* Added for full height coverage */
+    min-height: 100vh;
   }
   #version {
     position: absolute;
@@ -34,12 +43,12 @@
     flex: 1;
     padding-right: 20px;
     padding-top: 30px;
-    min-width: 300px; /* Added to prevent collapse on small screens */
+    min-width: 300px;
   }
   #right-panel {
     width: 600px;
     padding-left: 20px;
-    max-width: 100%; /* Responsive adjustment */
+    max-width: 100%;
   }
   #logo {
     display: block;
@@ -80,7 +89,7 @@
   }
   .trait-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); /* Adjusted for responsiveness */
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
     gap: 10px;
     margin-top: 10px;
   }
@@ -119,19 +128,19 @@
     width: 600px;
     height: 600px;
     background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: cover; /* Changed to cover for consistency */
+    background-size: cover;
     margin-bottom: 10px;
     overflow: hidden;
-    border: 2px solid #666; /* Enhanced visibility */
+    border: 2px solid #666;
     border-radius: 10px;
-    max-width: 100%; /* Responsive */
+    max-width: 100%;
   }
   #preview img {
     position: absolute;
     max-width: 600px;
     max-height: 600px;
     object-fit: contain;
-    display: none; /* Remains unchanged */
+    display: none;
   }
   #preview img.dragging {
     box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
@@ -305,7 +314,7 @@
     line-height: 22px;
     box-sizing: border-box;
     text-align: center;
-    width: 120px; /* Fixed width for consistency */
+    width: 120px;
   }
   .file-input-label:hover {
     background: #bbb;
@@ -319,7 +328,7 @@
   .confirmation-dialog {
     position: fixed;
     top: 50%;
-    left: 50%; /* Fixed typo from 'letter-spacing' */
+    left: 50%;
     transform: translate(-50%, -50%);
     background: white;
     padding: 20px;
@@ -360,17 +369,21 @@
     }
   }
 </style>
-  <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script src="config.js"></script>
-  <script src="entry.js"></script>
-</head>
+
+
+
+// Section 3 - BODY OPENING AND LEFT PANEL //
 <body>
-  <div id="version">Version 72</div>
+  <div id="version">Version 73</div>
   <div id="left-panel">
     <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
     <div id="trait-container">
       <!-- Trait groups will be added dynamically -->
     </div>
+
+
+
+// Section 4 - BACKGROUND SECTION //
     <div id="background-section">
       <h2>AI Background</h2>
       <div id="prompt-section">
@@ -385,11 +398,19 @@
         <p id="background-metadata">Loading...</p>
       </div>
     </div>
+
+
+
+// Section 5 - MINT SECTION //
     <div id="mint-section">
       <button id="mintButton" disabled>Mint NFT</button>
       <div id="mintFeeDisplay">Mint Fee: Loading...</div>
     </div>
   </div>
+
+
+
+// Section 6 - RIGHT PANEL //
   <div id="right-panel">
     <h2>Preview</h2>
     <div id="preview">
@@ -414,6 +435,10 @@
       </div>
     </div>
   </div>
+
+
+
+// Section 7 - ENLARGED PREVIEW AND BODY CLOSING //
   <div id="enlarged-preview">
     <!-- Enlarged preview images will be added dynamically -->
   </div>
