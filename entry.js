@@ -17,10 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
   let variantHistories = {};
   let timerInterval = null;
   let lastUndoTime = 0;
+  let autoPositioned = new Array(20).fill(false); // Track auto-positioning per trait (max 20 traits)
+  let sampleData = Array(20).fill(null).map(() => []); // Store trait, variant, and position for each sample
 
   const preview = document.getElementById('preview');
   const coordinates = document.getElementById('coordinates');
   const directionEmojis = document.querySelectorAll('.direction-emoji');
+  const magnifyEmoji = document.querySelector('.magnify-emoji');
+  const enlargedPreview = document.getElementById('enlarged-preview');
   const generateButton = document.getElementById('generate-background');
   const traitContainer = document.getElementById('trait-container');
   const previewSamplesGrid = document.getElementById('preview-samples-grid');
@@ -107,23 +111,29 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-manuallyMoved`, 'true');
 
-    // Update positions of all other variants in the same trait
+    // Auto-position other variants in the same trait, but only if this is the first variant and auto-positioning hasn't happened yet
     const trait = traits[traitIndex];
-    for (let i = 0; i < trait.variations.length; i++) {
-      if (trait.variations[i].name === variationName) continue; // Skip the current variant
-      const otherVariationName = trait.variations[i].name;
-      const otherKey = `${traitIndex}-${otherVariationName}`;
-      variantHistories[otherKey] = [{ left: position.left, top: position.top }];
-      localStorage.setItem(`trait${traitIndex + 1}-${otherVariationName}-position`, JSON.stringify(position));
-      localStorage.removeItem(`trait${traitIndex + 1}-${otherVariationName}-manuallyMoved`); // Reset manual move flag
-      if (trait.selected === i) {
-        const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
-        if (previewImage && previewImage.src) {
-          previewImage.style.left = `${position.left}px`;
-          previewImage.style.top = `${position.top}px`;
+    const currentVariationIndex = trait.variations.findIndex(v => v.name === variationName);
+    if (currentVariationIndex === 0 && !autoPositioned[traitIndex]) {
+      for (let i = 1; i < trait.variations.length; i++) { // Start from 1 to skip the first variant
+        const otherVariationName = trait.variations[i].name;
+        const otherKey = `${traitIndex}-${otherVariationName}`;
+        variantHistories[otherKey] = [{ left: position.left, top: position.top }];
+        localStorage.setItem(`trait${traitIndex + 1}-${otherVariationName}-position`, JSON.stringify(position));
+        localStorage.removeItem(`trait${traitIndex + 1}-${otherVariationName}-manuallyMoved`); // Reset manual move flag
+        if (trait.selected === i) {
+          const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
+          if (previewImage && previewImage.src) {
+            previewImage.style.left = `${position.left}px`;
+            previewImage.style.top = `${position.top}px`;
+          }
         }
       }
+      autoPositioned[traitIndex] = true; // Mark this trait as auto-positioned
     }
+
+    // Update sample positions for this specific variant
+    updateSamplePositions(traitIndex, variationName, position);
 
     updateSubsequentTraits(traitIndex, variationName, position);
   }
@@ -218,6 +228,11 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.accept = 'image/png,image/webp';
     fileInput.multiple = true;
 
+    const fileInputLabel = document.createElement('label');
+    fileInputLabel.className = 'file-input-label';
+    fileInputLabel.htmlFor = `trait${traitIndex + 1}-files`;
+    fileInputLabel.textContent = 'Choose Files';
+
     const grid = document.createElement('div');
     grid.id = `trait${traitIndex + 1}-grid`;
     grid.className = 'trait-grid';
@@ -225,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
     traitSection.appendChild(traitHeader);
     traitSection.appendChild(nameInput);
     traitSection.appendChild(fileInput);
+    traitSection.appendChild(fileInputLabel);
     traitSection.appendChild(grid);
     traitContainer.appendChild(traitSection);
 
@@ -284,6 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
           nameInput.id = `trait${i + 1}-name`;
           const fileInput = section.querySelector(`input[type="file"]`);
           fileInput.id = `trait${i + 1}-files`;
+          const fileInputLabel = section.querySelector('.file-input-label');
+          fileInputLabel.htmlFor = `trait${i + 1}-files`;
           const grid = section.querySelector('.trait-grid');
           grid.id = `trait${i + 1}-grid`;
           const upArrow = section.querySelector('.up-arrow');
@@ -344,8 +362,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
+      // Reset auto-positioned flag for removed trait
+      autoPositioned.splice(traitIndex, 1);
+      autoPositioned.push(false); // Add a new false for the new last trait
+
       updateZIndices();
-      updateMintButton();
       updatePreviewSamples(); // Update preview samples when a trait is removed
       confirmationDialog.remove();
     });
@@ -410,9 +431,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function setupTraitListeners(traitIndex) {
     const nameInput = document.getElementById(`trait${traitIndex + 1}-name`);
     const fileInput = document.getElementById(`trait${traitIndex + 1}-files`);
+    const fileInputLabel = document.querySelector(`label[for="trait${traitIndex + 1}-files"]`);
     const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
 
-    if (fileInput && nameInput && grid) {
+    if (fileInput && nameInput && grid && fileInputLabel) {
       fileInput.addEventListener('change', async (event) => {
         const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
         if (!files.length) return;
@@ -474,6 +496,10 @@ document.addEventListener('DOMContentLoaded', () => {
           if (firstWrapper) {
             firstWrapper.classList.add('selected');
           }
+          // Reset auto-positioned flag for this trait
+          autoPositioned[traitIndex] = false;
+          // Update file input label text
+          fileInputLabel.textContent = 'Choose New Files';
         }
 
         updateMintButton();
@@ -545,7 +571,6 @@ document.addEventListener('DOMContentLoaded', () => {
       refreshTraitGrid(traitIndex);
 
       updateZIndices();
-      updateMintButton();
       updatePreviewSamples(); // Update preview samples when trait order changes
     });
 
@@ -608,7 +633,6 @@ document.addEventListener('DOMContentLoaded', () => {
       refreshTraitGrid(traitIndex + 1);
 
       updateZIndices();
-      updateMintButton();
       updatePreviewSamples(); // Update preview samples when trait order changes
     });
 
@@ -638,6 +662,8 @@ document.addEventListener('DOMContentLoaded', () => {
       nameInput.id = `trait${index + 1}-name`;
       const fileInput = section.querySelector(`input[type="file"]`);
       fileInput.id = `trait${index + 1}-files`;
+      const fileInputLabel = section.querySelector('.file-input-label');
+      fileInputLabel.htmlFor = `trait${index + 1}-files`;
       const grid = section.querySelector('.trait-grid');
       grid.id = `trait${index + 1}-grid`;
       const upArrow = section.querySelector('.up-arrow');
@@ -713,8 +739,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function updateSamplePositions(traitIndex, variationName, position) {
+    // Update the position of this specific variant in all samples where it appears
+    for (let i = 0; i < 20; i++) {
+      const sample = sampleData[i];
+      for (let j = 0; j < sample.length; j++) {
+        if (sample[j].traitIndex === traitIndex && sample[j].variationName === variationName) {
+          sample[j].position = position;
+        }
+      }
+    }
+    updatePreviewSamples(); // Redraw the samples with updated positions
+  }
+
   function updatePreviewSamples() {
     previewSamplesGrid.innerHTML = ''; // Clear existing samples
+    sampleData = Array(20).fill(null).map(() => []); // Reset sample data
 
     // Generate 20 random combinations (5 rows x 4 columns)
     for (let i = 0; i < 20; i++) {
@@ -737,13 +777,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Apply the same positioning as in the main preview panel, scaled down
         const key = `${j}-${variant.name}`;
         const savedPosition = localStorage.getItem(`trait${j + 1}-${variant.name}-position`);
+        let position;
         if (savedPosition) {
-          const { left, top } = JSON.parse(savedPosition);
+          position = JSON.parse(savedPosition);
           const scale = 140 / 600; // Scale factor from 600px to 140px
-          img.style.left = `${left * scale}px`;
-          img.style.top = `${top * scale}px`;
+          img.style.left = `${position.left * scale}px`;
+          img.style.top = `${position.top * scale}px`;
           if (!variantHistories[key]) {
-            variantHistories[key] = [{ left, top }];
+            variantHistories[key] = [{ left: position.left, top: position.top }];
           }
         } else {
           let lastPosition = null;
@@ -757,17 +798,26 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           const scale = 140 / 600; // Scale factor from 600px to 140px
           if (lastPosition) {
+            position = lastPosition;
             img.style.left = `${lastPosition.left * scale}px`;
             img.style.top = `${lastPosition.top * scale}px`;
             variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
             localStorage.setItem(`trait${j + 1}-${variant.name}-position`, JSON.stringify(lastPosition));
           } else {
+            position = { left: 0, top: 0 };
             img.style.left = '0px';
             img.style.top = '0px';
             variantHistories[key] = [{ left: 0, top: 0 }];
             localStorage.setItem(`trait${j + 1}-${variant.name}-position`, JSON.stringify({ left: 0, top: 0 }));
           }
         }
+
+        // Store the trait, variant, and position for this sample
+        sampleData[i].push({
+          traitIndex: j,
+          variationName: variant.name,
+          position: position
+        });
 
         sampleContainer.appendChild(img);
       }
@@ -919,6 +969,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Magnifying glass functionality
+  magnifyEmoji.addEventListener('click', () => {
+    // Clear previous enlarged preview content
+    enlargedPreview.innerHTML = '';
+
+    // Calculate the maximum size based on the viewport
+    const maxWidth = window.innerWidth * 0.9; // 90% of viewport width
+    const maxHeight = window.innerHeight * 0.9; // 90% of viewport height
+    let scale = 1;
+
+    // Determine the size of the enlarged preview
+    if (maxWidth / maxHeight > 1) {
+      // Viewport is wider than tall, limit by height
+      enlargedPreview.style.height = `${maxHeight}px`;
+      enlargedPreview.style.width = `${maxHeight}px`; // Maintain square aspect ratio
+      scale = maxHeight / 600; // 600 is the original preview size
+    } else {
+      // Viewport is taller than wide, limit by width
+      enlargedPreview.style.width = `${maxWidth}px`;
+      enlargedPreview.style.height = `${maxWidth}px`; // Maintain square aspect ratio
+      scale = maxWidth / 600;
+    }
+
+    // Clone the visible images from the preview panel
+    traitImages.forEach(img => {
+      if (img.style.display === 'block') {
+        const clonedImg = img.cloneNode(true);
+        clonedImg.style.display = 'block';
+        clonedImg.style.width = `${img.width * scale}px`;
+        clonedImg.style.height = `${img.height * scale}px`;
+        clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
+        clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
+        clonedImg.style.zIndex = img.style.zIndex;
+        enlargedPreview.appendChild(clonedImg);
+      }
+    });
+
+    // Show the enlarged preview
+    enlargedPreview.style.display = 'block';
+
+    // Add click event to dismiss
+    enlargedPreview.addEventListener('click', () => {
+      enlargedPreview.style.display = 'none';
+    }, { once: true });
+  });
+
   document.addEventListener('keydown', (e) => {
     const now = Date.now();
     if (now - lastUndoTime < 300) return;
@@ -938,6 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(previousPosition));
         updateCoordinates(currentImage);
         updateSubsequentTraits(traitIndex, variationName, previousPosition);
+        updateSamplePositions(traitIndex, variationName, previousPosition);
       }
     }
   });
