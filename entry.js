@@ -106,6 +106,25 @@ document.addEventListener('DOMContentLoaded', () => {
     variantHistories[key].push(position);
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-manuallyMoved`, 'true');
+
+    // Update positions of all other variants in the same trait
+    const trait = traits[traitIndex];
+    for (let i = 0; i < trait.variations.length; i++) {
+      if (trait.variations[i].name === variationName) continue; // Skip the current variant
+      const otherVariationName = trait.variations[i].name;
+      const otherKey = `${traitIndex}-${otherVariationName}`;
+      variantHistories[otherKey] = [{ left: position.left, top: position.top }];
+      localStorage.setItem(`trait${traitIndex + 1}-${otherVariationName}-position`, JSON.stringify(position));
+      localStorage.removeItem(`trait${traitIndex + 1}-${otherVariationName}-manuallyMoved`); // Reset manual move flag
+      if (trait.selected === i) {
+        const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
+        if (previewImage && previewImage.src) {
+          previewImage.style.left = `${position.left}px`;
+          previewImage.style.top = `${position.top}px`;
+        }
+      }
+    }
+
     updateSubsequentTraits(traitIndex, variationName, position);
   }
 
@@ -342,6 +361,52 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(confirmationDialog);
   }
 
+  function refreshTraitGrid(traitIndex) {
+    const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    const trait = traits[traitIndex];
+    for (const variant of trait.variations) {
+      const container = document.createElement('div');
+      container.className = 'variation-container';
+      container.dataset.traitIndex = traitIndex;
+      container.dataset.variationName = variant.name;
+
+      const imageWrapper = document.createElement('div');
+      imageWrapper.className = 'variation-image-wrapper';
+
+      const img = document.createElement('img');
+      img.src = variant.url;
+      img.alt = variant.name;
+      img.className = 'variation';
+
+      const filename = document.createElement('div');
+      filename.className = 'variation-filename';
+      filename.textContent = variant.name;
+
+      imageWrapper.appendChild(img);
+      container.appendChild(imageWrapper);
+      container.appendChild(filename);
+      container.addEventListener('click', () => {
+        console.log(`Clicked variant: Trait ${traitIndex + 1}, Variation ${variant.name}`); // Debugging log
+        const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
+        allWrappers.forEach(w => w.classList.remove('selected'));
+        imageWrapper.classList.add('selected');
+        selectVariation(traitIndex, variant.name);
+      });
+
+      grid.appendChild(container);
+    }
+
+    // Reapply 'selected' class to the currently selected variant
+    const selectedIndex = trait.selected;
+    const selectedWrapper = grid.children[selectedIndex]?.querySelector('.variation-image-wrapper');
+    if (selectedWrapper) {
+      selectedWrapper.classList.add('selected');
+    }
+  }
+
   function setupTraitListeners(traitIndex) {
     const nameInput = document.getElementById(`trait${traitIndex + 1}-name`);
     const fileInput = document.getElementById(`trait${traitIndex + 1}-files`);
@@ -393,6 +458,13 @@ document.addEventListener('DOMContentLoaded', () => {
           });
 
           grid.appendChild(container);
+
+          // Initialize position for the new variant
+          const key = `${traitIndex}-${variationName}`;
+          if (!variantHistories[key]) {
+            variantHistories[key] = [{ left: 0, top: 0 }];
+            localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify({ left: 0, top: 0 }));
+          }
         }
 
         if (traits[traitIndex].variations.length > 0) {
@@ -468,6 +540,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
+      // Refresh the DOM for the affected traits
+      refreshTraitGrid(traitIndex - 1);
+      refreshTraitGrid(traitIndex);
+
       updateZIndices();
       updateMintButton();
       updatePreviewSamples(); // Update preview samples when trait order changes
@@ -527,6 +603,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
+      // Refresh the DOM for the affected traits
+      refreshTraitGrid(traitIndex);
+      refreshTraitGrid(traitIndex + 1);
+
       updateZIndices();
       updateMintButton();
       updatePreviewSamples(); // Update preview samples when trait order changes
@@ -582,6 +662,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function selectVariation(traitIndex, variationName) {
     const trait = traits[traitIndex];
     const variationIndex = trait.variations.findIndex(v => v.name === variationName);
+    if (variationIndex === -1) {
+      console.error(`Variation ${variationName} not found in Trait ${traitIndex + 1}`);
+      return;
+    }
     trait.selected = variationIndex;
 
     const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
