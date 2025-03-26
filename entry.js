@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Create click sound and set volume
   const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
-  clickSound.volume = 0.25; // Reduce volume to 25%
+  clickSound.volume = 0.25; // Volume set to 25%
 
   // Fetch background with user prompt
   async function fetchBackground() {
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (backgroundImage) backgroundImage.src = placeholder;
       if (previewBackground) previewBackground.src = placeholder;
-      if (backgroundMetadata) backgroundMetadata.innerText = 'Failed to load background';
+      if (backgroundMetadata) backgroundMetadata.innerText = 'Failed to load background: ' + error.message;
     } finally {
       // Stop timer and reset button
       clearInterval(timerInterval);
@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
       previousPosition,
       newPosition: position
     });
+    console.log(`Saved position to history: Trait ${traitIndex + 1}, Variant ${variationName}, Position ${position.left}, ${position.top}`);
     // Save to localStorage
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(position));
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-manuallyMoved`, 'true');
@@ -254,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         previewImage.style.top = `${top}px`;
       } else if (lastMovedPosition) {
         // Use the last moved position if no specific position is set
+        console.log(`Applying last moved position to Trait ${traitIndex + 1} variant ${variationName}: ${lastMovedPosition.left}, ${lastMovedPosition.top}`);
         previewImage.style.left = `${lastMovedPosition.left}px`;
         previewImage.style.top = `${lastMovedPosition.top}px`;
       } else {
@@ -424,7 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const lastMove = positionHistory[positionHistory.length - 1];
         const { traitIndex, variationName, previousPosition } = lastMove;
         const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
-        if (previewImage && traits[traitIndex].variations[traits[traitIndex].selected].name === variationName) {
+        console.log(`Last move in history: Trait ${traitIndex + 1}, Variant ${variationName}`);
+        console.log(`Current selected variant for Trait ${traitIndex + 1}:`, traits[traitIndex].variations[traits[traitIndex].selected].name);
+        if (previewImage) {
           console.log(`Undoing move for Trait ${traitIndex + 1} variant ${variationName} to ${previousPosition.left}, ${previousPosition.top}`);
           positionHistory.pop(); // Remove the last move from history
           previewImage.style.left = `${previousPosition.left}px`;
@@ -436,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // Update subsequent traits if they haven't been manually moved
           updateSubsequentTraits(traitIndex, variationName, previousPosition);
         } else {
-          console.log(`Cannot undo: Current variant does not match last moved variant (Trait ${traitIndex + 1}, Variant ${variationName})`);
+          console.log(`Preview image for Trait ${traitIndex + 1} not found`);
         }
       } else {
         console.log('No moves to undo');
