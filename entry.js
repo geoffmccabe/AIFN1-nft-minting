@@ -204,17 +204,15 @@ document.addEventListener('DOMContentLoaded', () => {
     traitSection.appendChild(grid);
     traitContainer.appendChild(traitSection);
 
-    if (!initial) {
-      const newTraitImage = document.createElement('img');
-      newTraitImage.id = `preview-trait${traitIndex + 1}`;
-      newTraitImage.src = '';
-      newTraitImage.alt = `Trait ${traitIndex + 1}`;
-      newTraitImage.style.zIndex = traitIndex + 2;
-      if (preview) {
-        preview.appendChild(newTraitImage);
-      }
-      traitImages.push(newTraitImage);
+    const newTraitImage = document.createElement('img');
+    newTraitImage.id = `preview-trait${traitIndex + 1}`;
+    newTraitImage.src = '';
+    newTraitImage.alt = `Trait ${traitIndex + 1}`;
+    newTraitImage.style.zIndex = traitIndex + 2;
+    if (preview) {
+      preview.appendChild(newTraitImage);
     }
+    traitImages[traitIndex] = newTraitImage;
 
     setupTraitListeners(traitIndex);
     updateZIndices();
@@ -256,19 +254,19 @@ document.addEventListener('DOMContentLoaded', () => {
           section.id = `trait${i + 1}`;
           const title = section.querySelector('h2');
           title.textContent = `Trait ${i + 1}`;
-          const nameInput = section.querySelector(`#trait${i + 2}-name`);
+          const nameInput = section.querySelector(`input[type="text"]`);
           nameInput.id = `trait${i + 1}-name`;
-          const fileInput = section.querySelector(`#trait${i + 2}-files`);
+          const fileInput = section.querySelector(`input[type="file"]`);
           fileInput.id = `trait${i + 1}-files`;
-          const grid = section.querySelector(`#trait${i + 2}-grid`);
+          const grid = section.querySelector('.trait-grid');
           grid.id = `trait${i + 1}-grid`;
-          const upArrow = section.querySelector(`.up-arrow`);
+          const upArrow = section.querySelector('.up-arrow');
           upArrow.setAttribute('data-trait', `${i + 1}`);
-          const downArrow = section.querySelector(`.down-arrow`);
+          const downArrow = section.querySelector('.down-arrow');
           downArrow.setAttribute('data-trait', `${i + 1}`);
-          const addTraitBtn = section.querySelector(`.add-trait`);
+          const addTraitBtn = section.querySelector('.add-trait');
           addTraitBtn.setAttribute('data-trait', `${i + 1}`);
-          const removeTraitBtn = section.querySelector(`.remove-trait`);
+          const removeTraitBtn = section.querySelector('.remove-trait');
           removeTraitBtn.setAttribute('data-trait', `${i + 1}`);
         }
         const oldTraitImage = document.getElementById(`preview-trait${i + 2}`);
