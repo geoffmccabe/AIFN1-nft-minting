@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let positionHistory = []; // Stack to store position history for undo
   let timerInterval = null; // For the processing timer
   let lastMovedPosition = null; // Store the last moved position for propagation
+  let lastUndoTime = 0; // For debouncing Cmd-Z
 
   // Create click sound and set volume
   const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
@@ -128,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem(`trait${traitIndex + 1}-${variationName}-manuallyMoved`, 'true');
     // Update last moved position
     lastMovedPosition = position;
+    console.log(`Updated lastMovedPosition: ${lastMovedPosition.left}, ${lastMovedPosition.top}`);
     // Update subsequent traits if they haven't been manually moved
     updateSubsequentTraits(traitIndex, variationName, position);
   }
@@ -253,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { left, top } = JSON.parse(savedPosition);
         previewImage.style.left = `${left}px`;
         previewImage.style.top = `${top}px`;
+        console.log(`Loaded saved position for Trait ${traitIndex + 1} variant ${variationName}: ${left}, ${top}`);
       } else if (lastMovedPosition) {
         // Use the last moved position if no specific position is set
         console.log(`Applying last moved position to Trait ${traitIndex + 1} variant ${variationName}: ${lastMovedPosition.left}, ${lastMovedPosition.top}`);
@@ -264,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset position if no saved position exists
         previewImage.style.left = '0px';
         previewImage.style.top = '0px';
+        console.log(`No position found for Trait ${traitIndex + 1} variant ${variationName}, resetting to 0, 0`);
       }
       // Set the current image to the selected variant and adjust z-index
       currentImage = previewImage;
@@ -419,8 +423,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Add event listener for Cmd-Z (Mac) to undo movement
+  // Add event listener for Cmd-Z (Mac) to undo movement with debouncing
   document.addEventListener('keydown', (e) => {
+    const now = Date.now();
+    if (now - lastUndoTime < 300) return; // Debounce: ignore if less than 300ms since last undo
+    lastUndoTime = now;
+
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       e.preventDefault(); // Prevent browser undo behavior
       console.log('Undo triggered, positionHistory length:', positionHistory.length);
@@ -429,7 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const { traitIndex, variationName, previousPosition } = lastMove;
         const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
         console.log(`Last move in history: Trait ${traitIndex + 1}, Variant ${variationName}`);
-        console.log(`Current selected variant for Trait ${traitIndex + 1}:`, traits[traitIndex].variations[traits[traitIndex].selected].name);
         if (previewImage) {
           console.log(`Undoing move for Trait ${traitIndex + 1} variant ${variationName} to ${previousPosition.left}, ${previousPosition.top}`);
           positionHistory.pop(); // Remove the last move from history
@@ -439,6 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(previousPosition));
           // Update last moved position
           lastMovedPosition = previousPosition;
+          console.log(`After undo, lastMovedPosition: ${lastMovedPosition.left}, ${lastMovedPosition.top}`);
           // Update subsequent traits if they haven't been manually moved
           updateSubsequentTraits(traitIndex, variationName, previousPosition);
         } else {
