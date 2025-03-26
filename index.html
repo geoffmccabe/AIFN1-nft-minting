@@ -105,7 +105,7 @@
       max-width: 600px;
       max-height: 600px;
       object-fit: contain;
-      display: none; /* Hide images until a variant is selected */
+      display: none;
     }
     #preview img.dragging {
       box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
@@ -132,6 +132,43 @@
     }
     .direction-emoji:hover {
       opacity: 0.8;
+    }
+    #preview-samples {
+      margin-top: 20px;
+    }
+    #preview-samples h2 {
+      font-family: 'Rowdies', sans-serif;
+      font-weight: 400;
+      text-align: left;
+      margin: 0 0 10px;
+    }
+    #preview-samples-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 140px);
+      grid-template-rows: repeat(5, 140px);
+      gap: 13px; /* 13px spacing between images */
+      width: 600px; /* 4 * 140px + 3 * 13px = 560 + 39 = 599px, rounded to 600px */
+    }
+    #preview-samples-grid img {
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+      border: 1px solid black;
+      border-radius: 5px;
+    }
+    #update-previews {
+      display: block;
+      margin: 10px 0 0 auto;
+      padding: 5px 10px;
+      background: #ccc;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #update-previews:hover {
+      background: #bbb;
     }
     button {
       padding: 10px 20px;
@@ -285,6 +322,13 @@
       <span class="direction-emoji" data-direction="down">⬇️</span>
       <span class="direction-emoji" data-direction="left">⬅️</span>
       <span class="direction-emoji" data-direction="right">➡️</span>
+    </div>
+    <div id="preview-samples">
+      <h2>PREVIEW SAMPLES</h2>
+      <div id="preview-samples-grid">
+        <!-- 5x4 grid of preview samples will be added dynamically -->
+      </div>
+      <button id="update-previews">UPDATE</button>
     </div>
   </div>
 </body>
