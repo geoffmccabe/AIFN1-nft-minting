@@ -1,36 +1,39 @@
 /* Section 1 - GLOBAL SETUP AND INITIALIZATION */
+
+// Declare variables globally
+let provider, contract, signer, contractWithSigner;
+let traits = [];
+let background = { url: '', metadata: '' };
+let traitImages = [];
+let isDragging = false;
+let currentImage = null;
+let offsetX = 0;
+let offsetY = 0;
+let moveInterval = null;
+let variantHistories = {};
+let timerInterval = null;
+let lastUndoTime = 0;
+let autoPositioned = new Array(20).fill(false);
+let sampleData = Array(20).fill(null).map(() => []);
+let preview, coordinates, directionEmojis, magnifyEmoji, enlargedPreview, generateButton, traitContainer, previewSamplesGrid, updatePreviewsButton;
+const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
+clickSound.volume = 0.25;
+
 document.addEventListener('DOMContentLoaded', () => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
-  const signer = provider.getSigner();
-  const contractWithSigner = contract.connect(signer);
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
+  signer = provider.getSigner();
+  contractWithSigner = contract.connect(signer);
 
-  let traits = [];
-  let background = { url: '', metadata: '' };
-  let traitImages = [];
-  let isDragging = false;
-  let currentImage = null;
-  let offsetX = 0;
-  let offsetY = 0;
-  let moveInterval = null;
-  let variantHistories = {};
-  let timerInterval = null;
-  let lastUndoTime = 0;
-  let autoPositioned = new Array(20).fill(false);
-  let sampleData = Array(20).fill(null).map(() => []);
-
-  const preview = document.getElementById('preview');
-  const coordinates = document.getElementById('coordinates');
-  const directionEmojis = document.querySelectorAll('.direction-emoji');
-  const magnifyEmoji = document.querySelector('.magnify-emoji');
-  const enlargedPreview = document.getElementById('enlarged-preview');
-  const generateButton = document.getElementById('generate-background');
-  const traitContainer = document.getElementById('trait-container');
-  const previewSamplesGrid = document.getElementById('preview-samples-grid');
-  const updatePreviewsButton = document.getElementById('update-previews');
-
-  const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
-  clickSound.volume = 0.25;
+  preview = document.getElementById('preview');
+  coordinates = document.getElementById('coordinates');
+  directionEmojis = document.querySelectorAll('.direction-emoji');
+  magnifyEmoji = document.querySelector('.magnify-emoji');
+  enlargedPreview = document.getElementById('enlarged-preview');
+  generateButton = document.getElementById('generate-background');
+  traitContainer = document.getElementById('trait-container');
+  previewSamplesGrid = document.getElementById('preview-samples-grid');
+  updatePreviewsButton = document.getElementById('update-previews');
 
   // Initialize with 3 trait groups
   for (let i = 0; i < 3; i++) {
