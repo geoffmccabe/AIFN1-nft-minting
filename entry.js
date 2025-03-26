@@ -362,19 +362,41 @@ document.addEventListener('DOMContentLoaded', () => {
           const url = URL.createObjectURL(file);
           traits[traitIndex].variations.push({ name: variationName, url });
 
+          const container = document.createElement('div');
+          container.className = 'variation-container';
+          container.dataset.traitIndex = traitIndex;
+          container.dataset.variationName = variationName;
+
           const img = document.createElement('img');
           img.src = url;
           img.alt = variationName;
           img.className = 'variation';
-          img.style.width = '100px';
-          img.style.height = '100px';
-          img.style.objectFit = 'contain';
-          img.addEventListener('click', () => selectVariation(traitIndex, variationName));
-          grid.appendChild(img);
+
+          const filename = document.createElement('div');
+          filename.className = 'variation-filename';
+          filename.textContent = file.name;
+
+          container.appendChild(img);
+          container.appendChild(filename);
+          container.addEventListener('click', () => {
+            // Remove 'selected' class from all containers in this trait
+            const allContainers = grid.querySelectorAll('.variation-container');
+            allContainers.forEach(c => c.classList.remove('selected'));
+            // Add 'selected' class to the clicked container
+            container.classList.add('selected');
+            selectVariation(traitIndex, variationName);
+          });
+
+          grid.appendChild(container);
         }
 
         if (traits[traitIndex].variations.length > 0) {
           selectVariation(traitIndex, traits[traitIndex].variations[0].name);
+          // Set the first variant as selected by default
+          const firstContainer = grid.querySelector('.variation-container');
+          if (firstContainer) {
+            firstContainer.classList.add('selected');
+          }
         }
 
         updateMintButton();
@@ -555,14 +577,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const variationIndex = trait.variations.findIndex(v => v.name === variationName);
     trait.selected = variationIndex;
 
-    // Update the selected class for the grid
-    const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
-    if (grid) {
-      Array.from(grid.children).forEach((child, idx) => {
-        child.classList.toggle('selected', idx === variationIndex);
-      });
-    }
-
     const previewImage = document.getElementById(`preview-trait${traitIndex + 1}`);
     if (previewImage) {
       previewImage.src = trait.variations[variationIndex].url;
@@ -637,9 +651,31 @@ document.addEventListener('DOMContentLoaded', () => {
           const scale = 140 / 600; // Scale factor from 600px to 140px
           img.style.left = `${left * scale}px`;
           img.style.top = `${top * scale}px`;
+          if (!variantHistories[key]) {
+            variantHistories[key] = [{ left, top }];
+          }
         } else {
-          img.style.left = '0px';
-          img.style.top = '0px';
+          let lastPosition = null;
+          for (let k = 0; k < trait.variations.length; k++) {
+            if (k === randomIndex) continue;
+            const otherVariationName = trait.variations[k].name;
+            const otherKey = `${j}-${otherVariationName}`;
+            if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
+              lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
+            }
+          }
+          const scale = 140 / 600; // Scale factor from 600px to 140px
+          if (lastPosition) {
+            img.style.left = `${lastPosition.left * scale}px`;
+            img.style.top = `${lastPosition.top * scale}px`;
+            variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
+            localStorage.setItem(`trait${j + 1}-${variant.name}-position`, JSON.stringify(lastPosition));
+          } else {
+            img.style.left = '0px';
+            img.style.top = '0px';
+            variantHistories[key] = [{ left: 0, top: 0 }];
+            localStorage.setItem(`trait${j + 1}-${variant.name}-position`, JSON.stringify({ left: 0, top: 0 }));
+          }
         }
 
         sampleContainer.appendChild(img);
