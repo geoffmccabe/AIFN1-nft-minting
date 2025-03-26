@@ -136,29 +136,43 @@
     #preview-samples {
       margin-top: 20px;
     }
+    #preview-samples-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
     #preview-samples h2 {
       font-family: 'Rowdies', sans-serif;
       font-weight: 400;
       text-align: left;
-      margin: 0 0 10px;
+      margin: 0;
     }
     #preview-samples-grid {
       display: grid;
       grid-template-columns: repeat(4, 140px);
       grid-template-rows: repeat(5, 140px);
-      gap: 13px; /* 13px spacing between images */
-      width: 600px; /* 4 * 140px + 3 * 13px = 560 + 39 = 599px, rounded to 600px */
+      gap: 13px;
+      width: 600px;
     }
-    #preview-samples-grid img {
+    #preview-samples-grid .sample-container {
+      position: relative;
       width: 140px;
       height: 140px;
-      object-fit: contain;
+      background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+      background-size: 140px 140px;
       border: 1px solid black;
       border-radius: 5px;
     }
+    #preview-samples-grid img {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+      transform: scale(0.2333); /* 140/600 = 0.2333 */
+      transform-origin: top left;
+    }
     #update-previews {
-      display: block;
-      margin: 10px 0 0 auto;
       padding: 5px 10px;
       background: #ccc;
       color: black;
@@ -324,11 +338,13 @@
       <span class="direction-emoji" data-direction="right">➡️</span>
     </div>
     <div id="preview-samples">
-      <h2>PREVIEW SAMPLES</h2>
+      <div id="preview-samples-header">
+        <h2>PREVIEW SAMPLES</h2>
+        <button id="update-previews">UPDATE</button>
+      </div>
       <div id="preview-samples-grid">
         <!-- 5x4 grid of preview samples will be added dynamically -->
       </div>
-      <button id="update-previews">UPDATE</button>
     </div>
   </div>
 </body>
