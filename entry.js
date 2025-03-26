@@ -383,6 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
           container.appendChild(imageWrapper);
           container.appendChild(filename);
           container.addEventListener('click', () => {
+            console.log(`Clicked variant: Trait ${traitIndex + 1}, Variation ${variationName}`); // Debugging log
             // Remove 'selected' class from all image wrappers in this trait
             const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
             allWrappers.forEach(w => w.classList.remove('selected'));
