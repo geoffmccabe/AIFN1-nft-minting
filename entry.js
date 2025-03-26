@@ -1,4 +1,7 @@
+
+
 /* Section 1 - GLOBAL SETUP AND INITIALIZATION */
+
 
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
@@ -44,12 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners for global controls
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
-  generateBackgroundButton.addEventListener('click', fetchBackground);
 });
 
 
 
 /* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
+
+
 function addTrait(traitIndex, initial = false) {
   const traitSection = document.createElement('div');
   traitSection.id = `trait${traitIndex + 1}`;
@@ -584,6 +588,8 @@ function updateMintButton() {
 
 
 /* Section 3 - PREVIEW AND POSITION MANAGEMENT */
+
+
 function updateZIndices() {
   traitImages.forEach((img, index) => {
     if (img && img !== currentImage) img.style.zIndex = traits[index].zIndex;
@@ -980,9 +986,15 @@ function updatePreviewSamples() {
   }
 }
 
+generateButton.addEventListener('click', fetchBackground);
+
+traitImages.forEach((img, index) => setupDragAndDrop(img, index));
+
 
 
 /* Section 4 - BACKGROUND GENERATION */
+
+
 async function fetchBackground() {
   try {
     clickSound.play().catch(error => console.error('Error playing click sound:', error));
@@ -1031,7 +1043,10 @@ fetchMintFee();
 
 
 
-// Section 5 - MINTING FUNCTION */
+
+/* Section 5 - MINTING FUNCTION */
+
+
 window.mintNFT = async function() {
   const status = document.getElementById('status');
   if (!status) return;
