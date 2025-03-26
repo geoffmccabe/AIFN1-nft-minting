@@ -46,9 +46,6 @@
       width: 600px;
       height: auto;
     }
-    h1 {
-      text-align: center;
-    }
     .trait-section {
       margin-bottom: 20px;
     }
@@ -106,7 +103,7 @@
       max-height: 600px;
       object-fit: contain;
     }
-    #preview-trait1 { z-index: 2; } /* Default z-index, will be adjusted dynamically */
+    #preview-trait1 { z-index: 2; }
     #preview-trait2 { z-index: 3; }
     #preview-trait3 { z-index: 4; }
     #preview img.dragging {
@@ -167,7 +164,7 @@
       width: 100%;
       height: 140px;
       resize: none;
-      border-radius: 5px; /* Half of 10px */
+      border-radius: 5px;
     }
     #prompt-section label {
       display: block;
@@ -187,7 +184,7 @@
     input[type="text"] {
       width: 100%;
       padding: 5px;
-      border-radius: 5px; /* Half of 10px */
+      border-radius: 5px;
     }
   </style>
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
@@ -198,7 +195,6 @@
   <div id="version">v1.0.63 - 2025-03-24 17:15:00 MDT</div>
   <div id="left-panel">
     <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo">
-    <h1>Mint Your AIFN NFT</h1>
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
     <div id="trait-container">
       <div id="trait1" class="trait-section">
@@ -245,4 +241,34 @@
       <h2>AI Background</h2>
       <div id="prompt-section">
         <label for="base-prompt">Basic Prompt:</label>
-        <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, 
+        <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
+        <label for="user-prompt">User Prompt:</label>
+        <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
+      </div>
+      <button id="generate-background">Generate Bkgd</button>
+      <div id="background-details">
+        <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
+        <p id="background-metadata">Loading...</p>
+      </div>
+    </div>
+    <button id="mintButton" disabled>Mint NFT</button>
+    <div id="status">Select traits to begin.</div>
+  </div>
+  <div id="right-panel">
+    <h2>Preview</h2>
+    <div id="preview">
+      <img id="preview-trait1" src="" alt="Trait 1">
+      <img id="preview-trait2" src="" alt="Trait 2">
+      <img id="preview-trait3" src="" alt="Trait 3">
+    </div>
+    <div id="controls">
+      <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
+      <span>   </span>
+      <span class="direction-emoji" data-direction="up">⬆️</span>
+      <span class="direction-emoji" data-direction="down">⬇️</span>
+      <span class="direction-emoji" data-direction="left">⬅️</span>
+      <span class="direction-emoji" data-direction="right">➡️</span>
+    </div>
+  </div>
+</body>
+</html>
