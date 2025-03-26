@@ -201,6 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
 /* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
 
 
@@ -226,6 +228,7 @@ function addTrait(traitIndex, initial = false) {
   const addTraitBtn = document.createElement('span');
   addTraitBtn.className = 'add-trait';
   addTraitBtn.setAttribute('data-trait', `${traitIndex + 1}`);
+  addTraitBtn.setAttribute('title', 'Insert New Trait Here'); // Tooltip for hover
   addTraitBtn.textContent = '➕';
   const removeTraitBtn = document.createElement('span');
   removeTraitBtn.className = 'remove-trait';
@@ -727,8 +730,20 @@ function setupTraitListeners(traitIndex) {
 
   addTraitBtn.addEventListener('click', () => {
     if (traits.length < 20) {
-      traits.push({ name: '', variations: [], selected: 0, zIndex: 0 }); // zIndex will be set in addTrait
-      addTrait(traits.length - 1);
+      // Insert new trait at the current index, shifting others down
+      traits.splice(traitIndex, 0, { name: '', variations: [], selected: 0, zIndex: 0 });
+      // Shift traitImages
+      traitImages.splice(traitIndex, 0, null);
+      // Shift autoPositioned
+      autoPositioned.splice(traitIndex, 0, false);
+      // Update DOM: remove all trait sections and re-add them
+      const existingSections = Array.from(traitContainer.querySelectorAll('.trait-section'));
+      existingSections.forEach(section => section.remove());
+      // Clear traitImages DOM elements
+      traitImages.forEach(img => { if (img) img.remove(); });
+      traitImages = [];
+      // Re-add all traits
+      traits.forEach((_, idx) => addTrait(idx));
     }
   });
 
@@ -813,13 +828,23 @@ function updateMintButton() {
 
 
 
+
+
 /* Section 3 - PREVIEW AND POSITION MANAGEMENT */
 
 
 function updateZIndices() {
   traitImages.forEach((img, index) => {
-    if (img && img !== currentImage) {
-      img.style.zIndex = traits[index].zIndex;
+    if (img) {
+      if (img.classList.contains('dragging')) {
+        // Temporarily increase z-index for dragging, but respect trait order
+        const baseZIndex = traits[index].zIndex;
+        img.style.zIndex = baseZIndex + 100; // Higher than its normal z-index but lower than higher traits
+      } else if (img === currentImage) {
+        img.style.zIndex = traits[index].zIndex + 50; // Selected but not dragging
+      } else {
+        img.style.zIndex = traits[index].zIndex;
+      }
     }
   });
 }
@@ -867,15 +892,7 @@ function selectVariation(traitIndex, variationName) {
       }
     }
     currentImage = previewImage;
-    traitImages.forEach(img => {
-      if (img) {
-        if (img === previewImage) img.style.zIndex = 1000;
-        else {
-          const idx = traitImages.indexOf(img);
-          img.style.zIndex = traits[idx].zIndex;
-        }
-      }
-    });
+    updateZIndices();
     updateCoordinates(previewImage);
   }
 }
@@ -893,6 +910,7 @@ function setupDragAndDrop(img, traitIndex) {
       offsetY = e.clientY - rect.top;
       img.style.cursor = 'grabbing';
       img.classList.add('dragging');
+      updateZIndices();
       updateCoordinates(img);
     });
 
@@ -904,6 +922,7 @@ function setupDragAndDrop(img, traitIndex) {
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
+        updateZIndices();
       }
     });
 
