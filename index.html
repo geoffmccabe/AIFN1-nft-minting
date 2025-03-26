@@ -16,7 +16,7 @@
 
 
 
-// Section 2 - STYLE/CSS //
+// Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) //
 <style>
   body {
     font-family: 'Poppins', sans-serif;
@@ -44,11 +44,6 @@
     padding-right: 20px;
     padding-top: 30px;
     min-width: 300px;
-  }
-  #right-panel {
-    width: 600px;
-    padding-left: 20px;
-    max-width: 100%;
   }
   #logo {
     display: block;
@@ -122,6 +117,54 @@
     text-align: center;
     margin-top: 5px;
     word-break: break-all;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-bottom: 5px;
+    box-sizing: border-box;
+    height: 32px;
+  }
+  input[type="file"] {
+    display: none;
+  }
+  .file-input-label {
+    display: inline-block;
+    padding: 5px 10px;
+    background: #ccc;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 5px;
+    height: 32px;
+    line-height: 22px;
+    box-sizing: border-box;
+    text-align: center;
+    width: 120px;
+  }
+  .file-input-label:hover {
+    background: #bbb;
+  }
+</style>
+
+
+
+// Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) //
+<style>
+  #right-panel {
+    width: 600px;
+    padding-left: 20px;
+    max-width: 100%;
+  }
+  #right-panel h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    text-align: center;
+    margin: 0 0 10px;
   }
   #preview {
     position: relative;
@@ -234,30 +277,17 @@
   #update-previews:hover {
     background: #bbb;
   }
-  button {
-    padding: 10px 20px;
-    background: grey;
-    color: black;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    border-radius: 5px;
-    margin: 10px 0;
-  }
-  button:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-  button:not(:disabled) {
-    background: #4CAF50;
-  }
-  #mint-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  #mintFeeDisplay {
-    font-size: 14px;
+</style>
+
+
+
+// Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) //
+<style>
+  #background-section h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    text-align: center;
+    margin: 0 0 10px;
   }
   #prompt-section {
     margin-top: 10px;
@@ -288,42 +318,30 @@
     border-radius: 10px;
     border: 1px solid black;
   }
-  input[type="text"] {
-    width: 100%;
-    padding: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    margin-bottom: 5px;
-    box-sizing: border-box;
-    height: 32px;
-  }
-  input[type="file"] {
-    display: none;
-  }
-  .file-input-label {
-    display: inline-block;
-    padding: 5px 10px;
-    background: #ccc;
+  button {
+    padding: 10px 20px;
+    background: grey;
     color: black;
     border: none;
-    border-radius: 5px;
     cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+    margin: 10px 0;
+  }
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  button:not(:disabled) {
+    background: #4CAF50;
+  }
+  #mint-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #mintFeeDisplay {
     font-size: 14px;
-    margin-bottom: 5px;
-    height: 32px;
-    line-height: 22px;
-    box-sizing: border-box;
-    text-align: center;
-    width: 120px;
-  }
-  .file-input-label:hover {
-    background: #bbb;
-  }
-  #right-panel h2, #background-section h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
-    text-align: center;
-    margin: 0 0 10px;
   }
   .confirmation-dialog {
     position: fixed;
@@ -372,7 +390,7 @@
 
 
 
-// Section 3 - BODY OPENING AND LEFT PANEL //
+// Section 5 - BODY OPENING AND LEFT PANEL //
 <body>
   <div id="version">Version 73</div>
   <div id="left-panel">
@@ -383,7 +401,7 @@
 
 
 
-// Section 4 - BACKGROUND SECTION //
+// Section 6 - BACKGROUND SECTION //
     <div id="background-section">
       <h2>AI Background</h2>
       <div id="prompt-section">
@@ -401,7 +419,7 @@
 
 
 
-// Section 5 - MINT SECTION //
+// Section 7 - MINT SECTION //
     <div id="mint-section">
       <button id="mintButton" disabled>Mint NFT</button>
       <div id="mintFeeDisplay">Mint Fee: Loading...</div>
@@ -410,7 +428,7 @@
 
 
 
-// Section 6 - RIGHT PANEL //
+// Section 8 - RIGHT PANEL //
   <div id="right-panel">
     <h2>Preview</h2>
     <div id="preview">
@@ -438,7 +456,7 @@
 
 
 
-// Section 7 - ENLARGED PREVIEW AND BODY CLOSING //
+// Section 9 - ENLARGED PREVIEW AND BODY CLOSING //
   <div id="enlarged-preview">
     <!-- Enlarged preview images will be added dynamically -->
   </div>
