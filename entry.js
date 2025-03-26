@@ -220,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     traitImages[traitIndex] = newTraitImage;
 
     setupTraitListeners(traitIndex);
+    setupDragAndDrop(newTraitImage, traitIndex); // Add drag-and-drop for the new trait
     updateZIndices();
     updateMintButton();
     updatePreviewSamples(); // Update preview samples when a new trait is added
@@ -660,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  traitImages.forEach((img, index) => {
+  function setupDragAndDrop(img, traitIndex) {
     if (img) {
       img.addEventListener('dragstart', (e) => e.preventDefault());
 
@@ -687,7 +688,19 @@ document.addEventListener('DOMContentLoaded', () => {
           currentImage.classList.remove('dragging');
         }
       });
+
+      img.addEventListener('click', () => {
+        if (img.src !== '') {
+          currentImage = img;
+          updateCoordinates(img);
+        }
+      });
     }
+  }
+
+  // Initial setup for drag-and-drop on existing trait images
+  traitImages.forEach((img, index) => {
+    setupDragAndDrop(img, index);
   });
 
   if (preview) {
@@ -777,17 +790,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
-  });
-
-  traitImages.forEach(img => {
-    if (img) {
-      img.addEventListener('click', () => {
-        if (img.src !== '') {
-          currentImage = img;
-          updateCoordinates(img);
-        }
-      });
-    }
   });
 
   document.addEventListener('keydown', (e) => {
