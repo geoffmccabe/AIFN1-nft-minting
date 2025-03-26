@@ -19,6 +19,8 @@
 
 
 
+
+
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
 
@@ -84,9 +86,35 @@
     cursor: pointer;
     font-size: 16px;
     color: #666;
+    position: relative; /* For tooltip positioning */
   }
   .trait-controls span:hover {
     opacity: 0.8;
+  }
+  /* Custom tooltip for add-trait button */
+  .add-trait:hover::after {
+    content: 'Insert New Trait Here';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+  }
+  .add-trait:hover::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
   }
   .trait-grid {
     display: grid;
@@ -159,6 +187,8 @@
     background: #bbb;
   }
 </style>
+
+
 
 
 
