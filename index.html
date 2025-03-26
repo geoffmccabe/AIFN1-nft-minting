@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Mint Your AIFN NFT</title>
   <link rel="icon" type="image/x-icon" href="/AIFN1-nft-minting/favicon.ico">
+  <!-- Include Rowdies font from Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -38,11 +40,40 @@
       padding-left: 20px;
       border-left: 1px solid #444;
     }
-    h1, h2 {
+    #logo {
+      display: block;
+      margin: 0 auto 20px;
+      width: 600px;
+      height: auto;
+    }
+    h1 {
       text-align: center;
     }
     .trait-section {
       margin-bottom: 20px;
+    }
+    .trait-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .trait-section h2 {
+      font-family: 'Rowdies', sans-serif;
+      font-weight: 400;
+      margin: 0;
+      text-align: left;
+      flex-grow: 1;
+    }
+    .trait-controls {
+      display: flex;
+      gap: 10px;
+    }
+    .trait-controls span {
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .trait-controls span:hover {
+      opacity: 0.8;
     }
     .trait-grid {
       display: grid;
@@ -67,7 +98,7 @@
       margin-bottom: 10px;
       overflow: hidden;
       border: 1px solid black;
-      border-radius: 10px; /* Increased from 5px to 10px */
+      border-radius: 10px;
     }
     #preview img {
       position: absolute;
@@ -75,13 +106,9 @@
       max-height: 600px;
       object-fit: contain;
     }
-    #preview-background { z-index: 1; }
-    #preview-trait1 { z-index: 2; } /* Bottom layer */
-    #preview-trait2 { z-index: 3; } /* Middle layer */
-    #preview-trait3 { z-index: 4; } /* Top layer */
-    #preview img[src="https://archive.org/download/placeholder-image/placeholder-image.jpg"] {
-      z-index: 1 !important;
-    }
+    #preview-trait1 { z-index: 2; } /* Default z-index, will be adjusted dynamically */
+    #preview-trait2 { z-index: 3; }
+    #preview-trait3 { z-index: 4; }
     #preview img.dragging {
       box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
     }
@@ -140,6 +167,7 @@
       width: 100%;
       height: 140px;
       resize: none;
+      border-radius: 5px; /* Half of 10px */
     }
     #prompt-section label {
       display: block;
@@ -150,11 +178,16 @@
       text-align: center;
     }
     #background-image {
-      width: 600px; /* Set to 600x600 */
+      width: 600px;
       height: 600px;
       background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
       background-size: cover;
-      border-radius: 10px; /* Increased from 5px to 10px */
+      border-radius: 10px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 5px;
+      border-radius: 5px; /* Half of 10px */
     }
   </style>
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
@@ -164,59 +197,52 @@
 <body>
   <div id="version">v1.0.63 - 2025-03-24 17:15:00 MDT</div>
   <div id="left-panel">
+    <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo">
     <h1>Mint Your AIFN NFT</h1>
     <div id="mintFeeDisplay">Mint Fee: Loading...</div>
-    <div id="trait1" class="trait-section">
-      <h2>Trait 1</h2>
-      <input type="text" id="trait1-name" placeholder="Trait Name (e.g., Eyes)">
-      <input type="file" id="trait1-files" accept="image/png,image/webp" multiple>
-      <div id="trait1-grid" class="trait-grid"></div>
-    </div>
-    <div id="trait2" class="trait-section">
-      <h2>Trait 2</h2>
-      <input type="text" id="trait2-name" placeholder="Trait Name (e.g., Hair)">
-      <input type="file" id="trait2-files" accept="image/png,image/webp" multiple>
-      <div id="trait2-grid" class="trait-grid"></div>
-    </div>
-    <div id="trait3" class="trait-section">
-      <h2>Trait 3</h2>
-      <input type="text" id="trait3-name" placeholder="Trait Name (e.g., Accessories)">
-      <input type="file" id="trait3-files" accept="image/png,image/webp" multiple>
-      <div id="trait3-grid" class="trait-grid"></div>
+    <div id="trait-container">
+      <div id="trait1" class="trait-section">
+        <div class="trait-header">
+          <h2>Trait 1</h2>
+          <div class="trait-controls">
+            <span class="up-arrow" data-trait="1">⬆️</span>
+            <span class="down-arrow" data-trait="1">⬇️</span>
+            <span class="add-remove-trait" data-trait="1">➕</span>
+          </div>
+        </div>
+        <input type="text" id="trait1-name" placeholder="Trait Name (e.g., Eyes)">
+        <input type="file" id="trait1-files" accept="image/png,image/webp" multiple>
+        <div id="trait1-grid" class="trait-grid"></div>
+      </div>
+      <div id="trait2" class="trait-section">
+        <div class="trait-header">
+          <h2>Trait 2</h2>
+          <div class="trait-controls">
+            <span class="up-arrow" data-trait="2">⬆️</span>
+            <span class="down-arrow" data-trait="2">⬇️</span>
+            <span class="add-remove-trait" data-trait="2">➕</span>
+          </div>
+        </div>
+        <input type="text" id="trait2-name" placeholder="Trait Name (e.g., Hair)">
+        <input type="file" id="trait2-files" accept="image/png,image/webp" multiple>
+        <div id="trait2-grid" class="trait-grid"></div>
+      </div>
+      <div id="trait3" class="trait-section">
+        <div class="trait-header">
+          <h2>Trait 3</h2>
+          <div class="trait-controls">
+            <span class="up-arrow" data-trait="3">⬆️</span>
+            <span class="down-arrow" data-trait="3">⬇️</span>
+            <span class="add-remove-trait" data-trait="3">➕</span>
+          </div>
+        </div>
+        <input type="text" id="trait3-name" placeholder="Trait Name (e.g., Accessories)">
+        <input type="file" id="trait3-files" accept="image/png,image/webp" multiple>
+        <div id="trait3-grid" class="trait-grid"></div>
+      </div>
     </div>
     <div id="background-section">
       <h2>AI Background</h2>
       <div id="prompt-section">
         <label for="base-prompt">Basic Prompt:</label>
-        <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
-        <label for="user-prompt">User Prompt:</label>
-        <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
-      </div>
-      <button id="generate-background">Generate Bkgd</button>
-      <div id="background-details">
-        <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
-        <p id="background-metadata">Loading...</p>
-      </div>
-    </div>
-    <button id="mintButton" disabled>Mint NFT</button>
-    <div id="status">Select traits to begin.</div>
-  </div>
-  <div id="right-panel">
-    <h2>Preview</h2>
-    <div id="preview">
-      <img id="preview-background" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="Background">
-      <img id="preview-trait1" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 1">
-      <img id="preview-trait2" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 2">
-      <img id="preview-trait3" src="https://archive.org/download/placeholder-image/placeholder-image.jpg" alt="Trait 3">
-    </div>
-    <div id="controls">
-      <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
-      <span>   </span>
-      <span class="direction-emoji" data-direction="up">⬆️</span>
-      <span class="direction-emoji" data-direction="down">⬇️</span>
-      <span class="direction-emoji" data-direction="left">⬅️</span>
-      <span class="direction-emoji" data-direction="right">➡️</span>
-    </div>
-  </div>
-</body>
-</html>
+        <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, 
