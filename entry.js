@@ -47,7 +47,158 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners for global controls
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
+  generateButton.addEventListener('click', fetchBackground);
+
+  // Set up drag-and-drop for direction emojis
+  directionEmojis.forEach(emoji => {
+    const direction = emoji.getAttribute('data-direction');
+    emoji.addEventListener('mousedown', () => {
+      if (!currentImage || currentImage.src === '') return;
+      moveInterval = setInterval(() => {
+        let left = parseFloat(currentImage.style.left) || 0;
+        let top = parseFloat(currentImage.style.top) || 0;
+        if (direction === 'up') top -= 1;
+        if (direction === 'down') top += 1;
+        if (direction === 'left') left -= 1;
+        if (direction === 'right') left += 1;
+        left = Math.max(0, Math.min(left, 600 - currentImage.width));
+        top = Math.max(0, Math.min(top, 600 - currentImage.height));
+        currentImage.style.left = `${left}px`;
+        currentImage.style.top = `${top}px`;
+        currentImage.classList.add('dragging');
+        updateCoordinates(currentImage);
+      }, 50);
+    });
+
+    emoji.addEventListener('mouseup', () => {
+      if (moveInterval) {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (currentImage) {
+          const traitIndex = traitImages.indexOf(currentImage);
+          const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
+          savePosition(currentImage, traitIndex, variationName);
+          currentImage.classList.remove('dragging');
+        }
+      }
+    });
+
+    emoji.addEventListener('mouseleave', () => {
+      if (moveInterval) {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (currentImage) {
+          const traitIndex = traitImages.indexOf(currentImage);
+          const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
+          savePosition(currentImage, traitIndex, variationName);
+          currentImage.classList.remove('dragging');
+        }
+      }
+    });
+  });
+
+  // Set up magnifying glass
+  magnifyEmoji.addEventListener('click', () => {
+    enlargedPreview.innerHTML = '';
+    const maxWidth = window.innerWidth * 0.9;
+    const maxHeight = window.innerHeight * 0.9;
+    let scale = 1;
+    if (maxWidth / maxHeight > 1) {
+      enlargedPreview.style.height = `${maxHeight}px`;
+      enlargedPreview.style.width = `${maxHeight}px`;
+      scale = maxHeight / 600;
+    } else {
+      enlargedPreview.style.width = `${maxWidth}px`;
+      enlargedPreview.style.height = `${maxWidth}px`;
+      scale = maxWidth / 600;
+    }
+
+    traitImages.forEach(img => {
+      if (img.style.display === 'block') {
+        const clonedImg = img.cloneNode(true);
+        clonedImg.style.display = 'block';
+        clonedImg.style.width = `${img.width * scale}px`;
+        clonedImg.style.height = `${img.height * scale}px`;
+        clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
+        clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
+        clonedImg.style.zIndex = img.style.zIndex;
+        enlargedPreview.appendChild(clonedImg);
+      }
+    });
+
+    enlargedPreview.style.display = 'block';
+    enlargedPreview.addEventListener('click', () => enlargedPreview.style.display = 'none', { once: true });
+  });
+
+  // Set up undo functionality
+  document.addEventListener('keydown', (e) => {
+    const now = Date.now();
+    if (now - lastUndoTime < 300) return;
+    lastUndoTime = now;
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      e.preventDefault();
+      if (!currentImage) return;
+      const traitIndex = traitImages.indexOf(currentImage);
+      const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
+      const key = `${traitIndex}-${variationName}`;
+      if (variantHistories[key] && variantHistories[key].length > 1) {
+        variantHistories[key].pop();
+        const previousPosition = variantHistories[key][variantHistories[key].length - 1];
+        currentImage.style.left = `${previousPosition.left}px`;
+        currentImage.style.top = `${previousPosition.top}px`;
+        localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(previousPosition));
+        updateCoordinates(currentImage);
+        updateSamplePositions(traitIndex, variationName, previousPosition);
+        updateSubsequentTraits(traitIndex, variationName, previousPosition);
+      }
+    }
+  });
+
+  // Set up drag-and-drop for initial trait images
+  traitImages.forEach((img, index) => setupDragAndDrop(img, index));
+
+  // Set up preview panel drag events
+  if (preview) {
+    preview.addEventListener('mousemove', (e) => {
+      if (!isDragging || !currentImage) return;
+      const rect = preview.getBoundingClientRect();
+      let newLeft = e.clientX - rect.left - offsetX;
+      let newTop = e.clientY - rect.top - offsetY;
+      newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
+      newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
+      currentImage.style.left = `${newLeft}px`;
+      currentImage.style.top = `${newTop}px`;
+      updateCoordinates(currentImage);
+    });
+
+    preview.addEventListener('mouseup', () => {
+      if (isDragging && currentImage) {
+        const traitIndex = traitImages.indexOf(currentImage);
+        const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
+        savePosition(currentImage, traitIndex, variationName);
+        isDragging = false;
+        currentImage.style.cursor = 'grab';
+        currentImage.classList.remove('dragging');
+      }
+    });
+
+    preview.addEventListener('mouseleave', () => {
+      if (isDragging && currentImage) {
+        const traitIndex = traitImages.indexOf(currentImage);
+        const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
+        savePosition(currentImage, traitIndex, variationName);
+        isDragging = false;
+        currentImage.style.cursor = 'grab';
+        currentImage.classList.remove('dragging');
+      }
+    });
+  }
 });
+
+
+
+
 
 
 
@@ -104,6 +255,11 @@ function addTrait(traitIndex, initial = false) {
   fileInputLabel.htmlFor = `trait${traitIndex + 1}-files`;
   fileInputLabel.textContent = 'Choose Files';
 
+  const variantCountSpan = document.createElement('span');
+  variantCountSpan.id = `trait${traitIndex + 1}-variant-count`;
+  variantCountSpan.style.marginLeft = '10px';
+  variantCountSpan.textContent = '[0 variants chosen]';
+
   const grid = document.createElement('div');
   grid.id = `trait${traitIndex + 1}-grid`;
   grid.className = 'trait-grid';
@@ -112,6 +268,7 @@ function addTrait(traitIndex, initial = false) {
   traitSection.appendChild(nameInput);
   traitSection.appendChild(fileInput);
   traitSection.appendChild(fileInputLabel);
+  traitSection.appendChild(variantCountSpan);
   traitSection.appendChild(grid);
   traitContainer.appendChild(traitSection);
 
@@ -224,9 +381,10 @@ function setupTraitListeners(traitIndex) {
   const nameInput = document.getElementById(`trait${traitIndex + 1}-name`);
   const fileInput = document.getElementById(`trait${traitIndex + 1}-files`);
   const fileInputLabel = document.querySelector(`label[for="trait${traitIndex + 1}-files"]`);
+  const variantCountSpan = document.getElementById(`trait${traitIndex + 1}-variant-count`);
   const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
 
-  if (fileInput && nameInput && grid && fileInputLabel) {
+  if (fileInput && nameInput && grid && fileInputLabel && variantCountSpan) {
     fileInput.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
@@ -284,6 +442,7 @@ function setupTraitListeners(traitIndex) {
         if (firstWrapper) firstWrapper.classList.add('selected');
         autoPositioned[traitIndex] = false;
         fileInputLabel.textContent = 'Choose New Files';
+        variantCountSpan.textContent = `[${traits[traitIndex].variations.length} variants chosen]`;
       }
 
       updateMintButton();
@@ -587,6 +746,8 @@ function updateMintButton() {
 
 
 
+
+
 /* Section 3 - PREVIEW AND POSITION MANAGEMENT */
 
 
@@ -685,147 +846,6 @@ function setupDragAndDrop(img, traitIndex) {
     });
   }
 }
-
-if (preview) {
-  preview.addEventListener('mousemove', (e) => {
-    if (!isDragging || !currentImage) return;
-    const rect = preview.getBoundingClientRect();
-    let newLeft = e.clientX - rect.left - offsetX;
-    let newTop = e.clientY - rect.top - offsetY;
-    newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
-    newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
-    currentImage.style.left = `${newLeft}px`;
-    currentImage.style.top = `${newTop}px`;
-    updateCoordinates(currentImage);
-  });
-
-  preview.addEventListener('mouseup', () => {
-    if (isDragging && currentImage) {
-      const traitIndex = traitImages.indexOf(currentImage);
-      const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
-      savePosition(currentImage, traitIndex, variationName);
-      isDragging = false;
-      currentImage.style.cursor = 'grab';
-      currentImage.classList.remove('dragging');
-    }
-  });
-
-  preview.addEventListener('mouseleave', () => {
-    if (isDragging && currentImage) {
-      const traitIndex = traitImages.indexOf(currentImage);
-      const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
-      savePosition(currentImage, traitIndex, variationName);
-      isDragging = false;
-      currentImage.style.cursor = 'grab';
-      currentImage.classList.remove('dragging');
-    }
-  });
-}
-
-directionEmojis.forEach(emoji => {
-  const direction = emoji.getAttribute('data-direction');
-  emoji.addEventListener('mousedown', () => {
-    if (!currentImage || currentImage.src === '') return;
-    moveInterval = setInterval(() => {
-      let left = parseFloat(currentImage.style.left) || 0;
-      let top = parseFloat(currentImage.style.top) || 0;
-      if (direction === 'up') top -= 1;
-      if (direction === 'down') top += 1;
-      if (direction === 'left') left -= 1;
-      if (direction === 'right') left += 1;
-      left = Math.max(0, Math.min(left, 600 - currentImage.width));
-      top = Math.max(0, Math.min(top, 600 - currentImage.height));
-      currentImage.style.left = `${left}px`;
-      currentImage.style.top = `${top}px`;
-      currentImage.classList.add('dragging');
-      updateCoordinates(currentImage);
-    }, 50);
-  });
-
-  emoji.addEventListener('mouseup', () => {
-    if (moveInterval) {
-      clearInterval(moveInterval);
-      moveInterval = null;
-      if (currentImage) {
-        const traitIndex = traitImages.indexOf(currentImage);
-        const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
-        savePosition(currentImage, traitIndex, variationName);
-        currentImage.classList.remove('dragging');
-      }
-    }
-  });
-
-  emoji.addEventListener('mouseleave', () => {
-    if (moveInterval) {
-      clearInterval(moveInterval);
-      moveInterval = null;
-      if (currentImage) {
-        const traitIndex = traitImages.indexOf(currentImage);
-        const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
-        savePosition(currentImage, traitIndex, variationName);
-        currentImage.classList.remove('dragging');
-      }
-    }
-  });
-});
-
-magnifyEmoji.addEventListener('click', () => {
-  enlargedPreview.innerHTML = '';
-  const maxWidth = window.innerWidth * 0.9;
-  const maxHeight = window.innerHeight * 0.9;
-  let scale = 1;
-  if (maxWidth / maxHeight > 1) {
-    enlargedPreview.style.height = `${maxHeight}px`;
-    enlargedPreview.style.width = `${maxHeight}px`;
-    scale = maxHeight / 600;
-  } else {
-    enlargedPreview.style.width = `${maxWidth}px`;
-    enlargedPreview.style.height = `${maxWidth}px`;
-    scale = maxWidth / 600;
-  }
-
-  traitImages.forEach(img => {
-    if (img.style.display === 'block') {
-      const clonedImg = img.cloneNode(true);
-      clonedImg.style.display = 'block';
-      clonedImg.style.width = `${img.width * scale}px`;
-      clonedImg.style.height = `${img.height * scale}px`;
-      clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
-      clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
-      clonedImg.style.zIndex = img.style.zIndex;
-      enlargedPreview.appendChild(clonedImg);
-    }
-  });
-
-  enlargedPreview.style.display = 'block';
-  enlargedPreview.addEventListener('click', () => enlargedPreview.style.display = 'none', { once: true });
-});
-
-document.addEventListener('keydown', (e) => {
-  const now = Date.now();
-  if (now - lastUndoTime < 300) return;
-  lastUndoTime = now;
-
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-    e.preventDefault();
-    if (!currentImage) return;
-    const traitIndex = traitImages.indexOf(currentImage);
-    const variationName = traits[traitIndex].variations[traits[traitIndex].selected].name;
-    const key = `${traitIndex}-${variationName}`;
-    if (variantHistories[key] && variantHistories[key].length > 1) {
-      variantHistories[key].pop();
-      const previousPosition = variantHistories[key][variantHistories[key].length - 1];
-      currentImage.style.left = `${previousPosition.left}px`;
-      currentImage.style.top = `${previousPosition.top}px`;
-      localStorage.setItem(`trait${traitIndex + 1}-${variationName}-position`, JSON.stringify(previousPosition));
-      updateCoordinates(currentImage);
-      updateSamplePositions(traitIndex, variationName, previousPosition);
-      updateSubsequentTraits(traitIndex, variationName, previousPosition);
-    }
-  }
-});
-
-traitImages.forEach((img, index) => setupDragAndDrop(img, index));
 
 function updateCoordinates(img) {
   if (img && coordinates) {
@@ -986,9 +1006,7 @@ function updatePreviewSamples() {
   }
 }
 
-generateButton.addEventListener('click', fetchBackground);
 
-traitImages.forEach((img, index) => setupDragAndDrop(img, index));
 
 
 
