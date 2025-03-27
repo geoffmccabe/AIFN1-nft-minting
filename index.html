@@ -1,680 +1,556 @@
-<!-- Section 1 - HTML HEADER AND METADATA -->
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mint Your AIFN NFT</title>
-  <link rel="icon" type="image/x-icon" href="/AIFN1-nft-minting/favicon.ico">
-  <!-- Include Rowdies font from Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
-  <!-- Include Poppins font for modern look -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <!-- Include Anime.js for sphere animation -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perceptron Network NFT Creator</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Rowdies:wght@400;700&display=swap">
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-  <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="config.js"></script>
   <script src="entry.js"></script>
 </head>
-
-
-
-
-
-<!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
-
-
-  
-<style>
-  body {
-    font-family: 'Poppins', sans-serif;
-    background-image: url('/AIFN1-nft-minting/images/background.webp');
-    background-repeat: repeat-y;
-    background-position: center top;
-    background-size: 100% auto;
-    color: black;
-    padding: 20px;
-    margin: 0;
-    display: flex;
-    position: relative;
-    min-height: 100vh;
-    width: 50%; /* Added to reduce sphere size */
-  }
-  #version {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 12px;
-    color: #333;
-    z-index: 10;
-  }
-  #left-panel {
-    flex: 1;
-    padding-right: 20px;
-    padding-top: 30px;
-    min-width: 300px;
-  }
-  #logo {
-    display: block;
-    margin: 0 auto 20px;
-    width: 600px;
-    max-width: 600px;
-    height: auto;
-  }
-  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    #logo { width: 300px; }
-  }
-  .trait-section {
-    margin-bottom: 20px;
-  }
-  .trait-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  .trait-section h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
-    margin: 0;
-    text-align: left;
-    flex-grow: 1;
-  }
-  .trait-controls {
-    display: flex;
-    gap: 10px;
-  }
-  .trait-controls span {
-    cursor: pointer;
-    font-size: 16px;
-    color: #666;
-    position: relative; /* For tooltip positioning */
-  }
-  .trait-controls span:hover {
-    opacity: 0.8;
-  }
-  /* Custom tooltip for add-trait button */
-  .add-trait:hover::after {
-    content: 'Insert New Trait Here';
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-  }
-  .add-trait:hover::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #333;
-    z-index: 1000;
-  }
-  /* Custom tooltip for remove-trait button */
-  .remove-trait:hover::after {
-    content: 'Remove this Trait\nand its Variants';
-    position: absolute;
-    top: -40px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    white-space: pre; /* Preserve line break */
-    line-height: 1.2; /* Ensure proper line spacing */
-    text-align: center;
-    z-index: 1000;
-  }
-  .remove-trait:hover::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #333;
-    z-index: 1000;
-  }
-  /* Custom tooltip for up-arrow button */
-  .up-arrow:hover::after {
-    content: attr(data-tooltip); /* Use data-tooltip attribute for dynamic text */
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-  }
-  .up-arrow:hover::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #333;
-    z-index: 1000;
-  }
-  /* Custom tooltip for down-arrow button */
-  .down-arrow:hover::after {
-    content: attr(data-tooltip); /* Use data-tooltip attribute for dynamic text */
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-  }
-  .down-arrow:hover::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #333;
-    z-index: 1000;
-  }
-  .trait-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 10px;
-    margin-top: 10px;
-  }
-  .variation-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-  }
-  .variation-image-wrapper {
-    width: 110px;
-    height: 110px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .variation-image-wrapper.selected {
-    border: 5px solid #f4c149;
-  }
-  .variation {
-    width: 100px;
-    height: 100px;
-    object-fit: contain;
-  }
-  .variation-filename {
-    font-size: 8px;
-    text-align: center;
-    margin-top: 5px;
-    word-break: break-all;
-  }
-  input[type="text"] {
-    width: 100%;
-    padding: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    margin-bottom: 5px;
-    box-sizing: border-box;
-    height: 32px;
-  }
-  input[type="file"] {
-    display: none;
-  }
-  .file-input-label {
-    display: inline-block;
-    padding: 5px 10px;
-    background: #ccc;
-    color: black;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-bottom: 5px;
-    height: 27.2px; /* Reduced from 32px by 15% (32 * 0.85 = 27.2) */
-    line-height: 17.2px; /* Adjusted to center text (27.2 - 10 padding = 17.2) */
-    box-sizing: border-box;
-    text-align: center;
-    min-width: 120px; /* Minimum width for "Choose Files" */
-    width: auto; /* Allow width to grow */
-    white-space: nowrap; /* Prevent text wrapping */
-    vertical-align: middle; /* Ensure alignment with input */
-  }
-  .file-input-label:hover {
-    background: #bbb;
-  }
-</style>
-
-
-  
-<!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
-
-
-  
-<style>
-  #right-panel {
-    width: 600px;
-    padding-left: 20px;
-    max-width: 100%;
-  }
-  #right-panel h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
-    text-align: center;
-    margin: 0 0 10px;
-  }
-  #preview {
-    position: relative;
-    width: 600px;
-    height: 600px;
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: cover;
-    margin-bottom: 10px;
-    overflow: hidden;
-    border: 2px solid #666;
-    border-radius: 10px;
-    max-width: 100%;
-  }
-  #preview img {
-    position: absolute;
-    max-width: 600px;
-    max-height: 600px;
-    object-fit: contain;
-    display: none;
-  }
-  #preview img.dragging {
-    box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
-  }
-  #controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    margin-top: 5px;
-  }
-  #coordinates {
-    font-size: 14px;
-  }
-  #coordinates strong {
-    font-weight: bold;
-  }
-  .direction-emoji, .magnify-emoji {
-    font-size: 16px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 0;
-    color: #666;
-  }
-  .direction-emoji:hover, .magnify-emoji:hover {
-    opacity: 0.8;
-  }
-  #enlarged-preview {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: cover;
-    border: 1px solid black;
-    z-index: 1000;
-    overflow: hidden;
-  }
-  #enlarged-preview img {
-    position: absolute;
-    object-fit: contain;
-  }
-  #preview-samples {
-    margin-top: 20px;
-  }
-  #preview-samples-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  #preview-samples h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
-    text-align: left;
-    margin: 0;
-  }
-  #preview-samples-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 140px);
-    grid-template-rows: repeat(5, 140px);
-    gap: 13px;
-    width: 600px;
-  }
-  #preview-samples-grid .sample-container {
-    position: relative;
-    width: 140px;
-    height: 140px;
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: 140px 140px;
-    border: 1px solid black;
-    border-radius: 5px;
-    overflow: hidden;
-  }
-  #preview-samples-grid img {
-    position: absolute;
-    transform: scale(0.23333);
-    transform-origin: top left;
-  }
-  #update-previews {
-    padding: 5px 10px;
-    background: #ccc;
-    color: black;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  #update-previews:hover {
-    background: #bbb;
-  }
-</style>
-
-
-
-<!-- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -->
-
-
-  
-<style>
-  #background-section h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
-    text-align: center;
-    margin: 0 0 10px;
-  }
-  #prompt-section {
-    margin-top: 10px;
-  }
-  #prompt-section p {
-    margin: 5px 0;
-  }
-  #prompt-section textarea {
-    width: 100%;
-    height: 140px;
-    resize: none;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-  }
-  #prompt-section label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-  #background-details {
-    text-align: center;
-  }
-  #background-image {
-    width: 600px;
-    height: 600px;
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: 600px 600px;
-    border-radius: 10px;
-    border: 1px solid black;
-  }
-  button {
-    padding: 10px 20px;
-    background: grey;
-    color: black;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    border-radius: 5px;
-    margin: 10px 0;
-  }
-  button:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-  button:not(:disabled) {
-    background: #4CAF50;
-  }
-  #mint-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  #mintFeeDisplay {
-    font-size: 14px;
-  }
-  .confirmation-dialog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    z-index: 1000;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  .confirmation-dialog p {
-    margin: 0 0 10px;
-    text-align: center;
-  }
-  .confirmation-dialog .buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-  }
-  .confirmation-dialog button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  .confirmation-dialog .yes-button {
-    background: #739c6c;
-  }
-  .confirmation-dialog .no-button {
-    background: #ae645a;
-  }
-  @media (max-width: 900px) {
-    body { flex-direction: column; }
-    #left-panel, #right-panel { width: 100%; padding: 10px; }
-    #preview { width: 100%; height: auto; aspect-ratio: 1 / 1; }
-    #logo { width: 100%; max-width: 600px; }
-    #preview-samples-grid { 
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-      width: 100%; 
-    }
-  }
-</style>
-
-
-
-<!-- Section 5 - BODY OPENING AND LEFT PANEL -->
-
-
-  
 <body>
-  <div id="version">Version 88</div>
+  <div id="version">Version 87</div>
   <div id="left-panel">
-    <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
-    <div id="trait-container">
-      <!-- Trait groups will be added dynamically -->
-    </div>
-
-
-
-<!-- Section 6 - BACKGROUND SECTION -->
-
-
-    
-    <div id="background-section">
-      <h2>AI Background</h2>
-      <div id="prompt-section">
-        <label for="base-prompt">Basic Prompt:</label>
-        <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
-        <label for="user-prompt">User Prompt:</label>
-        <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
-      </div>
-      <button id="generate-background">Generate Bkgd</button>
-      <div id="background-details">
-        <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
-        <p id="background-metadata">Loading...</p>
-      </div>
-    </div>
-
-
-
-<!-- Section 7 - MINT SECTION -->
-
-
-    
-    <div id="mint-section">
-      <button id="mintButton" disabled>Mint NFT</button>
-      <div id="mintFeeDisplay">Mint Fee: Loading...</div>
-    </div>
+    <img id="logo" src="/AIFN1-nft-minting/images/logo.png" alt="Perceptron Network NFT Creator">
+    <div id="trait-container"></div>
+    <h1>AI Background</h1>
+    <h2>Basic Prompt:</h2>
+    <textarea id="base-prompt" rows="5" cols="50">igirl, shinyang, (((small breasts))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, pirate pose, (white skull belt buckle), black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
+    <h2>User Prompt:</h2>
+    <textarea id="user-prompt" rows="2" cols="50" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
+    <button id="generate-background">Generate Bkgd</button>
   </div>
-
-
-
-<!-- Section 8 - RIGHT PANEL -->
-
-
-  
   <div id="right-panel">
-    <h2>Preview</h2>
-    <div id="preview">
-      <!-- Preview images will be added dynamically -->
-    </div>
-    <div id="controls">
-      <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
-      <span>   </span>
+    <h1>Preview</h1>
+    <div id="preview"></div>
+    <div id="coordinates"><strong>Coordinates:</strong> (1, 1)</div>
+    <div id="direction-emojis">
       <span class="direction-emoji" data-direction="up">⬆️</span>
       <span class="direction-emoji" data-direction="down">⬇️</span>
       <span class="direction-emoji" data-direction="left">⬅️</span>
       <span class="direction-emoji" data-direction="right">➡️</span>
       <span class="magnify-emoji">🔍</span>
     </div>
-    <div id="preview-samples">
-      <div id="preview-samples-header">
-        <h2>PREVIEW SAMPLES</h2>
-        <button id="update-previews">UPDATE</button>
-      </div>
-      <div id="preview-samples-grid">
-        <!-- 5x4 grid of preview samples will be added dynamically -->
-      </div>
-    </div>
+    <div id="enlarged-preview"></div>
+    <h1>Preview Samples</h1>
+    <div id="preview-samples-grid"></div>
+    <button id="update-previews">Update</button>
+  </div>
+  <div id="mint-section">
+    <button id="mintButton" disabled>Mint NFT</button>
+    <div id="mintFeeDisplay">Fetching mint fee...</div>
+  </div>
+  <div id="background-section">
+    <h1>Background</h1>
+    <img id="background-image" src="" alt="Generated Background">
+    <div id="background-metadata"></div>
   </div>
 
-  <div id="enlarged-preview">
-    <!-- Enlarged preview images will be added dynamically -->
-  </div>
-
-
-
-<!-- Section 9 - SPHERE ANIMATION -->
-
-
-  
+  <!-- Section 9 - SPHERE ANIMATION HTML (from 2 iterations ago) -->
   <div class="animation-wrapper">
-    <div class="sphere-animation">
-      <svg class="sphere" viewBox="0 0 440 440" stroke="rgba(80,80,80,.35)">
-        <defs>
-          <linearGradient id="sphereGradient" x1="5%" x2="5%" y1="0%" y2="15%">
-            <stop stop-color="#373734" offset="0%"/>
-            <stop stop-color="#242423" offset="50%"/>
-            <stop stop-color="#0D0D0C" offset="100%"/>
-          </linearGradient>
-        </defs>
-        <path d="M361.604 361.238c-24.407 24.408-51.119 37.27-59.662 28.727-8.542-8.543 4.319-35.255 28.726-59.663 24.408-24.407 51.12-37.269 59.663-28.726 8.542 8.543-4.319 35.255-28.727 59.662z"/>
-        <path d="M360.72 360.354c-35.879 35.88-75.254 54.677-87.946 41.985-12.692-12.692 6.105-52.067 41.985-87.947 35.879-35.879 75.254-54.676 87.946-41.984 12.692 12.692-6.105 52.067-41.984 87.946z"/>
-        <path d="M357.185 356.819c-44.91 44.91-94.376 68.258-110.485 52.149-16.11-16.11 7.238-65.575 52.149-110.485 44.91-44.91 94.376-68.259 110.485-52.15 16.11 16.11-7.239 65.576-52.149 110.486z"/>
-        <path d="M350.998 350.632c-53.21 53.209-111.579 81.107-130.373 62.313-18.794-18.793 9.105-77.163 62.314-130.372 53.209-53.21 111.579-81.108 130.373-62.314 18.794 18.794-9.105 77.164-62.314 130.373z"/>
-        <path d="M343.043 342.677c-59.8 59.799-125.292 91.26-146.283 70.268-20.99-20.99 10.47-86.483 70.269-146.282 59.799-59.8 125.292-91.26 146.283-70.269 20.99 20.99-10.47 86.484-70.27 146.283z"/>
-        <path d="M334.646 334.28c-65.169 65.169-136.697 99.3-159.762 76.235-23.065-23.066 11.066-94.593 76.235-159.762s136.697-99.3 159.762-76.235c23.065 23.065-11.066 94.593-76.235 159.762z"/>
-        <path d="M324.923 324.557c-69.806 69.806-146.38 106.411-171.031 81.76-24.652-24.652 11.953-101.226 81.759-171.032 69.806-69.806 146.38-106.411 171.031-81.76 24.652 24.653-11.953 101.226-81.759 171.032z"/>
-        <path d="M312.99 312.625c-73.222 73.223-153.555 111.609-179.428 85.736-25.872-25.872 12.514-106.205 85.737-179.428s153.556-111.609 179.429-85.737c25.872 25.873-12.514 106.205-85.737 179.429z"/>
-        <path d="M300.175 299.808c-75.909 75.909-159.11 115.778-185.837 89.052-26.726-26.727 13.143-109.929 89.051-185.837 75.908-75.908 159.11-115.778 185.837-89.051 26.726 26.726-13.143 109.928-89.051 185.836z"/>
-        <path d="M284.707 284.34c-77.617 77.617-162.303 118.773-189.152 91.924-26.848-26.848 14.308-111.534 91.924-189.15C265.096 109.496 349.782 68.34 376.63 95.188c26.849 26.849-14.307 111.535-91.923 189.151z"/>
-        <path d="M269.239 267.989c-78.105 78.104-163.187 119.656-190.035 92.807-26.849-26.848 14.703-111.93 92.807-190.035 78.105-78.104 163.187-119.656 190.035-92.807 26.849 26.848-14.703 111.93-92.807 190.035z"/>
-        <path d="M252.887 252.52C175.27 330.138 90.584 371.294 63.736 344.446 36.887 317.596 78.043 232.91 155.66 155.293 233.276 77.677 317.962 36.521 344.81 63.37c26.85 26.848-14.307 111.534-91.923 189.15z"/>
-        <path d="M236.977 236.61C161.069 312.52 77.867 352.389 51.14 325.663c-26.726-26.727 13.143-109.928 89.052-185.837 75.908-75.908 159.11-115.777 185.836-89.05 26.727 26.726-13.143 109.928-89.051 185.836z"/>
-        <path d="M221.067 220.7C147.844 293.925 67.51 332.31 41.639 306.439c-25.873-25.873 12.513-106.206 85.736-179.429C200.6 53.786 280.931 15.4 306.804 41.272c25.872 25.873-12.514 106.206-85.737 179.429z"/>
-        <path d="M205.157 204.79c-69.806 69.807-146.38 106.412-171.031 81.76-24.652-24.652 11.953-101.225 81.759-171.031 69.806-69.807 146.38-106.411 171.031-81.76 24.652 24.652-11.953 101.226-81.759 171.032z"/>
-        <path d="M189.247 188.881c-65.169 65.169-136.696 99.3-159.762 76.235-23.065-23.065 11.066-94.593 76.235-159.762s136.697-99.3 159.762-76.235c23.065 23.065-11.066 94.593-76.235 159.762z"/>
-        <path d="M173.337 172.971c-59.799 59.8-125.292 91.26-146.282 70.269-20.991-20.99 10.47-86.484 70.268-146.283 59.8-59.799 125.292-91.26 146.283-70.269 20.99 20.991-10.47 86.484-70.269 146.283z"/>
-        <path d="M157.427 157.061c-53.209 53.21-111.578 81.108-130.372 62.314-18.794-18.794 9.104-77.164 62.313-130.373 53.21-53.209 111.58-81.108 130.373-62.314 18.794 18.794-9.105 77.164-62.314 130.373z"/>
-        <path d="M141.517 141.151c-44.91 44.91-94.376 68.259-110.485 52.15-16.11-16.11 7.239-65.576 52.15-110.486 44.91-44.91 94.375-68.258 110.485-52.15 16.109 16.11-7.24 65.576-52.15 110.486z"/>
-        <path d="M125.608 125.241c-35.88 35.88-75.255 54.677-87.947 41.985-12.692-12.692 6.105-52.067 41.985-87.947C115.525 43.4 154.9 24.603 167.592 37.295c12.692 12.692-6.105 52.067-41.984 87.946z"/>
-        <path d="M109.698 109.332c-24.408 24.407-51.12 37.268-59.663 28.726-8.542-8.543 4.319-35.255 28.727-59.662 24.407-24.408 51.12-37.27 59.662-28.727 8.543 8.543-4.319 35.255-28.726 59.663z"/>
-      </svg>
-    </div>
+    <svg class="sphere-animation" viewBox="0 0 440 440">
+      <defs>
+        <linearGradient id="sphereGradient" x1="5%" y1="0%" x2="5%" y2="100%">
+          <stop offset="0%" stop-color="#000000" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#000000" stop-opacity="0.5"/>
+        </linearGradient>
+      </defs>
+      <g class="sphere">
+        <path d="M220,220 m-200,0 a200,200 0 1,0 400,0 a200,200 0 1,0 -400,0"/>
+        <path d="M220,220 m-180,0 a180,180 0 1,0 360,0 a180,180 0 1,0 -360,0"/>
+        <path d="M220,220 m-160,0 a160,160 0 1,0 320,0 a160,160 0 1,0 -320,0"/>
+        <path d="M220,220 m-140,0 a140,140 0 1,0 280,0 a140,140 0 1,0 -280,0"/>
+        <path d="M220,220 m-120,0 a120,120 0 1,0 240,0 a120,120 0 1,0 -240,0"/>
+        <path d="M220,220 m-100,0 a100,100 0 1,0 200,0 a100,100 0 1,0 -200,0"/>
+        <path d="M220,220 m-80,0 a80,80 0 1,0 160,0 a80,80 0 1,0 -160,0"/>
+        <path d="M220,220 m-60,0 a60,60 0 1,0 120,0 a60,60 0 1,0 -120,0"/>
+        <path d="M220,220 m-40,0 a40,40 0 1,0 80,0 a40,40 0 1,0 -80,0"/>
+        <path d="M220,220 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0"/>
+      </g>
+    </svg>
   </div>
 
-
-
-
-
-
-
-<!-- Section 10 - SPHERE ANIMATION STYLES -->
-
-
-  
-<style>
-  .animation-wrapper {
-    width: 100%;
-    padding-bottom: 100%;
-    position: fixed; /* Use fixed to center in viewport */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2000; /* Ensure it floats above the app */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .sphere-animation {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    transform: translate(-50%, -50%); /* Ensure centering within the wrapper */
-  }
-
-  .sphere path {
-    fill: #000000; /* Solid black fill */
-    stroke-width: 1px;
-    stroke: rgba(80,80,80,.35);
-    backface-visibility: hidden;
-  }
-
-  @media (min-width: 500px) {
-    .sphere path {
-      stroke-width: .4px;
+  <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-image: url('/AIFN1-nft-minting/images/background.webp');
+      background-repeat: repeat-y;
+      background-position: center top;
+      background-size: 100% auto;
+      color: black;
+      padding: 20px;
+      margin: 0;
+      display: flex;
+      position: relative;
+      min-height: 100vh;
+      width: 50%; /* Set to 50% to reduce sphere size */
     }
-  }
-</style>
+    #version {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 12px;
+      color: #333;
+      z-index: 10;
+    }
+    #left-panel {
+      flex: 1;
+      padding-right: 20px;
+      padding-top: 30px;
+      min-width: 300px;
+    }
+    #logo {
+      display: block;
+      margin: 0 auto 20px;
+      width: 600px;
+      max-width: 600px;
+      height: auto;
+    }
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      #logo { width: 300px; }
+    }
+    .trait-section {
+      margin-bottom: 20px;
+    }
+    .trait-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .trait-section h2 {
+      font-family: 'Rowdies', sans-serif;
+      font-weight: 400;
+      margin: 0;
+      text-align: left;
+      flex-grow: 1;
+    }
+    .trait-controls {
+      display: flex;
+      gap: 10px;
+    }
+    .trait-controls span {
+      cursor: pointer;
+      font-size: 16px;
+      color: #666;
+      position: relative; /* For tooltip positioning */
+    }
+    .trait-controls span:hover {
+      opacity: 0.8;
+    }
+    /* Custom tooltip for add-trait button */
+    .add-trait:hover::after {
+      content: 'Insert New Trait Here';
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1000;
+    }
+    .add-trait:hover::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+      z-index: 1000;
+    }
+    /* Custom tooltip for remove-trait button */
+    .remove-trait:hover::after {
+      content: 'Remove this Trait\nand its Variants';
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      white-space: pre; /* Preserve line break */
+      line-height: 1.2; /* Ensure proper line spacing */
+      text-align: center;
+      z-index: 1000;
+    }
+    .remove-trait:hover::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+      z-index: 1000;
+    }
+    /* Custom tooltip for up-arrow button */
+    .up-arrow:hover::after {
+      content: attr(data-tooltip); /* Use data-tooltip attribute for dynamic text */
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1000;
+    }
+    .up-arrow:hover::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+      z-index: 1000;
+    }
+    /* Custom tooltip for down-arrow button */
+    .down-arrow:hover::after {
+      content: attr(data-tooltip); /* Use data-tooltip attribute for dynamic text */
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1000;
+    }
+    .down-arrow:hover::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+      z-index: 1000;
+    }
+    .trait-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .variation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+    .variation-image-wrapper {
+      width: 110px;
+      height: 110px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .variation-image-wrapper.selected {
+      border: 5px solid #f4c149;
+    }
+    .variation {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+    }
+    .variation-filename {
+      font-size: 8px;
+      text-align: center;
+      margin-top: 5px;
+      word-break: break-all;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 5px;
+      box-sizing: border-box;
+      height: 32px;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .file-input-label {
+      display: inline-block;
+      padding: 5px 10px;
+      background: #ccc;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-bottom: 5px;
+      height: 27.2px; /* Reduced from 32px by 15% (32 * 0.85 = 27.2) */
+      line-height: 17.2px; /* Adjusted to center text (27.2 - 10 padding = 17.2) */
+      box-sizing: border-box;
+      text-align: center;
+      min-width: 120px; /* Minimum width for "Choose Files" */
+      width: auto; /* Allow width to grow */
+      white-space: nowrap; /* Prevent text wrapping */
+      vertical-align: middle; /* Ensure alignment with input */
+    }
+    .file-input-label:hover {
+      background: #bbb;
+    }
+  </style>
+
+  <!-- Section 3 - STYLE/CSS - RIGHT (PREVIEW AND SAMPLES) -->
+  <style>
+    #right-panel {
+      flex: 1;
+      padding-left: 20px;
+      padding-top: 30px;
+      min-width: 300px;
+    }
+    #preview {
+      width: 600px;
+      height: 600px;
+      border: 1px solid #ccc;
+      position: relative;
+      background: #ccc;
+      margin: 0 auto;
+    }
+    #preview img {
+      position: absolute;
+      max-width: 600px;
+      max-height: 600px;
+      cursor: grab;
+    }
+    #preview img.dragging {
+      cursor: grabbing;
+    }
+    #coordinates {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #direction-emojis {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .direction-emoji, .magnify-emoji {
+      cursor: pointer;
+      font-size: 20px;
+    }
+    #enlarged-preview {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ccc;
+      border: 1px solid #ccc;
+      z-index: 1000;
+      max-width: 90%;
+      max-height: 90%;
+    }
+    #enlarged-preview img {
+      position: absolute;
+    }
+    #preview-samples-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .sample-container {
+      width: 140px;
+      height: 140px;
+      border: 1px solid #ccc;
+      position: relative;
+      background: #ccc;
+    }
+    .sample-container img {
+      position: absolute;
+      max-width: 140px;
+      max-height: 140px;
+    }
+  </style>
+
+  <!-- Section 4 - STYLE/CSS - BOTTOM (MINT AND BACKGROUND) -->
+  <style>
+    #mint-section {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+    }
+    #mintButton {
+      padding: 10px 20px;
+      background: #f4c149;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #mintButton:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    #mintButton:hover:not(:disabled) {
+      background: #e0b040;
+    }
+    #mintFeeDisplay {
+      margin-top: 5px;
+      font-size: 12px;
+    }
+    #background-section {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      text-align: right;
+    }
+    #background-image {
+      max-width: 200px;
+      max-height: 200px;
+      margin-top: 10px;
+    }
+    #background-metadata {
+      margin-top: 5px;
+      font-size: 12px;
+      word-break: break-all;
+    }
+  </style>
+
+  <!-- Section 5 - STYLE/CSS - TEXTAREA -->
+  <style>
+    textarea {
+      width: 100%;
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 5px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+  </style>
+
+  <!-- Section 6 - STYLE/CSS - BUTTONS -->
+  <style>
+    button {
+      padding: 5px 10px;
+      background: #ccc;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #bbb;
+    }
+  </style>
+
+  <!-- Section 7 - STYLE/CSS - CONFIRMATION DIALOG -->
+  <style>
+    .confirmation-dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 1px solid #ccc;
+      padding: 20px;
+      z-index: 1000;
+      text-align: center;
+    }
+    .confirmation-dialog p {
+      margin: 0 0 20px;
+    }
+    .confirmation-dialog .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .yes-button, .no-button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .yes-button {
+      background: #f4c149;
+      color: black;
+    }
+    .yes-button:hover {
+      background: #e0b040;
+    }
+    .no-button {
+      background: #ccc;
+      color: black;
+    }
+    .no-button:hover {
+      background: #bbb;
+    }
+  </style>
+
+  <!-- Section 8 - STYLE/CSS - H1 -->
+  <style>
+    h1 {
+      font-family: 'Rowdies', sans-serif;
+      font-weight: 400;
+      margin: 0 0 20px;
+      text-align: center;
+    }
+  </style>
+
+  <!-- Section 10 - SPHERE ANIMATION STYLES (from 2 iterations ago) -->
+  <style>
+    .animation-wrapper {
+      width: 50%;
+      padding-bottom: 50%;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2000; /* Ensure it floats above the app */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .sphere-animation {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 580px;
+      height: 580px;
+      margin: -290px 0 0 -290px;
+    }
+
+    .sphere path {
+      fill: #000000; /* Solid black fill */
+      stroke-width: 1px;
+      stroke: rgba(80,80,80,.35);
+      backface-visibility: hidden;
+    }
+
+    @media (min-width: 500px) {
+      .sphere path {
+        stroke-width: .4px;
+      }
+    }
+  </style>
+</body>
+</html>
