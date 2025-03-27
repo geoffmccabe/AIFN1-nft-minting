@@ -203,12 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
-
-
-
-
-
 /* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
 
 
@@ -850,7 +844,7 @@ function refreshTraitGrid(traitIndex) {
       const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
       allWrappers.forEach(w => w.classList.remove('selected'));
       imageWrapper.classList.add('selected');
-      selectVariation(traitIndex, variant.name);
+      selectVariation(traitIndex, variationName);
     });
 
     grid.appendChild(container);
@@ -885,6 +879,24 @@ function renumberTraits() {
     section.querySelector('.down-arrow').setAttribute('data-trait', `${index + 1}`);
     section.querySelector('.add-trait').setAttribute('data-trait', `${index + 1}`);
     section.querySelector('.remove-trait').setAttribute('data-trait', `${index + 1}`);
+
+    // Update tooltips for up and down arrows after renumbering
+    const upArrow = section.querySelector('.up-arrow');
+    const downArrow = section.querySelector('.down-arrow');
+    if (upArrow) {
+      if (index === 0) {
+        upArrow.setAttribute('data-tooltip', 'Swap this Trait with the Last One');
+      } else {
+        upArrow.setAttribute('data-tooltip', 'Swap this Trait with the one above');
+      }
+    }
+    if (downArrow) {
+      if (index === traits.length - 1) {
+        downArrow.setAttribute('data-tooltip', 'Swap this Trait with Trait #1');
+      } else {
+        downArrow.setAttribute('data-tooltip', 'Swap this Trait with the one below');
+      }
+    }
   });
 }
 
@@ -1274,8 +1286,9 @@ window.mintNFT = async function() {
 
 
 
-/* Section 6 - SPHERE ANIMATION */
 
+
+/* Section 6 - SPHERE ANIMATION */
 
 
 function fitElementToParent(el, padding) {
@@ -1298,7 +1311,6 @@ var sphereAnimation = (function() {
   var sphereEl = document.querySelector('.sphere-animation');
   var spherePathEls = sphereEl.querySelectorAll('.sphere path');
   var pathLength = spherePathEls.length;
-  var hasStarted = false;
   var aimations = [];
 
   fitElementToParent(sphereEl);
@@ -1323,11 +1335,11 @@ var sphereAnimation = (function() {
       });
     },
     duration: Infinity,
-    autoplay: false
+    autoplay: true // Ensure animation plays on load
   });
 
   var introAnimation = anime.timeline({
-    autoplay: false
+    autoplay: true // Ensure animation plays on load
   })
   .add({
     targets: spherePathEls,
@@ -1350,7 +1362,7 @@ var sphereAnimation = (function() {
     y2: '75%',
     duration: 30000,
     easing: 'easeOutQuint',
-    autoplay: false
+    autoplay: true // Ensure animation plays on load
   }, 0);
 
   function init() {
