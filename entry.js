@@ -519,6 +519,8 @@ function removeTrait(traitIndex) {
 
 
 
+
+
 /* Section 4 - TRAIT LISTENERS AND UPDATES */
 
 
@@ -921,7 +923,6 @@ function setupTraitListeners(traitIndex) {
 }
 
 
-
 /* Section 5 - TRAIT GRID AND RENUMBERING */
 
 
@@ -1021,6 +1022,8 @@ function updateMintButton() {
 
 
 
+
+
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT */
 
 
@@ -1089,9 +1092,11 @@ function selectVariation(traitIndex, variationName) {
 
 function setupDragAndDrop(img, traitIndex) {
   if (img) {
-    img.addEventListener('dragstart', (e) => e.preventDefault());
+    img.addEventListener('dragstart', (e) => {
+      e.preventDefault();
+      console.log(`Dragstart prevented for Trait ${traitIndex + 1}`);
+    });
 
-    // Ensure currentImage is set on click before dragging
     img.addEventListener('click', () => {
       if (img.src !== '') {
         currentImage = img;
@@ -1105,6 +1110,7 @@ function setupDragAndDrop(img, traitIndex) {
         console.log(`Cannot drag: Image src is empty or not currentImage for Trait ${traitIndex + 1}`);
         return;
       }
+      e.preventDefault(); // Prevent any default behavior
       isDragging = true;
       const rect = img.getBoundingClientRect();
       offsetX = e.clientX - rect.left;
