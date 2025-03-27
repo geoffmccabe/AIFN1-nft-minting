@@ -1,7 +1,5 @@
 
 
-
-
 /* Section 1 - GLOBAL SETUP AND INITIALIZATION */
 
 
@@ -196,33 +194,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Set up drag-and-drop for initial trait images (moved to the end to ensure all traits are added)
+  // Set up drag-and-drop for initial trait images
   traitImages.forEach((img, index) => {
-    console.log(`Setting up drag-and-drop for trait ${index + 1}, image:`, img);
-    setupDragAndDrop(img, index);
+    if (img) {
+      console.log(`Setting up drag-and-drop for trait ${index + 1}, image:`, img);
+      setupDragAndDrop(img, index);
+    }
   });
 
-  // Sphere Animation Setup
-  function fitElementToParent(el, padding) {
-    var timeout = null;
-    function resize() {
-      if (timeout) clearTimeout(timeout);
-      anime.set(el, {scale: 1});
-      var pad = padding || 0;
-      var parentEl = el.parentNode;
-      var elOffsetWidth = el.offsetWidth - pad;
-      var parentOffsetWidth = parentEl.offsetWidth;
-      var ratio = parentOffsetWidth / elOffsetWidth;
-      timeout = setTimeout(anime.set(el, {scale: ratio}), 10);
-    }
-    resize();
-    window.addEventListener('resize', resize);
-  }
-
+  // Initialize sphere animation after DOM is fully loaded
   var sphereEl = document.querySelector('.sphere-animation');
-  if (!sphereEl) {
-    console.error('Sphere animation element not found');
-  } else {
+  if (sphereEl) {
     var spherePathEls = sphereEl.querySelectorAll('.sphere path');
     var pathLength = spherePathEls.length;
     var aimations = [];
@@ -292,13 +274,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     initSphereAnimation();
+  } else {
+    console.error('Sphere animation element not found');
   }
 });
 
+function fitElementToParent(el, padding) {
+  var timeout = null;
+  function resize() {
+    if (timeout) clearTimeout(timeout);
+    anime.set(el, {scale: 1});
+    var pad = padding || 0;
+    var parentEl = el.parentNode;
+    var elOffsetWidth = el.offsetWidth - pad;
+    var parentOffsetWidth = parentEl.offsetWidth;
+    var ratio = parentOffsetWidth / elOffsetWidth;
+    timeout = setTimeout(anime.set(el, {scale: ratio}), 10);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+}
 
 
 
-/* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
+/* Section 2 - TRAIT CREATION */
 
 
 function addTrait(traitIndex, initial = false) {
@@ -397,6 +396,11 @@ function addTrait(traitIndex, initial = false) {
   updateZIndices();
   updatePreviewSamples();
 }
+
+
+
+/* Section 3 - TRAIT REMOVAL */
+
 
 function removeTrait(traitIndex) {
   if (traits.length <= 1) return;
@@ -512,6 +516,11 @@ function removeTrait(traitIndex) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
+
+
+
+/* Section 4 - TRAIT LISTENERS AND UPDATES */
+
 
 function setupTraitListeners(traitIndex) {
   const nameInput = document.getElementById(`trait${traitIndex + 1}-name`);
@@ -911,6 +920,11 @@ function setupTraitListeners(traitIndex) {
   removeTraitBtn.addEventListener('click', () => removeTrait(traitIndex));
 }
 
+
+
+/* Section 5 - TRAIT GRID AND RENUMBERING */
+
+
 function refreshTraitGrid(traitIndex) {
   const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
   if (!grid) return;
@@ -1007,8 +1021,7 @@ function updateMintButton() {
 
 
 
-/* Section 3 - PREVIEW AND POSITION MANAGEMENT */
-
+/* Section 6 - PREVIEW AND POSITION MANAGEMENT */
 
 
 function updateZIndices() {
@@ -1078,10 +1091,21 @@ function setupDragAndDrop(img, traitIndex) {
   if (img) {
     img.addEventListener('dragstart', (e) => e.preventDefault());
 
+    // Ensure currentImage is set on click before dragging
+    img.addEventListener('click', () => {
+      if (img.src !== '') {
+        currentImage = img;
+        updateCoordinates(img);
+        console.log(`Set currentImage to Trait ${traitIndex + 1}`);
+      }
+    });
+
     img.addEventListener('mousedown', (e) => {
-      if (img.src === '' || img !== currentImage) return;
+      if (img.src === '' || img !== currentImage) {
+        console.log(`Cannot drag: Image src is empty or not currentImage for Trait ${traitIndex + 1}`);
+        return;
+      }
       isDragging = true;
-      currentImage = img;
       const rect = img.getBoundingClientRect();
       offsetX = e.clientX - rect.left;
       offsetY = e.clientY - rect.top;
@@ -1089,6 +1113,7 @@ function setupDragAndDrop(img, traitIndex) {
       img.classList.add('dragging');
       updateZIndices();
       updateCoordinates(img);
+      console.log(`Started dragging Trait ${traitIndex + 1}`);
     });
 
     img.addEventListener('mouseup', () => {
@@ -1100,13 +1125,7 @@ function setupDragAndDrop(img, traitIndex) {
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
         updateZIndices();
-      }
-    });
-
-    img.addEventListener('click', () => {
-      if (img.src !== '') {
-        currentImage = img;
-        updateCoordinates(img);
+        console.log(`Stopped dragging Trait ${traitIndex + 1}`);
       }
     });
   }
@@ -1272,214 +1291,96 @@ function updatePreviewSamples() {
 }
 
 
-/* Section 4 - BACKGROUND GENERATION */
+
+/* Section 7 - BACKGROUND GENERATION */
 
 
 async function fetchBackground() {
-  try {
-    clickSound.play().catch(error => console.error('Error playing click sound:', error));
-    let seconds = 0;
-    generateButton.disabled = true;
-    generateButton.innerText = `Processing ${seconds}...`;
-    timerInterval = setInterval(() => {
-      seconds++;
-      console.log(`Timer update: ${seconds} seconds`);
-      generateButton.innerText = `Processing ${seconds}...`;
-    }, 1000);
-
-    const userPrompt = document.getElementById('user-prompt') ? document.getElementById('user-prompt').value.trim() : '';
-    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background${userPrompt ? `?prompt=${encodeURIComponent(userPrompt)}` : ''}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch background: ${response.statusText}`);
-    const data = await response.json();
-    background.url = data.imageUrl;
-    background.metadata = data.metadata;
-
-    const backgroundImage = document.getElementById('background-image');
-    const backgroundMetadata = document.getElementById('background-metadata');
-
-    if (backgroundImage) backgroundImage.src = background.url;
-    if (backgroundMetadata) backgroundMetadata.innerText = background.metadata;
-  } catch (error) {
-    console.error('Error fetching background:', error);
-    const placeholder = 'https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp';
-    const backgroundImage = document.getElementById('background-image');
-    const backgroundMetadata = document.getElementById('background-metadata');
-
-    if (backgroundImage) backgroundImage.src = placeholder;
-    if (backgroundMetadata) backgroundMetadata.innerText = 'Failed to load background: ' + error.message;
-  } finally {
-    clearInterval(timerInterval);
-    generateButton.innerText = 'Generate Bkgd';
-    generateButton.disabled = false;
-  }
-}
-
-function fetchMintFee() {
-  const mintFeeDisplay = document.getElementById('mintFeeDisplay');
-  if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
-}
-fetchMintFee();
-
-
-
-
-/* Section 5 - MINTING FUNCTION */
-
-
-window.mintNFT = async function() {
-  const status = document.getElementById('status');
-  if (!status) return;
+  const userPrompt = document.getElementById('user-prompt').value;
+  const basePrompt = document.getElementById('base-prompt').value;
+  const fullPrompt = userPrompt ? `${basePrompt}, ${userPrompt}` : basePrompt;
+  const backgroundImage = document.getElementById('background-image');
+  const backgroundMetadata = document.getElementById('background-metadata');
+  backgroundMetadata.textContent = 'Generating...';
 
   try {
-    await provider.send("eth_requestAccounts", []);
-    const numTraitCategories = traits.length;
-    const traitCategoryVariants = traits.map(trait => trait.variations.length);
-    const traitIndices = traits.map(trait => trait.selected);
-    const recipient = await signer.getAddress();
-
-    status.innerText = "Uploading images to Arweave...";
-    const formData = new FormData();
-    for (let i = 0; i < traits.length; i++) {
-      const trait = traits[i];
-      const selectedVariation = trait.variations[trait.selected];
-      const response = await fetch(selectedVariation.url);
-      const blob = await response.blob();
-      formData.append('images', blob, `${trait.name}-${selectedVariation.name}.png`);
-    }
-
-    const uploadResponse = await fetch('https://aifn-1-api-q1ni.vercel.app/api/upload-to-arweave', {
+    const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
       method: 'POST',
-      body: formData
+      headers: {
+        'Authorization': `Bearer ${config.huggingFaceApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        inputs: fullPrompt,
+        parameters: {
+          num_inference_steps: 50,
+          guidance_scale: 7.5
+        }
+      })
     });
-    const uploadData = await uploadResponse.json();
-    if (uploadData.error) throw new Error(uploadData.error);
 
-    const arweaveUrls = uploadData.transactionIds.map(id => `https://arweave.net/${id}`);
+    if (!response.ok) throw new Error('Failed to generate background');
 
-    status.innerText = "Estimating gas...";
-    const gasLimit = await contractWithSigner.estimateGas.mintNFT(
-      recipient,
-      initialHtmlUri,
-      numTraitCategories,
-      traitCategoryVariants,
-      traitIndices,
-      { value: ethers.utils.parseEther(config.sepolia.mintFee) }
-    );
-
-    status.innerText = "Minting...";
-    const tx = await contractWithSigner.mintNFT(
-      recipient,
-      initialHtmlUri,
-      numTraitCategories,
-      traitCategoryVariants,
-      traitIndices,
-      { value: ethers.utils.parseEther(config.sepolia.mintFee), gasLimit: gasLimit.add(50000) }
-    );
-    const receipt = await tx.wait();
-    const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
-    status.innerText = `Minted! Token ID: ${tokenId}`;
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    backgroundImage.src = url;
+    background.url = url;
+    background.metadata = fullPrompt;
+    backgroundMetadata.textContent = fullPrompt;
   } catch (error) {
-    status.innerText = `Error: ${error.message}`;
+    console.error('Error generating background:', error);
+    backgroundMetadata.textContent = 'Error generating background';
   }
-};
-
-
-
-
-/* Section 6 - SPHERE ANIMATION */
-
-
-function fitElementToParent(el, padding) {
-  var timeout = null;
-  function resize() {
-    if (timeout) clearTimeout(timeout);
-    anime.set(el, {scale: 1});
-    var pad = padding || 0;
-    var parentEl = el.parentNode;
-    var elOffsetWidth = el.offsetWidth - pad;
-    var parentOffsetWidth = parentEl.offsetWidth;
-    var ratio = parentOffsetWidth / elOffsetWidth;
-    timeout = setTimeout(anime.set(el, {scale: ratio}), 10);
-  }
-  resize();
-  window.addEventListener('resize', resize);
 }
 
-var sphereAnimation = (function() {
-  var sphereEl = document.querySelector('.sphere-animation');
-  if (!sphereEl) {
-    console.error('Sphere animation element not found');
+
+
+/* Section 8 - MINTING FUNCTION */
+
+
+async function mintNFT() {
+  const allTraitsSet = traits.every(trait => trait.name && trait.variations.length > 0);
+  if (!allTraitsSet) {
+    alert('Please set all trait names and upload at least one variant for each trait.');
     return;
   }
 
-  var spherePathEls = sphereEl.querySelectorAll('.sphere path');
-  var pathLength = spherePathEls.length;
-  var aimations = [];
+  const mintFeeDisplay = document.getElementById('mintFeeDisplay');
+  const mintButton = document.getElementById('mintButton');
+  mintButton.disabled = true;
+  mintFeeDisplay.textContent = 'Minting...';
 
-  fitElementToParent(sphereEl);
+  try {
+    const mintFee = await contract.mintFee();
+    const overrides = { value: mintFee };
+    const traitNames = traits.map(trait => trait.name);
+    const traitUrls = traits.map(trait => trait.variations[trait.selected].url);
+    const positions = traits.map((_, index) => {
+      const variationName = traits[index].variations[traits[index].selected].name;
+      const position = JSON.parse(localStorage.getItem(`trait${index + 1}-${variationName}-position`)) || { left: 0, top: 0 };
+      return [position.left, position.top];
+    });
+    const backgroundUrl = background.url || '';
+    const backgroundMetadata = background.metadata || '';
 
-  var breathAnimation = anime({
-    begin: function() {
-      for (var i = 0; i < pathLength; i++) {
-        aimations.push(anime({
-          targets: spherePathEls[i],
-          stroke: {value: ['rgba(255,75,75,1)', 'rgba(80,80,80,.35)'], duration: 500},
-          translateX: [2, -4],
-          translateY: [2, -4],
-          easing: 'easeOutQuad',
-          autoplay: false
-        }));
-      }
-    },
-    update: function(ins) {
-      aimations.forEach(function(animation, i) {
-        var percent = (1 - Math.sin((i * .35) + (.0022 * ins.currentTime))) / 2;
-        animation.seek(animation.duration * percent);
-      });
-    },
-    duration: Infinity,
-    autoplay: true // Ensure animation plays on load
-  });
-
-  var introAnimation = anime.timeline({
-    autoplay: true // Ensure animation plays on load
-  })
-  .add({
-    targets: spherePathEls,
-    strokeDashoffset: {
-      value: [anime.setDashoffset, 0],
-      duration: 3900,
-      easing: 'easeInOutCirc',
-      delay: anime.stagger(190, {direction: 'reverse'})
-    },
-    duration: 2000,
-    delay: anime.stagger(60, {direction: 'reverse'}),
-    easing: 'linear'
-  }, 0);
-
-  var shadowAnimation = anime({
-    targets: '#sphereGradient',
-    x1: '25%',
-    x2: '25%',
-    y1: '0%',
-    y2: '75%',
-    duration: 30000,
-    easing: 'easeOutQuint',
-    autoplay: true // Ensure animation plays on load
-  }, 0);
-
-  function init() {
-    introAnimation.play();
-    breathAnimation.play();
-    shadowAnimation.play();
+    const tx = await contractWithSigner.mintNFT(traitNames, traitUrls, positions, backgroundUrl, backgroundMetadata, overrides);
+    await tx.wait();
+    mintFeeDisplay.textContent = `Minted! Tx: ${tx.hash}`;
+  } catch (error) {
+    console.error('Error minting NFT:', error);
+    mintFeeDisplay.textContent = 'Error minting NFT';
+    mintButton.disabled = false;
   }
+}
 
-  // Add click event to hide the sphere
-  sphereEl.addEventListener('click', () => {
-    console.log('Sphere clicked, hiding sphere');
-    sphereEl.style.display = 'none';
-  });
-
-  init();
-})();
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const mintFee = await contract.mintFee();
+    const mintFeeDisplay = document.getElementById('mintFeeDisplay');
+    mintFeeDisplay.textContent = `Mint Fee: ${ethers.utils.formatEther(mintFee)} ETH`;
+    document.getElementById('mintButton').addEventListener('click', mintNFT);
+  } catch (error) {
+    console.error('Error fetching mint fee:', error);
+    document.getElementById('mintFeeDisplay').textContent = 'Error fetching mint fee';
+  }
+});
