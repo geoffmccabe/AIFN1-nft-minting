@@ -844,7 +844,7 @@ function refreshTraitGrid(traitIndex) {
       const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
       allWrappers.forEach(w => w.classList.remove('selected'));
       imageWrapper.classList.add('selected');
-      selectVariation(traitIndex, variationName);
+      selectVariation(traitIndex, variant.name);
     });
 
     grid.appendChild(container);
@@ -905,7 +905,6 @@ function updateMintButton() {
   const mintBtn = document.getElementById('mintButton');
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
-
 
 
 /* Section 3 - PREVIEW AND POSITION MANAGEMENT */
