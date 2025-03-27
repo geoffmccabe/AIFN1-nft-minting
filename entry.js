@@ -207,6 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
 /* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
 
 
@@ -313,7 +315,7 @@ function removeTrait(traitIndex) {
   const confirmationDialog = document.createElement('div');
   confirmationDialog.className = 'confirmation-dialog';
   const message = document.createElement('p');
-  message.textContent = `Are you sure you want to delete Trait ${traitIndex + 1}?`;
+  message.textContent = `Are you sure you want to delete Trait ${traitIndex + 1}${traits[traitIndex].name ? ` - ${traits[traitIndex].name}` : ''}?`;
   const buttonsDiv = document.createElement('div');
   buttonsDiv.className = 'buttons';
   const yesButton = document.createElement('button');
@@ -427,14 +429,37 @@ function setupTraitListeners(traitIndex) {
   const variantCountSpan = document.getElementById(`trait${traitIndex + 1}-variant-count`);
   const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
 
+  // Set the tooltip for up and down arrows based on position
+  const upArrow = document.querySelector(`.up-arrow[data-trait="${traitIndex + 1}"]`);
+  const downArrow = document.querySelector(`.down-arrow[data-trait="${traitIndex + 1}"]`);
+  if (upArrow) {
+    if (traitIndex === 0) {
+      upArrow.setAttribute('data-tooltip', 'Swap this Trait with the Last One');
+    } else {
+      upArrow.setAttribute('data-tooltip', 'Swap this Trait with the one above');
+    }
+  }
+  if (downArrow) {
+    if (traitIndex === traits.length - 1) {
+      downArrow.setAttribute('data-tooltip', 'Swap this Trait with Trait #1');
+    } else {
+      downArrow.setAttribute('data-tooltip', 'Swap this Trait with the one below');
+    }
+  }
+
   if (nameInput) {
     // Update title when the user types a name
     nameInput.addEventListener('input', () => {
       const traitName = nameInput.value.trim();
-      traits[traitIndex].name = traitName;
+      // Ensure the name doesn't include the "Trait X - " prefix
+      if (traitName.startsWith(`Trait ${traitIndex + 1} - `)) {
+        traits[traitIndex].name = traitName.replace(`Trait ${traitIndex + 1} - `, '');
+      } else {
+        traits[traitIndex].name = traitName;
+      }
       const title = document.querySelector(`#trait${traitIndex + 1} h2`);
       if (title) {
-        title.textContent = `Trait ${traitIndex + 1}${traitName ? ` - ${traitName}` : ''}`;
+        title.textContent = `Trait ${traitIndex + 1}${traits[traitIndex].name ? ` - ${traits[traitIndex].name}` : ''}`;
       }
     });
   }
@@ -445,7 +470,12 @@ function setupTraitListeners(traitIndex) {
       if (!files.length) return;
 
       const traitName = nameInput.value.trim() || `Trait ${traitIndex + 1}`;
-      traits[traitIndex].name = traitName;
+      // Ensure the name doesn't include the "Trait X - " prefix
+      if (traitName.startsWith(`Trait ${traitIndex + 1} - `)) {
+        traits[traitIndex].name = traitName.replace(`Trait ${traitIndex + 1} - `, '');
+      } else {
+        traits[traitIndex].name = traitName;
+      }
       traits[traitIndex].variations = [];
 
       grid.innerHTML = '';
@@ -506,12 +536,12 @@ function setupTraitListeners(traitIndex) {
     });
   }
 
-  const upArrow = document.querySelector(`.up-arrow[data-trait="${traitIndex + 1}"]`);
-  const downArrow = document.querySelector(`.down-arrow[data-trait="${traitIndex + 1}"]`);
+  const upArrowBtn = document.querySelector(`.up-arrow[data-trait="${traitIndex + 1}"]`);
+  const downArrowBtn = document.querySelector(`.down-arrow[data-trait="${traitIndex + 1}"]`);
   const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitIndex + 1}"]`);
   const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitIndex + 1}"]`);
 
-  upArrow.addEventListener('click', () => {
+  upArrowBtn.addEventListener('click', () => {
     if (traitIndex === 0) {
       const lastIndex = traits.length - 1;
       if (lastIndex === 0) return;
@@ -629,7 +659,7 @@ function setupTraitListeners(traitIndex) {
     updatePreviewSamples();
   });
 
-  downArrow.addEventListener('click', () => {
+  downArrowBtn.addEventListener('click', () => {
     if (traitIndex === traits.length - 1) {
       const firstIndex = 0;
       if (traits.length === 1) return;
@@ -863,8 +893,6 @@ function updateMintButton() {
   const mintBtn = document.getElementById('mintButton');
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
-
-
 
 
 
@@ -1130,7 +1158,6 @@ function updatePreviewSamples() {
     previewSamplesGrid.appendChild(sampleContainer);
   }
 }
-
 
 
 /* Section 4 - BACKGROUND GENERATION */
