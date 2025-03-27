@@ -205,6 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
 /* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
 
 
@@ -216,7 +218,7 @@ function addTrait(traitIndex, initial = false) {
   const traitHeader = document.createElement('div');
   traitHeader.className = 'trait-header';
   const title = document.createElement('h2');
-  title.textContent = `Trait ${traitIndex + 1}`;
+  title.textContent = `Trait ${traitIndex + 1}${traits[traitIndex].name ? ` - ${traits[traitIndex].name}` : ''}`;
   const controls = document.createElement('div');
   controls.className = 'trait-controls';
   const upArrow = document.createElement('span');
@@ -230,7 +232,6 @@ function addTrait(traitIndex, initial = false) {
   const addTraitBtn = document.createElement('span');
   addTraitBtn.className = 'add-trait';
   addTraitBtn.setAttribute('data-trait', `${traitIndex + 1}`);
-  addTraitBtn.setAttribute('title', 'Insert New Trait Here'); // Native tooltip
   addTraitBtn.textContent = '➕';
   const removeTraitBtn = document.createElement('span');
   removeTraitBtn.className = 'remove-trait';
@@ -276,9 +277,9 @@ function addTrait(traitIndex, initial = false) {
   traitSection.appendChild(grid);
 
   // Insert the trait section at the correct position
-  const nextSection = traitContainer.querySelector(`#trait${traitIndex + 2}`);
-  if (nextSection) {
-    traitContainer.insertBefore(traitSection, nextSection);
+  const currentSection = traitContainer.querySelector(`#trait${traitIndex + 1}`);
+  if (currentSection) {
+    traitContainer.insertBefore(traitSection, currentSection);
   } else {
     traitContainer.appendChild(traitSection);
   }
@@ -287,7 +288,7 @@ function addTrait(traitIndex, initial = false) {
   newTraitImage.id = `preview-trait${traitIndex + 1}`;
   newTraitImage.src = '';
   newTraitImage.alt = `Trait ${traitIndex + 1}`;
-  newTraitImage.style.zIndex = traits[traitIndex].zIndex;
+  newTraitImage.style.zIndex = (traits.length - traitIndex) * 100;
   if (preview) preview.appendChild(newTraitImage);
   traitImages[traitIndex] = newTraitImage;
 
@@ -862,8 +863,6 @@ function updateMintButton() {
   const mintBtn = document.getElementById('mintButton');
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
-
-
 
 
 
