@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Initialize sphere animation after DOM is fully loaded
+  // Initialize sphere animation after DOM is fully loaded (from 2 generations ago)
   var sphereEl = document.querySelector('.sphere-animation');
   if (sphereEl) {
     var spherePathEls = sphereEl.querySelectorAll('.sphere path');
@@ -516,8 +516,6 @@ function removeTrait(traitIndex) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
-
-
 
 
 
@@ -923,6 +921,7 @@ function setupTraitListeners(traitIndex) {
 }
 
 
+
 /* Section 5 - TRAIT GRID AND RENUMBERING */
 
 
@@ -1019,8 +1018,6 @@ function updateMintButton() {
   const mintBtn = document.getElementById('mintButton');
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
-
-
 
 
 
@@ -1387,6 +1384,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('mintButton').addEventListener('click', mintNFT);
   } catch (error) {
     console.error('Error fetching mint fee:', error);
-    document.getElementById('mintFeeDisplay').textContent = 'Error fetching mint fee';
+    const mintFeeDisplay = document.getElementById('mintFeeDisplay');
+    mintFeeDisplay.textContent = 'Error fetching mint fee. Please ensure the contract is deployed on the correct network (Sepolia) and your wallet is connected.';
+    // Still attach the mint button listener to allow minting attempts
+    document.getElementById('mintButton').addEventListener('click', mintNFT);
   }
 });
