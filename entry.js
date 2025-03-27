@@ -201,103 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
       setupDragAndDrop(img, index);
     }
   });
-
-  // Initialize sphere animation after DOM is fully loaded (from 2 generations ago)
-  var sphereEl = document.querySelector('.sphere-animation');
-  if (sphereEl) {
-    var spherePathEls = sphereEl.querySelectorAll('.sphere path');
-    var pathLength = spherePathEls.length;
-    var aimations = [];
-
-    fitElementToParent(sphereEl);
-
-    var breathAnimation = anime({
-      begin: function() {
-        for (var i = 0; i < pathLength; i++) {
-          aimations.push(anime({
-            targets: spherePathEls[i],
-            stroke: {value: ['rgba(255,75,75,1)', 'rgba(80,80,80,.35)'], duration: 500},
-            translateX: [2, -4],
-            translateY: [2, -4],
-            easing: 'easeOutQuad',
-            autoplay: false
-          }));
-        }
-      },
-      update: function(ins) {
-        aimations.forEach(function(animation, i) {
-          var percent = (1 - Math.sin((i * .35) + (.0022 * ins.currentTime))) / 2;
-          animation.seek(animation.duration * percent);
-        });
-      },
-      duration: Infinity,
-      autoplay: true
-    });
-
-    var introAnimation = anime.timeline({
-      autoplay: true
-    })
-    .add({
-      targets: spherePathEls,
-      strokeDashoffset: {
-        value: [anime.setDashoffset, 0],
-        duration: 3900,
-        easing: 'easeInOutCirc',
-        delay: anime.stagger(190, {direction: 'reverse'})
-      },
-      duration: 2000,
-      delay: anime.stagger(60, {direction: 'reverse'}),
-      easing: 'linear'
-    }, 0);
-
-    var shadowAnimation = anime({
-      targets: '#sphereGradient',
-      x1: '25%',
-      x2: '25%',
-      y1: '0%',
-      y2: '75%',
-      duration: 30000,
-      easing: 'easeOutQuint',
-      autoplay: true
-    }, 0);
-
-    function initSphereAnimation() {
-      introAnimation.play();
-      breathAnimation.play();
-      shadowAnimation.play();
-    }
-
-    // Add click event to hide the sphere
-    sphereEl.addEventListener('click', () => {
-      console.log('Sphere clicked, hiding sphere');
-      sphereEl.style.display = 'none';
-    });
-
-    initSphereAnimation();
-  } else {
-    console.error('Sphere animation element not found');
-  }
 });
 
-function fitElementToParent(el, padding) {
-  var timeout = null;
-  function resize() {
-    if (timeout) clearTimeout(timeout);
-    anime.set(el, {scale: 1});
-    var pad = padding || 0;
-    var parentEl = el.parentNode;
-    var elOffsetWidth = el.offsetWidth - pad;
-    var parentOffsetWidth = parentEl.offsetWidth;
-    var ratio = parentOffsetWidth / elOffsetWidth;
-    timeout = setTimeout(anime.set(el, {scale: ratio}), 10);
-  }
-  resize();
-  window.addEventListener('resize', resize);
-}
 
 
-
-/* Section 2 - TRAIT CREATION */
+/* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
 
 
 function addTrait(traitIndex, initial = false) {
@@ -396,11 +304,6 @@ function addTrait(traitIndex, initial = false) {
   updateZIndices();
   updatePreviewSamples();
 }
-
-
-
-/* Section 3 - TRAIT REMOVAL */
-
 
 function removeTrait(traitIndex) {
   if (traits.length <= 1) return;
@@ -506,9 +409,7 @@ function removeTrait(traitIndex) {
     confirmationDialog.remove();
   });
 
-  noButton.addEventListener('click', () => {
-    confirmationDialog.remove();
-  });
+  noButton.addEventListener('click', () => confirmationDialog.remove());
 
   buttonsDiv.appendChild(yesButton);
   buttonsDiv.appendChild(noButton);
@@ -516,11 +417,6 @@ function removeTrait(traitIndex) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
-
-
-
-/* Section 4 - TRAIT LISTENERS AND UPDATES */
-
 
 function setupTraitListeners(traitIndex) {
   const nameInput = document.getElementById(`trait${traitIndex + 1}-name`);
@@ -920,11 +816,6 @@ function setupTraitListeners(traitIndex) {
   removeTraitBtn.addEventListener('click', () => removeTrait(traitIndex));
 }
 
-
-
-/* Section 5 - TRAIT GRID AND RENUMBERING */
-
-
 function refreshTraitGrid(traitIndex) {
   const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
   if (!grid) return;
@@ -1021,7 +912,7 @@ function updateMintButton() {
 
 
 
-/* Section 6 - PREVIEW AND POSITION MANAGEMENT */
+/* Section 3 - PREVIEW AND POSITION MANAGEMENT */
 
 
 function updateZIndices() {
@@ -1295,7 +1186,7 @@ function updatePreviewSamples() {
 
 
 
-/* Section 7 - BACKGROUND GENERATION */
+/* Section 4 - BACKGROUND GENERATION */
 
 
 async function fetchBackground() {
@@ -1338,7 +1229,7 @@ async function fetchBackground() {
 
 
 
-/* Section 8 - MINTING FUNCTION */
+/* Section 5 - MINTING FUNCTION */
 
 
 async function mintNFT() {
