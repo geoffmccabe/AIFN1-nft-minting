@@ -298,6 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
 /* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
 
 
@@ -502,7 +503,9 @@ function removeTrait(traitIndex) {
     confirmationDialog.remove();
   });
 
-  noButton.addEventListener('click', () => confirmationDialog.remove());
+  noButton.addEventListener('click', () => {
+    confirmationDialog.remove();
+  });
 
   buttonsDiv.appendChild(yesButton);
   buttonsDiv.appendChild(noButton);
@@ -541,8 +544,9 @@ function setupTraitListeners(traitIndex) {
     nameInput.addEventListener('input', () => {
       const traitName = nameInput.value.trim();
       // Ensure the name doesn't include the "Trait X - " prefix
-      if (traitName.startsWith(`Trait ${traitIndex + 1} - `)) {
-        traits[traitIndex].name = traitName.replace(`Trait ${traitIndex + 1} - `, '');
+      const prefix = `Trait ${traitIndex + 1} - `;
+      if (traitName.startsWith(prefix)) {
+        traits[traitIndex].name = traitName.substring(prefix.length);
       } else {
         traits[traitIndex].name = traitName;
       }
@@ -560,8 +564,9 @@ function setupTraitListeners(traitIndex) {
 
       const traitName = nameInput.value.trim() || `Trait ${traitIndex + 1}`;
       // Ensure the name doesn't include the "Trait X - " prefix
-      if (traitName.startsWith(`Trait ${traitIndex + 1} - `)) {
-        traits[traitIndex].name = traitName.replace(`Trait ${traitIndex + 1} - `, '');
+      const prefix = `Trait ${traitIndex + 1} - `;
+      if (traitName.startsWith(prefix)) {
+        traits[traitIndex].name = traitName.substring(prefix.length);
       } else {
         traits[traitIndex].name = traitName;
       }
