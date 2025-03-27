@@ -1283,131 +1283,101 @@ window.mintNFT = async function() {
 };
 
 
+
+
 /* Section 6 - SPHERE ANIMATION */
 
 
-document.addEventListener('DOMContentLoaded', function() {
-  function fitElementToParent(el, padding) {
-    var timeout = null;
-    function resize() {
-      if (timeout) clearTimeout(timeout);
-      anime.set(el, {scale: 1});
-      var pad = padding || 0;
-      var parentEl = el.parentNode;
-      var elOffsetWidth = el.offsetWidth - pad;
-      var parentOffsetWidth = parentEl.offsetWidth;
-      var ratio = parentOffsetWidth / elOffsetWidth;
-      timeout = setTimeout(anime.set(el, {scale: ratio}), 10);
-    }
-    resize();
-    window.addEventListener('resize', resize);
+function fitElementToParent(el, padding) {
+  var timeout = null;
+  function resize() {
+    if (timeout) clearTimeout(timeout);
+    anime.set(el, {scale: 1});
+    var pad = padding || 0;
+    var parentEl = el.parentNode;
+    var elOffsetWidth = el.offsetWidth - pad;
+    var parentOffsetWidth = parentEl.offsetWidth;
+    var ratio = parentOffsetWidth / elOffsetWidth;
+    timeout = setTimeout(anime.set(el, {scale: ratio}), 10);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+}
+
+var sphereAnimation = (function() {
+  var sphereEl = document.querySelector('.sphere-animation');
+  if (!sphereEl) {
+    console.error('Sphere animation element not found');
+    return;
   }
 
-  var sphereAnimation = (function() {
-    var sphereEl = document.querySelector('.sphere-animation');
-    var spherePathEls = sphereEl.querySelectorAll('.sphere path');
-    var pathLength = spherePathEls.length;
-    var aimations = [];
+  var spherePathEls = sphereEl.querySelectorAll('.sphere path');
+  var pathLength = spherePathEls.length;
+  var aimations = [];
 
-    // Verify Anime.js is loaded
-    if (typeof anime === 'undefined') {
-      console.error('Anime.js is not loaded. Please ensure the script is included in index.html.');
-      return;
-    }
+  fitElementToParent(sphereEl);
 
-    // Verify sphere elements are found
-    console.log('Sphere element:', sphereEl);
-    console.log('Sphere paths:', spherePathEls);
-
-    fitElementToParent(sphereEl);
-
-    var breathAnimation = anime({
-      begin: function() {
-        for (var i = 0; i < pathLength; i++) {
-          aimations.push(anime({
-            targets: spherePathEls[i],
-            stroke: {value: ['rgba(255,75,75,1)', 'rgba(80,80,80,.35)'], duration: 500},
-            translateX: [2, -4],
-            translateY: [2, -4],
-            easing: 'easeOutQuad',
-            autoplay: false
-          }));
-        }
-      },
-      update: function(ins) {
-        aimations.forEach(function(animation, i) {
-          var percent = (1 - Math.sin((i * .35) + (.0022 * ins.currentTime))) / 2;
-          animation.seek(animation.duration * percent);
-        });
-      },
-      duration: Infinity,
-      autoplay: true
-    });
-
-    var introAnimation = anime.timeline({
-      autoplay: true
-    })
-    .add({
-      targets: spherePathEls,
-      strokeDashoffset: {
-        value: [anime.setDashoffset, 0],
-        duration: 3900,
-        easing: 'easeInOutCirc',
-        delay: anime.stagger(190, {direction: 'reverse'})
-      },
-      duration: 2000,
-      delay: anime.stagger(60, {direction: 'reverse'}),
-      easing: 'linear'
-    }, 0);
-
-    var shadowAnimation = anime({
-      targets: '#sphereGradient',
-      x1: '25%',
-      x2: '25%',
-      y1: '0%',
-      y2: '75%',
-      duration: 30000,
-      easing: 'easeOutQuint',
-      autoplay: true
-    }, 0);
-
-    function init() {
-      introAnimation.play();
-      breathAnimation.play();
-      shadowAnimation.play();
-    }
-
-    // Add click event to hide the sphere
-    if (sphereEl) {
-      sphereEl.addEventListener('click', () => {
-        console.log('Sphere clicked, hiding sphere');
-        sphereEl.style.display = 'none';
-      });
-    } else {
-      console.error('Sphere element not found');
-    }
-
-    // Center the sphere on the visible screen
-    function centerSphereOnScreen() {
-      const sphereWrapper = document.querySelector('.animation-wrapper');
-      if (!sphereWrapper) {
-        console.error('Animation wrapper not found');
-        return;
+  var breathAnimation = anime({
+    begin: function() {
+      for (var i = 0; i < pathLength; i++) {
+        aimations.push(anime({
+          targets: spherePathEls[i],
+          stroke: {value: ['rgba(255,75,75,1)', 'rgba(80,80,80,.35)'], duration: 500},
+          translateX: [2, -4],
+          translateY: [2, -4],
+          easing: 'easeOutQuad',
+          autoplay: false
+        }));
       }
-      const viewportHeight = window.innerHeight;
-      const viewportWidth = window.innerWidth;
-      const sphereHeight = sphereWrapper.offsetHeight;
-      const sphereWidth = sphereWrapper.offsetWidth;
+    },
+    update: function(ins) {
+      aimations.forEach(function(animation, i) {
+        var percent = (1 - Math.sin((i * .35) + (.0022 * ins.currentTime))) / 2;
+        animation.seek(animation.duration * percent);
+      });
+    },
+    duration: Infinity,
+    autoplay: true // Ensure animation plays on load
+  });
 
-      // Center the sphere in the viewport
-      sphereWrapper.style.top = `${(viewportHeight - sphereHeight) / 2}px`;
-      sphereWrapper.style.left = `${(viewportWidth - sphereWidth) / 2}px`;
-    }
+  var introAnimation = anime.timeline({
+    autoplay: true // Ensure animation plays on load
+  })
+  .add({
+    targets: spherePathEls,
+    strokeDashoffset: {
+      value: [anime.setDashoffset, 0],
+      duration: 3900,
+      easing: 'easeInOutCirc',
+      delay: anime.stagger(190, {direction: 'reverse'})
+    },
+    duration: 2000,
+    delay: anime.stagger(60, {direction: 'reverse'}),
+    easing: 'linear'
+  }, 0);
 
-    // Call the centering function on load and on window resize
-    window.addEventListener('load', centerSphereOnScreen);
-    window.addEventListener('resize', centerSphereOnScreen);
+  var shadowAnimation = anime({
+    targets: '#sphereGradient',
+    x1: '25%',
+    x2: '25%',
+    y1: '0%',
+    y2: '75%',
+    duration: 30000,
+    easing: 'easeOutQuint',
+    autoplay: true // Ensure animation plays on load
+  }, 0);
 
-    init();
-  })();
-});
+  function init() {
+    introAnimation.play();
+    breathAnimation.play();
+    shadowAnimation.play();
+  }
+
+  // Add click event to hide the sphere
+  sphereEl.addEventListener('click', () => {
+    console.log('Sphere clicked, hiding sphere');
+    sphereEl.style.display = 'none';
+  });
+
+  init();
+})();
