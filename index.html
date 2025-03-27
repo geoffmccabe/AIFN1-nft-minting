@@ -21,12 +21,6 @@
 
 
 
-
-
-
-
-
-
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
 
@@ -135,6 +129,7 @@
     border-radius: 5px;
     font-size: 12px;
     white-space: pre; /* Preserve line break */
+    line-height: 1.2; /* Ensure line break is visible */
     z-index: 1000;
   }
   .remove-trait:hover::before {
@@ -268,6 +263,7 @@
     background: #bbb;
   }
 </style>
+
 
 
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
@@ -518,7 +514,7 @@
 
   
 <body>
-  <div id="version">Version 82</div>
+  <div id="version">Version 77</div>
   <div id="left-panel">
     <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
     <div id="trait-container">
@@ -604,9 +600,9 @@
       <svg class="sphere" viewBox="0 0 440 440" stroke="rgba(80,80,80,.35)">
         <defs>
           <linearGradient id="sphereGradient" x1="5%" x2="5%" y1="0%" y2="15%">
-            <stop stop-color="rgba(55,55,52,0)" offset="0%"/>
-            <stop stop-color="rgba(36,36,35,0)" offset="50%"/>
-            <stop stop-color="rgba(13,13,12,0)" offset="100%"/>
+            <stop stop-color="#373734" offset="0%"/>
+            <stop stop-color="#242423" offset="50%"/>
+            <stop stop-color="#0D0D0C" offset="100%"/>
           </linearGradient>
         </defs>
         <path d="M361.604 361.238c-24.407 24.408-51.119 37.27-59.662 28.727-8.542-8.543 4.319-35.255 28.726-59.663 24.408-24.407 51.12-37.269 59.663-28.726 8.542 8.543-4.319 35.255-28.727 59.662z"/>
@@ -636,7 +632,6 @@
 
 
 
-
 <!-- Section 10 - SPHERE ANIMATION STYLES -->
 
 
@@ -656,10 +651,11 @@
     width: 580px;
     height: 580px;
     margin: -290px 0 0 -290px;
+    pointer-events: auto; /* Ensure click events are captured */
   }
 
   .sphere path {
-    fill: #000000; /* Solid black fill */
+    fill: url(#sphereGradient); /* Use the gradient for fill */
     stroke-width: 1px;
     stroke: rgba(80,80,80,.35);
     backface-visibility: hidden;
@@ -671,3 +667,5 @@
     }
   }
 </style>
+</body>
+</html>
