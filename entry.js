@@ -298,7 +298,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
 /* Section 2 - TRAIT MANAGEMENT FUNCTIONS */
 
 
@@ -1006,7 +1005,10 @@ function updateMintButton() {
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
+
+
 /* Section 3 - PREVIEW AND POSITION MANAGEMENT */
+
 
 
 function updateZIndices() {
