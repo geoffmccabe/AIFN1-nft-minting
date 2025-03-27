@@ -21,6 +21,8 @@
 
 
 
+
+
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
 
@@ -116,6 +118,81 @@
     border-top-color: #333;
     z-index: 1000;
   }
+  /* Custom tooltip for remove-trait button */
+  .remove-trait:hover::after {
+    content: 'Remove this Trait and its Variants';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+  }
+  .remove-trait:hover::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+  }
+  /* Custom tooltip for up-arrow button */
+  .up-arrow:hover::after {
+    content: attr(data-tooltip); /* Use data-tooltip attribute for dynamic text */
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+  }
+  .up-arrow:hover::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+  }
+  /* Custom tooltip for down-arrow button */
+  .down-arrow:hover::after {
+    content: attr(data-tooltip); /* Use data-tooltip attribute for dynamic text */
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+  }
+  .down-arrow:hover::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+  }
   .trait-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -174,8 +251,8 @@
     cursor: pointer;
     font-size: 14px;
     margin-bottom: 5px;
-    height: 32px;
-    line-height: 22px;
+    height: 27.2px; /* Reduced from 32px by 15% (32 * 0.85 = 27.2) */
+    line-height: 17.2px; /* Adjusted to center text (27.2 - 10 padding = 17.2) */
     box-sizing: border-box;
     text-align: center;
     min-width: 120px; /* Minimum width for "Choose Files" */
@@ -187,7 +264,6 @@
     background: #bbb;
   }
 </style>
-
 
 
 
