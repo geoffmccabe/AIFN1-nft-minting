@@ -1286,7 +1286,6 @@ window.mintNFT = async function() {
 
 
 
-
 /* Section 6 - SPHERE ANIMATION */
 
 
@@ -1312,6 +1311,16 @@ var sphereAnimation = (function() {
   var pathLength = spherePathEls.length;
   var aimations = [];
 
+  // Verify Anime.js is loaded
+  if (typeof anime === 'undefined') {
+    console.error('Anime.js is not loaded. Please ensure the script is included in index.html.');
+    return;
+  }
+
+  // Verify sphere elements are found
+  console.log('Sphere element:', sphereEl);
+  console.log('Sphere paths:', spherePathEls);
+
   fitElementToParent(sphereEl);
 
   var breathAnimation = anime({
@@ -1334,11 +1343,11 @@ var sphereAnimation = (function() {
       });
     },
     duration: Infinity,
-    autoplay: true // Ensure animation plays on load
+    autoplay: true
   });
 
   var introAnimation = anime.timeline({
-    autoplay: true // Ensure animation plays on load
+    autoplay: true
   })
   .add({
     targets: spherePathEls,
@@ -1361,7 +1370,7 @@ var sphereAnimation = (function() {
     y2: '75%',
     duration: 30000,
     easing: 'easeOutQuint',
-    autoplay: true // Ensure animation plays on load
+    autoplay: true
   }, 0);
 
   function init() {
@@ -1371,9 +1380,35 @@ var sphereAnimation = (function() {
   }
 
   // Add click event to hide the sphere
-  sphereEl.addEventListener('click', () => {
-    sphereEl.style.display = 'none';
-  });
+  if (sphereEl) {
+    sphereEl.addEventListener('click', () => {
+      console.log('Sphere clicked, hiding sphere');
+      sphereEl.style.display = 'none';
+    });
+  } else {
+    console.error('Sphere element not found');
+  }
+
+  // Center the sphere on the visible screen
+  function centerSphereOnScreen() {
+    const sphereWrapper = document.querySelector('.animation-wrapper');
+    if (!sphereWrapper) {
+      console.error('Animation wrapper not found');
+      return;
+    }
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    const sphereHeight = sphereWrapper.offsetHeight;
+    const sphereWidth = sphereWrapper.offsetWidth;
+
+    // Center the sphere in the viewport
+    sphereWrapper.style.top = `${(viewportHeight - sphereHeight) / 2}px`;
+    sphereWrapper.style.left = `${(viewportWidth - sphereWidth) / 2}px`;
+  }
+
+  // Call the centering function on load and on window resize
+  window.addEventListener('load', centerSphereOnScreen);
+  window.addEventListener('resize', centerSphereOnScreen);
 
   init();
 })();
