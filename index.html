@@ -23,6 +23,8 @@
 
 
 
+
+
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
 
@@ -120,9 +122,9 @@
   }
   /* Custom tooltip for remove-trait button */
   .remove-trait:hover::after {
-    content: 'Remove this Trait and its Variants';
+    content: 'Remove this Trait\nand its Variants';
     position: absolute;
-    top: -30px;
+    top: -40px;
     left: 50%;
     transform: translateX(-50%);
     background: #333;
@@ -130,7 +132,7 @@
     padding: 5px 10px;
     border-radius: 5px;
     font-size: 12px;
-    white-space: nowrap;
+    white-space: pre; /* Preserve line break */
     z-index: 1000;
   }
   .remove-trait:hover::before {
@@ -516,7 +518,7 @@
 
   
 <body>
-  <div id="version">Version 78</div>
+  <div id="version">Version 79</div>
   <div id="left-panel">
     <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
     <div id="trait-container">
