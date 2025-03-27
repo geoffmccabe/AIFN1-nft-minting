@@ -21,6 +21,8 @@
 
 
 
+
+
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
 
@@ -129,7 +131,6 @@
     border-radius: 5px;
     font-size: 12px;
     white-space: pre; /* Preserve line break */
-    line-height: 1.2; /* Ensure line break is visible */
     z-index: 1000;
   }
   .remove-trait:hover::before {
@@ -265,7 +266,7 @@
 </style>
 
 
-
+  
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
 
 
@@ -632,6 +633,8 @@
 
 
 
+
+
 <!-- Section 10 - SPHERE ANIMATION STYLES -->
 
 
@@ -640,7 +643,10 @@
   .animation-wrapper {
     width: 50%;
     padding-bottom: 50%;
-    position: fixed; /* Use fixed to position relative to viewport */
+    position: fixed; /* Use fixed to center in viewport */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 2000; /* Ensure it floats above the app */
   }
 
@@ -651,11 +657,10 @@
     width: 580px;
     height: 580px;
     margin: -290px 0 0 -290px;
-    pointer-events: auto; /* Ensure click events are captured */
   }
 
   .sphere path {
-    fill: url(#sphereGradient); /* Use the gradient for fill */
+    fill: #000000; /* Solid black fill */
     stroke-width: 1px;
     stroke: rgba(80,80,80,.35);
     backface-visibility: hidden;
@@ -667,5 +672,3 @@
     }
   }
 </style>
-</body>
-</html>
