@@ -376,7 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
-        updateZIndices();
       }
     });
 
@@ -389,7 +388,6 @@ document.addEventListener('DOMContentLoaded', () => {
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
-        updateZIndices();
       }
     });
   }
@@ -492,18 +490,16 @@ function addTrait(trait) {
   newTraitImage.id = `preview-trait${trait.id}`;
   newTraitImage.src = trait.variants.length > 0 ? trait.variants[trait.selected].url : '';
   newTraitImage.alt = `Trait ${traitContainer.children.length}`;
-  newTraitImage.style.zIndex = String(trait.zIndex); // Ensure zIndex is a string
   newTraitImage.style.visibility = trait.variants.length > 0 ? 'visible' : 'hidden';
   traitImages.push(newTraitImage);
 
-  // Re-render all preview images in order of zIndex (highest to lowest)
+  // Re-render all preview images in order of position (lowest to highest for DOM order)
   if (preview) {
     preview.innerHTML = '';
     const sortedImages = traitImages
-      .map((img, idx) => ({ img, zIndex: TraitManager.getAllTraits()[idx]?.zIndex || 0 }))
-      .sort((a, b) => b.zIndex - a.zIndex); // Sort by zIndex (descending)
+      .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx]?.position || 0 }))
+      .sort((a, b) => a.position - b.position); // Sort by position (ascending)
     sortedImages.forEach(({ img }) => {
-      img.style.zIndex = String(TraitManager.getAllTraits()[traitImages.indexOf(img)].zIndex); // Apply zIndex
       preview.appendChild(img);
     });
   }
