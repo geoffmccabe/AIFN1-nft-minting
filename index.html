@@ -5,74 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Perceptron Network NFT Creator</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Rowdies:wght@400;700&display=swap">
-  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-  <script src="config.js"></script>
-  <script src="entry.js"></script>
 </head>
 <body>
   <div id="version">Version 87</div>
   <div id="left-panel">
-    <img id="logo" src="/AIFN1-nft-minting/images/logo.png" alt="Perceptron Network NFT Creator">
-    <div id="trait-container"></div>
-    <h1>AI Background</h1>
-    <h2>Basic Prompt:</h2>
-    <textarea id="base-prompt" rows="5" cols="50">igirl, shinyang, (((small breasts))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, pirate pose, (white skull belt buckle), black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
-    <h2>User Prompt:</h2>
-    <textarea id="user-prompt" rows="2" cols="50" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
-    <button id="generate-background">Generate Bkgd</button>
-  </div>
-  <div id="right-panel">
-    <h1>Preview</h1>
-    <div id="preview"></div>
-    <div id="coordinates"><strong>Coordinates:</strong> (1, 1)</div>
-    <div id="direction-emojis">
-      <span class="direction-emoji" data-direction="up">⬆️</span>
-      <span class="direction-emoji" data-direction="down">⬇️</span>
-      <span class="direction-emoji" data-direction="left">⬅️</span>
-      <span class="direction-emoji" data-direction="right">➡️</span>
-      <span class="magnify-emoji">🔍</span>
-    </div>
-    <div id="enlarged-preview"></div>
-    <h1>Preview Samples</h1>
-    <div id="preview-samples-grid"></div>
-    <button id="update-previews">Update</button>
-  </div>
-  <div id="mint-section">
-    <button id="mintButton" disabled>Mint NFT</button>
-    <div id="mintFeeDisplay">Fetching mint fee...</div>
-  </div>
-  <div id="background-section">
-    <h1>Background</h1>
-    <img id="background-image" src="" alt="Generated Background">
-    <div id="background-metadata"></div>
+    <img id="logo" src="/AIFN1-nft-minting/images/perceptron-network-nft-creator-logo.webp" alt="Perceptron Network NFT Creator Logo">
   </div>
 
-  <!-- Section 9 - SPHERE ANIMATION HTML (from 2 iterations ago) -->
-  <div class="animation-wrapper">
-    <svg class="sphere-animation" viewBox="0 0 440 440">
-      <defs>
-        <linearGradient id="sphereGradient" x1="5%" y1="0%" x2="5%" y2="100%">
-          <stop offset="0%" stop-color="#000000" stop-opacity="1"/>
-          <stop offset="100%" stop-color="#000000" stop-opacity="0.5"/>
-        </linearGradient>
-      </defs>
-      <g class="sphere">
-        <path d="M220,220 m-200,0 a200,200 0 1,0 400,0 a200,200 0 1,0 -400,0"/>
-        <path d="M220,220 m-180,0 a180,180 0 1,0 360,0 a180,180 0 1,0 -360,0"/>
-        <path d="M220,220 m-160,0 a160,160 0 1,0 320,0 a160,160 0 1,0 -320,0"/>
-        <path d="M220,220 m-140,0 a140,140 0 1,0 280,0 a140,140 0 1,0 -280,0"/>
-        <path d="M220,220 m-120,0 a120,120 0 1,0 240,0 a120,120 0 1,0 -240,0"/>
-        <path d="M220,220 m-100,0 a100,100 0 1,0 200,0 a100,100 0 1,0 -200,0"/>
-        <path d="M220,220 m-80,0 a80,80 0 1,0 160,0 a80,80 0 1,0 -160,0"/>
-        <path d="M220,220 m-60,0 a60,60 0 1,0 120,0 a60,60 0 1,0 -120,0"/>
-        <path d="M220,220 m-40,0 a40,40 0 1,0 80,0 a40,40 0 1,0 -80,0"/>
-        <path d="M220,220 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0"/>
-      </g>
-    </svg>
-  </div>
-
-  <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -86,7 +25,6 @@
       display: flex;
       position: relative;
       min-height: 100vh;
-      width: 50%; /* Set to 50% to reduce sphere size */
     }
     #version {
       position: absolute;
@@ -314,7 +252,30 @@
     }
   </style>
 
-  <!-- Section 3 - STYLE/CSS - RIGHT (PREVIEW AND SAMPLES) -->
+  <div id="trait-container"></div>
+
+  <style>
+    #trait-container {
+      margin-top: 20px;
+    }
+  </style>
+
+  <div id="right-panel">
+    <div id="preview-container">
+      <h2>Preview</h2>
+      <div id="preview"></div>
+      <div id="coordinates"><strong>Coordinates:</strong> (1, 1)</div>
+      <div id="controls">
+        <span class="direction-emoji" data-direction="up">⬆️</span>
+        <span class="direction-emoji" data-direction="down">⬇️</span>
+        <span class="direction-emoji" data-direction="left">⬅️</span>
+        <span class="direction-emoji" data-direction="right">➡️</span>
+        <span class="magnify-emoji">🔍</span>
+      </div>
+    </div>
+    <div id="enlarged-preview"></div>
+  </div>
+
   <style>
     #right-panel {
       flex: 1;
@@ -322,18 +283,28 @@
       padding-top: 30px;
       min-width: 300px;
     }
+    #preview-container {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    #preview-container h2 {
+      font-family: 'Rowdies', sans-serif;
+      font-weight: 400;
+      margin: 0 0 10px;
+      text-align: left;
+    }
     #preview {
       width: 600px;
       height: 600px;
-      border: 1px solid #ccc;
-      position: relative;
       background: #ccc;
-      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
     }
     #preview img {
       position: absolute;
-      max-width: 600px;
-      max-height: 600px;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
       cursor: grab;
     }
     #preview img.dragging {
@@ -341,17 +312,19 @@
     }
     #coordinates {
       margin-top: 10px;
-      text-align: center;
+      font-size: 14px;
     }
-    #direction-emojis {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
+    #controls {
       margin-top: 10px;
+      display: flex;
+      gap: 10px;
     }
     .direction-emoji, .magnify-emoji {
       cursor: pointer;
       font-size: 20px;
+    }
+    .direction-emoji:hover, .magnify-emoji:hover {
+      opacity: 0.8;
     }
     #enlarged-preview {
       display: none;
@@ -359,198 +332,142 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: #ccc;
-      border: 1px solid #ccc;
+      background: rgba(0, 0, 0, 0.8);
       z-index: 1000;
-      max-width: 90%;
-      max-height: 90%;
+      border-radius: 10px;
+      overflow: hidden;
     }
     #enlarged-preview img {
       position: absolute;
+    }
+  </style>
+
+  <div id="preview-samples">
+    <h2>Preview Samples</h2>
+    <div id="preview-samples-grid"></div>
+    <button id="update-previews">Update</button>
+    <button id="mintButton">Mint NFT</button>
+    <div id="mintFeeDisplay">Fetching mint fee...</div>
+  </div>
+
+  <style>
+    #preview-samples {
+      margin-top: 20px;
+    }
+    #preview-samples h2 {
+      font-family: 'Rowdies', sans-serif;
+      font-weight: 400;
+      margin: 0 0 10px;
+      text-align: left;
     }
     #preview-samples-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 10px;
-      margin-top: 10px;
+      margin-bottom: 20px;
     }
     .sample-container {
       width: 140px;
       height: 140px;
-      border: 1px solid #ccc;
-      position: relative;
       background: #ccc;
+      position: relative;
+      overflow: hidden;
     }
     .sample-container img {
       position: absolute;
-      max-width: 140px;
-      max-height: 140px;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
     }
-  </style>
-
-  <!-- Section 4 - STYLE/CSS - BOTTOM (MINT AND BACKGROUND) -->
-  <style>
-    #mint-section {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-    }
-    #mintButton {
+    #update-previews, #mintButton {
       padding: 10px 20px;
-      background: #f4c149;
-      color: black;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    #mintButton:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-    #mintButton:hover:not(:disabled) {
-      background: #e0b040;
-    }
-    #mintFeeDisplay {
-      margin-top: 5px;
-      font-size: 12px;
-    }
-    #background-section {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      text-align: right;
-    }
-    #background-image {
-      max-width: 200px;
-      max-height: 200px;
-      margin-top: 10px;
-    }
-    #background-metadata {
-      margin-top: 5px;
-      font-size: 12px;
-      word-break: break-all;
-    }
-  </style>
-
-  <!-- Section 5 - STYLE/CSS - TEXTAREA -->
-  <style>
-    textarea {
-      width: 100%;
-      padding: 5px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      margin-bottom: 5px;
-      box-sizing: border-box;
-      resize: vertical;
-    }
-  </style>
-
-  <!-- Section 6 - STYLE/CSS - BUTTONS -->
-  <style>
-    button {
-      padding: 5px 10px;
       background: #ccc;
       color: black;
       border: none;
       border-radius: 5px;
       cursor: pointer;
       font-size: 14px;
+      margin-right: 10px;
     }
-    button:hover {
+    #update-previews:hover, #mintButton:hover {
       background: #bbb;
+    }
+    #mintButton:disabled {
+      background: #ddd;
+      cursor: not-allowed;
+    }
+    #mintFeeDisplay {
+      margin-top: 10px;
+      font-size: 14px;
     }
   </style>
 
-  <!-- Section 7 - STYLE/CSS - CONFIRMATION DIALOG -->
+  <div id="ai-background">
+    <h2>AI Background</h2>
+    <label for="base-prompt">Basic Prompt:</label>
+    <textarea id="base-prompt" rows="5" cols="50">igirl, shinyang, ((small breasts))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,1:1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, cleavage cutout, bracelet, midriff, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right arm, (shoulder tattoo)</textarea>
+    <label for="user-prompt">User Prompt:</label>
+    <textarea id="user-prompt" rows="2" cols="50" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
+    <button id="generate-background">Generate Bkgd</button>
+    <div id="background-metadata"></div>
+    <img id="background-image" src="" alt="AI Background">
+  </div>
+
   <style>
-    .confirmation-dialog {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
+    #ai-background {
+      margin-top: 20px;
+    }
+    #ai-background h2 {
+      font-family: 'Rowdies', sans-serif;
+      font-weight: 400;
+      margin: 0 0 10px;
+      text-align: left;
+    }
+    #ai-background label {
+      display: block;
+      margin: 10px 0 5px;
+      font-size: 14px;
+    }
+    #ai-background textarea {
+      width: 100%;
+      padding: 5px;
+      border-radius: 5px;
       border: 1px solid #ccc;
-      padding: 20px;
-      z-index: 1000;
-      text-align: center;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
     }
-    .confirmation-dialog p {
-      margin: 0 0 20px;
-    }
-    .confirmation-dialog .buttons {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-    .yes-button, .no-button {
-      padding: 5px 10px;
+    #generate-background {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      font-size: 14px;
     }
-    .yes-button {
-      background: #f4c149;
-      color: black;
+    #generate-background:hover {
+      background: #45a049;
     }
-    .yes-button:hover {
-      background: #e0b040;
+    #background-metadata {
+      margin: 10px 0;
+      font-size: 14px;
     }
-    .no-button {
-      background: #ccc;
-      color: black;
-    }
-    .no-button:hover {
-      background: #bbb;
-    }
-  </style>
-
-  <!-- Section 8 - STYLE/CSS - H1 -->
-  <style>
-    h1 {
-      font-family: 'Rowdies', sans-serif;
-      font-weight: 400;
-      margin: 0 0 20px;
-      text-align: center;
+    #background-image {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin-top: 10px;
+      border-radius: 5px;
     }
   </style>
 
-  <!-- Section 10 - SPHERE ANIMATION STYLES (from 2 iterations ago) -->
-  <style>
-    .animation-wrapper {
-      width: 50%;
-      padding-bottom: 50%;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 2000; /* Ensure it floats above the app */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .sphere-animation {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 580px;
-      height: 580px;
-      margin: -290px 0 0 -290px;
-    }
-
-    .sphere path {
-      fill: #000000; /* Solid black fill */
-      stroke-width: 1px;
-      stroke: rgba(80,80,80,.35);
-      backface-visibility: hidden;
-    }
-
-    @media (min-width: 500px) {
-      .sphere path {
-        stroke-width: .4px;
-      }
-    }
-  </style>
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <script src="/AIFN1-nft-minting/config.js"></script>
+  <script src="/AIFN1-nft-minting/lockdown-install.js"></script>
+  <script src="/AIFN1-nft-minting/lockdown-run.js"></script>
+  <script src="/AIFN1-nft-minting/entry.js"></script>
 </body>
 </html>
