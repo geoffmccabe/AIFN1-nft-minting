@@ -19,7 +19,7 @@
 
 
 
-/* Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) */
+<!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
 
 
@@ -79,6 +79,7 @@
   .trait-controls {
     display: flex;
     gap: 10px;
+    position: relative; /* Added to ensure tooltips are positioned correctly */
   }
   .trait-controls span {
     cursor: pointer;
@@ -88,7 +89,6 @@
   .trait-controls span:hover {
     opacity: 0.8;
   }
-  /* Restored styles for trait grid and variants */
   .trait-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
