@@ -1,51 +1,44 @@
 /* Section 1 - TRAIT MANAGER FRAMEWORK */
 
-
-
-// Utility to generate unique IDs (simple incrementing counter for this example)
 let idCounter = 0;
 function generateId() {
   return `id-${idCounter++}`;
 }
 
-// TraitManager class to manage traits and variants
 const TraitManager = {
   traits: [],
 
-  // Initialize with 3 empty traits in descending position order
   initialize() {
     this.traits = [];
-    for (let i = 3; i >= 1; i--) { // Start with position 3, then 2, then 1
-      this.addTrait(i);
+    for (let i = 0; i < 3; i++) {
+      this.addTrait(i + 1);
     }
   },
 
-  // Add a new trait at the specified position
   addTrait(position) {
     const newTrait = {
       id: generateId(),
       position: position,
       name: '',
-      isUserAssignedName: false, // Track if the name is user-assigned
+      isUserAssignedName: false,
       variants: [],
       selected: 0,
+      zIndex: this.traits.length - position + 1,
       createdAt: Date.now()
     };
 
-    // Shift existing traits with position >= new position
     this.traits.forEach(trait => {
       if (trait.position >= position) {
         trait.position++;
+        trait.zIndex = this.traits.length - trait.position + 1;
       }
     });
 
-    // Add the new trait
     this.traits.push(newTrait);
-    this.traits.sort((a, b) => a.position - b.position); // Sort by position (ascending)
+    this.traits.sort((a, b) => a.position - b.position);
     return newTrait;
   },
 
-  // Remove a trait by ID
   removeTrait(traitId) {
     const traitIndex = this.traits.findIndex(trait => trait.id === traitId);
     if (traitIndex === -1) return;
@@ -53,25 +46,22 @@ const TraitManager = {
     const removedTrait = this.traits[traitIndex];
     const removedPosition = removedTrait.position;
 
-    // Remove the trait
     this.traits.splice(traitIndex, 1);
 
-    // Shift positions of remaining traits
     this.traits.forEach(trait => {
       if (trait.position > removedPosition) {
         trait.position--;
+        trait.zIndex = this.traits.length - trait.position + 1;
       }
     });
   },
 
-  // Move a trait to a new position
   moveTrait(traitId, newPosition) {
     const trait = this.traits.find(t => t.id === traitId);
     if (!trait) return;
 
     const oldPosition = trait.position;
 
-    // Adjust positions of other traits
     if (newPosition < oldPosition) {
       this.traits.forEach(t => {
         if (t.position >= newPosition && t.position < oldPosition) {
@@ -86,24 +76,14 @@ const TraitManager = {
       });
     }
 
-    // Update the trait's position
     trait.position = newPosition;
 
-    // Sort traits by position (ascending)
     this.traits.sort((a, b) => a.position - b.position);
-
-    // Re-sort traitImages to match the new trait order
-    const sortedTraits = this.getAllTraits();
-    const newTraitImages = [];
-    sortedTraits.forEach(trait => {
-      const img = traitImages.find(img => img.id === `preview-trait${trait.id}`);
-      if (img) newTraitImages.push(img);
+    this.traits.forEach((t, idx) => {
+      t.zIndex = this.traits.length - t.position + 1;
     });
-    traitImages.length = 0; // Clear the array
-    traitImages.push(...newTraitImages); // Re-populate in correct order
   },
 
-  // Add a variant to a trait
   addVariant(traitId, variantData) {
     const trait = this.traits.find(t => t.id === traitId);
     if (!trait) return;
@@ -112,7 +92,7 @@ const TraitManager = {
       id: generateId(),
       name: variantData.name,
       url: variantData.url,
-      chance: variantData.chance || 0.5, // Default chance if not provided
+      chance: variantData.chance || 0.5,
       createdAt: Date.now()
     };
 
@@ -120,7 +100,6 @@ const TraitManager = {
     return newVariant;
   },
 
-  // Remove a variant from a trait
   removeVariant(traitId, variantId) {
     const trait = this.traits.find(t => t.id === traitId);
     if (!trait) return;
@@ -130,13 +109,11 @@ const TraitManager = {
 
     trait.variants.splice(variantIndex, 1);
 
-    // Adjust selected index if necessary
     if (trait.selected >= trait.variants.length) {
       trait.selected = Math.max(0, trait.variants.length - 1);
     }
   },
 
-  // Update the chance of a variant
   updateVariantChance(traitId, variantId, chance) {
     const trait = this.traits.find(t => t.id === traitId);
     if (!trait) return;
@@ -147,25 +124,17 @@ const TraitManager = {
     variant.chance = chance;
   },
 
-  // Get a trait by ID
   getTrait(traitId) {
     return this.traits.find(t => t.id === traitId);
   },
 
-  // Get all traits
   getAllTraits() {
     return [...this.traits];
   }
 };
 
-
-
-
 /* Section 2 - GLOBAL SETUP AND INITIALIZATION */
 
-
-
-// Declare variables globally
 let provider, contract, signer, contractWithSigner;
 let traitImages = [];
 let isDragging = false;
@@ -198,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
   previewSamplesGrid = document.getElementById('preview-samples-grid');
   updatePreviewsButton = document.getElementById('update-previews');
 
-  // Add error handling for missing DOM elements
   if (!traitContainer) {
     console.error('Error: trait-container element not found in the DOM');
     return;
@@ -208,19 +176,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Clear localStorage to start fresh with the new framework
   localStorage.clear();
   variantHistories = {};
 
-  // Clear any stray elements in the preview panel
   if (preview) {
     preview.innerHTML = '';
   }
 
-  // Initialize TraitManager with 3 traits
   TraitManager.initialize();
 
-  // Render initial traits and select their variants
   TraitManager.getAllTraits().forEach(trait => {
     addTrait(trait);
     refreshTraitGrid(trait.id);
@@ -230,11 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   updatePreviewSamples();
 
-  // Event listeners for global controls
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
   generateButton.addEventListener('click', fetchBackground);
 
-  // Set up drag-and-drop for direction emojis
   directionEmojis.forEach(emoji => {
     const direction = emoji.getAttribute('data-direction');
     emoji.addEventListener('mousedown', () => {
@@ -285,12 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-
-
-
 /* Section 3 - GLOBAL EVENT LISTENERS */
-
-
 
 document.addEventListener('DOMContentLoaded', () => {
   // Set up magnifying glass
@@ -309,19 +266,19 @@ document.addEventListener('DOMContentLoaded', () => {
       scale = maxWidth / 600;
     }
 
-    // Sort images by trait position (lowest to highest) to match Preview Panel order
     const sortedImages = traitImages
       .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx].position }))
       .sort((a, b) => a.position - b.position);
 
     sortedImages.forEach(({ img }) => {
-      if (img && img.src && img.style.visibility !== 'hidden') { // Check for src and visibility
+      if (img && img.src && img.style.visibility !== 'hidden') {
         const clonedImg = img.cloneNode(true);
         clonedImg.style.width = `${img.width * scale}px`;
         clonedImg.style.height = `${img.height * scale}px`;
         clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
         clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
-        clonedImg.style.visibility = 'visible'; // Ensure cloned image is visible
+        clonedImg.style.zIndex = String(img.style.zIndex);
+        clonedImg.style.visibility = 'visible';
         enlargedPreview.appendChild(clonedImg);
       }
     });
@@ -356,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Set up preview panel drag events
+  // Set up preview panel mousemove event only (mouseup handled in setupDragAndDrop)
   if (preview) {
     preview.addEventListener('mousemove', (e) => {
       if (!isDragging || !currentImage) return;
@@ -370,38 +327,11 @@ document.addEventListener('DOMContentLoaded', () => {
       updateCoordinates(currentImage);
     });
 
-    preview.addEventListener('mouseup', () => {
-      if (isDragging && currentImage) {
-        const traitIndex = traitImages.indexOf(currentImage);
-        const trait = TraitManager.getAllTraits()[traitIndex];
-        const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, trait.id, variationName);
-        isDragging = false;
-        currentImage.style.cursor = 'grab';
-        currentImage.classList.remove('dragging');
-      }
-    });
-
-    preview.addEventListener('mouseleave', () => {
-      if (isDragging && currentImage) {
-        const traitIndex = traitImages.indexOf(currentImage);
-        const trait = TraitManager.getAllTraits()[traitIndex];
-        const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, trait.id, variationName);
-        isDragging = false;
-        currentImage.style.cursor = 'grab';
-        currentImage.classList.remove('dragging');
-      }
-    });
+    // Removed preview mouseup and mouseleave listeners to avoid conflicts
   }
 });
 
-
-
-
 /* Section 4 - TRAIT MANAGEMENT FUNCTIONS (PART 1) */
-
-
 
 function addTrait(trait) {
   const traitSection = document.createElement('div');
@@ -411,7 +341,7 @@ function addTrait(trait) {
   const traitHeader = document.createElement('div');
   traitHeader.className = 'trait-header';
   const title = document.createElement('h2');
-  title.textContent = `TRAIT ${traitContainer.children.length + 1}`; // Use DOM position for TRAIT [x]
+  title.textContent = `TRAIT ${traitContainer.children.length + 1}`;
   if (trait.name && trait.isUserAssignedName) {
     title.textContent += ` - ${trait.name}`;
   }
@@ -445,9 +375,9 @@ function addTrait(trait) {
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.id = `trait${trait.id}-name`;
-  nameInput.placeholder = `Trait ${traitContainer.children.length + 1}`; // Set placeholder dynamically
+  nameInput.placeholder = `Trait ${traitContainer.children.length + 1}`;
   if (trait.isUserAssignedName) {
-    nameInput.value = trait.name; // Only set value if user-assigned
+    nameInput.value = trait.name;
   }
 
   const fileInput = document.createElement('input');
@@ -471,7 +401,6 @@ function addTrait(trait) {
   traitSection.appendChild(fileInputLabel);
   traitSection.appendChild(grid);
 
-  // Insert the trait section at the correct position
   const existingSections = traitContainer.querySelectorAll('.trait-section');
   let inserted = false;
   for (let i = 0; i < existingSections.length; i++) {
@@ -488,7 +417,6 @@ function addTrait(trait) {
     traitContainer.appendChild(traitSection);
   }
 
-  // Always create the preview image to ensure it exists in the DOM
   const newTraitImage = document.createElement('img');
   newTraitImage.id = `preview-trait${trait.id}`;
   newTraitImage.src = trait.variants.length > 0 ? trait.variants[trait.selected].url : '';
@@ -496,12 +424,11 @@ function addTrait(trait) {
   newTraitImage.style.visibility = trait.variants.length > 0 ? 'visible' : 'hidden';
   traitImages.push(newTraitImage);
 
-  // Re-render all preview images in order of position (lowest to highest for DOM order)
   if (preview) {
     preview.innerHTML = '';
     const sortedImages = traitImages
       .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx]?.position || 0 }))
-      .sort((a, b) => a.position - b.position); // Sort by position (ascending)
+      .sort((a, b) => a.position - b.position);
     sortedImages.forEach(({ img }) => {
       preview.appendChild(img);
     });
@@ -535,14 +462,11 @@ function removeTrait(traitId) {
   noButton.textContent = 'N';
 
   yesButton.addEventListener('click', () => {
-    // Remove the trait from TraitManager
     TraitManager.removeTrait(traitId);
 
-    // Remove the DOM element
     const traitSection = document.getElementById(`trait${traitId}`);
     if (traitSection) traitSection.remove();
 
-    // Remove the preview image
     const traitImage = document.getElementById(`preview-trait${traitId}`);
     if (traitImage) {
       const traitIndex = traitImages.indexOf(traitImage);
@@ -550,18 +474,15 @@ function removeTrait(traitId) {
       traitImage.remove();
     }
 
-    // Clear localStorage for the deleted trait
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith(`trait${traitId}-`)) {
         localStorage.removeItem(key);
       }
     });
 
-    // Re-render all traits
     traitContainer.innerHTML = '';
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
-      // Reset default name if not user-assigned
       if (!trait.isUserAssignedName) {
         const position = TraitManager.getAllTraits().indexOf(trait) + 1;
         trait.name = `Trait ${position}`;
@@ -585,11 +506,7 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
-
-
 /* Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) */
-
-
 
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
@@ -601,8 +518,7 @@ function setupTraitListeners(traitId) {
     nameInput.addEventListener('input', () => {
       const trait = TraitManager.getTrait(traitId);
       trait.name = nameInput.value.trim();
-      trait.isUserAssignedName = true; // Mark the name as user-assigned
-      // Update the headline
+      trait.isUserAssignedName = true;
       const title = nameInput.parentElement.querySelector('h2');
       const position = Array.from(traitContainer.children).indexOf(nameInput.parentElement) + 1;
       title.textContent = `TRAIT ${position}${trait.name ? ` - ${trait.name}` : ''}`;
@@ -613,7 +529,6 @@ function setupTraitListeners(traitId) {
       if (!files.length) return;
 
       const trait = TraitManager.getTrait(traitId);
-      // Only set a default name if no name has been assigned
       if (!trait.isUserAssignedName) {
         const position = Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1;
         TraitManager.getTrait(traitId).name = `Trait ${position}`;
@@ -665,7 +580,6 @@ function setupTraitListeners(traitId) {
         }
       }
 
-      // After adding variants, select the first one and update the UI
       if (TraitManager.getTrait(traitId).variants.length > 0) {
         const firstVariant = TraitManager.getTrait(traitId).variants[0];
         selectVariation(traitId, firstVariant.id);
@@ -695,11 +609,9 @@ function setupTraitListeners(traitId) {
         TraitManager.moveTrait(traitId, newPosition);
       }
 
-      // Re-render all traits
       traitContainer.innerHTML = '';
       traitImages = [];
       TraitManager.getAllTraits().forEach(trait => {
-        // Reset default name if not user-assigned and matches the default pattern
         const position = TraitManager.getAllTraits().indexOf(trait) + 1;
         if (!trait.isUserAssignedName && trait.name === `Trait ${trait.position}`) {
           trait.name = `Trait ${position}`;
@@ -727,11 +639,9 @@ function setupTraitListeners(traitId) {
         TraitManager.moveTrait(traitId, newPosition);
       }
 
-      // Re-render all traits
       traitContainer.innerHTML = '';
       traitImages = [];
       TraitManager.getAllTraits().forEach(trait => {
-        // Reset default name if not user-assigned and matches the default pattern
         const position = TraitManager.getAllTraits().indexOf(trait) + 1;
         if (!trait.isUserAssignedName && trait.name === `Trait ${trait.position}`) {
           trait.name = `Trait ${position}`;
@@ -753,11 +663,9 @@ function setupTraitListeners(traitId) {
         const newPosition = trait.position;
         TraitManager.addTrait(newPosition);
 
-        // Re-render all traits
         traitContainer.innerHTML = '';
         traitImages = [];
         TraitManager.getAllTraits().forEach(trait => {
-          // Reset default name if not user-assigned
           if (!trait.isUserAssignedName) {
             const position = TraitManager.getAllTraits().indexOf(trait) + 1;
             trait.name = `Trait ${position}`;
@@ -840,7 +748,7 @@ function renumberTraits() {
     const trait = TraitManager.getTrait(traitId);
     section.querySelector('h2').textContent = `TRAIT ${index + 1}${trait.isUserAssignedName && trait.name ? ` - ${trait.name}` : ''}`;
     section.querySelector('input[type="text"]').id = `trait${traitId}-name`;
-    section.querySelector('input[type="text"]').placeholder = `Trait ${index + 1}`; // Update placeholder
+    section.querySelector('input[type="text"]').placeholder = `Trait ${index + 1}`;
     section.querySelector('input[type="file"]').id = `trait${traitId}-files`;
     section.querySelector('.file-input-label').htmlFor = `trait${traitId}-files`;
     section.querySelector('.trait-grid').id = `trait${traitId}-grid`;
@@ -857,21 +765,16 @@ function updateMintButton() {
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
-
-
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
-
-
 
 function updateZIndices() {
   traitImages.forEach((img, index) => {
     if (img) {
       const trait = TraitManager.getAllTraits()[index];
-      img.style.zIndex = String(trait.zIndex);
-      console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${trait.zIndex}`);
+      img.style.zIndex = String(trait.position); // Fix: Lower position = higher z-index
+      console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${trait.position}`);
     }
   });
-  // Force a reflow to ensure zIndex changes are applied
   if (preview) preview.offsetHeight;
 }
 
@@ -887,7 +790,7 @@ function selectVariation(traitId, variationId) {
   const previewImage = document.getElementById(`preview-trait${traitId}`);
   if (previewImage) {
     previewImage.src = trait.variants[variationIndex].url;
-    previewImage.style.visibility = 'visible'; // Show the selected image
+    previewImage.style.visibility = 'visible';
     const key = `${traitId}-${trait.variants[variationIndex].name}`;
     const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
     if (savedPosition) {
@@ -941,7 +844,6 @@ function setupDragAndDrop(img, traitIndex) {
 
     img.addEventListener('mouseup', () => {
       if (isDragging && currentImage === img) {
-        const traitIndex = traitImages.indexOf(currentImage);
         const trait = TraitManager.getAllTraits()[traitIndex];
         const variationName = trait.variants[trait.selected].name;
         savePosition(currentImage, trait.id, variationName);
@@ -1002,7 +904,65 @@ function savePosition(img, traitId, variationName) {
   updateSubsequentTraits(traitId, variationName, position);
 }
 
+/* Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) */
 
+function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
+  const currentTrait = TraitManager.getTrait(currentTraitId);
+  const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === currentTraitId);
+  const currentVariationIndex = currentTrait.variants.findIndex(v => v.name === currentVariationName);
+
+  if (currentTrait.variants.length > 1) {
+    for (let i = currentVariationIndex + 1; i < currentTrait.variants.length; i++) {
+      const nextVariationName = currentTrait.variants[i].name;
+      const key = `${currentTraitId}-${nextVariationName}`;
+      const manuallyMoved = localStorage.getItem(`trait${currentTraitId}-${nextVariationName}-manuallyMoved`);
+      if (!manuallyMoved && !variantHistories[key]) {
+        variantHistories[key] = [{ left: position.left, top: position.top }];
+        localStorage.setItem(`trait${currentTraitId}-${nextVariationName}-position`, JSON.stringify(position));
+        if (currentTrait.selected === i) {
+          const previewImage = document.getElementById(`preview-trait${currentTraitId}`);
+          if (previewImage && previewImage.src) {
+            previewImage.style.left = `${position.left}px`;
+            previewImage.style.top = `${position.top}px`;
+          }
+        }
+      }
+    }
+  }
+
+  for (let traitIndex = currentTraitIndex + 1; traitIndex < TraitManager.getAllTraits().length; traitIndex++) {
+    const nextTrait = TraitManager.getAllTraits()[traitIndex];
+    if (nextTrait.variants.length === 0) continue;
+    for (let i = 0; i < nextTrait.variants.length; i++) {
+      const nextVariationName = nextTrait.variants[i].name;
+      const key = `${nextTrait.id}-${nextVariationName}`;
+      const manuallyMoved = localStorage.getItem(`trait${nextTrait.id}-${nextVariationName}-manuallyMoved`);
+      if (!manuallyMoved && !variantHistories[key]) {
+        variantHistories[key] = [{ left: position.left, top: position.top }];
+        localStorage.setItem(`trait${nextTrait.id}-${nextVariationName}-position`, JSON.stringify(position));
+        if (nextTrait.selected === i) {
+          const previewImage = document.getElementById(`preview-trait${nextTrait.id}`);
+          if (previewImage && previewImage.src) {
+            previewImage.style.left = `${position.left}px`;
+            previewImage.style.top = `${position.top}px`;
+          }
+        }
+      }
+    }
+  }
+}
+
+function updateSamplePositions(traitId, variationId, position) {
+  for (let i = 0; i < 16; i++) {
+    const sample = sampleData[i];
+    for (let j = 0; j < sample.length; j++) {
+      if (sample[j].traitId === traitId && sample[j].variantId === variationId) {
+        sample[j].position = position;
+      }
+    }
+  }
+  updatePreviewSamples();
+}
 
 function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
@@ -1012,7 +972,6 @@ function updatePreviewSamples() {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
 
-    // Render traits in order of position (lowest to highest) to ensure correct stacking
     const traits = TraitManager.getAllTraits().slice().sort((a, b) => a.position - b.position);
     for (let j = 0; j < traits.length; j++) {
       const trait = traits[j];
@@ -1024,8 +983,7 @@ function updatePreviewSamples() {
       const img = document.createElement('img');
       img.src = variant.url;
       img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
-      // Fix: Set zIndex to match position (lower position = higher z-index, so TRAIT 1 is on top)
-      img.style.zIndex = String(trait.position); // Ascending position = higher z-index
+      img.style.zIndex = String(trait.position); // Consistent with #preview
 
       const key = `${trait.id}-${variant.name}`;
       const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
@@ -1066,16 +1024,13 @@ function updatePreviewSamples() {
       sampleContainer.appendChild(img);
     }
 
-    // Add click event listener to update Preview Panel and select variants
     sampleContainer.addEventListener('click', () => {
-      // Update Preview Panel with the variants from this sample
       sampleData[i].forEach(sample => {
         const traitId = sample.traitId;
         const variantId = sample.variantId;
         selectVariation(traitId, variantId);
       });
 
-      // Update selected variants on the left side
       sampleData[i].forEach(sample => {
         const traitId = sample.traitId;
         const variantId = sample.variantId;
@@ -1096,14 +1051,7 @@ function updatePreviewSamples() {
   }
 }
 
-  
-
-
 /* Section 8 - BACKGROUND GENERATION AND MINTING */
-
-
-  
-
 
 async function fetchBackground() {
   try {
