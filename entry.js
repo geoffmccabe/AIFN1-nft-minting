@@ -1,5 +1,7 @@
 /* Section 1 - TRAIT MANAGER FRAMEWORK */
 
+
+
 // Utility to generate unique IDs (simple incrementing counter for this example)
 let idCounter = 0;
 function generateId() {
@@ -26,7 +28,7 @@ const TraitManager = {
       name: '',
       variants: [],
       selected: 0,
-      zIndex: this.traits.length + 1 - position, // Higher position = higher zIndex
+      zIndex: this.traits.length + 1 - position, // Higher position = lower zIndex
       createdAt: Date.now()
     };
 
@@ -151,7 +153,12 @@ const TraitManager = {
   }
 };
 
+
+
+
 /* Section 2 - GLOBAL SETUP AND INITIALIZATION */
+
+
 
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
@@ -252,7 +259,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+});
 
+
+
+
+/* Section 3 - GLOBAL EVENT LISTENERS */
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
   // Set up magnifying glass
   magnifyEmoji.addEventListener('click', () => {
     enlargedPreview.innerHTML = '';
@@ -335,6 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
+        updateZIndices();
       }
     });
 
@@ -347,12 +364,18 @@ document.addEventListener('DOMContentLoaded', () => {
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
+        updateZIndices();
       }
     });
   }
 });
 
-/* Section 3 - TRAIT MANAGEMENT FUNCTIONS */
+
+
+
+/* Section 4 - TRAIT MANAGEMENT FUNCTIONS (PART 1) */
+
+
 
 function addTrait(trait) {
   const traitSection = document.createElement('div');
@@ -511,6 +534,13 @@ function removeTrait(traitId) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
+
+
+
+
+/* Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) */
+
+
 
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
@@ -719,12 +749,18 @@ function updateMintButton() {
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
-/* Section 4 - PREVIEW AND POSITION MANAGEMENT */
+
+
+
+/* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
+
+
 
 function updateZIndices() {
   traitImages.forEach((img, index) => {
-    if (img && img !== currentImage) {
-      img.style.zIndex = TraitManager.getAllTraits()[index].zIndex;
+    if (img) {
+      const trait = TraitManager.getAllTraits()[index];
+      img.style.zIndex = trait.zIndex;
     }
   });
 }
@@ -772,15 +808,7 @@ function selectVariation(traitId, variationId) {
       }
     }
     currentImage = previewImage;
-    traitImages.forEach(img => {
-      if (img) {
-        if (img === previewImage) img.style.zIndex = 1000;
-        else {
-          const idx = traitImages.indexOf(img);
-          img.style.zIndex = TraitManager.getAllTraits()[idx].zIndex;
-        }
-      }
-    });
+    updateZIndices();
     updateCoordinates(previewImage);
   }
 }
@@ -810,6 +838,7 @@ function setupDragAndDrop(img, traitIndex) {
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
+        updateZIndices();
       }
     });
 
@@ -862,6 +891,13 @@ function savePosition(img, traitId, variationName) {
   updateSamplePositions(traitId, variationName, position);
   updateSubsequentTraits(traitId, variationName, position);
 }
+
+
+
+
+/* Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) */
+
+
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
@@ -929,8 +965,10 @@ function updatePreviewSamples() {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
 
-    for (let j = 0; j < TraitManager.getAllTraits().length; j++) {
-      const trait = TraitManager.getAllTraits()[j];
+    // Render traits in reverse order (highest position first) to ensure correct stacking
+    const traits = TraitManager.getAllTraits().slice().reverse();
+    for (let j = 0; j < traits.length; j++) {
+      const trait = traits[j];
       if (trait.variants.length === 0) continue;
 
       const randomIndex = Math.floor(Math.random() * trait.variants.length);
@@ -938,7 +976,7 @@ function updatePreviewSamples() {
 
       const img = document.createElement('img');
       img.src = variant.url;
-      img.alt = `Sample ${i + 1} - Trait ${j + 1}`;
+      img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
       img.style.zIndex = trait.zIndex;
 
       const key = `${trait.id}-${variant.name}`;
@@ -983,7 +1021,12 @@ function updatePreviewSamples() {
   }
 }
 
-/* Section 5 - BACKGROUND GENERATION */
+
+
+
+/* Section 8 - BACKGROUND GENERATION AND MINTING */
+
+
 
 async function fetchBackground() {
   try {
@@ -1030,8 +1073,6 @@ function fetchMintFee() {
   if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
 }
 fetchMintFee();
-
-/* Section 6 - MINTING FUNCTION */
 
 window.mintNFT = async function() {
   const status = document.getElementById('status');
