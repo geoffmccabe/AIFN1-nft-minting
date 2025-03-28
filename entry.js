@@ -863,7 +863,7 @@ function updateZIndices() {
   traitImages.forEach((img, index) => {
     if (img) {
       const trait = TraitManager.getAllTraits()[index];
-      img.style.zIndex = trait.zIndex;
+      img.style.zIndex = String(trait.zIndex);
       console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${trait.zIndex}`);
     }
   });
@@ -997,7 +997,6 @@ function savePosition(img, traitId, variationName) {
   updateSamplePositions(traitId, variationName, position);
   updateSubsequentTraits(traitId, variationName, position);
 }
-
 
 
 
