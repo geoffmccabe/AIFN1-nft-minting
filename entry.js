@@ -937,7 +937,6 @@ function savePosition(img, traitId, variationName) {
 
 
 
-
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
   const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === currentTraitId);
@@ -1015,7 +1014,8 @@ function updatePreviewSamples() {
       const img = document.createElement('img');
       img.src = variant.url;
       img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
-      img.style.zIndex = String(trait.position); // Consistent with #preview
+      // Fix: Match #preview, lower position = higher z-index, TRAIT 1 on top
+      img.style.zIndex = String(traits.length - trait.position + 1);
 
       const key = `${trait.id}-${variant.name}`;
       const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
