@@ -485,7 +485,7 @@ function removeTrait(traitId) {
   noButton.className = 'no-button';
   noButton.textContent = 'N';
 
-  yesButton.addEventListener('click', () => {
+  const deleteAndRemoveDialog = () => {
     console.log(`Yes clicked for trait ${traitId}`);
     TraitManager.removeTrait(traitId);
 
@@ -520,8 +520,20 @@ function removeTrait(traitId) {
     });
 
     updatePreviewSamples();
-    console.log('Removing confirmation dialog after Yes');
-    confirmationDialog.remove(); // Ensure removal after all operations
+  };
+
+  yesButton.addEventListener('click', () => {
+    deleteAndRemoveDialog();
+    try {
+      console.log('Attempting to remove dialog after Yes');
+      if (confirmationDialog && confirmationDialog.parentNode) {
+        confirmationDialog.parentNode.removeChild(confirmationDialog);
+      } else {
+        console.log('Dialog already removed or not in DOM');
+      }
+    } catch (e) {
+      console.error('Error removing dialog:', e);
+    }
   });
 
   noButton.addEventListener('click', () => {
@@ -535,7 +547,6 @@ function removeTrait(traitId) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
-
 
 
 /* Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) */
