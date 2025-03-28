@@ -246,7 +246,6 @@
     max-width: 600px;
     max-height: 600px;
     object-fit: contain;
-    display: none;
   }
   #preview img.dragging {
     box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
@@ -309,7 +308,7 @@
   #preview-samples-grid {
     display: grid;
     grid-template-columns: repeat(4, 140px);
-    grid-template-rows: repeat(4, 140px); /* Updated to 4 rows for 4x4 grid */
+    grid-template-rows: repeat(4, 140px);
     gap: 13px;
     width: 600px;
   }
@@ -322,7 +321,7 @@
     border: 1px solid black;
     border-radius: 5px;
     overflow: hidden;
-    cursor: pointer; /* Added to indicate the sample is clickable */
+    cursor: pointer;
   }
   #preview-samples-grid img {
     position: absolute;
@@ -462,7 +461,7 @@
 
   
 <body>
-  <div id="version">Version 90</div>
+  <div id="version">Version 91</div>
   <div id="left-panel">
     <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
     <div id="trait-container">
