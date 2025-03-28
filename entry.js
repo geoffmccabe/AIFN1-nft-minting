@@ -14,8 +14,8 @@ class Panel {
     this.id = id;
     this.title = title;
     this.content = content;
-    this.column = column; // 'left' or 'right'
-    this.style = { backgroundColor: '#ffffff', ...style }; // All panels white
+    this.column = column;
+    this.style = { backgroundColor: '#ffffff', ...style };
     this.element = null;
   }
 
@@ -24,7 +24,7 @@ class Panel {
       this.element = document.createElement('div');
       this.element.id = this.id;
       this.element.className = 'panel';
-      this.element.innerHTML = this.id === 'logo-panel' ? this.content : `<h2>${this.title}</h2>${this.content}`; // No title for logo
+      this.element.innerHTML = this.id === 'logo-panel' ? this.content : `<h2>${this.title}</h2>${this.content}`;
       Object.assign(this.element.style, this.style);
     }
     return this.element;
@@ -305,7 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
   previewSamplesPanel.update(getPreviewSamplesContent());
   fetchMintFee();
 
-  document.getElementById('update-previews').addEventListener('click', updatePreviewSamples);
   document.getElementById('generate-background').addEventListener('click', fetchBackground);
   document.getElementById('mintButton').addEventListener('click', window.mintNFT);
 
@@ -318,6 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
       selectVariation(trait.id, trait.variants[0].id);
     }
   });
+
+  traitImages.forEach((img, index) => setupDragAndDrop(img, index));
 });
 
 /* Section 4 - PANEL LOGIC */
@@ -364,16 +365,21 @@ function setupTraitListeners(traitId) {
   const fileInput = document.getElementById(`trait${traitId}-files`);
   const fileInputLabel = document.querySelector(`label[for="trait${traitId}-files"]`);
   const grid = document.getElementById(`trait${traitId}-grid`);
+  const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
+  const downArrow = document.querySelector(`.down-arrow[data-trait="${traitId}"]`);
+  const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
+  const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitId}"]`);
 
-  if (fileInput && nameInput && grid && fileInputLabel) {
+  if (nameInput) {
     nameInput.addEventListener('input', () => {
       const trait = TraitManager.getTrait(traitId);
       trait.name = nameInput.value.trim();
       trait.isUserAssignedName = true;
       traitsPanel.update(getTraitsContent());
-      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
     });
+  }
 
+  if (fileInput && fileInputLabel && grid) {
     fileInput.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
@@ -384,14 +390,11 @@ function setupTraitListeners(traitId) {
         trait.name = `Trait ${position}`;
       }
 
-      TraitManager.getTrait(traitId).variants = [];
-      traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
-
-      for (const file of files) {
+      files.forEach(file => {
         const variationName = file.name.split('.').slice(0, -1).join('.');
         const url = URL.createObjectURL(file);
         TraitManager.addVariant(traitId, { name: variationName, url });
-      }
+      });
 
       if (trait.variants.length > 0) {
         selectVariation(traitId, trait.variants[0].id);
@@ -400,9 +403,9 @@ function setupTraitListeners(traitId) {
       }
 
       traitsPanel.update(getTraitsContent());
-      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updateMintButton();
       updatePreviewSamples();
+      setupTraitListeners(traitId); // Reattach for this trait only
     });
 
     grid.querySelectorAll('.variation-container').forEach(container => {
@@ -415,12 +418,9 @@ function setupTraitListeners(traitId) {
         selectVariation(traitId, variantId);
       });
     });
+  }
 
-    const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
-    const downArrow = document.querySelector(`.down-arrow[data-trait="${traitId}"]`);
-    const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
-    const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitId}"]`);
-
+  if (upArrow) {
     upArrow.addEventListener('click', () => {
       const trait = TraitManager.getTrait(traitId);
       let newPosition = trait.position === 1 ? TraitManager.getAllTraits().length : trait.position - 1;
@@ -429,7 +429,9 @@ function setupTraitListeners(traitId) {
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updatePreviewSamples();
     });
+  }
 
+  if (downArrow) {
     downArrow.addEventListener('click', () => {
       const trait = TraitManager.getTrait(traitId);
       let newPosition = trait.position === TraitManager.getAllTraits().length ? 1 : trait.position + 1;
@@ -438,7 +440,9 @@ function setupTraitListeners(traitId) {
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updatePreviewSamples();
     });
+  }
 
+  if (addTraitBtn) {
     addTraitBtn.addEventListener('click', () => {
       if (TraitManager.getAllTraits().length < 20) {
         const trait = TraitManager.getTrait(traitId);
@@ -448,7 +452,9 @@ function setupTraitListeners(traitId) {
         updatePreviewSamples();
       }
     });
+  }
 
+  if (removeTraitBtn) {
     removeTraitBtn.addEventListener('click', () => removeTrait(traitId));
   }
 }
@@ -527,6 +533,10 @@ function updatePreviewSamples() {
     });
   }
   previewSamplesPanel.update(getPreviewSamplesContent());
+  const updateButton = document.getElementById('update-previews');
+  if (updateButton) {
+    updateButton.addEventListener('click', updatePreviewSamples);
+  }
   document.querySelectorAll('#preview-samples-grid .sample-container').forEach((container, i) => {
     container.addEventListener('click', () => {
       sampleData[i].forEach(sample => selectVariation(sample.traitId, sample.variantId));
