@@ -1004,68 +1004,6 @@ function savePosition(img, traitId, variationName) {
 
 
 
-/* Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) */
-
-
-
-function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
-  const currentTrait = TraitManager.getTrait(currentTraitId);
-  const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === currentTraitId);
-  const currentVariationIndex = currentTrait.variants.findIndex(v => v.name === currentVariationName);
-
-  if (currentTrait.variants.length > 1) {
-    for (let i = currentVariationIndex + 1; i < currentTrait.variants.length; i++) {
-      const nextVariationName = currentTrait.variants[i].name;
-      const key = `${currentTraitId}-${nextVariationName}`;
-      const manuallyMoved = localStorage.getItem(`trait${currentTraitId}-${nextVariationName}-manuallyMoved`);
-      if (!manuallyMoved && !variantHistories[key]) {
-        variantHistories[key] = [{ left: position.left, top: position.top }];
-        localStorage.setItem(`trait${currentTraitId}-${nextVariationName}-position`, JSON.stringify(position));
-        if (currentTrait.selected === i) {
-          const previewImage = document.getElementById(`preview-trait${currentTraitId}`);
-          if (previewImage && previewImage.src) {
-            previewImage.style.left = `${position.left}px`;
-            previewImage.style.top = `${position.top}px`;
-          }
-        }
-      }
-    }
-  }
-
-  for (let traitIndex = currentTraitIndex + 1; traitIndex < TraitManager.getAllTraits().length; traitIndex++) {
-    const nextTrait = TraitManager.getAllTraits()[traitIndex];
-    if (nextTrait.variants.length === 0) continue;
-    for (let i = 0; i < nextTrait.variants.length; i++) {
-      const nextVariationName = nextTrait.variants[i].name;
-      const key = `${nextTrait.id}-${nextVariationName}`;
-      const manuallyMoved = localStorage.getItem(`trait${nextTrait.id}-${nextVariationName}-manuallyMoved`);
-      if (!manuallyMoved && !variantHistories[key]) {
-        variantHistories[key] = [{ left: position.left, top: position.top }];
-        localStorage.setItem(`trait${nextTrait.id}-${nextVariationName}-position`, JSON.stringify(position));
-        if (nextTrait.selected === i) {
-          const previewImage = document.getElementById(`preview-trait${nextTrait.id}`);
-          if (previewImage && previewImage.src) {
-            previewImage.style.left = `${position.left}px`;
-            previewImage.style.top = `${position.top}px`;
-          }
-        }
-      }
-    }
-  }
-}
-
-function updateSamplePositions(traitId, variationId, position) {
-  for (let i = 0; i < 16; i++) {
-    const sample = sampleData[i];
-    for (let j = 0; j < sample.length; j++) {
-      if (sample[j].traitId === traitId && sample[j].variantId === variationId) {
-        sample[j].position = position;
-      }
-    }
-  }
-  updatePreviewSamples();
-}
-
 function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
@@ -1086,6 +1024,8 @@ function updatePreviewSamples() {
       const img = document.createElement('img');
       img.src = variant.url;
       img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
+      // Fix: Set zIndex to match position (lower position = higher z-index, so TRAIT 1 is on top)
+      img.style.zIndex = String(trait.position); // Ascending position = higher z-index
 
       const key = `${trait.id}-${variant.name}`;
       const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
