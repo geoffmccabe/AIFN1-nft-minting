@@ -390,12 +390,12 @@ function addTrait(trait) {
   const upArrow = document.createElement('span');
   upArrow.className = 'up-arrow';
   upArrow.setAttribute('data-trait', trait.id);
-  upArrow.setAttribute('data-tooltip', 'Swap Trait Order'); // Add tooltip
+  upArrow.setAttribute('data-tooltip', 'Swap Trait Order');
   upArrow.textContent = '⬆️';
   const downArrow = document.createElement('span');
   downArrow.className = 'down-arrow';
   downArrow.setAttribute('data-trait', trait.id);
-  downArrow.setAttribute('data-tooltip', 'Swap Trait Order'); // Add tooltip
+  downArrow.setAttribute('data-tooltip', 'Swap Trait Order');
   downArrow.textContent = '⬇️';
   const addTraitBtn = document.createElement('span');
   addTraitBtn.className = 'add-trait';
@@ -537,7 +537,7 @@ function removeTrait(traitId) {
     });
 
     updateZIndices();
-    updatePreviewSamples();
+    updatePreviewSamples(); // Regenerate preview samples to sync sampleData
     confirmationDialog.remove();
   });
 
@@ -658,7 +658,7 @@ function setupTraitListeners(traitId) {
     });
 
     updateZIndices();
-    updatePreviewSamples();
+    updatePreviewSamples(); // Regenerate preview samples to sync sampleData
   });
 
   downArrow.addEventListener('click', () => {
@@ -683,7 +683,7 @@ function setupTraitListeners(traitId) {
     });
 
     updateZIndices();
-    updatePreviewSamples();
+    updatePreviewSamples(); // Regenerate preview samples to sync sampleData
   });
 
   addTraitBtn.addEventListener('click', () => {
@@ -703,6 +703,9 @@ function setupTraitListeners(traitId) {
           selectVariation(trait.id, trait.variants[trait.selected].id);
         }
       });
+
+      updateZIndices();
+      updatePreviewSamples(); // Regenerate preview samples to sync sampleData
     }
   });
 
@@ -784,7 +787,6 @@ function updateMintButton() {
   const mintBtn = document.getElementById('mintButton');
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
-
 
 
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
