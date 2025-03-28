@@ -1141,8 +1141,6 @@ function updatePreviewSamples() {
 
 
 
-  
-
 async function fetchBackground() {
   try {
     clickSound.play().catch(error => console.error('Error playing click sound:', error));
