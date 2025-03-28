@@ -28,7 +28,7 @@ const TraitManager = {
       name: '',
       variants: [],
       selected: 0,
-      zIndex: position, // Higher position = higher zIndex (e.g., TRAIT 3 on top)
+      zIndex: this.traits.length - position + 1, // Higher position = lower zIndex (e.g., TRAIT 1 on top)
       createdAt: Date.now()
     };
 
@@ -36,7 +36,7 @@ const TraitManager = {
     this.traits.forEach(trait => {
       if (trait.position >= position) {
         trait.position++;
-        trait.zIndex = trait.position; // Update zIndex to match new position
+        trait.zIndex = this.traits.length - trait.position + 1; // Update zIndex to match new position
       }
     });
 
@@ -61,7 +61,7 @@ const TraitManager = {
     this.traits.forEach(trait => {
       if (trait.position > removedPosition) {
         trait.position--;
-        trait.zIndex = trait.position; // Update zIndex to match new position
+        trait.zIndex = this.traits.length - trait.position + 1; // Update zIndex to match new position
       }
     });
   },
@@ -94,7 +94,7 @@ const TraitManager = {
     // Sort traits by position and update zIndex
     this.traits.sort((a, b) => a.position - b.position);
     this.traits.forEach((t, idx) => {
-      t.zIndex = t.position; // Higher position = higher zIndex
+      t.zIndex = this.traits.length - t.position + 1; // Higher position = lower zIndex
     });
   },
 
@@ -566,6 +566,7 @@ function removeTrait(traitId) {
 
 
 
+
 /* Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) */
 
 
@@ -793,28 +794,11 @@ function refreshTraitGrid(traitId) {
 }
 
 function renumberTraits() {
-  const sections = traitContainer.querySelectorAll('.trait-section');
+  const sections = traitContainer.query натSelectorAll('.trait-section');
   sections.forEach((section, index) => {
     const traitId = section.id.replace('trait', '');
     const trait = TraitManager.getTrait(traitId);
-    section.querySelector('h2').textContent = `TRAIT ${index + 1}${trait.name ? ` - ${trait.name}` : ''}`;
-    section.querySelector('input[type="text"]').id = `trait${traitId}-name`;
-    section.querySelector('input[type="file"]').id = `trait${traitId}-files`;
-    section.querySelector('.file-input-label').htmlFor = `trait${traitId}-files`;
-    section.querySelector('.trait-grid').id = `trait${traitId}-grid`;
-    section.querySelector('.up-arrow').setAttribute('data-trait', traitId);
-    section.querySelector('.down-arrow').setAttribute('data-trait', traitId);
-    section.querySelector('.add-trait').setAttribute('data-trait', traitId);
-    section.querySelector('.remove-trait').setAttribute('data-trait', traitId);
-  });
-}
-
-function updateMintButton() {
-  const allTraitsSet = TraitManager.getAllTraits().every(trait => trait.name && trait.variants.length > 0);
-  const mintBtn = document.getElementById('mintButton');
-  if (mintBtn) mintBtn.disabled = !allTraitsSet;
-}
-
+    section.querySelector('h2').textContent = `
 
 
 
@@ -1117,6 +1101,7 @@ function updatePreviewSamples() {
     previewSamplesGrid.appendChild(sampleContainer);
   }
 }
+
 
 
 /* Section 8 - BACKGROUND GENERATION AND MINTING */
