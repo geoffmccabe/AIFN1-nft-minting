@@ -1,259 +1,558 @@
-/* Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) */
+<!-- Section 1 - HTML HEADER AND METADATA -->
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mint Your AIFN NFT</title>
+  <link rel="icon" type="image/x-icon" href="/AIFN1-nft-minting/favicon.ico">
+  <!-- Include Rowdies font from Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
+  <!-- Include Poppins font for modern look -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="entry.js"></script>
+</head>
 
+<!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
-function setupTraitListeners(traitId) {
-  const nameInput = document.getElementById(`trait${traitId}-name`);
-  const fileInput = document.getElementById(`trait${traitId}-files`);
-  const fileInputLabel = document.querySelector(`label[for="trait${traitId}-files"]`);
-  const grid = document.getElementById(`trait${traitId}-grid`);
-
-  if (fileInput && nameInput && grid && fileInputLabel) {
-    nameInput.addEventListener('input', () => {
-      const trait = TraitManager.getTrait(traitId);
-      trait.name = nameInput.value.trim();
-      // Update the headline
-      const title = nameInput.parentElement.querySelector('h2');
-      const position = Array.from(traitContainer.children).indexOf(nameInput.parentElement) + 1;
-      title.textContent = `TRAIT ${position}${trait.name ? ` - ${trait.name}` : ''}`;
-    });
-
-    fileInput.addEventListener('change', async (event) => {
-      const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
-      if (!files.length) return;
-
-      const traitName = nameInput.value.trim() || `Trait ${Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1}`;
-      TraitManager.getTrait(traitId).name = traitName;
-      TraitManager.getTrait(traitId).variants = [];
-
-      grid.innerHTML = '';
-      for (const file of files) {
-        const variationName = file.name.split('.').slice(0, -1).join('.');
-        const url = URL.createObjectURL(file);
-        const variant = TraitManager.addVariant(traitId, { name: variationName, url });
-
-        const container = document.createElement('div');
-        container.className = 'variation-container';
-        container.dataset.traitId = traitId;
-        container.dataset.variationId = variant.id;
-
-        // Add chance display if more than one variant
-        if (trait.variants.length > 1) {
-          const chanceDisplay = document.createElement('div');
-          chanceDisplay.className = 'variation-chance';
-          chanceDisplay.textContent = `${variant.chance}% Chance`;
-          container.appendChild(chanceDisplay);
-        }
-
-        const imageWrapper = document.createElement('div');
-        imageWrapper.className = 'variation-image-wrapper';
-
-        const img = document.createElement('img');
-        img.src = url;
-        img.alt = variationName;
-        img.className = 'variation';
-
-        const filename = document.createElement('div');
-        filename.className = 'variation-filename';
-        filename.textContent = file.name;
-
-        imageWrapper.appendChild(img);
-        container.appendChild(imageWrapper);
-        container.appendChild(filename);
-        container.addEventListener('click', () => {
-          console.log(`Clicked variant: Trait ${traitId}, Variation ${variationName}`);
-          const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
-          allWrappers.forEach(w => w.classList.remove('selected'));
-          imageWrapper.classList.add('selected');
-          selectVariation(traitId, variant.id);
-        });
-
-        grid.appendChild(container);
-
-        const key = `${traitId}-${variationName}`;
-        if (!variantHistories[key]) {
-          variantHistories[key] = [{ left: 0, top: 0 }];
-          localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify({ left: 0, top: 0 }));
-          localStorage.removeItem(`trait${traitId}-${variationName}-manuallyMoved`);
-        }
-      }
-
-      if (TraitManager.getTrait(traitId).variants.length > 0) {
-        selectVariation(traitId, TraitManager.getTrait(traitId).variants[0].id);
-        const firstWrapper = grid.querySelector('.variation-image-wrapper');
-        if (firstWrapper) firstWrapper.classList.add('selected');
-        autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
-        fileInputLabel.textContent = 'Choose New Files';
-      }
-
-      updateMintButton();
-      updatePreviewSamples();
-    });
+<body>
+  <div id="version">Version 93</div>
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background-image: url('/AIFN1-nft-minting/images/background.webp');
+    background-repeat: repeat-y;
+    background-position: center top;
+    background-size: 100% auto;
+    color: black;
+    padding: 20px;
+    margin: 0;
+    display: flex;
+    position: relative;
+    min-height: 100vh;
   }
-
-  const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
-  const downArrow = document.querySelector(`.down-arrow[data-trait="${traitId}"]`);
-  const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
-  const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitId}"]`);
-
-  upArrow.addEventListener('click', () => {
-    const trait = TraitManager.getTrait(traitId);
-    if (trait.position === 1) {
-      const lastPosition = TraitManager.getAllTraits().length;
-      TraitManager.moveTrait(traitId, lastPosition);
-    } else {
-      TraitManager.moveTrait(traitId, trait.position - 1);
-    }
-
-    // Re-render all traits
-    traitContainer.innerHTML = '';
-    traitImages = [];
-    TraitManager.getAllTraits().forEach(trait => {
-      addTrait(trait);
-      refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) {
-        selectVariation(trait.id, trait.variants[trait.selected].id);
-      }
-    });
-
-    updateZIndices();
-    updatePreviewSamples();
-  });
-
-  downArrow.addEventListener('click', () => {
-    const trait = TraitManager.getTrait(traitId);
-    const lastPosition = TraitManager.getAllTraits().length;
-    if (trait.position === lastPosition) {
-      TraitManager.moveTrait(traitId, 1);
-    } else {
-      TraitManager.moveTrait(traitId, trait.position + 1);
-    }
-
-    // Re-render all traits
-    traitContainer.innerHTML = '';
-    traitImages = [];
-    TraitManager.getAllTraits().forEach(trait => {
-      addTrait(trait);
-      refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) {
-        selectVariation(trait.id, trait.variants[trait.selected].id);
-      }
-    });
-
-    updateZIndices();
-    updatePreviewSamples();
-  });
-
-  addTraitBtn.addEventListener('click', () => {
-    if (TraitManager.getAllTraits().length < 20) {
-      const trait = TraitManager.getTrait(traitId);
-      const newPosition = trait.position;
-      TraitManager.addTrait(newPosition);
-
-      // Re-render all traits
-      traitContainer.innerHTML = '';
-      traitImages = [];
-      TraitManager.getAllTraits().forEach(trait => {
-        addTrait(trait);
-        refreshTraitGrid(trait.id);
-        if (trait.variants.length > 0) {
-          selectVariation(trait.id, trait.variants[trait.selected].id);
-        }
-      });
-
-      updateZIndices();
-      updatePreviewSamples();
-    }
-  });
-
-  removeTraitBtn.addEventListener('click', () => removeTrait(traitId));
-}
-
-function refreshTraitGrid(traitId) {
-  const grid = document.getElementById(`trait${traitId}-grid`);
-  if (!grid) return;
-
-  grid.innerHTML = '';
-  const trait = TraitManager.getTrait(traitId);
-  // Ensure chances are calculated before rendering
-  TraitManager.calculateChances(trait);
-  for (const variant of trait.variants) {
-    const container = document.createElement('div');
-    container.className = 'variation-container';
-    container.dataset.traitId = traitId;
-    container.dataset.variationId = variant.id;
-
-    // Add chance display if more than one variant
-    if (trait.variants.length > 1) {
-      const chanceDisplay = document.createElement('div');
-      chanceDisplay.className = 'variation-chance';
-      chanceDisplay.textContent = `${variant.chance}% Chance`;
-      container.appendChild(chanceDisplay);
-    }
-
-    const imageWrapper = document.createElement('div');
-    imageWrapper.className = 'variation-image-wrapper';
-
-    const img = document.createElement('img');
-    img.src = variant.url;
-    img.alt = variant.name;
-    img.className = 'variation';
-
-    const filename = document.createElement('div');
-    filename.className = 'variation-filename';
-    filename.textContent = variant.name;
-
-    imageWrapper.appendChild(img);
-    container.appendChild(imageWrapper);
-    container.appendChild(filename);
-    container.addEventListener('click', () => {
-      console.log(`Clicked variant: Trait ${traitId}, Variation ${variant.name}`);
-      const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
-      allWrappers.forEach(w => w.classList.remove('selected'));
-      imageWrapper.classList.add('selected');
-      selectVariation(traitId, variant.id);
-    });
-
-    grid.appendChild(container);
+  #version {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 12px;
+    color: #333;
+    z-index: 10;
   }
+  #left-panel {
+    flex: 1;
+    padding-right: 20px;
+    padding-top: 30px;
+    min-width: 300px;
+  }
+  #logo {
+    display: block;
+    margin: 0 auto 20px;
+    width: 600px;
+    max-width: 600px;
+    height: auto;
+  }
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    #logo { width: 300px; }
+  }
+  .trait-section {
+    margin-bottom: 20px;
+  }
+  .trait-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .trait-section h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    margin: 0;
+    text-align: left;
+    flex-grow: 1;
+  }
+  .trait-controls {
+    display: flex;
+    gap: 10px;
+    position: relative;
+  }
+  .trait-controls span {
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+  }
+  .trait-controls span:hover {
+    opacity: 0.8;
+  }
+  .trait-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .variation-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+  }
+  .variation-chance {
+    font-size: 8px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 5px;
+    color: #666;
+  }
+  .variation-image-wrapper {
+    width: 110px;
+    height: 110px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .variation-image-wrapper.selected {
+    border: 5px solid #f4c149;
+  }
+  .variation {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+  }
+  .variation-filename {
+    font-size: 8px;
+    text-align: center;
+    margin-top: 5px;
+    word-break: break-all;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-bottom: 5px;
+    box-sizing: border-box;
+    height: 32px;
+  }
+  input[type="file"] {
+    display: none;
+  }
+  .file-input-label {
+    display: inline-block;
+    padding: 5px 10px;
+    background: #ccc;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 5px;
+    height: 32px;
+    line-height: 22px;
+    box-sizing: border-box;
+    text-align: center;
+    min-width: 120px;
+    width: auto;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  .file-input-label:hover {
+    background: #bbb;
+  }
+  /* Tooltip for up-arrow */
+  .up-arrow:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+  }
+  .up-arrow:hover::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+  }
+  /* Tooltip for down-arrow */
+  .down-arrow:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+  }
+  .down-arrow:hover::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+  }
+</style>
 
-  const selectedIndex = trait.selected;
-  const selectedWrapper = grid.children[selectedIndex]?.querySelector('.variation-image-wrapper');
-  if (selectedWrapper) selectedWrapper.classList.add('selected');
+<!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
 
-  const previewImage = document.getElementById(`preview-trait${traitId}`);
-  if (previewImage && trait.variants[trait.selected]) {
-    previewImage.src = trait.variants[trait.selected].url;
-    previewImage.style.visibility = 'visible';
-    const key = `${traitId}-${trait.variants[trait.selected].name}`;
-    const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[trait.selected].name}-position`);
-    if (savedPosition) {
-      const { left, top } = JSON.parse(savedPosition);
-      previewImage.style.left = `${left}px`;
-      previewImage.style.top = `${top}px`;
+<style>
+  #right-panel {
+    width: 600px;
+    padding-left: 20px;
+    max-width: 100%;
+  }
+  #right-panel h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    text-align: center;
+    margin: 0 0 10px;
+  }
+  #preview {
+    position: relative;
+    width: 600px;
+    height: 600px;
+    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: cover;
+    margin-bottom: 10px;
+    overflow: hidden;
+    border: 2px solid #666;
+    border-radius: 10px;
+    max-width: 100%;
+  }
+  #preview img {
+    position: absolute;
+    max-width: 600px;
+    max-height: 600px;
+    object-fit: contain;
+  }
+  #preview img.dragging {
+    box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
+  }
+  #controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+  }
+  #coordinates {
+    font-size: 14px;
+  }
+  #coordinates strong {
+    font-weight: bold;
+  }
+  .direction-emoji, .magnify-emoji {
+    font-size: 16px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    color: #666;
+  }
+  .direction-emoji:hover, .magnify-emoji:hover {
+    opacity: 0.8;
+  }
+  #enlarged-preview {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: cover;
+    border: 1px solid black;
+    z-index: 1000;
+    overflow: hidden;
+  }
+  #enlarged-preview img {
+    position: absolute;
+    object-fit: contain;
+  }
+  #preview-samples {
+    margin-top: 20px;
+  }
+  #preview-samples-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  #preview-samples h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    text-align: left;
+    margin: 0;
+  }
+  #preview-samples-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 140px);
+    grid-template-rows: repeat(4, 140px);
+    gap: 13px;
+    width: 600px;
+  }
+  #preview-samples-grid .sample-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: 140px 140px;
+    border: 1px solid black;
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  #preview-samples-grid img {
+    position: absolute;
+    transform: scale(0.23333);
+    transform-origin: top left;
+  }
+  #update-previews {
+    padding: 5px 10px;
+    background: #ccc;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #update-previews:hover {
+    background: #bbb;
+  }
+  #show-200-samples {
+    padding: 5px 8px;
+    background: #ccc;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 50px;
+    text-align: center;
+  }
+  #show-200-samples:hover {
+    background: #bbb;
+  }
+  #large-preview-samples {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95vw;
+    height: auto;
+    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: cover;
+    border: 1px solid black;
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  #large-preview-samples-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  #large-preview-samples-grid .sample-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: 140px 140px;
+    border: 1px solid black;
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  #large-preview-samples-grid img {
+    position: absolute;
+    transform: scale(0.23333);
+    transform-origin: top left;
+  }
+</style>
+
+<!-- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -->
+
+<style>
+  #background-section h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    text-align: center;
+    margin: 0 0 10px;
+  }
+  #prompt-section {
+    margin-top: 10px;
+  }
+  #prompt-section p {
+    margin: 5px 0;
+  }
+  #prompt-section textarea {
+    width: 100%;
+    height: 140px;
+    resize: none;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  #prompt-section label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  #background-details {
+    text-align: center;
+  }
+  #background-image {
+    width: 600px;
+    height: 600px;
+    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: 600px 600px;
+    border-radius: 10px;
+    border: 1px solid black;
+  }
+  button {
+    padding: 10px 20px;
+    background: grey;
+    color: black;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+    margin: 10px 0;
+  }
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  button:not(:disabled) {
+    background: #4CAF50;
+  }
+  #mint-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #mintFeeDisplay {
+    font-size: 14px;
+  }
+  .confirmation-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  .confirmation-dialog p {
+    margin: 0 0 10px;
+    text-align: center;
+  }
+  .confirmation-dialog .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  .confirmation-dialog button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .confirmation-dialog .yes-button {
+    background: #739c6c;
+  }
+  .confirmation-dialog .no-button {
+    background: #ae645a;
+  }
+  @media (max-width: 900px) {
+    body { flex-direction: column; }
+    #left-panel, #right-panel { width: 100%; padding: 10px; }
+    #preview { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+    #logo { width: 100%; max-width: 600px; }
+    #preview-samples-grid { 
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+      width: 100%; 
     }
   }
-}
+</style>
 
-function renumberTraits() {
-  const sections = traitContainer.querySelectorAll('.trait-section');
-  sections.forEach((section, index) => {
-    const traitId = section.id.replace('trait', '');
-    const trait = TraitManager.getTrait(traitId);
-    section.querySelector('h2').textContent = `TRAIT ${index + 1}${trait.name ? ` - ${trait.name}` : ''}`;
-    section.querySelector('input[type="text"]').id = `trait${traitId}-name`;
-    section.querySelector('input[type="file"]').id = `trait${traitId}-files`;
-    section.querySelector('.file-input-label').htmlFor = `trait${traitId}-files`;
-    section.querySelector('.trait-grid').id = `trait${traitId}-grid`;
-    section.querySelector('.up-arrow').setAttribute('data-trait', traitId);
-    section.querySelector('.down-arrow').setAttribute('data-trait', traitId);
-    section.querySelector('.add-trait').setAttribute('data-trait', traitId);
-    section.querySelector('.remove-trait').setAttribute('data-trait', traitId);
-  });
-}
+<!-- Section 5 - HTML - LEFT SIDE (TRAITS) -->
 
-function updateMintButton() {
-  const allTraitsSet = TraitManager.getAllTraits().every(trait => trait.name && trait.variants.length > 0);
-  const mintBtn = document.getElementById('mintButton');
-  if (mintBtn) mintBtn.disabled = !allTraitsSet;
-}
+<div id="left-panel">
+  <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/PERCEPTRON-NETWORK-PERC-CREATOR-Logo-600px.webp" alt="PERCEPTRON NETWORK PERC CREATOR Logo">
+  <div id="trait-container"></div>
+  <h2>AI BACKGROUND</h2>
+  <p><strong>Basic Prompt:</strong> girl, shinyang, ((small breasts)), white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo, golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail cutout, cleavage cutout, midriff, cheongsam top, choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, (asian girl), action pose, white skull belt buckle, black dragon tattoo on right shoulder, black dragon tattoo on right arm</p>
+  <p><strong>User Prompt:</strong></p>
+  <textarea id="user-prompt" placeholder="add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
+  <button id="generate-background">Generate Bkgd</button>
+</div>
+
+<!-- Section 6 - HTML - RIGHT SIDE (PREVIEWS) -->
+
+<div id="right-panel">
+  <h2>PREVIEW</h2>
+  <div id="preview"></div>
+  <div id="controls">
+    <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
+    <button class="direction-emoji" data-direction="up">⬆️</button>
+    <button class="direction-emoji" data-direction="down">⬇️</button>
+    <button class="direction-emoji" data-direction="left">⬅️</button>
+    <button class="direction-emoji" data-direction="right">➡️</button>
+    <button class="magnify-emoji">🔍</button>
+  </div>
+  <div id="preview-samples">
+    <div id="preview-samples-header">
+      <h2>PREVIEW SAMPLES</h2>
+      <div>
+        <button id="show-200-samples">200</button>
+        <button id="update-previews">UPDATE</button>
+      </div>
+    </div>
+    <div id="preview-samples-grid"></div>
+  </div>
+  <div id="enlarged-preview"></div>
+  <div id="large-preview-samples">
+    <div id="large-preview-samples-grid"></div>
+  </div>
+</div>
+
+<!-- Section 7 - HTML - BOTTOM (AI BACKGROUND AND MINT) -->
+
+<div id="background-section">
+  <div id="background-details">
+    <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
+    <p id="background-metadata">Loading...</p>
+  </div>
+  <div id="mint-section">
+    <button id="mintButton" disabled>Mint NFT</button>
+    <div id="mintFeeDisplay">Mint Fee: Loading...</div>
+  </div>
+</div>
+
+</body>
+</html>
