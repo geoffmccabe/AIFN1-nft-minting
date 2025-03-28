@@ -172,7 +172,7 @@ let variantHistories = {};
 let timerInterval = null;
 let lastUndoTime = 0;
 let autoPositioned = new Array(20).fill(false);
-let sampleData = Array(20).fill(null).map(() => []);
+let sampleData = Array(16).fill(null).map(() => []);
 let preview, coordinates, directionEmojis, magnifyEmoji, enlargedPreview, generateButton, traitContainer, previewSamplesGrid, updatePreviewsButton;
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
@@ -200,9 +200,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize TraitManager with 3 traits
   TraitManager.initialize();
 
-  // Render initial traits
+  // Render initial traits and select their variants
   TraitManager.getAllTraits().forEach(trait => {
     addTrait(trait);
+    refreshTraitGrid(trait.id); // Ensure variants are rendered
+    // Select the first variant if available
+    if (trait.variants.length > 0) {
+      selectVariation(trait.id, trait.variants[0].id);
+    }
   });
   updatePreviewSamples();
 
@@ -466,7 +471,6 @@ function addTrait(trait) {
   newTraitImage.src = '';
   newTraitImage.alt = `Trait ${trait.position}`;
   newTraitImage.style.zIndex = trait.zIndex;
-  newTraitImage.style.visibility = 'hidden'; // Initialize as hidden
   traitImages.push(newTraitImage);
 
   // Re-render all preview images in reverse order
@@ -529,15 +533,14 @@ function removeTrait(traitId) {
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
       addTrait(trait);
-      refreshTraitGrid(trait.id); // Restore variants in the grid
-      // Restore the selected variant in the Preview Panel
+      refreshTraitGrid(trait.id);
       if (trait.variants.length > 0) {
         selectVariation(trait.id, trait.variants[trait.selected].id);
       }
     });
 
     updateZIndices();
-    updatePreviewSamples(); // Regenerate preview samples to sync sampleData
+    updatePreviewSamples();
     confirmationDialog.remove();
   });
 
@@ -650,15 +653,14 @@ function setupTraitListeners(traitId) {
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
       addTrait(trait);
-      refreshTraitGrid(trait.id); // Restore variants in the grid
-      // Restore the selected variant in the Preview Panel
+      refreshTraitGrid(trait.id);
       if (trait.variants.length > 0) {
         selectVariation(trait.id, trait.variants[trait.selected].id);
       }
     });
 
     updateZIndices();
-    updatePreviewSamples(); // Regenerate preview samples to sync sampleData
+    updatePreviewSamples();
   });
 
   downArrow.addEventListener('click', () => {
@@ -675,15 +677,14 @@ function setupTraitListeners(traitId) {
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
       addTrait(trait);
-      refreshTraitGrid(trait.id); // Restore variants in the grid
-      // Restore the selected variant in the Preview Panel
+      refreshTraitGrid(trait.id);
       if (trait.variants.length > 0) {
         selectVariation(trait.id, trait.variants[trait.selected].id);
       }
     });
 
     updateZIndices();
-    updatePreviewSamples(); // Regenerate preview samples to sync sampleData
+    updatePreviewSamples();
   });
 
   addTraitBtn.addEventListener('click', () => {
@@ -697,15 +698,14 @@ function setupTraitListeners(traitId) {
       traitImages = [];
       TraitManager.getAllTraits().forEach(trait => {
         addTrait(trait);
-        refreshTraitGrid(trait.id); // Restore variants in the grid
-        // Restore the selected variant in the Preview Panel
+        refreshTraitGrid(trait.id);
         if (trait.variants.length > 0) {
           selectVariation(trait.id, trait.variants[trait.selected].id);
         }
       });
 
       updateZIndices();
-      updatePreviewSamples(); // Regenerate preview samples to sync sampleData
+      updatePreviewSamples();
     }
   });
 
@@ -787,7 +787,6 @@ function updateMintButton() {
   const mintBtn = document.getElementById('mintButton');
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
-
 
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
 
