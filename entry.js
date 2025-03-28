@@ -1060,19 +1060,26 @@ function updateSubsequentTraits(currentTraitId, currentVariationName, position) 
 
 function updateSamplePositions(traitId, variationId, position) {
   for (let i = 0; i < 16; i++) {
-    const sample = sampleData[i];
-    for (let j = 0; j < sample.length; j++) {
-      if (sample[j].traitId === traitId && sample[j].variantId === variationId) {
-        sample[j].position = position;
+    const sampleContainer = previewSamplesGrid.children[i];
+    if (!sampleContainer) continue;
+    const variantElements = sampleContainer.querySelectorAll('.variant-data');
+    variantElements.forEach(element => {
+      const elementTraitId = element.dataset.traitId;
+      const elementVariantId = element.dataset.variantId;
+      if (elementTraitId === traitId && elementVariantId === variationId) {
+        const img = element.querySelector('img');
+        if (img) {
+          const scale = 140 / 600;
+          img.style.left = `${position.left * scale}px`;
+          img.style.top = `${position.top * scale}px`;
+        }
       }
-    }
+    });
   }
-  updatePreviewSamples();
 }
 
 function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
-  sampleData = Array(16).fill(null).map(() => []);
 
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
@@ -1086,6 +1093,11 @@ function updatePreviewSamples() {
 
       const randomIndex = Math.floor(Math.random() * trait.variants.length);
       const variant = trait.variants[randomIndex];
+
+      const variantElement = document.createElement('div');
+      variantElement.className = 'variant-data';
+      variantElement.dataset.traitId = trait.id;
+      variantElement.dataset.variantId = variant.id;
 
       const img = document.createElement('img');
       img.src = variant.url;
@@ -1127,23 +1139,24 @@ function updatePreviewSamples() {
         }
       }
 
-      sampleData[i].push({ traitId: trait.id, variantId: variant.id, position });
-      sampleContainer.appendChild(img);
+      variantElement.appendChild(img);
+      sampleContainer.appendChild(variantElement);
     }
 
     // Add click event listener to update Preview Panel and select variants
     sampleContainer.addEventListener('click', () => {
       // Update Preview Panel with the variants from this sample
-      sampleData[i].forEach(sample => {
-        const traitId = sample.traitId;
-        const variantId = sample.variantId;
+      const variantElements = sampleContainer.querySelectorAll('.variant-data');
+      variantElements.forEach(element => {
+        const traitId = element.dataset.traitId;
+        const variantId = element.dataset.variantId;
         selectVariation(traitId, variantId);
       });
 
       // Update selected variants on the left side
-      sampleData[i].forEach(sample => {
-        const traitId = sample.traitId;
-        const variantId = sample.variantId;
+      variantElements.forEach(element => {
+        const traitId = element.dataset.traitId;
+        const variantId = element.dataset.variantId;
         const grid = document.getElementById(`trait${traitId}-grid`);
         if (grid) {
           const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
@@ -1161,6 +1174,118 @@ function updatePreviewSamples() {
   }
 }
 
+function showLargePreviewSamples() {
+  const largePreviewSamples = document.getElementById('large-preview-samples');
+  const largePreviewSamplesGrid = document.getElementById('large-preview-samples-grid');
+  largePreviewSamplesGrid.innerHTML = '';
+
+  for (let i = 0; i < 200; i++) {
+    const sampleContainer = document.createElement('div');
+    sampleContainer.className = 'sample-container';
+
+    // Render traits in reverse order (highest position first) to ensure correct stacking
+    const traits = TraitManager.getAllTraits().slice().reverse();
+    for (let j = 0; j < traits.length; j++) {
+      const trait = traits[j];
+      if (trait.variants.length === 0) continue;
+
+      const randomIndex = Math.floor(Math.random() * trait.variants.length);
+      const variant = trait.variants[randomIndex];
+
+      const variantElement = document.createElement('div');
+      variantElement.className = 'variant-data';
+      variantElement.dataset.traitId = trait.id;
+      variantElement.dataset.variantId = variant.id;
+
+      const img = document.createElement('img');
+      img.src = variant.url;
+      img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
+      img.style.zIndex = trait.zIndex;
+
+      const key = `${trait.id}-${variant.name}`;
+      const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
+      let position;
+      if (savedPosition) {
+        position = JSON.parse(savedPosition);
+        const scale = 140 / 600;
+        img.style.left = `${position.left * scale}px`;
+        img.style.top = `${position.top * scale}px`;
+        if (!variantHistories[key]) variantHistories[key] = [{ left: position.left, top: position.top }];
+      } else {
+        let lastPosition = null;
+        for (let k = 0; k < trait.variants.length; k++) {
+          if (k === randomIndex) continue;
+          const otherVariationName = trait.variants[k].name;
+          const otherKey = `${trait.id}-${otherVariationName}`;
+          if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
+            lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
+          }
+        }
+        const scale = 140 / 600;
+        if (lastPosition) {
+          position = lastPosition;
+          img.style.left = `${lastPosition.left * scale}px`;
+          img.style.top = `${lastPosition.top * scale}px`;
+          variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
+          localStorage.setItem(`trait${trait.id}-${variant.name}-position`, JSON.stringify(lastPosition));
+        } else {
+          position = { left: 0, top: 0 };
+          img.style.left = '0px';
+          img.style.top = '0px';
+          variantHistories[key] = [{ left: 0, top: 0 }];
+          localStorage.setItem(`trait${trait.id}-${variant.name}-position`, JSON.stringify({ left: 0, top: 0 }));
+        }
+      }
+
+      variantElement.appendChild(img);
+      sampleContainer.appendChild(variantElement);
+    }
+
+    // Add click event listener to update Preview Panel and select variants
+    sampleContainer.addEventListener('click', () => {
+      // Update Preview Panel with the variants from this sample
+      const variantElements = sampleContainer.querySelectorAll('.variant-data');
+      variantElements.forEach(element => {
+        const traitId = element.dataset.traitId;
+        const variantId = element.dataset.variantId;
+        selectVariation(traitId, variantId);
+      });
+
+      // Update selected variants on the left side
+      variantElements.forEach(element => {
+        const traitId = element.dataset.traitId;
+        const variantId = element.dataset.variantId;
+        const grid = document.getElementById(`trait${traitId}-grid`);
+        if (grid) {
+          const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
+          allWrappers.forEach(w => w.classList.remove('selected'));
+          const container = grid.querySelector(`[data-variation-id="${variantId}"]`);
+          if (container) {
+            const imageWrapper = container.querySelector('.variation-image-wrapper');
+            if (imageWrapper) imageWrapper.classList.add('selected');
+          }
+        }
+      });
+
+      // Close the large preview window and refresh the 16 preview samples
+      largePreviewSamples.style.display = 'none';
+      updatePreviewSamples();
+    });
+
+    largePreviewSamplesGrid.appendChild(sampleContainer);
+  }
+
+  largePreviewSamples.style.display = 'block';
+
+  // Add ESC key listener to close the window without changes
+  const escListener = (e) => {
+    if (e.key === 'Escape') {
+      largePreviewSamples.style.display = 'none';
+      document.removeEventListener('keydown', escListener);
+    }
+  };
+  document.addEventListener('keydown', escListener);
+}
 
 
 /* Section 8 - BACKGROUND GENERATION AND MINTING */
