@@ -519,6 +519,7 @@ function removeTrait(traitId) {
     });
 
     updatePreviewSamples();
+    confirmationDialog.remove(); // Fix: Remove dialog after "Y" click
   });
 
   noButton.addEventListener('click', () => confirmationDialog.remove());
@@ -529,7 +530,6 @@ function removeTrait(traitId) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
-
 
 
 
