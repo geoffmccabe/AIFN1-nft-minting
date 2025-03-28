@@ -390,10 +390,12 @@ function addTrait(trait) {
   const upArrow = document.createElement('span');
   upArrow.className = 'up-arrow';
   upArrow.setAttribute('data-trait', trait.id);
+  upArrow.setAttribute('data-tooltip', 'Swap Trait Order'); // Add tooltip
   upArrow.textContent = '⬆️';
   const downArrow = document.createElement('span');
   downArrow.className = 'down-arrow';
   downArrow.setAttribute('data-trait', trait.id);
+  downArrow.setAttribute('data-tooltip', 'Swap Trait Order'); // Add tooltip
   downArrow.textContent = '⬇️';
   const addTraitBtn = document.createElement('span');
   addTraitBtn.className = 'add-trait';
@@ -524,7 +526,15 @@ function removeTrait(traitId) {
 
     // Re-render all traits
     traitContainer.innerHTML = '';
-    TraitManager.getAllTraits().forEach(trait => addTrait(trait));
+    traitImages = [];
+    TraitManager.getAllTraits().forEach(trait => {
+      addTrait(trait);
+      refreshTraitGrid(trait.id); // Restore variants in the grid
+      // Restore the selected variant in the Preview Panel
+      if (trait.variants.length > 0) {
+        selectVariation(trait.id, trait.variants[trait.selected].id);
+      }
+    });
 
     updateZIndices();
     updatePreviewSamples();
@@ -638,7 +648,14 @@ function setupTraitListeners(traitId) {
     // Re-render all traits
     traitContainer.innerHTML = '';
     traitImages = [];
-    TraitManager.getAllTraits().forEach(trait => addTrait(trait));
+    TraitManager.getAllTraits().forEach(trait => {
+      addTrait(trait);
+      refreshTraitGrid(trait.id); // Restore variants in the grid
+      // Restore the selected variant in the Preview Panel
+      if (trait.variants.length > 0) {
+        selectVariation(trait.id, trait.variants[trait.selected].id);
+      }
+    });
 
     updateZIndices();
     updatePreviewSamples();
@@ -656,7 +673,14 @@ function setupTraitListeners(traitId) {
     // Re-render all traits
     traitContainer.innerHTML = '';
     traitImages = [];
-    TraitManager.getAllTraits().forEach(trait => addTrait(trait));
+    TraitManager.getAllTraits().forEach(trait => {
+      addTrait(trait);
+      refreshTraitGrid(trait.id); // Restore variants in the grid
+      // Restore the selected variant in the Preview Panel
+      if (trait.variants.length > 0) {
+        selectVariation(trait.id, trait.variants[trait.selected].id);
+      }
+    });
 
     updateZIndices();
     updatePreviewSamples();
@@ -671,7 +695,14 @@ function setupTraitListeners(traitId) {
       // Re-render all traits
       traitContainer.innerHTML = '';
       traitImages = [];
-      TraitManager.getAllTraits().forEach(trait => addTrait(trait));
+      TraitManager.getAllTraits().forEach(trait => {
+        addTrait(trait);
+        refreshTraitGrid(trait.id); // Restore variants in the grid
+        // Restore the selected variant in the Preview Panel
+        if (trait.variants.length > 0) {
+          selectVariation(trait.id, trait.variants[trait.selected].id);
+        }
+      });
     }
   });
 
