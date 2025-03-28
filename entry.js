@@ -630,18 +630,32 @@ function setupTraitListeners(traitId) {
 
     upArrow.addEventListener('click', () => {
       const trait = TraitManager.getTrait(traitId);
-      let newPosition;
+      const traits = TraitManager.getAllTraits();
+      const lastPosition = traits.length;
+
       if (trait.position === 1) {
-        newPosition = TraitManager.getAllTraits().length;
-        TraitManager.moveTrait(traitId, newPosition);
+        // Swap with last trait
+        const lastTrait = traits.find(t => t.position === lastPosition);
+        if (lastTrait) {
+          const tempPosition = trait.position;
+          trait.position = lastTrait.position;
+          lastTrait.position = tempPosition;
+        }
       } else {
-        newPosition = trait.position - 1;
-        TraitManager.moveTrait(traitId, newPosition);
+        // Swap with previous trait
+        const prevTrait = traits.find(t => t.position === trait.position - 1);
+        if (prevTrait) {
+          const tempPosition = trait.position;
+          trait.position = prevTrait.position;
+          prevTrait.position = tempPosition;
+        }
       }
 
+      // Re-render all traits
       traitContainer.innerHTML = '';
       traitImages = [];
-      TraitManager.getAllTraits().forEach(trait => {
+      traits.sort((a, b) => a.position - b.position);
+      traits.forEach(trait => {
         const position = TraitManager.getAllTraits().indexOf(trait) + 1;
         if (!trait.isUserAssignedName && trait.name === `Trait ${trait.position}`) {
           trait.name = `Trait ${position}`;
@@ -659,19 +673,32 @@ function setupTraitListeners(traitId) {
 
     downArrow.addEventListener('click', () => {
       const trait = TraitManager.getTrait(traitId);
-      let newPosition;
-      const lastPosition = TraitManager.getAllTraits().length;
+      const traits = TraitManager.getAllTraits();
+      const lastPosition = traits.length;
+
       if (trait.position === lastPosition) {
-        newPosition = 1;
-        TraitManager.moveTrait(traitId, newPosition);
+        // Swap with first trait
+        const firstTrait = traits.find(t => t.position === 1);
+        if (firstTrait) {
+          const tempPosition = trait.position;
+          trait.position = firstTrait.position;
+          firstTrait.position = tempPosition;
+        }
       } else {
-        newPosition = trait.position + 1;
-        TraitManager.moveTrait(traitId, newPosition);
+        // Swap with next trait
+        const nextTrait = traits.find(t => t.position === trait.position + 1);
+        if (nextTrait) {
+          const tempPosition = trait.position;
+          trait.position = nextTrait.position;
+          nextTrait.position = tempPosition;
+        }
       }
 
+      // Re-render all traits
       traitContainer.innerHTML = '';
       traitImages = [];
-      TraitManager.getAllTraits().forEach(trait => {
+      traits.sort((a, b) => a.position - b.position);
+      traits.forEach(trait => {
         const position = TraitManager.getAllTraits().indexOf(trait) + 1;
         if (!trait.isUserAssignedName && trait.name === `Trait ${trait.position}`) {
           trait.name = `Trait ${position}`;
