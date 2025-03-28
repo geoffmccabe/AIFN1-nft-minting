@@ -177,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
-        updateZIndices();
       }
     });
 
@@ -189,17 +188,14 @@ document.addEventListener('DOMContentLoaded', () => {
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
-        updateZIndices();
       }
     });
   }
 
-  // Set up drag-and-drop for initial trait images
+  // Set up drag-and-drop for initial trait images (moved to the end to ensure all traits are added)
   traitImages.forEach((img, index) => {
-    if (img) {
-      console.log(`Setting up drag-and-drop for trait ${index + 1}, image:`, img);
-      setupDragAndDrop(img, index);
-    }
+    console.log(`Setting up drag-and-drop for trait ${index + 1}, image:`, img);
+    setupDragAndDrop(img, index);
   });
 });
 
@@ -216,7 +212,7 @@ function addTrait(traitIndex, initial = false) {
   const traitHeader = document.createElement('div');
   traitHeader.className = 'trait-header';
   const title = document.createElement('h2');
-  title.textContent = `Trait ${traitIndex + 1}${traits[traitIndex].name ? ` - ${traits[traitIndex].name}` : ''}`;
+  title.textContent = `Trait ${traitIndex + 1}`;
   const controls = document.createElement('div');
   controls.className = 'trait-controls';
   const upArrow = document.createElement('span');
@@ -273,22 +269,16 @@ function addTrait(traitIndex, initial = false) {
   traitSection.appendChild(fileInputLabel);
   traitSection.appendChild(variantCountSpan);
   traitSection.appendChild(grid);
-
-  // Insert the trait section at the correct position
-  const currentSection = traitContainer.querySelector(`#trait${traitIndex + 1}`);
-  if (currentSection) {
-    traitContainer.insertBefore(traitSection, currentSection);
-  } else {
-    traitContainer.appendChild(traitSection);
-  }
+  traitContainer.appendChild(traitSection);
 
   const newTraitImage = document.createElement('img');
   newTraitImage.id = `preview-trait${traitIndex + 1}`;
   newTraitImage.src = '';
   newTraitImage.alt = `Trait ${traitIndex + 1}`;
-  newTraitImage.style.zIndex = (traits.length - traitIndex) * 100;
+  newTraitImage.style.zIndex = traits[traitIndex].zIndex;
   if (preview) preview.appendChild(newTraitImage);
-  traitImages[traitIndex] = newTraitImage;
+  // Use push to ensure contiguous array
+  traitImages.push(newTraitImage);
 
   // Update z-indices after adding the trait
   for (let i = 0; i < traits.length; i++) {
@@ -311,7 +301,7 @@ function removeTrait(traitIndex) {
   const confirmationDialog = document.createElement('div');
   confirmationDialog.className = 'confirmation-dialog';
   const message = document.createElement('p');
-  message.textContent = `Are you sure you want to delete Trait ${traitIndex + 1}${traits[traitIndex].name ? ` - ${traits[traitIndex].name}` : ''}?`;
+  message.textContent = `Are you sure you want to delete Trait ${traitIndex + 1}?`;
   const buttonsDiv = document.createElement('div');
   buttonsDiv.className = 'buttons';
   const yesButton = document.createElement('button');
@@ -337,7 +327,7 @@ function removeTrait(traitIndex) {
       const section = document.getElementById(`trait${i + 2}`);
       if (section) {
         section.id = `trait${i + 1}`;
-        section.querySelector('h2').textContent = `Trait ${i + 1}${traits[i].name ? ` - ${traits[i].name}` : ''}`;
+        section.querySelector('h2').textContent = `Trait ${i + 1}`;
         section.querySelector('input[type="text"]').id = `trait${i + 1}-name`;
         section.querySelector('input[type="file"]').id = `trait${i + 1}-files`;
         section.querySelector('.file-input-label').htmlFor = `trait${i + 1}-files`;
@@ -425,55 +415,13 @@ function setupTraitListeners(traitIndex) {
   const variantCountSpan = document.getElementById(`trait${traitIndex + 1}-variant-count`);
   const grid = document.getElementById(`trait${traitIndex + 1}-grid`);
 
-  // Set the tooltip for up and down arrows based on position
-  const upArrow = document.querySelector(`.up-arrow[data-trait="${traitIndex + 1}"]`);
-  const downArrow = document.querySelector(`.down-arrow[data-trait="${traitIndex + 1}"]`);
-  if (upArrow) {
-    if (traitIndex === 0) {
-      upArrow.setAttribute('data-tooltip', 'Swap this Trait with the Last One');
-    } else {
-      upArrow.setAttribute('data-tooltip', 'Swap this Trait with the one above');
-    }
-  }
-  if (downArrow) {
-    if (traitIndex === traits.length - 1) {
-      downArrow.setAttribute('data-tooltip', 'Swap this Trait with Trait #1');
-    } else {
-      downArrow.setAttribute('data-tooltip', 'Swap this Trait with the one below');
-    }
-  }
-
-  if (nameInput) {
-    // Update title when the user types a name
-    nameInput.addEventListener('input', () => {
-      const traitName = nameInput.value.trim();
-      // Ensure the name doesn't include the "Trait X - " prefix
-      const prefix = `Trait ${traitIndex + 1} - `;
-      if (traitName.startsWith(prefix)) {
-        traits[traitIndex].name = traitName.substring(prefix.length);
-      } else {
-        traits[traitIndex].name = traitName;
-      }
-      const title = document.querySelector(`#trait${traitIndex + 1} h2`);
-      if (title) {
-        title.textContent = `Trait ${traitIndex + 1}${traits[traitIndex].name ? ` - ${traits[traitIndex].name}` : ''}`;
-      }
-    });
-  }
-
   if (fileInput && nameInput && grid && fileInputLabel && variantCountSpan) {
     fileInput.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
 
       const traitName = nameInput.value.trim() || `Trait ${traitIndex + 1}`;
-      // Ensure the name doesn't include the "Trait X - " prefix
-      const prefix = `Trait ${traitIndex + 1} - `;
-      if (traitName.startsWith(prefix)) {
-        traits[traitIndex].name = traitName.substring(prefix.length);
-      } else {
-        traits[traitIndex].name = traitName;
-      }
+      traits[traitIndex].name = traitName;
       traits[traitIndex].variations = [];
 
       grid.innerHTML = '';
@@ -534,12 +482,12 @@ function setupTraitListeners(traitIndex) {
     });
   }
 
-  const upArrowBtn = document.querySelector(`.up-arrow[data-trait="${traitIndex + 1}"]`);
-  const downArrowBtn = document.querySelector(`.down-arrow[data-trait="${traitIndex + 1}"]`);
+  const upArrow = document.querySelector(`.up-arrow[data-trait="${traitIndex + 1}"]`);
+  const downArrow = document.querySelector(`.down-arrow[data-trait="${traitIndex + 1}"]`);
   const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitIndex + 1}"]`);
   const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitIndex + 1}"]`);
 
-  upArrowBtn.addEventListener('click', () => {
+  upArrow.addEventListener('click', () => {
     if (traitIndex === 0) {
       const lastIndex = traits.length - 1;
       if (lastIndex === 0) return;
@@ -558,6 +506,7 @@ function setupTraitListeners(traitIndex) {
       const tempImage = traitImages[traitIndex];
       traitImages[traitIndex] = traitImages[lastIndex];
       traitImages[lastIndex] = tempImage;
+      traitImages.forEach((img, idx) => { if (img) img.id = `preview-trait${idx + 1}`; });
 
       const newVariantHistories = {};
       Object.keys(variantHistories).forEach(key => {
@@ -594,7 +543,6 @@ function setupTraitListeners(traitIndex) {
       autoPositioned[traitIndex] = autoPositioned[lastIndex];
       autoPositioned[lastIndex] = tempAutoPositioned;
 
-      renumberTraits();
       refreshTraitGrid(traitIndex);
       refreshTraitGrid(lastIndex);
     } else {
@@ -613,6 +561,7 @@ function setupTraitListeners(traitIndex) {
       const tempImage = traitImages[traitIndex];
       traitImages[traitIndex] = traitImages[traitIndex - 1];
       traitImages[traitIndex - 1] = tempImage;
+      traitImages.forEach((img, idx) => { if (img) img.id = `preview-trait${idx + 1}`; });
 
       const newVariantHistories = {};
       Object.keys(variantHistories).forEach(key => {
@@ -649,15 +598,15 @@ function setupTraitListeners(traitIndex) {
       autoPositioned[traitIndex] = autoPositioned[traitIndex - 1];
       autoPositioned[traitIndex - 1] = tempAutoPositioned;
 
-      renumberTraits();
       refreshTraitGrid(traitIndex - 1);
       refreshTraitGrid(traitIndex);
     }
+    renumberTraits();
     updateZIndices();
     updatePreviewSamples();
   });
 
-  downArrowBtn.addEventListener('click', () => {
+  downArrow.addEventListener('click', () => {
     if (traitIndex === traits.length - 1) {
       const firstIndex = 0;
       if (traits.length === 1) return;
@@ -676,6 +625,7 @@ function setupTraitListeners(traitIndex) {
       const tempImage = traitImages[traitIndex];
       traitImages[traitIndex] = traitImages[firstIndex];
       traitImages[firstIndex] = tempImage;
+      traitImages.forEach((img, idx) => { if (img) img.id = `preview-trait${idx + 1}`; });
 
       const newVariantHistories = {};
       Object.keys(variantHistories).forEach(key => {
@@ -712,7 +662,6 @@ function setupTraitListeners(traitIndex) {
       autoPositioned[traitIndex] = autoPositioned[firstIndex];
       autoPositioned[firstIndex] = tempAutoPositioned;
 
-      renumberTraits();
       refreshTraitGrid(firstIndex);
       refreshTraitGrid(traitIndex);
     } else {
@@ -731,6 +680,7 @@ function setupTraitListeners(traitIndex) {
       const tempImage = traitImages[traitIndex];
       traitImages[traitIndex] = traitImages[traitIndex + 1];
       traitImages[traitIndex + 1] = tempImage;
+      traitImages.forEach((img, idx) => { if (img) img.id = `preview-trait${idx + 1}`; });
 
       const newVariantHistories = {};
       Object.keys(variantHistories).forEach(key => {
@@ -767,49 +717,18 @@ function setupTraitListeners(traitIndex) {
       autoPositioned[traitIndex] = autoPositioned[traitIndex + 1];
       autoPositioned[traitIndex + 1] = tempAutoPositioned;
 
-      renumberTraits();
       refreshTraitGrid(traitIndex);
       refreshTraitGrid(traitIndex + 1);
     }
+    renumberTraits();
     updateZIndices();
     updatePreviewSamples();
   });
 
   addTraitBtn.addEventListener('click', () => {
     if (traits.length < 20) {
-      // Insert new trait at the current index, shifting others down
-      traits.splice(traitIndex, 0, { name: '', variations: [], selected: 0, zIndex: 0 });
-      traitImages.splice(traitIndex, 0, null);
-      autoPositioned.splice(traitIndex, 0, false);
-
-      // Shift variantHistories and localStorage keys
-      const newVariantHistories = {};
-      Object.keys(variantHistories).forEach(key => {
-        const [oldIndex, variationName] = key.split('-');
-        const oldIndexNum = parseInt(oldIndex);
-        if (oldIndexNum >= traitIndex) {
-          newVariantHistories[`${oldIndexNum + 1}-${variationName}`] = variantHistories[key];
-        } else {
-          newVariantHistories[key] = variantHistories[key];
-        }
-      });
-      variantHistories = newVariantHistories;
-
-      for (let i = traits.length - 1; i >= traitIndex; i--) {
-        const oldKeys = Object.keys(localStorage).filter(key => key.startsWith(`trait${i}-`));
-        oldKeys.forEach(oldKey => {
-          const value = localStorage.getItem(oldKey);
-          const newKey = oldKey.replace(`trait${i}-`, `trait${i + 1}-`);
-          localStorage.setItem(newKey, value);
-          localStorage.removeItem(oldKey);
-        });
-      }
-
-      // Add the new trait at the correct position
-      addTrait(traitIndex);
-      renumberTraits();
-      updateZIndices();
-      updatePreviewSamples();
+      traits.push({ name: '', variations: [], selected: 0, zIndex: 0 }); // zIndex will be set in addTrait
+      addTrait(traits.length - 1);
     }
   });
 
@@ -874,7 +793,7 @@ function renumberTraits() {
   const sections = traitContainer.querySelectorAll('.trait-section');
   sections.forEach((section, index) => {
     section.id = `trait${index + 1}`;
-    section.querySelector('h2').textContent = `Trait ${index + 1}${traits[index].name ? ` - ${traits[index].name}` : ''}`;
+    section.querySelector('h2').textContent = `Trait ${index + 1}`;
     section.querySelector('input[type="text"]').id = `trait${index + 1}-name`;
     section.querySelector('input[type="file"]').id = `trait${index + 1}-files`;
     section.querySelector('.file-input-label').htmlFor = `trait${index + 1}-files`;
@@ -883,24 +802,6 @@ function renumberTraits() {
     section.querySelector('.down-arrow').setAttribute('data-trait', `${index + 1}`);
     section.querySelector('.add-trait').setAttribute('data-trait', `${index + 1}`);
     section.querySelector('.remove-trait').setAttribute('data-trait', `${index + 1}`);
-
-    // Update tooltips for up and down arrows after renumbering
-    const upArrow = section.querySelector('.up-arrow');
-    const downArrow = section.querySelector('.down-arrow');
-    if (upArrow) {
-      if (index === 0) {
-        upArrow.setAttribute('data-tooltip', 'Swap this Trait with the Last One');
-      } else {
-        upArrow.setAttribute('data-tooltip', 'Swap this Trait with the one above');
-      }
-    }
-    if (downArrow) {
-      if (index === traits.length - 1) {
-        downArrow.setAttribute('data-tooltip', 'Swap this Trait with Trait #1');
-      } else {
-        downArrow.setAttribute('data-tooltip', 'Swap this Trait with the one below');
-      }
-    }
   });
 }
 
@@ -917,15 +818,8 @@ function updateMintButton() {
 
 function updateZIndices() {
   traitImages.forEach((img, index) => {
-    if (img) {
-      const baseZIndex = (traits.length - index) * 100; // Scale z-indices (e.g., 300, 200, 100)
-      if (img.classList.contains('dragging')) {
-        img.style.zIndex = baseZIndex + 10; // Dragging: just above its own trait (e.g., 110 for Trait 2)
-      } else if (img === currentImage) {
-        img.style.zIndex = baseZIndex + 5; // Selected: slightly above its own trait (e.g., 105 for Trait 2)
-      } else {
-        img.style.zIndex = baseZIndex; // Normal: base z-index (e.g., 100 for Trait 2)
-      }
+    if (img && img !== currentImage) {
+      img.style.zIndex = traits[index].zIndex;
     }
   });
 }
@@ -973,41 +867,33 @@ function selectVariation(traitIndex, variationName) {
       }
     }
     currentImage = previewImage;
-    updateZIndices();
+    traitImages.forEach(img => {
+      if (img) {
+        if (img === previewImage) img.style.zIndex = 1000;
+        else {
+          const idx = traitImages.indexOf(img);
+          img.style.zIndex = traits[idx].zIndex;
+        }
+      }
+    });
     updateCoordinates(previewImage);
   }
 }
 
 function setupDragAndDrop(img, traitIndex) {
   if (img) {
-    img.addEventListener('dragstart', (e) => {
-      e.preventDefault();
-      console.log(`Dragstart prevented for Trait ${traitIndex + 1}`);
-    });
-
-    img.addEventListener('click', () => {
-      if (img.src !== '') {
-        currentImage = img;
-        updateCoordinates(img);
-        console.log(`Set currentImage to Trait ${traitIndex + 1}`);
-      }
-    });
+    img.addEventListener('dragstart', (e) => e.preventDefault());
 
     img.addEventListener('mousedown', (e) => {
-      if (img.src === '' || img !== currentImage) {
-        console.log(`Cannot drag: Image src is empty or not currentImage for Trait ${traitIndex + 1}`);
-        return;
-      }
-      e.preventDefault(); // Prevent any default behavior
+      if (img.src === '' || img !== currentImage) return;
       isDragging = true;
+      currentImage = img;
       const rect = img.getBoundingClientRect();
       offsetX = e.clientX - rect.left;
       offsetY = e.clientY - rect.top;
       img.style.cursor = 'grabbing';
       img.classList.add('dragging');
-      updateZIndices();
       updateCoordinates(img);
-      console.log(`Started dragging Trait ${traitIndex + 1}`);
     });
 
     img.addEventListener('mouseup', () => {
@@ -1018,8 +904,13 @@ function setupDragAndDrop(img, traitIndex) {
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
-        updateZIndices();
-        console.log(`Stopped dragging Trait ${traitIndex + 1}`);
+      }
+    });
+
+    img.addEventListener('click', () => {
+      if (img.src !== '') {
+        currentImage = img;
+        updateCoordinates(img);
       }
     });
   }
@@ -1140,7 +1031,7 @@ function updatePreviewSamples() {
       const img = document.createElement('img');
       img.src = variant.url;
       img.alt = `Sample ${i + 1} - Trait ${j + 1}`;
-      img.style.zIndex = (traits.length - j) * 100;
+      img.style.zIndex = traits[j].zIndex;
 
       const key = `${j}-${variant.name}`;
       const savedPosition = localStorage.getItem(`trait${j + 1}-${variant.name}-position`);
@@ -1190,94 +1081,110 @@ function updatePreviewSamples() {
 
 
 async function fetchBackground() {
-  const userPrompt = document.getElementById('user-prompt').value;
-  const basePrompt = document.getElementById('base-prompt').value;
-  const fullPrompt = userPrompt ? `${basePrompt}, ${userPrompt}` : basePrompt;
-  const backgroundImage = document.getElementById('background-image');
-  const backgroundMetadata = document.getElementById('background-metadata');
-  backgroundMetadata.textContent = 'Generating...';
-
   try {
-    const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${config.huggingFaceApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        inputs: fullPrompt,
-        parameters: {
-          num_inference_steps: 50,
-          guidance_scale: 7.5
-        }
-      })
-    });
+    clickSound.play().catch(error => console.error('Error playing click sound:', error));
+    let seconds = 0;
+    generateButton.disabled = true;
+    generateButton.innerText = `Processing ${seconds}...`;
+    timerInterval = setInterval(() => {
+      seconds++;
+      console.log(`Timer update: ${seconds} seconds`);
+      generateButton.innerText = `Processing ${seconds}...`;
+    }, 1000);
 
-    if (!response.ok) throw new Error('Failed to generate background');
+    const userPrompt = document.getElementById('user-prompt') ? document.getElementById('user-prompt').value.trim() : '';
+    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background${userPrompt ? `?prompt=${encodeURIComponent(userPrompt)}` : ''}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch background: ${response.statusText}`);
+    const data = await response.json();
+    background.url = data.imageUrl;
+    background.metadata = data.metadata;
 
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    backgroundImage.src = url;
-    background.url = url;
-    background.metadata = fullPrompt;
-    backgroundMetadata.textContent = fullPrompt;
+    const backgroundImage = document.getElementById('background-image');
+    const backgroundMetadata = document.getElementById('background-metadata');
+
+    if (backgroundImage) backgroundImage.src = background.url;
+    if (backgroundMetadata) backgroundMetadata.innerText = background.metadata;
   } catch (error) {
-    console.error('Error generating background:', error);
-    backgroundMetadata.textContent = 'Error generating background';
+    console.error('Error fetching background:', error);
+    const placeholder = 'https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp';
+    const backgroundImage = document.getElementById('background-image');
+    const backgroundMetadata = document.getElementById('background-metadata');
+
+    if (backgroundImage) backgroundImage.src = placeholder;
+    if (backgroundMetadata) backgroundMetadata.innerText = 'Failed to load background: ' + error.message;
+  } finally {
+    clearInterval(timerInterval);
+    generateButton.innerText = 'Generate Bkgd';
+    generateButton.disabled = false;
   }
 }
+
+function fetchMintFee() {
+  const mintFeeDisplay = document.getElementById('mintFeeDisplay');
+  if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
+}
+fetchMintFee();
+
 
 
 
 /* Section 5 - MINTING FUNCTION */
 
 
-async function mintNFT() {
-  const allTraitsSet = traits.every(trait => trait.name && trait.variations.length > 0);
-  if (!allTraitsSet) {
-    alert('Please set all trait names and upload at least one variant for each trait.');
-    return;
-  }
-
-  const mintFeeDisplay = document.getElementById('mintFeeDisplay');
-  const mintButton = document.getElementById('mintButton');
-  mintButton.disabled = true;
-  mintFeeDisplay.textContent = 'Minting...';
+window.mintNFT = async function() {
+  const status = document.getElementById('status');
+  if (!status) return;
 
   try {
-    const mintFee = await contract.mintFee();
-    const overrides = { value: mintFee };
-    const traitNames = traits.map(trait => trait.name);
-    const traitUrls = traits.map(trait => trait.variations[trait.selected].url);
-    const positions = traits.map((_, index) => {
-      const variationName = traits[index].variations[traits[index].selected].name;
-      const position = JSON.parse(localStorage.getItem(`trait${index + 1}-${variationName}-position`)) || { left: 0, top: 0 };
-      return [position.left, position.top];
+    await provider.send("eth_requestAccounts", []);
+    const numTraitCategories = traits.length;
+    const traitCategoryVariants = traits.map(trait => trait.variations.length);
+    const traitIndices = traits.map(trait => trait.selected);
+    const recipient = await signer.getAddress();
+
+    status.innerText = "Uploading images to Arweave...";
+    const formData = new FormData();
+    for (let i = 0; i < traits.length; i++) {
+      const trait = traits[i];
+      const selectedVariation = trait.variations[trait.selected];
+      const response = await fetch(selectedVariation.url);
+      const blob = await response.blob();
+      formData.append('images', blob, `${trait.name}-${selectedVariation.name}.png`);
+    }
+
+    const uploadResponse = await fetch('https://aifn-1-api-q1ni.vercel.app/api/upload-to-arweave', {
+      method: 'POST',
+      body: formData
     });
-    const backgroundUrl = background.url || '';
-    const backgroundMetadata = background.metadata || '';
+    const uploadData = await uploadResponse.json();
+    if (uploadData.error) throw new Error(uploadData.error);
 
-    const tx = await contractWithSigner.mintNFT(traitNames, traitUrls, positions, backgroundUrl, backgroundMetadata, overrides);
-    await tx.wait();
-    mintFeeDisplay.textContent = `Minted! Tx: ${tx.hash}`;
-  } catch (error) {
-    console.error('Error minting NFT:', error);
-    mintFeeDisplay.textContent = 'Error minting NFT';
-    mintButton.disabled = false;
-  }
-}
+    const arweaveUrls = uploadData.transactionIds.map(id => `https://arweave.net/${id}`);
 
-document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    const mintFee = await contract.mintFee();
-    const mintFeeDisplay = document.getElementById('mintFeeDisplay');
-    mintFeeDisplay.textContent = `Mint Fee: ${ethers.utils.formatEther(mintFee)} ETH`;
-    document.getElementById('mintButton').addEventListener('click', mintNFT);
+    status.innerText = "Estimating gas...";
+    const gasLimit = await contractWithSigner.estimateGas.mintNFT(
+      recipient,
+      initialHtmlUri,
+      numTraitCategories,
+      traitCategoryVariants,
+      traitIndices,
+      { value: ethers.utils.parseEther(config.sepolia.mintFee) }
+    );
+
+    status.innerText = "Minting...";
+    const tx = await contractWithSigner.mintNFT(
+      recipient,
+      initialHtmlUri,
+      numTraitCategories,
+      traitCategoryVariants,
+      traitIndices,
+      { value: ethers.utils.parseEther(config.sepolia.mintFee), gasLimit: gasLimit.add(50000) }
+    );
+    const receipt = await tx.wait();
+    const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
+    status.innerText = `Minted! Token ID: ${tokenId}`;
   } catch (error) {
-    console.error('Error fetching mint fee:', error);
-    const mintFeeDisplay = document.getElementById('mintFeeDisplay');
-    mintFeeDisplay.textContent = 'Error fetching mint fee. Please ensure the contract is deployed on the correct network (Sepolia) and your wallet is connected.';
-    // Still attach the mint button listener to allow minting attempts
-    document.getElementById('mintButton').addEventListener('click', mintNFT);
+    status.innerText = `Error: ${error.message}`;
   }
-});
+};
