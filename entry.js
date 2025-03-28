@@ -814,13 +814,6 @@ function selectVariation(traitId, variationId) {
 
   const previewImage = document.getElementById(`preview-trait${traitId}`);
   if (previewImage) {
-    // Hide all other images for this trait
-    traitImages.forEach(img => {
-      if (img !== previewImage) {
-        img.style.visibility = 'hidden';
-      }
-    });
-
     previewImage.src = trait.variants[variationIndex].url;
     previewImage.style.visibility = 'visible'; // Show the selected image
     const key = `${traitId}-${trait.variants[variationIndex].name}`;
@@ -939,6 +932,7 @@ function savePosition(img, traitId, variationName) {
 
 
 
+
 /* Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) */
 
 
@@ -989,11 +983,11 @@ function updateSubsequentTraits(currentTraitId, currentVariationName, position) 
   }
 }
 
-function updateSamplePositions(traitId, variationName, position) {
+function updateSamplePositions(traitId, variationId, position) {
   for (let i = 0; i < 16; i++) {
     const sample = sampleData[i];
     for (let j = 0; j < sample.length; j++) {
-      if (sample[j].traitId === traitId && sample[j].variationName === variationName) {
+      if (sample[j].traitId === traitId && sample[j].variantId === variationId) {
         sample[j].position = position;
       }
     }
@@ -1058,7 +1052,7 @@ function updatePreviewSamples() {
         }
       }
 
-      sampleData[i].push({ traitId: trait.id, variationName: variant.name, position });
+      sampleData[i].push({ traitId: trait.id, variantId: variant.id, position });
       sampleContainer.appendChild(img);
     }
 
@@ -1067,28 +1061,22 @@ function updatePreviewSamples() {
       // Update Preview Panel with the variants from this sample
       sampleData[i].forEach(sample => {
         const traitId = sample.traitId;
-        const trait = TraitManager.getTrait(traitId);
-        const variant = trait.variants.find(v => v.name === sample.variationName);
-        if (variant) {
-          selectVariation(traitId, variant.id);
-        }
+        const variantId = sample.variantId;
+        selectVariation(traitId, variantId);
       });
 
       // Update selected variants on the left side
       sampleData[i].forEach(sample => {
         const traitId = sample.traitId;
-        const trait = TraitManager.getTrait(traitId);
-        const variant = trait.variants.find(v => v.name === sample.variationName);
-        if (variant) {
-          const grid = document.getElementById(`trait${traitId}-grid`);
-          if (grid) {
-            const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
-            allWrappers.forEach(w => w.classList.remove('selected'));
-            const container = grid.querySelector(`[data-variation-id="${variant.id}"]`);
-            if (container) {
-              const imageWrapper = container.querySelector('.variation-image-wrapper');
-              if (imageWrapper) imageWrapper.classList.add('selected');
-            }
+        const variantId = sample.variantId;
+        const grid = document.getElementById(`trait${traitId}-grid`);
+        if (grid) {
+          const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
+          allWrappers.forEach(w => w.classList.remove('selected'));
+          const container = grid.querySelector(`[data-variation-id="${variantId}"]`);
+          if (container) {
+            const imageWrapper = container.querySelector('.variation-image-wrapper');
+            if (imageWrapper) imageWrapper.classList.add('selected');
           }
         }
       });
