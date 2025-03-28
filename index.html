@@ -19,8 +19,6 @@
 
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
-
-
 <style>
   body {
     font-family: 'Poppins', sans-serif;
@@ -132,6 +130,9 @@
     box-sizing: border-box;
     height: 32px;
   }
+  input[type="text"]::placeholder {
+    color: #ccc; /* Match the border color */
+  }
   input[type="file"] {
     display: none;
   }
@@ -209,11 +210,9 @@
   }
 </style>
 
-
+  
 
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
-
-
 
 <style>
   #right-panel {
@@ -224,7 +223,7 @@
   #right-panel h2 {
     font-family: 'Rowdies', sans-serif;
     font-weight: 400;
-    text-align: center;
+    text-align: left; /* Left-justify to align with PREVIEW SAMPLES */
     margin: 0 0 10px;
   }
   #preview {
@@ -235,7 +234,7 @@
     background-size: cover;
     margin-bottom: 10px;
     overflow: hidden;
-    border: 2px solid #666;
+    border: 1px solid #ccc; /* Match left panel border color and width */
     border-radius: 10px;
     max-width: 100%;
   }
@@ -316,7 +315,7 @@
     height: 140px;
     background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
     background-size: 140px 140px;
-    border: 1px solid black;
+    border: 1px solid #ccc; /* Match left panel border color and width */
     border-radius: 5px;
     overflow: hidden;
     cursor: pointer;
@@ -342,8 +341,10 @@
 
 
 
+  
 <!-- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -->
 
+  
 
   
 <style>
@@ -457,7 +458,7 @@
 <!-- Section 5 - BODY OPENING AND LEFT PANEL -->
 
 <body>
-  <div id="version">Version 91</div>
+  <div id="version">Version 92</div>
   <div id="left-panel">
     <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
     <div id="trait-container">
