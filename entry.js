@@ -990,7 +990,7 @@ function updateSubsequentTraits(currentTraitId, currentVariationName, position) 
 }
 
 function updateSamplePositions(traitId, variationName, position) {
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 16; i++) {
     const sample = sampleData[i];
     for (let j = 0; j < sample.length; j++) {
       if (sample[j].traitId === traitId && sample[j].variationName === variationName) {
@@ -1003,9 +1003,9 @@ function updateSamplePositions(traitId, variationName, position) {
 
 function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
-  sampleData = Array(20).fill(null).map(() => []);
+  sampleData = Array(16).fill(null).map(() => []);
 
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
 
@@ -1061,10 +1061,42 @@ function updatePreviewSamples() {
       sampleData[i].push({ traitId: trait.id, variationName: variant.name, position });
       sampleContainer.appendChild(img);
     }
+
+    // Add click event listener to update Preview Panel and select variants
+    sampleContainer.addEventListener('click', () => {
+      // Update Preview Panel with the variants from this sample
+      sampleData[i].forEach(sample => {
+        const traitId = sample.traitId;
+        const trait = TraitManager.getTrait(traitId);
+        const variant = trait.variants.find(v => v.name === sample.variationName);
+        if (variant) {
+          selectVariation(traitId, variant.id);
+        }
+      });
+
+      // Update selected variants on the left side
+      sampleData[i].forEach(sample => {
+        const traitId = sample.traitId;
+        const trait = TraitManager.getTrait(traitId);
+        const variant = trait.variants.find(v => v.name === sample.variationName);
+        if (variant) {
+          const grid = document.getElementById(`trait${traitId}-grid`);
+          if (grid) {
+            const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
+            allWrappers.forEach(w => w.classList.remove('selected'));
+            const container = grid.querySelector(`[data-variation-id="${variant.id}"]`);
+            if (container) {
+              const imageWrapper = container.querySelector('.variation-image-wrapper');
+              if (imageWrapper) imageWrapper.classList.add('selected');
+            }
+          }
+        }
+      });
+    });
+
     previewSamplesGrid.appendChild(sampleContainer);
   }
 }
-
 
 
 
