@@ -1,9 +1,5 @@
 /* Section 1 - PANELS MANAGER FRAMEWORK */
 
-
-
-
-
 let idCounter = 0;
 function generateId() {
   return `id-${idCounter++}`;
@@ -40,8 +36,6 @@ class Panel {
 class PanelManager {
   constructor() {
     this.panels = [];
-    this.leftColumn = document.getElementById('left-column');
-    this.rightColumn = document.getElementById('right-column');
   }
 
   addPanel(panel) {
@@ -55,18 +49,27 @@ class PanelManager {
   }
 
   renderAll() {
-    this.leftColumn.innerHTML = '';
-    this.rightColumn.innerHTML = '';
+    const leftColumn = document.getElementById('left-column');
+    const rightColumn = document.getElementById('right-column');
+    if (!leftColumn || !rightColumn) {
+      console.error('Column elements not found');
+      return;
+    }
+    leftColumn.innerHTML = '';
+    rightColumn.innerHTML = '';
     this.panels.forEach(panel => {
       const el = panel.render();
       if (panel.column === 'left') {
-        this.leftColumn.appendChild(el);
+        leftColumn.appendChild(el);
       } else {
-        this.rightColumn.appendChild(el);
+        rightColumn.appendChild(el);
       }
     });
   }
 }
+
+
+
 
 /* Section 2 - TRAIT MANAGER FRAMEWORK */
 
