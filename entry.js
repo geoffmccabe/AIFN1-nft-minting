@@ -980,8 +980,6 @@ function savePosition(img, traitId, variationName) {
 /* Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) */
 
 
-  
-
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
