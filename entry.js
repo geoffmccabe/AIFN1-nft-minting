@@ -10,11 +10,11 @@ function generateId() {
 }
 
 class Panel {
-  constructor(id, title, content, position = { x: 0, y: 0 }, style = {}) {
+  constructor(id, title, content, column = 'left', style = {}) {
     this.id = id;
     this.title = title;
-    this.content = content; // HTML string or DOM element
-    this.position = position;
+    this.content = content;
+    this.column = column; // 'left' or 'right'
     this.style = { backgroundColor: '#f0f0f0', ...style };
     this.element = null;
   }
@@ -25,12 +25,7 @@ class Panel {
       this.element.id = this.id;
       this.element.className = 'panel';
       this.element.innerHTML = `<h2>${this.title}</h2>${this.content}`;
-      Object.assign(this.element.style, {
-        position: 'absolute',
-        left: `${this.position.x}px`,
-        top: `${this.position.y}px`,
-        ...this.style
-      });
+      Object.assign(this.element.style, this.style);
     }
     return this.element;
   }
@@ -40,21 +35,13 @@ class Panel {
       this.element.innerHTML = `<h2>${this.title}</h2>${content || this.content}`;
     }
   }
-
-  setPosition(x, y) {
-    this.position = { x, y };
-    if (this.element) {
-      this.element.style.left = `${x}px`;
-      this.element.style.top = `${y}px`;
-    }
-  }
 }
 
 class PanelManager {
   constructor() {
     this.panels = [];
-    this.layoutMode = 'grid'; // 'grid' or 'tabs'
-    this.container = document.getElementById('panel-container');
+    this.leftColumn = document.getElementById('left-column');
+    this.rightColumn = document.getElementById('right-column');
   }
 
   addPanel(panel) {
@@ -68,79 +55,16 @@ class PanelManager {
   }
 
   renderAll() {
-    this.container.innerHTML = '';
-    if (this.layoutMode === 'tabs') {
-      const tabBar = document.createElement('div');
-      tabBar.className = 'tab-bar';
-      this.panels.forEach((panel, index) => {
-        const tab = document.createElement('span');
-        tab.textContent = panel.title;
-        tab.className = 'tab';
-        tab.dataset.panelId = panel.id;
-        tab.addEventListener('click', () => this.showPanel(panel.id));
-        tabBar.appendChild(tab);
-        panel.render().style.display = index === 0 ? 'block' : 'none';
-      });
-      this.container.appendChild(tabBar);
-    }
-
-    this.panels.forEach((panel, index) => {
-      const el = panel.render();
-      if (this.layoutMode === 'grid') {
-        const savedPos = JSON.parse(localStorage.getItem(`panel-${panel.id}-position`));
-        if (savedPos) {
-          panel.setPosition(savedPos.x, savedPos.y);
-        } else {
-          const gridWidth = 310; // Approx width + padding
-          panel.setPosition((index % 2) * gridWidth, Math.floor(index / 2) * 400);
-        }
-      }
-      this.container.appendChild(el);
-      this.setupDrag(el, panel);
-    });
-
-    // Mobile check
-    if (window.innerWidth < 900) {
-      this.setLayoutMode('tabs');
-    }
-  }
-
-  setupDrag(element, panel) {
-    let offsetX, offsetY, isDragging = false;
-    element.addEventListener('mousedown', (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || this.layoutMode === 'tabs') return;
-      isDragging = true;
-      const rect = element.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-      element.style.cursor = 'grabbing';
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      const newX = e.clientX - offsetX;
-      const newY = e.clientY - offsetY;
-      panel.setPosition(newX, newY);
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        element.style.cursor = 'grab';
-        localStorage.setItem(`panel-${panel.id}-position`, JSON.stringify(panel.position));
-      }
-    });
-  }
-
-  showPanel(panelId) {
+    this.leftColumn.innerHTML = '';
+    this.rightColumn.innerHTML = '';
     this.panels.forEach(panel => {
-      panel.element.style.display = panel.id === panelId ? 'block' : 'none';
+      const el = panel.render();
+      if (panel.column === 'left') {
+        this.leftColumn.appendChild(el);
+      } else {
+        this.rightColumn.appendChild(el);
+      }
     });
-  }
-
-  setLayoutMode(mode) {
-    this.layoutMode = mode;
-    this.renderAll();
   }
 }
 
@@ -303,12 +227,12 @@ const panelManager = new PanelManager();
 
 const logoPanel = new Panel('logo-panel', 'Logo', 
   `<img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">`,
-  { x: 0, y: 0 }, { backgroundColor: '#fff' }
+  'left', { backgroundColor: '#fff' }
 );
 
 const traitsPanel = new Panel('traits-panel', 'Traits Manager', 
   `<div id="trait-container"></div>`,
-  { x: 0, y: 400 }, { backgroundColor: '#e6f3ff' }
+  'left', { backgroundColor: '#e6f3ff' }
 );
 
 const previewPanel = new Panel('preview-panel', 'Preview', 
@@ -323,7 +247,7 @@ const previewPanel = new Panel('preview-panel', 'Preview',
      <span class="magnify-emoji">🔍</span>
    </div>
    <div id="enlarged-preview"></div>`,
-  { x: 310, y: 0 }, { backgroundColor: '#fff0f0' }
+  'right', { backgroundColor: '#fff0f0' }
 );
 
 const previewSamplesPanel = new Panel('preview-samples-panel', 'Preview Samples', 
@@ -333,7 +257,7 @@ const previewSamplesPanel = new Panel('preview-samples-panel', 'Preview Samples'
      </div>
      <div id="preview-samples-grid"></div>
    </div>`,
-  { x: 310, y: 400 }, { backgroundColor: '#f0fff0' }
+  'right', { backgroundColor: '#f0fff0' }
 );
 
 const backgroundPanel = new Panel('background-panel', 'AI Background', 
@@ -348,7 +272,7 @@ const backgroundPanel = new Panel('background-panel', 'AI Background',
      <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
      <p id="background-metadata">Loading...</p>
    </div>`,
-  { x: 0, y: 800 }, { backgroundColor: '#fff5e6' }
+  'left', { backgroundColor: '#fff5e6' }
 );
 
 const mintingPanel = new Panel('minting-panel', 'Minting', 
@@ -356,7 +280,7 @@ const mintingPanel = new Panel('minting-panel', 'Minting',
      <button id="mintButton" disabled>Mint NFT</button>
      <div id="mintFeeDisplay">Mint Fee: Loading...</div>
    </div>`,
-  { x: 310, y: 800 }, { backgroundColor: '#f0e6ff' }
+  'right', { backgroundColor: '#f0e6ff' }
 );
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -367,9 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   panelManager.addPanel(logoPanel);
   panelManager.addPanel(traitsPanel);
+  panelManager.addPanel(backgroundPanel);
   panelManager.addPanel(previewPanel);
   panelManager.addPanel(previewSamplesPanel);
-  panelManager.addPanel(backgroundPanel);
   panelManager.addPanel(mintingPanel);
 
   TraitManager.initialize();
@@ -383,6 +307,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setupPreviewListeners();
   setupUndoListener();
+
+  TraitManager.getAllTraits().forEach(trait => {
+    setupTraitListeners(trait.id);
+    if (trait.variants.length > 0) {
+      selectVariation(trait.id, trait.variants[0].id);
+    }
+  });
 });
 
 /* Section 4 - PANEL LOGIC */
@@ -408,8 +339,17 @@ function getTraitsContent() {
         <input type="text" id="trait${trait.id}-name" placeholder="Trait ${trait.position}" ${trait.isUserAssignedName ? `value="${trait.name}"` : ''}>
         <input type="file" id="trait${trait.id}-files" accept="image/png,image/webp" multiple>
         <label class="file-input-label" for="trait${trait.id}-files">Choose Files</label>
-        <div id="trait${trait.id}-grid" class="trait-grid"></div>
-      </div>`;
+        <div id="trait${trait.id}-grid" class="trait-grid">`;
+    trait.variants.forEach(variant => {
+      html += `
+        <div class="variation-container" data-trait-id="${trait.id}" data-variation-id="${variant.id}">
+          <div class="variation-image-wrapper${trait.selected === trait.variants.indexOf(variant) ? ' selected' : ''}">
+            <img src="${variant.url}" alt="${variant.name}" class="variation">
+          </div>
+          <div class="variation-filename">${variant.name}</div>
+        </div>`;
+    });
+    html += `</div></div>`;
   });
   html += '</div>';
   return html;
@@ -426,10 +366,8 @@ function setupTraitListeners(traitId) {
       const trait = TraitManager.getTrait(traitId);
       trait.name = nameInput.value.trim();
       trait.isUserAssignedName = true;
-      const title = nameInput.parentElement.querySelector('h2');
-      const position = TraitManager.getAllTraits().findIndex(t => t.id === traitId) + 1;
-      title.textContent = `TRAIT ${position}${trait.name ? ` - ${trait.name}` : ''}`;
       traitsPanel.update(getTraitsContent());
+      setupTraitListeners(traitId); // Reattach listeners
     });
 
     fileInput.addEventListener('change', async (event) => {
@@ -443,62 +381,35 @@ function setupTraitListeners(traitId) {
       }
 
       TraitManager.getTrait(traitId).variants = [];
+      traitImages = traitImages.filter(img => !img.id.startsWith(`preview-trait${traitId}`));
 
-      grid.innerHTML = '';
       for (const file of files) {
         const variationName = file.name.split('.').slice(0, -1).join('.');
         const url = URL.createObjectURL(file);
-        const variant = TraitManager.addVariant(traitId, { name: variationName, url });
-
-        const container = document.createElement('div');
-        container.className = 'variation-container';
-        container.dataset.traitId = traitId;
-        container.dataset.variationId = variant.id;
-
-        const imageWrapper = document.createElement('div');
-        imageWrapper.className = 'variation-image-wrapper';
-
-        const img = document.createElement('img');
-        img.src = url;
-        img.alt = variationName;
-        img.className = 'variation';
-
-        const filename = document.createElement('div');
-        filename.className = 'variation-filename';
-        filename.textContent = file.name;
-
-        imageWrapper.appendChild(img);
-        container.appendChild(imageWrapper);
-        container.appendChild(filename);
-        container.addEventListener('click', () => {
-          console.log(`Clicked variant: Trait ${traitId}, Variation ${variationName}`);
-          const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
-          allWrappers.forEach(w => w.classList.remove('selected'));
-          imageWrapper.classList.add('selected');
-          selectVariation(traitId, variant.id);
-        });
-
-        grid.appendChild(container);
-
-        const key = `${traitId}-${variationName}`;
-        if (!variantHistories[key]) {
-          variantHistories[key] = [{ left: 0, top: 0 }];
-          localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify({ left: 0, top: 0 }));
-          localStorage.removeItem(`trait${traitId}-${variationName}-manuallyMoved`);
-        }
+        TraitManager.addVariant(traitId, { name: variationName, url });
       }
 
-      if (TraitManager.getTrait(traitId).variants.length > 0) {
-        const firstVariant = TraitManager.getTrait(traitId).variants[0];
-        selectVariation(traitId, firstVariant.id);
-        const firstWrapper = grid.querySelector('.variation-image-wrapper');
-        if (firstWrapper) firstWrapper.classList.add('selected');
-        autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
+      if (trait.variants.length > 0) {
+        selectVariation(traitId, trait.variants[0].id);
         fileInputLabel.textContent = 'Choose New Files';
+        autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
       }
 
+      traitsPanel.update(getTraitsContent());
+      setupTraitListeners(traitId); // Reattach listeners
       updateMintButton();
       updatePreviewSamples();
+    });
+
+    grid.querySelectorAll('.variation-container').forEach(container => {
+      container.addEventListener('click', () => {
+        const traitId = container.dataset.traitId;
+        const variantId = container.dataset.variationId;
+        const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
+        allWrappers.forEach(w => w.classList.remove('selected'));
+        container.querySelector('.variation-image-wrapper').classList.add('selected');
+        selectVariation(traitId, variantId);
+      });
     });
 
     const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
@@ -511,6 +422,7 @@ function setupTraitListeners(traitId) {
       let newPosition = trait.position === 1 ? TraitManager.getAllTraits().length : trait.position - 1;
       TraitManager.moveTrait(traitId, newPosition);
       traitsPanel.update(getTraitsContent());
+      setupTraitListeners(traitId);
       updatePreviewSamples();
     });
 
@@ -519,6 +431,7 @@ function setupTraitListeners(traitId) {
       let newPosition = trait.position === TraitManager.getAllTraits().length ? 1 : trait.position + 1;
       TraitManager.moveTrait(traitId, newPosition);
       traitsPanel.update(getTraitsContent());
+      setupTraitListeners(traitId);
       updatePreviewSamples();
     });
 
@@ -527,6 +440,7 @@ function setupTraitListeners(traitId) {
         const trait = TraitManager.getTrait(traitId);
         TraitManager.addTrait(trait.position);
         traitsPanel.update(getTraitsContent());
+        TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
         updatePreviewSamples();
       }
     });
@@ -553,7 +467,9 @@ function removeTrait(traitId) {
 
   const deleteAndRemoveDialog = () => {
     TraitManager.removeTrait(traitId);
+    traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
     traitsPanel.update(getTraitsContent());
+    TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
     updatePreviewSamples();
   };
 
@@ -782,44 +698,49 @@ function selectVariation(traitId, variationId) {
   }
   trait.selected = variationIndex;
 
-  const previewImage = document.getElementById(`preview-trait${traitId}`);
-  if (previewImage) {
-    previewImage.src = trait.variants[variationIndex].url;
-    previewImage.style.visibility = 'visible';
-    const key = `${traitId}-${trait.variants[variationIndex].name}`;
-    const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
-    if (savedPosition) {
-      const { left, top } = JSON.parse(savedPosition);
-      previewImage.style.left = `${left}px`;
-      previewImage.style.top = `${top}px`;
-      if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
-    } else {
-      let lastPosition = null;
-      for (let i = 0; i < trait.variants.length; i++) {
-        if (i === variationIndex) continue;
-        const otherVariationName = trait.variants[i].name;
-        const otherKey = `${traitId}-${otherVariationName}`;
-        if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
-          lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
-        }
-      }
-      if (lastPosition) {
-        previewImage.style.left = `${lastPosition.left}px`;
-        previewImage.style.top = `${lastPosition.top}px`;
-        variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
-        localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
-      } else {
-        previewImage.style.left = '0px';
-        previewImage.style.top = '0px';
-        variantHistories[key] = [{ left: 0, top: 0 }];
-        localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
+  let previewImage = document.getElementById(`preview-trait${traitId}`);
+  if (!previewImage) {
+    previewImage = document.createElement('img');
+    previewImage.id = `preview-trait${traitId}`;
+    traitImages.push(previewImage);
+    document.getElementById('preview').appendChild(previewImage);
+  }
+
+  previewImage.src = trait.variants[variationIndex].url;
+  previewImage.style.visibility = 'visible';
+  const key = `${traitId}-${trait.variants[variationIndex].name}`;
+  const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
+  if (savedPosition) {
+    const { left, top } = JSON.parse(savedPosition);
+    previewImage.style.left = `${left}px`;
+    previewImage.style.top = `${top}px`;
+    if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
+  } else {
+    let lastPosition = null;
+    for (let i = 0; i < trait.variants.length; i++) {
+      if (i === variationIndex) continue;
+      const otherVariationName = trait.variants[i].name;
+      const otherKey = `${traitId}-${otherVariationName}`;
+      if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
+        lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
       }
     }
-    currentImage = previewImage;
-    updateZIndices();
-    updateCoordinates(currentImage, document.getElementById('coordinates'));
-    traitsPanel.update(getTraitsContent());
+    if (lastPosition) {
+      previewImage.style.left = `${lastPosition.left}px`;
+      previewImage.style.top = `${lastPosition.top}px`;
+      variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
+      localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
+    } else {
+      previewImage.style.left = '0px';
+      previewImage.style.top = '0px';
+      variantHistories[key] = [{ left: 0, top: 0 }];
+      localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
+    }
   }
+  currentImage = previewImage;
+  updateZIndices();
+  updateCoordinates(currentImage, document.getElementById('coordinates'));
+  traitsPanel.update(getTraitsContent());
 }
 
 function setupDragAndDrop(img, traitIndex) {
@@ -1003,8 +924,9 @@ function updateMintButton() {
 }
 
 window.mintNFT = async function() {
-  const status = document.getElementById('status');
-  if (!status) return;
+  const status = document.getElementById('status') || document.createElement('div'); // Fallback if status not found
+  status.id = 'status';
+  mintingPanel.element.appendChild(status);
 
   try {
     await provider.send("eth_requestAccounts", []);
