@@ -224,7 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
       selectVariation(trait.id, trait.variants[0].id);
     }
   });
-  updateZIndices(); // Ensure zIndex is applied on initial load
   updatePreviewSamples();
 
   // Event listeners for global controls
@@ -412,7 +411,7 @@ function addTrait(trait) {
   traitHeader.className = 'trait-header';
   const title = document.createElement('h2');
   title.textContent = `TRAIT ${traitContainer.children.length + 1}`; // Use DOM position for TRAIT [x]
-  if (trait.name) {
+  if (trait.name && trait.isUserAssignedName) {
     title.textContent += ` - ${trait.name}`;
   }
   const controls = document.createElement('div');
@@ -445,8 +444,10 @@ function addTrait(trait) {
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.id = `trait${trait.id}-name`;
-  nameInput.placeholder = `Trait Name (e.g., ${traitContainer.children.length + 1 === 1 ? 'Eyes' : traitContainer.children.length + 1 === 2 ? 'Hair' : 'Accessories'})`;
-  nameInput.value = trait.name || ''; // Restore the trait name
+  nameInput.placeholder = `Trait ${traitContainer.children.length + 1}`; // Set placeholder dynamically
+  if (trait.isUserAssignedName) {
+    nameInput.value = trait.name; // Only set value if user-assigned
+  }
 
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
@@ -495,13 +496,16 @@ function addTrait(trait) {
   newTraitImage.style.visibility = trait.variants.length > 0 ? 'visible' : 'hidden';
   traitImages.push(newTraitImage);
 
-  // Re-render all preview images in order of position (lowest to highest)
+  // Re-render all preview images in order of zIndex (highest to lowest)
   if (preview) {
     preview.innerHTML = '';
     const sortedImages = traitImages
-      .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx]?.position || 0 }))
-      .sort((a, b) => a.position - b.position); // Sort by position (ascending)
-    sortedImages.forEach(({ img }) => preview.appendChild(img));
+      .map((img, idx) => ({ img, zIndex: TraitManager.getAllTraits()[idx]?.zIndex || 0 }))
+      .sort((a, b) => b.zIndex - a.zIndex); // Sort by zIndex (descending)
+    sortedImages.forEach(({ img }) => {
+      img.style.zIndex = String(TraitManager.getAllTraits()[traitImages.indexOf(img)].zIndex); // Apply zIndex
+      preview.appendChild(img);
+    });
   }
 
   setupTraitListeners(trait.id);
@@ -512,7 +516,6 @@ function addTrait(trait) {
       setupDragAndDrop(traitImage, traitImages.length - 1);
     }
   });
-  updateZIndices();
   updatePreviewSamples();
 }
 
@@ -571,9 +574,7 @@ function removeTrait(traitId) {
       }
     });
 
-    updateZIndices();
     updatePreviewSamples();
-    confirmationDialog.remove();
   });
 
   noButton.addEventListener('click', () => confirmationDialog.remove());
@@ -616,8 +617,8 @@ function setupTraitListeners(traitId) {
       const trait = TraitManager.getTrait(traitId);
       // Only set a default name if no name has been assigned
       if (!trait.isUserAssignedName) {
-        const traitName = nameInput.value.trim() || `Trait ${Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1}`;
-        TraitManager.getTrait(traitId).name = traitName;
+        const position = Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1;
+        TraitManager.getTrait(traitId).name = `Trait ${position}`;
       }
 
       TraitManager.getTrait(traitId).variants = [];
@@ -687,21 +688,24 @@ function setupTraitListeners(traitId) {
 
     upArrow.addEventListener('click', () => {
       const trait = TraitManager.getTrait(traitId);
+      let newPosition;
       if (trait.position === 1) {
-        const lastPosition = TraitManager.getAllTraits().length;
-        TraitManager.moveTrait(traitId, lastPosition);
+        newPosition = TraitManager.getAllTraits().length;
+        TraitManager.moveTrait(traitId, newPosition);
       } else {
-        TraitManager.moveTrait(traitId, trait.position - 1);
+        newPosition = trait.position - 1;
+        TraitManager.moveTrait(traitId, newPosition);
       }
 
       // Re-render all traits
       traitContainer.innerHTML = '';
       traitImages = [];
       TraitManager.getAllTraits().forEach(trait => {
-        // Reset default name if not user-assigned
-        if (!trait.isUserAssignedName) {
-          const position = TraitManager.getAllTraits().indexOf(trait) + 1;
+        // Reset default name if not user-assigned and matches the default pattern
+        const position = TraitManager.getAllTraits().indexOf(trait) + 1;
+        if (!trait.isUserAssignedName && trait.name === `Trait ${trait.position}`) {
           trait.name = `Trait ${position}`;
+          trait.isUserAssignedName = false;
         }
         addTrait(trait);
         refreshTraitGrid(trait.id);
@@ -710,27 +714,30 @@ function setupTraitListeners(traitId) {
         }
       });
 
-      updateZIndices();
       updatePreviewSamples();
     });
 
     downArrow.addEventListener('click', () => {
       const trait = TraitManager.getTrait(traitId);
+      let newPosition;
       const lastPosition = TraitManager.getAllTraits().length;
       if (trait.position === lastPosition) {
-        TraitManager.moveTrait(traitId, 1);
+        newPosition = 1;
+        TraitManager.moveTrait(traitId, newPosition);
       } else {
-        TraitManager.moveTrait(traitId, trait.position + 1);
+        newPosition = trait.position + 1;
+        TraitManager.moveTrait(traitId, newPosition);
       }
 
       // Re-render all traits
       traitContainer.innerHTML = '';
       traitImages = [];
       TraitManager.getAllTraits().forEach(trait => {
-        // Reset default name if not user-assigned
-        if (!trait.isUserAssignedName) {
-          const position = TraitManager.getAllTraits().indexOf(trait) + 1;
+        // Reset default name if not user-assigned and matches the default pattern
+        const position = TraitManager.getAllTraits().indexOf(trait) + 1;
+        if (!trait.isUserAssignedName && trait.name === `Trait ${trait.position}`) {
           trait.name = `Trait ${position}`;
+          trait.isUserAssignedName = false;
         }
         addTrait(trait);
         refreshTraitGrid(trait.id);
@@ -739,7 +746,6 @@ function setupTraitListeners(traitId) {
         }
       });
 
-      updateZIndices();
       updatePreviewSamples();
     });
 
@@ -765,7 +771,6 @@ function setupTraitListeners(traitId) {
           }
         });
 
-        updateZIndices();
         updatePreviewSamples();
       }
     });
@@ -835,8 +840,9 @@ function renumberTraits() {
   sections.forEach((section, index) => {
     const traitId = section.id.replace('trait', '');
     const trait = TraitManager.getTrait(traitId);
-    section.querySelector('h2').textContent = `TRAIT ${index + 1}${trait.name ? ` - ${trait.name}` : ''}`;
+    section.querySelector('h2').textContent = `TRAIT ${index + 1}${trait.isUserAssignedName && trait.name ? ` - ${trait.name}` : ''}`;
     section.querySelector('input[type="text"]').id = `trait${traitId}-name`;
+    section.querySelector('input[type="text"]').placeholder = `Trait ${index + 1}`; // Update placeholder
     section.querySelector('input[type="file"]').id = `trait${traitId}-files`;
     section.querySelector('.file-input-label').htmlFor = `trait${traitId}-files`;
     section.querySelector('.trait-grid').id = `trait${traitId}-grid`;
