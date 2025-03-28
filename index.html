@@ -73,112 +73,9 @@
       cursor: pointer;
       font-size: 16px;
       color: #666;
-      position: relative; /* For tooltip positioning */
     }
     .trait-controls span:hover {
       opacity: 0.8;
-    }
-    /* Custom tooltip for add-trait button */
-    .add-trait:hover::after {
-      content: 'Insert New Trait Here';
-      position: absolute;
-      top: -30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 5px;
-      font-size: 12px;
-      white-space: nowrap;
-      z-index: 1000;
-    }
-    .add-trait:hover::before {
-      content: '';
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 5px solid transparent;
-      border-top-color: #333;
-      z-index: 1000;
-    }
-    /* Custom tooltip for remove-trait button */
-    .remove-trait:hover::after {
-      content: 'Remove this Trait\nand its Variants';
-      position: absolute;
-      top: -40px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 5px;
-      font-size: 12px;
-      white-space: pre; /* Preserve line break */
-      line-height: 1.2; /* Ensure proper line spacing */
-      text-align: center;
-      z-index: 1000;
-    }
-    .remove-trait:hover::before {
-      content: '';
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 5px solid transparent;
-      border-top-color: #333;
-      z-index: 1000;
-    }
-    /* Custom tooltip for up-arrow button */
-    .up-arrow:hover::after {
-      content: attr(data-tooltip); /* Use data-tooltip attribute for dynamic text */
-      position: absolute;
-      top: -30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 5px;
-      font-size: 12px;
-      white-space: nowrap;
-      z-index: 1000;
-    }
-    .up-arrow:hover::before {
-      content: '';
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 5px solid transparent;
-      border-top-color: #333;
-      z-index: 1000;
-    }
-    /* Custom tooltip for down-arrow button */
-    .down-arrow:hover::after {
-      content: attr(data-tooltip); /* Use data-tooltip attribute for dynamic text */
-      position: absolute;
-      top: -30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 5px;
-      font-size: 12px;
-      white-space: nowrap;
-      z-index: 1000;
-    }
-    .down-arrow:hover::before {
-      content: '';
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 5px solid transparent;
-      border-top-color: #333;
-      z-index: 1000;
     }
     .trait-grid {
       display: grid;
@@ -346,8 +243,9 @@
     <h2>Preview Samples</h2>
     <div id="preview-samples-grid"></div>
     <button id="update-previews">Update</button>
-    <button id="mintButton">Mint NFT</button>
+    <button id="mintButton" onclick="mintNFT()">Mint NFT</button>
     <div id="mintFeeDisplay">Fetching mint fee...</div>
+    <div id="status"></div>
   </div>
 
   <style>
@@ -400,12 +298,15 @@
       margin-top: 10px;
       font-size: 14px;
     }
+    #status {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #333;
+    }
   </style>
 
   <div id="ai-background">
     <h2>AI Background</h2>
-    <label for="base-prompt">Basic Prompt:</label>
-    <textarea id="base-prompt" rows="5" cols="50">igirl, shinyang, ((small breasts))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,1:1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, cleavage cutout, bracelet, midriff, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right arm, (shoulder tattoo)</textarea>
     <label for="user-prompt">User Prompt:</label>
     <textarea id="user-prompt" rows="2" cols="50" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
     <button id="generate-background">Generate Bkgd</button>
