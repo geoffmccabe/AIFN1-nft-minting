@@ -28,7 +28,7 @@ const TraitManager = {
       name: '',
       variants: [],
       selected: 0,
-      zIndex: this.traits.length + 1 - position, // Higher position = lower zIndex
+      zIndex: this.traits.length + 1 - position,
       createdAt: Date.now()
     };
 
@@ -107,11 +107,12 @@ const TraitManager = {
       id: generateId(),
       name: variantData.name,
       url: variantData.url,
-      chance: variantData.chance || 0.5, // Default chance if not provided
+      chance: 0, // Will be calculated
       createdAt: Date.now()
     };
 
     trait.variants.push(newVariant);
+    this.calculateChances(trait);
     return newVariant;
   },
 
@@ -129,6 +130,9 @@ const TraitManager = {
     if (trait.selected >= trait.variants.length) {
       trait.selected = Math.max(0, trait.variants.length - 1);
     }
+
+    // Recalculate chances after removal
+    this.calculateChances(trait);
   },
 
   // Update the chance of a variant
@@ -142,6 +146,45 @@ const TraitManager = {
     variant.chance = chance;
   },
 
+  // Calculate chances for a trait's variants
+  calculateChances(trait) {
+    const numVariants = trait.variants.length;
+    if (numVariants === 0) return;
+
+    let chances = [];
+    if (numVariants === 1) {
+      chances = [100];
+    } else if (numVariants === 2) {
+      chances = [67, 23];
+    } else if (numVariants === 3) {
+      chances = [55, 30, 15];
+    } else {
+      // For 4 or more variants: 50%, 25%, 12.5%, 6.25%, etc.
+      chances = [];
+      let remaining = 100;
+      for (let i = 0; i < numVariants; i++) {
+        const chance = i === 0 ? 50 : chances[i - 1] / 2;
+        if (i === numVariants - 1) {
+          // Last variant gets the remaining percentage to sum to 100%
+          chances.push(remaining);
+        } else {
+          chances.push(chance);
+          remaining -= chance;
+        }
+      }
+      // Adjust the first chance to ensure the total sums to 100%
+      const total = chances.reduce((sum, chance) => sum + chance, 0);
+      if (total !== 100) {
+        chances[0] += 100 - total;
+      }
+    }
+
+    // Assign the calculated chances to the variants
+    trait.variants.forEach((variant, index) => {
+      variant.chance = chances[index];
+    });
+  },
+
   // Get a trait by ID
   getTrait(traitId) {
     return this.traits.find(t => t.id === traitId);
@@ -152,8 +195,6 @@ const TraitManager = {
     return [...this.traits];
   }
 };
-
-
 
 
 /* Section 2 - GLOBAL SETUP AND INITIALIZATION */
@@ -427,7 +468,7 @@ function addTrait(trait) {
   nameInput.type = 'text';
   nameInput.id = `trait${trait.id}-name`;
   nameInput.placeholder = `Trait Name (e.g., ${traitContainer.children.length + 1 === 1 ? 'Eyes' : traitContainer.children.length + 1 === 2 ? 'Hair' : 'Accessories'})`;
-  nameInput.value = trait.name || ''; // Restore the trait name
+  nameInput.value = trait.name || '';
 
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
@@ -473,24 +514,33 @@ function addTrait(trait) {
     traitContainer.appendChild(traitSection);
   }
 
-  const newTraitImage = document.createElement('img');
-  newTraitImage.id = `preview-trait${trait.id}`;
-  newTraitImage.src = '';
-  newTraitImage.alt = `Trait ${traitContainer.children.length}`; // Use DOM position
-  newTraitImage.style.zIndex = trait.zIndex;
-  traitImages.push(newTraitImage);
+  // Only create and append the preview image if a variant is selected
+  if (trait.variants.length > 0) {
+    const newTraitImage = document.createElement('img');
+    newTraitImage.id = `preview-trait${trait.id}`;
+    newTraitImage.src = trait.variants[trait.selected].url;
+    newTraitImage.alt = `Trait ${traitContainer.children.length}`;
+    newTraitImage.style.zIndex = trait.zIndex;
+    newTraitImage.style.visibility = 'visible';
+    traitImages.push(newTraitImage);
 
-  // Re-render all preview images in reverse order
-  if (preview) {
-    preview.innerHTML = '';
-    const reversedImages = traitImages.slice().reverse();
-    reversedImages.forEach(img => preview.appendChild(img));
+    // Re-render all preview images in reverse order
+    if (preview) {
+      preview.innerHTML = '';
+      const reversedImages = traitImages.slice().reverse();
+      reversedImages.forEach(img => preview.appendChild(img));
+    }
   }
 
   setupTraitListeners(trait.id);
   requestAnimationFrame(() => {
-    console.log(`Setting up drag-and-drop for new trait ${trait.id}, image:`, newTraitImage);
-    setupDragAndDrop(newTraitImage, traitImages.length - 1);
+    if (trait.variants.length > 0) {
+      const traitImage = document.getElementById(`preview-trait${trait.id}`);
+      if (traitImage) {
+        console.log(`Setting up drag-and-drop for new trait ${trait.id}, image:`, traitImage);
+        setupDragAndDrop(traitImage, traitImages.length - 1);
+      }
+    }
   });
   updateZIndices();
   updatePreviewSamples();
@@ -739,6 +789,14 @@ function refreshTraitGrid(traitId) {
     container.className = 'variation-container';
     container.dataset.traitId = traitId;
     container.dataset.variationId = variant.id;
+
+    // Add chance display if more than one variant
+    if (trait.variants.length > 1) {
+      const chanceDisplay = document.createElement('div');
+      chanceDisplay.className = 'variation-chance';
+      chanceDisplay.textContent = `CHANCE: ${variant.chance}%`;
+      container.appendChild(chanceDisplay);
+    }
 
     const imageWrapper = document.createElement('div');
     imageWrapper.className = 'variation-image-wrapper';
