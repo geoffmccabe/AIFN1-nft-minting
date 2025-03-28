@@ -160,7 +160,6 @@ const TraitManager = {
 
 
 
-
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
 let traitImages = [];
@@ -193,6 +192,16 @@ document.addEventListener('DOMContentLoaded', () => {
   traitContainer = document.getElementById('trait-container');
   previewSamplesGrid = document.getElementById('preview-samples-grid');
   updatePreviewsButton = document.getElementById('update-previews');
+
+  // Add error handling for missing DOM elements
+  if (!traitContainer) {
+    console.error('Error: trait-container element not found in the DOM');
+    return;
+  }
+  if (!previewSamplesGrid) {
+    console.error('Error: preview-samples-grid element not found in the DOM');
+    return;
+  }
 
   // Clear localStorage to start fresh with the new framework
   localStorage.clear();
