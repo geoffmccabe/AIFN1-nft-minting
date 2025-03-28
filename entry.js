@@ -26,6 +26,7 @@ const TraitManager = {
       id: generateId(),
       position: position,
       name: '',
+      isUserAssignedName: false, // Track if the name is user-assigned
       variants: [],
       selected: 0,
       zIndex: this.traits.length - position + 1, // Higher position = lower zIndex (e.g., TRAIT 1 on top)
@@ -223,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
       selectVariation(trait.id, trait.variants[0].id);
     }
   });
+  updateZIndices(); // Ensure zIndex is applied on initial load
   updatePreviewSamples();
 
   // Event listeners for global controls
@@ -279,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
 
 
 
@@ -556,6 +559,11 @@ function removeTrait(traitId) {
     traitContainer.innerHTML = '';
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
+      // Reset default name if not user-assigned
+      if (!trait.isUserAssignedName) {
+        const position = TraitManager.getAllTraits().indexOf(trait) + 1;
+        trait.name = `Trait ${position}`;
+      }
       addTrait(trait);
       refreshTraitGrid(trait.id);
       if (trait.variants.length > 0) {
@@ -594,6 +602,7 @@ function setupTraitListeners(traitId) {
     nameInput.addEventListener('input', () => {
       const trait = TraitManager.getTrait(traitId);
       trait.name = nameInput.value.trim();
+      trait.isUserAssignedName = true; // Mark the name as user-assigned
       // Update the headline
       const title = nameInput.parentElement.querySelector('h2');
       const position = Array.from(traitContainer.children).indexOf(nameInput.parentElement) + 1;
@@ -606,7 +615,7 @@ function setupTraitListeners(traitId) {
 
       const trait = TraitManager.getTrait(traitId);
       // Only set a default name if no name has been assigned
-      if (!trait.name) {
+      if (!trait.isUserAssignedName) {
         const traitName = nameInput.value.trim() || `Trait ${Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1}`;
         TraitManager.getTrait(traitId).name = traitName;
       }
@@ -689,6 +698,11 @@ function setupTraitListeners(traitId) {
       traitContainer.innerHTML = '';
       traitImages = [];
       TraitManager.getAllTraits().forEach(trait => {
+        // Reset default name if not user-assigned
+        if (!trait.isUserAssignedName) {
+          const position = TraitManager.getAllTraits().indexOf(trait) + 1;
+          trait.name = `Trait ${position}`;
+        }
         addTrait(trait);
         refreshTraitGrid(trait.id);
         if (trait.variants.length > 0) {
@@ -713,6 +727,11 @@ function setupTraitListeners(traitId) {
       traitContainer.innerHTML = '';
       traitImages = [];
       TraitManager.getAllTraits().forEach(trait => {
+        // Reset default name if not user-assigned
+        if (!trait.isUserAssignedName) {
+          const position = TraitManager.getAllTraits().indexOf(trait) + 1;
+          trait.name = `Trait ${position}`;
+        }
         addTrait(trait);
         refreshTraitGrid(trait.id);
         if (trait.variants.length > 0) {
@@ -734,6 +753,11 @@ function setupTraitListeners(traitId) {
         traitContainer.innerHTML = '';
         traitImages = [];
         TraitManager.getAllTraits().forEach(trait => {
+          // Reset default name if not user-assigned
+          if (!trait.isUserAssignedName) {
+            const position = TraitManager.getAllTraits().indexOf(trait) + 1;
+            trait.name = `Trait ${position}`;
+          }
           addTrait(trait);
           refreshTraitGrid(trait.id);
           if (trait.variants.length > 0) {
