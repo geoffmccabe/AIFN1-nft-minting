@@ -197,14 +197,18 @@ document.addEventListener('DOMContentLoaded', () => {
   localStorage.clear();
   variantHistories = {};
 
+  // Clear any stray elements in the preview panel
+  if (preview) {
+    preview.innerHTML = '';
+  }
+
   // Initialize TraitManager with 3 traits
   TraitManager.initialize();
 
   // Render initial traits and select their variants
   TraitManager.getAllTraits().forEach(trait => {
     addTrait(trait);
-    refreshTraitGrid(trait.id); // Ensure variants are rendered
-    // Select the first variant if available
+    refreshTraitGrid(trait.id);
     if (trait.variants.length > 0) {
       selectVariation(trait.id, trait.variants[0].id);
     }
@@ -374,6 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+
 /* Section 4 - TRAIT MANAGEMENT FUNCTIONS (PART 1) */
 
 
@@ -386,7 +392,10 @@ function addTrait(trait) {
   const traitHeader = document.createElement('div');
   traitHeader.className = 'trait-header';
   const title = document.createElement('h2');
-  title.textContent = `Trait ${trait.position}`;
+  title.textContent = `TRAIT ${traitContainer.children.length + 1}`; // Use DOM position for TRAIT [x]
+  if (trait.name) {
+    title.textContent += ` - ${trait.name}`;
+  }
   const controls = document.createElement('div');
   controls.className = 'trait-controls';
   const upArrow = document.createElement('span');
@@ -417,7 +426,8 @@ function addTrait(trait) {
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.id = `trait${trait.id}-name`;
-  nameInput.placeholder = `Trait Name (e.g., ${trait.position === 1 ? 'Eyes' : trait.position === 2 ? 'Hair' : 'Accessories'})`;
+  nameInput.placeholder = `Trait Name (e.g., ${traitContainer.children.length + 1 === 1 ? 'Eyes' : traitContainer.children.length + 1 === 2 ? 'Hair' : 'Accessories'})`;
+  nameInput.value = trait.name || ''; // Restore the trait name
 
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
@@ -466,7 +476,7 @@ function addTrait(trait) {
   const newTraitImage = document.createElement('img');
   newTraitImage.id = `preview-trait${trait.id}`;
   newTraitImage.src = '';
-  newTraitImage.alt = `Trait ${trait.position}`;
+  newTraitImage.alt = `Trait ${traitContainer.children.length}`; // Use DOM position
   newTraitImage.style.zIndex = trait.zIndex;
   traitImages.push(newTraitImage);
 
@@ -565,11 +575,20 @@ function setupTraitListeners(traitId) {
   const grid = document.getElementById(`trait${traitId}-grid`);
 
   if (fileInput && nameInput && grid && fileInputLabel && variantCountSpan) {
+    nameInput.addEventListener('input', () => {
+      const trait = TraitManager.getTrait(traitId);
+      trait.name = nameInput.value.trim();
+      // Update the headline
+      const title = nameInput.parentElement.querySelector('h2');
+      const position = Array.from(traitContainer.children).indexOf(nameInput.parentElement) + 1;
+      title.textContent = `TRAIT ${position}${trait.name ? ` - ${trait.name}` : ''}`;
+    });
+
     fileInput.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
 
-      const traitName = nameInput.value.trim() || `Trait ${TraitManager.getTrait(traitId).position}`;
+      const traitName = nameInput.value.trim() || `Trait ${Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1}`;
       TraitManager.getTrait(traitId).name = traitName;
       TraitManager.getTrait(traitId).variants = [];
 
@@ -767,7 +786,8 @@ function renumberTraits() {
   const sections = traitContainer.querySelectorAll('.trait-section');
   sections.forEach((section, index) => {
     const traitId = section.id.replace('trait', '');
-    section.querySelector('h2').textContent = `Trait ${index + 1}`;
+    const trait = TraitManager.getTrait(traitId);
+    section.querySelector('h2').textContent = `TRAIT ${index + 1}${trait.name ? ` - ${trait.name}` : ''}`;
     section.querySelector('input[type="text"]').id = `trait${traitId}-name`;
     section.querySelector('input[type="file"]').id = `trait${traitId}-files`;
     section.querySelector('.file-input-label').htmlFor = `trait${traitId}-files`;
@@ -784,6 +804,8 @@ function updateMintButton() {
   const mintBtn = document.getElementById('mintButton');
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
+
+
 
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
 
