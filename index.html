@@ -79,7 +79,7 @@
   .trait-controls {
     display: flex;
     gap: 10px;
-    position: relative; /* Added to ensure tooltips are positioned correctly */
+    position: relative;
   }
   .trait-controls span {
     cursor: pointer;
@@ -100,6 +100,12 @@
     flex-direction: column;
     align-items: center;
     cursor: pointer;
+  }
+  .variation-chance {
+    font-size: 10px;
+    text-align: center;
+    margin-bottom: 5px;
+    color: #666;
   }
   .variation-image-wrapper {
     width: 110px;
@@ -151,10 +157,10 @@
     line-height: 22px;
     box-sizing: border-box;
     text-align: center;
-    min-width: 120px; /* Minimum width for "Choose Files" */
-    width: auto; /* Allow width to grow */
-    white-space: nowrap; /* Prevent text wrapping */
-    vertical-align: middle; /* Ensure alignment with input */
+    min-width: 120px;
+    width: auto;
+    white-space: nowrap;
+    vertical-align: middle;
   }
   .file-input-label:hover {
     background: #bbb;
@@ -461,7 +467,7 @@
 
   
 <body>
-  <div id="version">Version 91</div>
+  <div id="version">Version 92</div>
   <div id="left-panel">
     <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
     <div id="trait-container">
