@@ -23,6 +23,7 @@
     margin: 0;
     position: relative;
     min-height: 100vh;
+    display: flex;
   }
   #version {
     position: absolute;
@@ -32,18 +33,23 @@
     color: #333;
     z-index: 10;
   }
-  #panel-container {
-    width: 100%;
-    position: relative;
+  #left-column {
+    flex: 2;
+    padding-right: 20px;
+    padding-top: 30px;
+  }
+  #right-column {
+    flex: 1;
+    padding-left: 20px;
   }
   .panel {
     background-color: #f0f0f0;
     border-radius: 10px;
     padding: 10px;
     border: 1px solid #ccc;
-    width: 300px;
+    width: 100%;
     box-sizing: border-box;
-    cursor: grab;
+    margin-bottom: 20px;
   }
   .panel h2 {
     font-family: 'Rowdies', sans-serif;
@@ -53,7 +59,7 @@
   }
   #logo {
     display: block;
-    margin: 0 auto;
+    margin: 0 auto 20px;
     width: 100%;
     max-width: 600px;
     height: auto;
@@ -208,13 +214,12 @@
   }
   #preview {
     position: relative;
-    width: 600px;
+    width: 100%;
     height: 600px;
     background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
     background-size: cover;
     margin-bottom: 10px;
     overflow: hidden;
-    max-width: 100%;
   }
   #preview img {
     position: absolute;
@@ -270,7 +275,7 @@
     grid-template-columns: repeat(4, 140px);
     grid-template-rows: repeat(4, 140px);
     gap: 13px;
-    width: 600px;
+    width: 100%;
   }
   #preview-samples-grid .sample-container {
     position: relative;
@@ -317,10 +322,10 @@
     text-align: center;
   }
   #background-image {
-    width: 600px;
+    width: 100%;
     height: 600px;
     background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: 600px 600px;
+    background-size: cover;
   }
   button {
     padding: 10px 20px;
@@ -380,41 +385,17 @@
   .confirmation-dialog .no-button {
     background: #ae645a;
   }
-  .tab-bar {
-    margin-bottom: 10px;
-  }
-  .tab {
-    display: inline-block;
-    padding: 5px 10px;
-    cursor: pointer;
-    background: #ddd;
-    border-radius: 5px 5px 0 0;
-    margin-right: 5px;
-  }
-  .tab:hover {
-    background: #ccc;
-  }
   @media (max-width: 900px) {
-    body { padding: 10px; }
-    .panel {
-      position: static;
-      width: 100%;
-      margin-bottom: 20px;
-    }
-    #preview, #background-image {
-      width: 100%;
-      height: auto;
-      aspect-ratio: 1 / 1;
-    }
-    #preview-samples-grid { 
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-      width: 100%; 
-    }
+    body { flex-direction: column; padding: 10px; }
+    #left-column, #right-column { flex: none; width: 100%; padding: 0; }
+    #preview, #background-image { height: auto; aspect-ratio: 1 / 1; }
+    #preview-samples-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
   }
 </style>
 
 <body>
   <div id="version">Version 93</div>
-  <div id="panel-container"></div>
+  <div id="left-column"></div>
+  <div id="right-column"></div>
 </body>
 </html>
