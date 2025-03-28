@@ -28,7 +28,7 @@ const TraitManager = {
       name: '',
       variants: [],
       selected: 0,
-      zIndex: this.traits.length + 1 - position, // Higher position = lower zIndex
+      zIndex: position, // Higher position = higher zIndex (e.g., TRAIT 3 on top)
       createdAt: Date.now()
     };
 
@@ -36,7 +36,7 @@ const TraitManager = {
     this.traits.forEach(trait => {
       if (trait.position >= position) {
         trait.position++;
-        trait.zIndex = this.traits.length + 1 - trait.position;
+        trait.zIndex = trait.position; // Update zIndex to match new position
       }
     });
 
@@ -61,7 +61,7 @@ const TraitManager = {
     this.traits.forEach(trait => {
       if (trait.position > removedPosition) {
         trait.position--;
-        trait.zIndex = this.traits.length + 1 - trait.position;
+        trait.zIndex = trait.position; // Update zIndex to match new position
       }
     });
   },
@@ -94,7 +94,7 @@ const TraitManager = {
     // Sort traits by position and update zIndex
     this.traits.sort((a, b) => a.position - b.position);
     this.traits.forEach((t, idx) => {
-      t.zIndex = this.traits.length - idx;
+      t.zIndex = t.position; // Higher position = higher zIndex
     });
   },
 
@@ -152,7 +152,6 @@ const TraitManager = {
     return [...this.traits];
   }
 };
-
 
 
 
@@ -473,24 +472,42 @@ function addTrait(trait) {
     traitContainer.appendChild(traitSection);
   }
 
-  const newTraitImage = document.createElement('img');
-  newTraitImage.id = `preview-trait${trait.id}`;
-  newTraitImage.src = '';
-  newTraitImage.alt = `Trait ${traitContainer.children.length}`; // Use DOM position
-  newTraitImage.style.zIndex = trait.zIndex;
-  traitImages.push(newTraitImage);
+  // Only create and append the preview image if a variant is selected
+  if (trait.variants.length > 0) {
+    const newTraitImage = document.createElement('img');
+    newTraitImage.id = `preview-trait${trait.id}`;
+    newTraitImage.src = trait.variants[trait.selected].url;
+    newTraitImage.alt = `Trait ${traitContainer.children.length}`;
+    newTraitImage.style.zIndex = trait.zIndex;
+    newTraitImage.style.visibility = 'visible';
+    traitImages.push(newTraitImage);
 
-  // Re-render all preview images in reverse order
-  if (preview) {
-    preview.innerHTML = '';
-    const reversedImages = traitImages.slice().reverse();
-    reversedImages.forEach(img => preview.appendChild(img));
+    // Re-render all preview images in order of position (lowest to highest)
+    if (preview) {
+      preview.innerHTML = '';
+      const sortedImages = traitImages
+        .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx].position }))
+        .sort((a, b) => a.position - b.position); // Sort by position (ascending)
+      sortedImages.forEach(({ img }) => preview.appendChild(img));
+    }
+  } else {
+    // Create the image element but don't append it yet
+    const newTraitImage = document.createElement('img');
+    newTraitImage.id = `preview-trait${trait.id}`;
+    newTraitImage.src = '';
+    newTraitImage.alt = `Trait ${traitContainer.children.length}`;
+    newTraitImage.style.zIndex = trait.zIndex;
+    newTraitImage.style.visibility = 'hidden';
+    traitImages.push(newTraitImage);
   }
 
   setupTraitListeners(trait.id);
   requestAnimationFrame(() => {
-    console.log(`Setting up drag-and-drop for new trait ${trait.id}, image:`, newTraitImage);
-    setupDragAndDrop(newTraitImage, traitImages.length - 1);
+    const traitImage = document.getElementById(`preview-trait${trait.id}`);
+    if (traitImage && traitImage.src) {
+      console.log(`Setting up drag-and-drop for new trait ${trait.id}, image:`, traitImage);
+      setupDragAndDrop(traitImage, traitImages.length - 1);
+    }
   });
   updateZIndices();
   updatePreviewSamples();
@@ -559,8 +576,6 @@ function removeTrait(traitId) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
-
-
 
 
 /* Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) */
@@ -1027,8 +1042,8 @@ function updatePreviewSamples() {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
 
-    // Render traits in reverse order (highest position first) to ensure correct stacking
-    const traits = TraitManager.getAllTraits().slice().reverse();
+    // Render traits in order of position (lowest to highest) to ensure correct stacking
+    const traits = TraitManager.getAllTraits().slice().sort((a, b) => a.position - b.position);
     for (let j = 0; j < traits.length; j++) {
       const trait = traits[j];
       if (trait.variants.length === 0) continue;
@@ -1109,7 +1124,6 @@ function updatePreviewSamples() {
     previewSamplesGrid.appendChild(sampleContainer);
   }
 }
-
 
 
 /* Section 8 - BACKGROUND GENERATION AND MINTING */
