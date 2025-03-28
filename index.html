@@ -346,6 +346,57 @@
   #update-previews:hover {
     background: #bbb;
   }
+  #show-200-samples {
+    padding: 5px 8px;
+    background: #ccc;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 50px;
+    text-align: center;
+  }
+  #show-200-samples:hover {
+    background: #bbb;
+  }
+  #large-preview-samples {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95vw;
+    height: auto;
+    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: cover;
+    border: 1px solid black;
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  #large-preview-samples-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  #large-preview-samples-grid .sample-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: 140px 140px;
+    border: 1px solid black;
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  #large-preview-samples-grid img {
+    position: absolute;
+    transform: scale(0.23333);
+    transform-origin: top left;
+  }
 </style>
 
 
@@ -462,19 +513,38 @@
 
 
 
-<!-- Section 5 - BODY OPENING AND LEFT PANEL -->
+<!-- Section 5 - HTML - RIGHT SIDE (PREVIEWS) -->
 
+
+
+<div id="right-panel">
+  <h2>PREVIEW</h2>
+  <div id="preview"></div>
+  <div id="controls">
+    <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
+    <button class="direction-emoji" data-direction="up">⬆️</button>
+    <button class="direction-emoji" data-direction="down">⬇️</button>
+    <button class="direction-emoji" data-direction="left">⬅️</button>
+    <button class="direction-emoji" data-direction="right">➡️</button>
+    <button class="magnify-emoji">🔍</button>
+  </div>
+  <div id="preview-samples">
+    <div id="preview-samples-header">
+      <h2>PREVIEW SAMPLES</h2>
+      <div>
+        <button id="show-200-samples">200</button>
+        <button id="update-previews">UPDATE</button>
+      </div>
+    </div>
+    <div id="preview-samples-grid"></div>
+  </div>
+  <div id="enlarged-preview"></div>
+  <div id="large-preview-samples">
+    <div id="large-preview-samples-grid"></div>
+  </div>
+</div>
 
   
-<body>
-  <div id="version">Version 93</div>
-  <div id="left-panel">
-    <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
-    <div id="trait-container">
-      <!-- Trait groups will be added dynamically -->
-    </div>
-
-
 
 <!-- Section 6 - BACKGROUND SECTION -->
 
