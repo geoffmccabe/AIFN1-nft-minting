@@ -564,6 +564,8 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
+
+
 /* Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) */
 
 
@@ -584,18 +586,12 @@ function setupTraitListeners(traitId) {
       title.textContent = `TRAIT ${position}${trait.name ? ` - ${trait.name}` : ''}`;
     });
 
-    // Ensure name is saved before operations that trigger re-rendering
-    const saveNameBeforeOperation = () => {
-      const trait = TraitManager.getTrait(traitId);
-      trait.name = nameInput.value.trim();
-    };
-
     fileInput.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
 
-      // Only set a default name if no name has been assigned
       const trait = TraitManager.getTrait(traitId);
+      // Only set a default name if no name has been assigned
       if (!trait.name) {
         const traitName = nameInput.value.trim() || `Trait ${Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1}`;
         TraitManager.getTrait(traitId).name = traitName;
@@ -667,7 +663,6 @@ function setupTraitListeners(traitId) {
     const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitId}"]`);
 
     upArrow.addEventListener('click', () => {
-      saveNameBeforeOperation();
       const trait = TraitManager.getTrait(traitId);
       if (trait.position === 1) {
         const lastPosition = TraitManager.getAllTraits().length;
@@ -692,7 +687,6 @@ function setupTraitListeners(traitId) {
     });
 
     downArrow.addEventListener('click', () => {
-      saveNameBeforeOperation();
       const trait = TraitManager.getTrait(traitId);
       const lastPosition = TraitManager.getAllTraits().length;
       if (trait.position === lastPosition) {
@@ -717,7 +711,6 @@ function setupTraitListeners(traitId) {
     });
 
     addTraitBtn.addEventListener('click', () => {
-      saveNameBeforeOperation();
       if (TraitManager.getAllTraits().length < 20) {
         const trait = TraitManager.getTrait(traitId);
         const newPosition = trait.position;
@@ -739,10 +732,7 @@ function setupTraitListeners(traitId) {
       }
     });
 
-    removeTraitBtn.addEventListener('click', () => {
-      saveNameBeforeOperation();
-      removeTrait(traitId);
-    });
+    removeTraitBtn.addEventListener('click', () => removeTrait(traitId));
   }
 }
 
@@ -826,7 +816,10 @@ function updateMintButton() {
 }
 
 
+
+
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
+
 
 
 
