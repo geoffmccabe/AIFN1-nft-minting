@@ -282,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
 /* Section 3 - GLOBAL EVENT LISTENERS */
 
 
@@ -1139,6 +1138,8 @@ function updatePreviewSamples() {
 
 /* Section 8 - BACKGROUND GENERATION AND MINTING */
 
+
+  
 
 
 async function fetchBackground() {
