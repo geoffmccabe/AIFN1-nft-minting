@@ -268,7 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
 /* Section 3 - GLOBAL EVENT LISTENERS */
 
 
@@ -291,14 +290,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     traitImages.forEach(img => {
-      if (img && img.style.display === 'block') {
+      if (img && img.src && img.style.visibility !== 'hidden') { // Check for src and visibility
         const clonedImg = img.cloneNode(true);
-        clonedImg.style.display = 'block';
         clonedImg.style.width = `${img.width * scale}px`;
         clonedImg.style.height = `${img.height * scale}px`;
         clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
         clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
         clonedImg.style.zIndex = img.style.zIndex;
+        clonedImg.style.visibility = 'visible'; // Ensure cloned image is visible
         enlargedPreview.appendChild(clonedImg);
       }
     });
@@ -327,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentImage.style.top = `${previousPosition.top}px`;
         localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
         updateCoordinates(currentImage);
-        updateSamplePositions(trait.id, variationName, previousPosition);
+        updateSamplePositions(trait.id, trait.variants[trait.selected].id, previousPosition);
         updateSubsequentTraits(trait.id, variationName, previousPosition);
       }
     }
@@ -374,8 +373,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-
-
 
 /* Section 4 - TRAIT MANAGEMENT FUNCTIONS (PART 1) */
 
