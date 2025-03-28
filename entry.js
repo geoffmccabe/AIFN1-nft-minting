@@ -12,11 +12,11 @@ function generateId() {
 const TraitManager = {
   traits: [],
 
-  // Initialize with 3 empty traits
+  // Initialize with 3 empty traits in descending position order
   initialize() {
     this.traits = [];
-    for (let i = 0; i < 3; i++) {
-      this.addTrait(i + 1);
+    for (let i = 3; i >= 1; i--) { // Start with position 3, then 2, then 1
+      this.addTrait(i);
     }
   },
 
@@ -29,7 +29,6 @@ const TraitManager = {
       isUserAssignedName: false, // Track if the name is user-assigned
       variants: [],
       selected: 0,
-      zIndex: this.traits.length - position + 1, // Higher position = lower zIndex (e.g., TRAIT 1 on top)
       createdAt: Date.now()
     };
 
@@ -37,13 +36,12 @@ const TraitManager = {
     this.traits.forEach(trait => {
       if (trait.position >= position) {
         trait.position++;
-        trait.zIndex = this.traits.length - trait.position + 1; // Update zIndex to match new position
       }
     });
 
     // Add the new trait
     this.traits.push(newTrait);
-    this.traits.sort((a, b) => a.position - b.position);
+    this.traits.sort((a, b) => a.position - b.position); // Sort by position (ascending)
     return newTrait;
   },
 
@@ -62,7 +60,6 @@ const TraitManager = {
     this.traits.forEach(trait => {
       if (trait.position > removedPosition) {
         trait.position--;
-        trait.zIndex = this.traits.length - trait.position + 1; // Update zIndex to match new position
       }
     });
   },
@@ -92,11 +89,18 @@ const TraitManager = {
     // Update the trait's position
     trait.position = newPosition;
 
-    // Sort traits by position and update zIndex
+    // Sort traits by position (ascending)
     this.traits.sort((a, b) => a.position - b.position);
-    this.traits.forEach((t, idx) => {
-      t.zIndex = this.traits.length - t.position + 1; // Higher position = lower zIndex
+
+    // Re-sort traitImages to match the new trait order
+    const sortedTraits = this.getAllTraits();
+    const newTraitImages = [];
+    sortedTraits.forEach(trait => {
+      const img = traitImages.find(img => img.id === `preview-trait${trait.id}`);
+      if (img) newTraitImages.push(img);
     });
+    traitImages.length = 0; // Clear the array
+    traitImages.push(...newTraitImages); // Re-populate in correct order
   },
 
   // Add a variant to a trait
@@ -317,7 +321,6 @@ document.addEventListener('DOMContentLoaded', () => {
         clonedImg.style.height = `${img.height * scale}px`;
         clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
         clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
-        clonedImg.style.zIndex = String(img.style.zIndex); // Ensure zIndex is a string
         clonedImg.style.visibility = 'visible'; // Ensure cloned image is visible
         enlargedPreview.appendChild(clonedImg);
       }
@@ -581,7 +584,6 @@ function removeTrait(traitId) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
-
 
 
 
