@@ -486,6 +486,7 @@ function removeTrait(traitId) {
   noButton.textContent = 'N';
 
   yesButton.addEventListener('click', () => {
+    console.log(`Yes clicked for trait ${traitId}`);
     TraitManager.removeTrait(traitId);
 
     const traitSection = document.getElementById(`trait${traitId}`);
@@ -519,10 +520,14 @@ function removeTrait(traitId) {
     });
 
     updatePreviewSamples();
-    confirmationDialog.remove(); // Fix: Remove dialog after "Y" click
+    console.log('Removing confirmation dialog after Yes');
+    confirmationDialog.remove(); // Ensure removal after all operations
   });
 
-  noButton.addEventListener('click', () => confirmationDialog.remove());
+  noButton.addEventListener('click', () => {
+    console.log('No clicked, removing dialog');
+    confirmationDialog.remove();
+  });
 
   buttonsDiv.appendChild(yesButton);
   buttonsDiv.appendChild(noButton);
