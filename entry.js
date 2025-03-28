@@ -214,7 +214,7 @@ let timerInterval = null;
 let lastUndoTime = 0;
 let autoPositioned = new Array(20).fill(false);
 let sampleData = Array(16).fill(null).map(() => []);
-let preview, coordinates, directionEmojis, magnifyEmoji, enlargedPreview, generateButton, traitContainer, previewSamplesGrid, updatePreviewsButton;
+let preview, coordinates, directionEmojis, magnifyEmoji, enlargedPreview, generateButton, traitContainer, previewSamplesGrid, updatePreviewsButton, show200SamplesButton;
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
 
@@ -233,6 +233,13 @@ document.addEventListener('DOMContentLoaded', () => {
   traitContainer = document.getElementById('trait-container');
   previewSamplesGrid = document.getElementById('preview-samples-grid');
   updatePreviewsButton = document.getElementById('update-previews');
+  show200SamplesButton = document.getElementById('show-200-samples');
+
+  // Ensure traitContainer exists before proceeding
+  if (!traitContainer) {
+    console.error('trait-container element not found in the DOM');
+    return;
+  }
 
   // Clear localStorage to start fresh with the new framework
   localStorage.clear();
@@ -259,6 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event listeners for global controls
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
   generateButton.addEventListener('click', fetchBackground);
+  show200SamplesButton.addEventListener('click', showLargePreviewSamples);
 
   // Set up drag-and-drop for direction emojis
   directionEmojis.forEach(emoji => {
