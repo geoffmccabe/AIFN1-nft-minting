@@ -1,5 +1,7 @@
 <!-- Section 1 - HTML HEADER AND METADATA -->
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,10 +17,12 @@
   <script src="entry.js"></script>
 </head>
 
+
+
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
-<body>
-  <div id="version">Version 93</div>
+
+
 <style>
   body {
     font-family: 'Poppins', sans-serif;
@@ -75,7 +79,7 @@
   .trait-controls {
     display: flex;
     gap: 10px;
-    position: relative;
+    position: relative; /* Added to ensure tooltips are positioned correctly */
   }
   .trait-controls span {
     cursor: pointer;
@@ -96,13 +100,6 @@
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-  }
-  .variation-chance {
-    font-size: 8px;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 5px;
-    color: #666;
   }
   .variation-image-wrapper {
     width: 110px;
@@ -154,10 +151,10 @@
     line-height: 22px;
     box-sizing: border-box;
     text-align: center;
-    min-width: 120px;
-    width: auto;
-    white-space: nowrap;
-    vertical-align: middle;
+    min-width: 120px; /* Minimum width for "Choose Files" */
+    width: auto; /* Allow width to grow */
+    white-space: nowrap; /* Prevent text wrapping */
+    vertical-align: middle; /* Ensure alignment with input */
   }
   .file-input-label:hover {
     background: #bbb;
@@ -214,7 +211,11 @@
   }
 </style>
 
+
+
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
+
+
 
 <style>
   #right-panel {
@@ -339,61 +340,14 @@
   #update-previews:hover {
     background: #bbb;
   }
-  #show-200-samples {
-    padding: 5px 8px;
-    background: #ccc;
-    color: black;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    width: 50px;
-    text-align: center;
-  }
-  #show-200-samples:hover {
-    background: #bbb;
-  }
-  #large-preview-samples {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 95vw;
-    height: auto;
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: cover;
-    border: 1px solid black;
-    z-index: 1000;
-    overflow-y: auto;
-    padding: 10px;
-    box-sizing: border-box;
-  }
-  #large-preview-samples-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
-  }
-  #large-preview-samples-grid .sample-container {
-    position: relative;
-    width: 140px;
-    height: 140px;
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: 140px 140px;
-    border: 1px solid black;
-    border-radius: 5px;
-    overflow: hidden;
-    cursor: pointer;
-  }
-  #large-preview-samples-grid img {
-    position: absolute;
-    transform: scale(0.23333);
-    transform-origin: top left;
-  }
 </style>
+
+
 
 <!-- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -->
 
+
+  
 <style>
   #background-section h2 {
     font-family: 'Rowdies', sans-serif;
@@ -500,59 +454,86 @@
   }
 </style>
 
-<!-- Section 5 - HTML - LEFT SIDE (TRAITS) -->
 
-<div id="left-panel">
-  <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/PERCEPTRON-NETWORK-PERC-CREATOR-Logo-600px.webp" alt="PERCEPTRON NETWORK PERC CREATOR Logo">
-  <div id="trait-container"></div>
-  <h2>AI BACKGROUND</h2>
-  <p><strong>Basic Prompt:</strong> girl, shinyang, ((small breasts)), white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo, golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail cutout, cleavage cutout, midriff, cheongsam top, choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, (asian girl), action pose, white skull belt buckle, black dragon tattoo on right shoulder, black dragon tattoo on right arm</p>
-  <p><strong>User Prompt:</strong></p>
-  <textarea id="user-prompt" placeholder="add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
-  <button id="generate-background">Generate Bkgd</button>
-</div>
 
-<!-- Section 6 - HTML - RIGHT SIDE (PREVIEWS) -->
+<!-- Section 5 - BODY OPENING AND LEFT PANEL -->
 
-<div id="right-panel">
-  <h2>PREVIEW</h2>
-  <div id="preview"></div>
-  <div id="controls">
-    <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
-    <button class="direction-emoji" data-direction="up">⬆️</button>
-    <button class="direction-emoji" data-direction="down">⬇️</button>
-    <button class="direction-emoji" data-direction="left">⬅️</button>
-    <button class="direction-emoji" data-direction="right">➡️</button>
-    <button class="magnify-emoji">🔍</button>
-  </div>
-  <div id="preview-samples">
-    <div id="preview-samples-header">
-      <h2>PREVIEW SAMPLES</h2>
-      <div>
-        <button id="show-200-samples">200</button>
-        <button id="update-previews">UPDATE</button>
+
+  
+<body>
+  <div id="version">Version 91</div>
+  <div id="left-panel">
+    <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
+    <div id="trait-container">
+      <!-- Trait groups will be added dynamically -->
+    </div>
+
+
+
+<!-- Section 6 - BACKGROUND SECTION -->
+
+
+    
+    <div id="background-section">
+      <h2>AI Background</h2>
+      <div id="prompt-section">
+        <label for="base-prompt">Basic Prompt:</label>
+        <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
+        <label for="user-prompt">User Prompt:</label>
+        <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
+      </div>
+      <button id="generate-background">Generate Bkgd</button>
+      <div id="background-details">
+        <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
+        <p id="background-metadata">Loading...</p>
       </div>
     </div>
-    <div id="preview-samples-grid"></div>
-  </div>
-  <div id="enlarged-preview"></div>
-  <div id="large-preview-samples">
-    <div id="large-preview-samples-grid"></div>
-  </div>
-</div>
 
-<!-- Section 7 - HTML - BOTTOM (AI BACKGROUND AND MINT) -->
 
-<div id="background-section">
-  <div id="background-details">
-    <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
-    <p id="background-metadata">Loading...</p>
-  </div>
-  <div id="mint-section">
-    <button id="mintButton" disabled>Mint NFT</button>
-    <div id="mintFeeDisplay">Mint Fee: Loading...</div>
-  </div>
-</div>
 
+<!-- Section 7 - MINT SECTION -->
+
+
+    
+    <div id="mint-section">
+      <button id="mintButton" disabled>Mint NFT</button>
+      <div id="mintFeeDisplay">Mint Fee: Loading...</div>
+    </div>
+  </div>
+
+
+
+<!-- Section 8 - RIGHT PANEL -->
+
+
+  
+  <div id="right-panel">
+    <h2>Preview</h2>
+    <div id="preview">
+      <!-- Preview images will be added dynamically -->
+    </div>
+    <div id="controls">
+      <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
+      <span>   </span>
+      <span class="direction-emoji" data-direction="up">⬆️</span>
+      <span class="direction-emoji" data-direction="down">⬇️</span>
+      <span class="direction-emoji" data-direction="left">⬅️</span>
+      <span class="direction-emoji" data-direction="right">➡️</span>
+      <span class="magnify-emoji">🔍</span>
+    </div>
+    <div id="preview-samples">
+      <div id="preview-samples-header">
+        <h2>PREVIEW SAMPLES</h2>
+        <button id="update-previews">UPDATE</button>
+      </div>
+      <div id="preview-samples-grid">
+        <!-- 5x4 grid of preview samples will be added dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <div id="enlarged-preview">
+    <!-- Enlarged preview images will be added dynamically -->
+  </div>
 </body>
 </html>
