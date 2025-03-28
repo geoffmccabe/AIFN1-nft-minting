@@ -592,7 +592,7 @@ function setupTraitListeners(traitId) {
       TraitManager.getTrait(traitId).name = traitName;
       TraitManager.getTrait(traitId).variants = [];
 
-      grid.innerHTML = '';
+      grid.innerHTML = ''; // Clear the grid before adding new variants
       for (const file of files) {
         const variationName = file.name.split('.').slice(0, -1).join('.');
         const url = URL.createObjectURL(file);
@@ -636,8 +636,10 @@ function setupTraitListeners(traitId) {
         }
       }
 
+      // After adding variants, select the first one and update the UI
       if (TraitManager.getTrait(traitId).variants.length > 0) {
-        selectVariation(traitId, TraitManager.getTrait(traitId).variants[0].id);
+        const firstVariant = TraitManager.getTrait(traitId).variants[0];
+        selectVariation(traitId, firstVariant.id);
         const firstWrapper = grid.querySelector('.variation-image-wrapper');
         if (firstWrapper) firstWrapper.classList.add('selected');
         autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
@@ -771,7 +773,9 @@ function refreshTraitGrid(traitId) {
   if (selectedWrapper) selectedWrapper.classList.add('selected');
 
   const previewImage = document.getElementById(`preview-trait${traitId}`);
-  if (previewImage && previewImage.src && trait.variants[trait.selected]) {
+  if (previewImage && trait.variants[trait.selected]) {
+    previewImage.src = trait.variants[trait.selected].url;
+    previewImage.style.visibility = 'visible';
     const key = `${traitId}-${trait.variants[trait.selected].name}`;
     const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[trait.selected].name}-position`);
     if (savedPosition) {
