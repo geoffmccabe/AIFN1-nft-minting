@@ -800,13 +800,16 @@ function updateMintButton() {
 
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
 
+
+
+
 function updateZIndices() {
   traitImages.forEach((img, index) => {
     if (img) {
       const trait = TraitManager.getAllTraits()[index];
-      // Fix: Higher position = higher z-index, TRAIT 1 (position 1) on bottom
-      img.style.zIndex = String(trait.position);
-      console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${trait.position}`);
+      // Fix: Lower position = higher z-index, TRAIT 1 on top
+      img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
+      console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${TraitManager.getAllTraits().length - trait.position + 1}`);
     }
   });
   if (preview) preview.offsetHeight;
@@ -876,7 +879,6 @@ function setupDragAndDrop(img, traitIndex) {
       updateCoordinates(img);
     });
 
-    // Mouseup moved to global listener in Section 3
     img.addEventListener('click', () => {
       if (img.src !== '') {
         currentImage = img;
