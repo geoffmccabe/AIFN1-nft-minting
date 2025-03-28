@@ -1,7 +1,5 @@
 <!-- Section 1 - HTML HEADER AND METADATA -->
 
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,12 +14,10 @@
   <script src="config.js"></script>
   <script src="entry.js"></script>
 </head>
-
-
+<body>
+  <span id="version">Version 88</span>
 
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
-
-
 
 <style>
   body {
@@ -218,10 +214,7 @@
   }
 </style>
 
-
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
-
-
 
 <style>
   #right-panel {
@@ -399,123 +392,19 @@
   }
 </style>
 
+<!-- Section 4 - HTML - LEFT SIDE (TRAITS) -->
 
-
-<!-- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -->
-
-
-  
-<style>
-  #background-section h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
-    text-align: center;
-    margin: 0 0 10px;
-  }
-  #prompt-section {
-    margin-top: 10px;
-  }
-  #prompt-section p {
-    margin: 5px 0;
-  }
-  #prompt-section textarea {
-    width: 100%;
-    height: 140px;
-    resize: none;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-  }
-  #prompt-section label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-  #background-details {
-    text-align: center;
-  }
-  #background-image {
-    width: 600px;
-    height: 600px;
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: 600px 600px;
-    border-radius: 10px;
-    border: 1px solid black;
-  }
-  button {
-    padding: 10px 20px;
-    background: grey;
-    color: black;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    border-radius: 5px;
-    margin: 10px 0;
-  }
-  button:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-  button:not(:disabled) {
-    background: #4CAF50;
-  }
-  #mint-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  #mintFeeDisplay {
-    font-size: 14px;
-  }
-  .confirmation-dialog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    z-index: 1000;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  .confirmation-dialog p {
-    margin: 0 0 10px;
-    text-align: center;
-  }
-  .confirmation-dialog .buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-  }
-  .confirmation-dialog button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  .confirmation-dialog .yes-button {
-    background: #739c6c;
-  }
-  .confirmation-dialog .no-button {
-    background: #ae645a;
-  }
-  @media (max-width: 900px) {
-    body { flex-direction: column; }
-    #left-panel, #right-panel { width: 100%; padding: 10px; }
-    #preview { width: 100%; height: auto; aspect-ratio: 1 / 1; }
-    #logo { width: 100%; max-width: 600px; }
-    #preview-samples-grid { 
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-      width: 100%; 
-    }
-  }
-</style>
-
-
+<div id="left-panel">
+  <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/PERCEPTRON-NETWORK-PERC-CREATOR-Logo-600px.webp" alt="PERCEPTRON NETWORK PERC CREATOR Logo">
+  <div id="trait-container"></div>
+  <h2>AI BACKGROUND</h2>
+  <p><strong>Basic Prompt:</strong> girl, shinyang, ((small breasts)), white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo, golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail cutout, cleavage cutout, midriff, cheongsam top, choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, (asian girl), action pose, white skull belt buckle, black dragon tattoo on right shoulder, black dragon tattoo on right arm</p>
+  <p><strong>User Prompt:</strong></p>
+  <textarea id="user-prompt" placeholder="add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
+  <button id="generate-background">Generate Bkgd</button>
+</div>
 
 <!-- Section 5 - HTML - RIGHT SIDE (PREVIEWS) -->
-
-
 
 <div id="right-panel">
   <h2>PREVIEW</h2>
@@ -544,72 +433,26 @@
   </div>
 </div>
 
-  
+<!-- Section 6 - HTML - BOTTOM (AI BACKGROUND AND MINT) -->
 
-<!-- Section 6 - BACKGROUND SECTION -->
-
-
-    
-    <div id="background-section">
-      <h2>AI Background</h2>
-      <div id="prompt-section">
-        <label for="base-prompt">Basic Prompt:</label>
-        <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
-        <label for="user-prompt">User Prompt:</label>
-        <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
-      </div>
-      <button id="generate-background">Generate Bkgd</button>
-      <div id="background-details">
-        <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
-        <p id="background-metadata">Loading...</p>
-      </div>
-    </div>
-
-
-
-<!-- Section 7 - MINT SECTION -->
-
-
-    
-    <div id="mint-section">
-      <button id="mintButton" disabled>Mint NFT</button>
-      <div id="mintFeeDisplay">Mint Fee: Loading...</div>
-    </div>
+<div id="background-section">
+  <h2>AI BACKGROUND</h2>
+  <div id="prompt-section">
+    <label for="base-prompt">Basic Prompt:</label>
+    <textarea id="base-prompt" readonly>girl, shinyang, ((small breasts)), white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo, golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail cutout, cleavage cutout, midriff, cheongsam top, choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, (asian girl), action pose, white skull belt buckle, black dragon tattoo on right shoulder, black dragon tattoo on right arm</textarea>
+    <label for="user-prompt">User Prompt:</label>
+    <textarea id="user-prompt" placeholder="add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
   </div>
-
-
-
-<!-- Section 8 - RIGHT PANEL -->
-
-
-  
-  <div id="right-panel">
-    <h2>Preview</h2>
-    <div id="preview">
-      <!-- Preview images will be added dynamically -->
-    </div>
-    <div id="controls">
-      <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
-      <span>   </span>
-      <span class="direction-emoji" data-direction="up">⬆️</span>
-      <span class="direction-emoji" data-direction="down">⬇️</span>
-      <span class="direction-emoji" data-direction="left">⬅️</span>
-      <span class="direction-emoji" data-direction="right">➡️</span>
-      <span class="magnify-emoji">🔍</span>
-    </div>
-    <div id="preview-samples">
-      <div id="preview-samples-header">
-        <h2>PREVIEW SAMPLES</h2>
-        <button id="update-previews">UPDATE</button>
-      </div>
-      <div id="preview-samples-grid">
-        <!-- 5x4 grid of preview samples will be added dynamically -->
-      </div>
-    </div>
+  <button id="generate-background">Generate Bkgd</button>
+  <div id="background-details">
+    <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
+    <p id="background-metadata">Loading...</p>
   </div>
-
-  <div id="enlarged-preview">
-    <!-- Enlarged preview images will be added dynamically -->
+  <div id="mint-section">
+    <button id="mintButton" disabled onclick="mintNFT()">Mint NFT</button>
+    <div id="mintFeeDisplay">Mint Fee: Loading...</div>
   </div>
+</div>
+
 </body>
 </html>
