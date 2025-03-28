@@ -357,6 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
 function addTrait(trait) {
   const traitSection = document.createElement('div');
   traitSection.id = `trait${trait.id}`;
@@ -524,16 +525,19 @@ function removeTrait(traitId) {
 
   yesButton.addEventListener('click', () => {
     deleteAndRemoveDialog();
-    try {
-      console.log('Attempting to remove dialog after Yes');
-      if (confirmationDialog && confirmationDialog.parentNode) {
-        confirmationDialog.parentNode.removeChild(confirmationDialog);
-      } else {
-        console.log('Dialog already removed or not in DOM');
+    console.log('Scheduling dialog removal after Yes');
+    setTimeout(() => {
+      try {
+        if (confirmationDialog && confirmationDialog.parentNode) {
+          confirmationDialog.parentNode.removeChild(confirmationDialog);
+          console.log('Dialog removed successfully');
+        } else {
+          console.log('Dialog not found in DOM');
+        }
+      } catch (e) {
+        console.error('Error removing dialog:', e);
       }
-    } catch (e) {
-      console.error('Error removing dialog:', e);
-    }
+    }, 0); // Delay to ensure DOM updates complete
   });
 
   noButton.addEventListener('click', () => {
