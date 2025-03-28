@@ -155,7 +155,9 @@ const TraitManager = {
 
 
 
+
 /* Section 2 - GLOBAL SETUP AND INITIALIZATION */
+
 
 
 
@@ -271,6 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
 /* Section 3 - GLOBAL EVENT LISTENERS */
 
 
@@ -304,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clonedImg.style.height = `${img.height * scale}px`;
         clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
         clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
-        clonedImg.style.zIndex = img.style.zIndex;
+        clonedImg.style.zIndex = String(img.style.zIndex); // Ensure zIndex is a string
         clonedImg.style.visibility = 'visible'; // Ensure cloned image is visible
         enlargedPreview.appendChild(clonedImg);
       }
@@ -381,6 +384,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+
 
 
 /* Section 4 - TRAIT MANAGEMENT FUNCTIONS (PART 1) */
@@ -475,7 +480,7 @@ function addTrait(trait) {
   newTraitImage.id = `preview-trait${trait.id}`;
   newTraitImage.src = trait.variants.length > 0 ? trait.variants[trait.selected].url : '';
   newTraitImage.alt = `Trait ${traitContainer.children.length}`;
-  newTraitImage.style.zIndex = trait.zIndex;
+  newTraitImage.style.zIndex = String(trait.zIndex); // Ensure zIndex is a string
   newTraitImage.style.visibility = trait.variants.length > 0 ? 'visible' : 'hidden';
   traitImages.push(newTraitImage);
 
@@ -794,17 +799,33 @@ function refreshTraitGrid(traitId) {
 }
 
 function renumberTraits() {
-  const sections = traitContainer.query натSelectorAll('.trait-section');
+  const sections = traitContainer.querySelectorAll('.trait-section');
   sections.forEach((section, index) => {
     const traitId = section.id.replace('trait', '');
     const trait = TraitManager.getTrait(traitId);
-    section.querySelector('h2').textContent = `
+    section.querySelector('h2').textContent = `TRAIT ${index + 1}${trait.name ? ` - ${trait.name}` : ''}`;
+    section.querySelector('input[type="text"]').id = `trait${traitId}-name`;
+    section.querySelector('input[type="file"]').id = `trait${traitId}-files`;
+    section.querySelector('.file-input-label').htmlFor = `trait${traitId}-files`;
+    section.querySelector('.trait-grid').id = `trait${traitId}-grid`;
+    section.querySelector('.up-arrow').setAttribute('data-trait', traitId);
+    section.querySelector('.down-arrow').setAttribute('data-trait', traitId);
+    section.querySelector('.add-trait').setAttribute('data-trait', traitId);
+    section.querySelector('.remove-trait').setAttribute('data-trait', traitId);
+  });
+}
 
+function updateMintButton() {
+  const allTraitsSet = TraitManager
+
+
+  
 
 
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
 
 
+  
 
 
 function updateZIndices() {
@@ -952,6 +973,8 @@ function savePosition(img, traitId, variationName) {
 /* Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) */
 
 
+  
+
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
@@ -1031,7 +1054,7 @@ function updatePreviewSamples() {
       const img = document.createElement('img');
       img.src = variant.url;
       img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
-      img.style.zIndex = trait.zIndex;
+      img.style.zIndex = String(trait.zIndex); // Ensure zIndex is a string
 
       const key = `${trait.id}-${variant.name}`;
       const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
@@ -1102,11 +1125,14 @@ function updatePreviewSamples() {
   }
 }
 
+  
 
 
 /* Section 8 - BACKGROUND GENERATION AND MINTING */
 
 
+
+  
 
 async function fetchBackground() {
   try {
