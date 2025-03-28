@@ -372,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
 /* Section 4 - TRAIT MANAGEMENT FUNCTIONS (PART 1) */
 
 
@@ -465,6 +464,7 @@ function addTrait(trait) {
   newTraitImage.src = '';
   newTraitImage.alt = `Trait ${trait.position}`;
   newTraitImage.style.zIndex = trait.zIndex;
+  newTraitImage.style.visibility = 'hidden'; // Initialize as hidden
   traitImages.push(newTraitImage);
 
   // Re-render all preview images in reverse order
@@ -756,7 +756,6 @@ function updateMintButton() {
 
 
 
-
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
 
 
@@ -766,8 +765,11 @@ function updateZIndices() {
     if (img) {
       const trait = TraitManager.getAllTraits()[index];
       img.style.zIndex = trait.zIndex;
+      console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${trait.zIndex}`);
     }
   });
+  // Force a reflow to ensure zIndex changes are applied
+  if (preview) preview.offsetHeight;
 }
 
 function selectVariation(traitId, variationId) {
@@ -781,8 +783,15 @@ function selectVariation(traitId, variationId) {
 
   const previewImage = document.getElementById(`preview-trait${traitId}`);
   if (previewImage) {
+    // Hide all other images for this trait
+    traitImages.forEach(img => {
+      if (img !== previewImage) {
+        img.style.visibility = 'hidden';
+      }
+    });
+
     previewImage.src = trait.variants[variationIndex].url;
-    previewImage.style.display = 'block';
+    previewImage.style.visibility = 'visible'; // Show the selected image
     const key = `${traitId}-${trait.variants[variationIndex].name}`;
     const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
     if (savedPosition) {
@@ -896,7 +905,6 @@ function savePosition(img, traitId, variationName) {
   updateSamplePositions(traitId, variationName, position);
   updateSubsequentTraits(traitId, variationName, position);
 }
-
 
 
 
