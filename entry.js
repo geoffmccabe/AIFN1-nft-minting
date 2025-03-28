@@ -1086,7 +1086,6 @@ function updatePreviewSamples() {
       const img = document.createElement('img');
       img.src = variant.url;
       img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
-      img.style.zIndex = String(trait.zIndex); // Ensure zIndex is a string
 
       const key = `${trait.id}-${variant.name}`;
       const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
