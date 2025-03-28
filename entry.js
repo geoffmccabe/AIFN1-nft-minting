@@ -465,8 +465,14 @@ function addTrait(trait) {
   newTraitImage.src = '';
   newTraitImage.alt = `Trait ${trait.position}`;
   newTraitImage.style.zIndex = trait.zIndex;
-  if (preview) preview.appendChild(newTraitImage);
   traitImages.push(newTraitImage);
+
+  // Re-render all preview images in reverse order
+  if (preview) {
+    preview.innerHTML = '';
+    const reversedImages = traitImages.slice().reverse();
+    reversedImages.forEach(img => preview.appendChild(img));
+  }
 
   setupTraitListeners(trait.id);
   requestAnimationFrame(() => {
@@ -518,7 +524,6 @@ function removeTrait(traitId) {
 
     // Re-render all traits
     traitContainer.innerHTML = '';
-    traitImages = [];
     TraitManager.getAllTraits().forEach(trait => addTrait(trait));
 
     updateZIndices();
