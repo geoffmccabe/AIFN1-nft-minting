@@ -247,10 +247,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+
+
+
+
 /* Section 3 - GLOBAL EVENT LISTENERS */
 
+
+
+
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Set up magnifying glass
   magnifyEmoji.addEventListener('click', () => {
     enlargedPreview.innerHTML = '';
     const maxWidth = window.innerWidth * 0.9;
@@ -287,7 +294,6 @@ document.addEventListener('DOMContentLoaded', () => {
     enlargedPreview.addEventListener('click', () => enlargedPreview.style.display = 'none', { once: true });
   });
 
-  // Set up undo functionality
   document.addEventListener('keydown', (e) => {
     const now = Date.now();
     if (now - lastUndoTime < 300) return;
@@ -313,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Set up preview panel mousemove event only (mouseup handled in setupDragAndDrop)
   if (preview) {
     preview.addEventListener('mousemove', (e) => {
       if (!isDragging || !currentImage) return;
@@ -326,12 +331,31 @@ document.addEventListener('DOMContentLoaded', () => {
       currentImage.style.top = `${newTop}px`;
       updateCoordinates(currentImage);
     });
-
-    // Removed preview mouseup and mouseleave listeners to avoid conflicts
   }
+
+  // Global mouseup to ensure drop works everywhere
+  document.addEventListener('mouseup', (e) => {
+    if (isDragging && currentImage) {
+      const traitIndex = traitImages.indexOf(currentImage);
+      if (traitIndex !== -1) {
+        const trait = TraitManager.getAllTraits()[traitIndex];
+        const variationName = trait.variants[trait.selected].name;
+        savePosition(currentImage, trait.id, variationName);
+      }
+      isDragging = false;
+      currentImage.style.cursor = 'grab';
+      currentImage.classList.remove('dragging');
+      updateZIndices();
+    }
+  });
 });
 
+
+
 /* Section 4 - TRAIT MANAGEMENT FUNCTIONS (PART 1) */
+
+
+
 
 function addTrait(trait) {
   const traitSection = document.createElement('div');
@@ -506,7 +530,13 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
+
+
+
 /* Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) */
+
+
+
 
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
@@ -765,13 +795,17 @@ function updateMintButton() {
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
+
+
+
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
 
 function updateZIndices() {
   traitImages.forEach((img, index) => {
     if (img) {
       const trait = TraitManager.getAllTraits()[index];
-      img.style.zIndex = String(trait.position); // Fix: Lower position = higher z-index
+      // Fix: Higher position = higher z-index, TRAIT 1 (position 1) on bottom
+      img.style.zIndex = String(trait.position);
       console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${trait.position}`);
     }
   });
@@ -842,18 +876,7 @@ function setupDragAndDrop(img, traitIndex) {
       updateCoordinates(img);
     });
 
-    img.addEventListener('mouseup', () => {
-      if (isDragging && currentImage === img) {
-        const trait = TraitManager.getAllTraits()[traitIndex];
-        const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, trait.id, variationName);
-        isDragging = false;
-        currentImage.style.cursor = 'grab';
-        currentImage.classList.remove('dragging');
-        updateZIndices();
-      }
-    });
-
+    // Mouseup moved to global listener in Section 3
     img.addEventListener('click', () => {
       if (img.src !== '') {
         currentImage = img;
@@ -904,7 +927,14 @@ function savePosition(img, traitId, variationName) {
   updateSubsequentTraits(traitId, variationName, position);
 }
 
+
+
+
 /* Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) */
+
+
+
+
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
@@ -1051,7 +1081,13 @@ function updatePreviewSamples() {
   }
 }
 
+
+
+
 /* Section 8 - BACKGROUND GENERATION AND MINTING */
+
+
+
 
 async function fetchBackground() {
   try {
