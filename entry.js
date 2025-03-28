@@ -514,32 +514,28 @@ function addTrait(trait) {
     traitContainer.appendChild(traitSection);
   }
 
-  // Only create and append the preview image if a variant is selected
-  if (trait.variants.length > 0) {
-    const newTraitImage = document.createElement('img');
-    newTraitImage.id = `preview-trait${trait.id}`;
-    newTraitImage.src = trait.variants[trait.selected].url;
-    newTraitImage.alt = `Trait ${traitContainer.children.length}`;
-    newTraitImage.style.zIndex = trait.zIndex;
-    newTraitImage.style.visibility = 'visible';
-    traitImages.push(newTraitImage);
+  // Always create the preview image to ensure it exists in the DOM
+  const newTraitImage = document.createElement('img');
+  newTraitImage.id = `preview-trait${trait.id}`;
+  newTraitImage.src = trait.variants.length > 0 ? trait.variants[trait.selected].url : '';
+  newTraitImage.alt = `Trait ${traitContainer.children.length}`;
+  newTraitImage.style.zIndex = trait.zIndex;
+  newTraitImage.style.visibility = trait.variants.length > 0 ? 'visible' : 'hidden';
+  traitImages.push(newTraitImage);
 
-    // Re-render all preview images in reverse order
-    if (preview) {
-      preview.innerHTML = '';
-      const reversedImages = traitImages.slice().reverse();
-      reversedImages.forEach(img => preview.appendChild(img));
-    }
+  // Re-render all preview images in reverse order
+  if (preview) {
+    preview.innerHTML = '';
+    const reversedImages = traitImages.slice().reverse();
+    reversedImages.forEach(img => preview.appendChild(img));
   }
 
   setupTraitListeners(trait.id);
   requestAnimationFrame(() => {
-    if (trait.variants.length > 0) {
-      const traitImage = document.getElementById(`preview-trait${trait.id}`);
-      if (traitImage) {
-        console.log(`Setting up drag-and-drop for new trait ${trait.id}, image:`, traitImage);
-        setupDragAndDrop(traitImage, traitImages.length - 1);
-      }
+    const traitImage = document.getElementById(`preview-trait${trait.id}`);
+    if (traitImage && traitImage.src) {
+      console.log(`Setting up drag-and-drop for new trait ${trait.id}, image:`, traitImage);
+      setupDragAndDrop(traitImage, traitImages.length - 1);
     }
   });
   updateZIndices();
@@ -794,7 +790,7 @@ function refreshTraitGrid(traitId) {
     if (trait.variants.length > 1) {
       const chanceDisplay = document.createElement('div');
       chanceDisplay.className = 'variation-chance';
-      chanceDisplay.textContent = `CHANCE: ${variant.chance}%`;
+      chanceDisplay.textContent = `${variant.chance}% Chance`;
       container.appendChild(chanceDisplay);
     }
 
