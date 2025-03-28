@@ -1,5 +1,9 @@
 /* Section 1 - PANELS MANAGER FRAMEWORK */
 
+
+
+
+
 let idCounter = 0;
 function generateId() {
   return `id-${idCounter++}`;
@@ -11,7 +15,7 @@ class Panel {
     this.title = title;
     this.content = content;
     this.column = column; // 'left' or 'right'
-    this.style = { backgroundColor: '#f0f0f0', ...style };
+    this.style = { backgroundColor: '#ffffff', ...style }; // All panels white
     this.element = null;
   }
 
@@ -20,7 +24,7 @@ class Panel {
       this.element = document.createElement('div');
       this.element.id = this.id;
       this.element.className = 'panel';
-      this.element.innerHTML = `<h2>${this.title}</h2>${this.content}`;
+      this.element.innerHTML = this.id === 'logo-panel' ? this.content : `<h2>${this.title}</h2>${this.content}`; // No title for logo
       Object.assign(this.element.style, this.style);
     }
     return this.element;
@@ -28,7 +32,7 @@ class Panel {
 
   update(content) {
     if (this.element) {
-      this.element.innerHTML = `<h2>${this.title}</h2>${content || this.content}`;
+      this.element.innerHTML = this.id === 'logo-panel' ? content || this.content : `<h2>${this.title}</h2>${content || this.content}`;
     }
   }
 }
@@ -67,9 +71,6 @@ class PanelManager {
     });
   }
 }
-
-
-
 
 /* Section 2 - TRAIT MANAGER FRAMEWORK */
 
@@ -228,14 +229,14 @@ clickSound.volume = 0.25;
 
 const panelManager = new PanelManager();
 
-const logoPanel = new Panel('logo-panel', 'Logo', 
+const logoPanel = new Panel('logo-panel', '', 
   `<img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">`,
-  'left', { backgroundColor: '#fff' }
+  'left'
 );
 
 const traitsPanel = new Panel('traits-panel', 'Traits Manager', 
   `<div id="trait-container"></div>`,
-  'left', { backgroundColor: '#e6f3ff' }
+  'left'
 );
 
 const previewPanel = new Panel('preview-panel', 'Preview', 
@@ -250,7 +251,7 @@ const previewPanel = new Panel('preview-panel', 'Preview',
      <span class="magnify-emoji">🔍</span>
    </div>
    <div id="enlarged-preview"></div>`,
-  'right', { backgroundColor: '#fff0f0' }
+  'right'
 );
 
 const previewSamplesPanel = new Panel('preview-samples-panel', 'Preview Samples', 
@@ -260,7 +261,7 @@ const previewSamplesPanel = new Panel('preview-samples-panel', 'Preview Samples'
      </div>
      <div id="preview-samples-grid"></div>
    </div>`,
-  'right', { backgroundColor: '#f0fff0' }
+  'right'
 );
 
 const backgroundPanel = new Panel('background-panel', 'AI Background', 
@@ -275,7 +276,7 @@ const backgroundPanel = new Panel('background-panel', 'AI Background',
      <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
      <p id="background-metadata">Loading...</p>
    </div>`,
-  'left', { backgroundColor: '#fff5e6' }
+  'left'
 );
 
 const mintingPanel = new Panel('minting-panel', 'Minting', 
@@ -283,7 +284,7 @@ const mintingPanel = new Panel('minting-panel', 'Minting',
      <button id="mintButton" disabled>Mint NFT</button>
      <div id="mintFeeDisplay">Mint Fee: Loading...</div>
    </div>`,
-  'right', { backgroundColor: '#f0e6ff' }
+  'right'
 );
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -370,7 +371,7 @@ function setupTraitListeners(traitId) {
       trait.name = nameInput.value.trim();
       trait.isUserAssignedName = true;
       traitsPanel.update(getTraitsContent());
-      setupTraitListeners(traitId); // Reattach listeners
+      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
     });
 
     fileInput.addEventListener('change', async (event) => {
@@ -384,7 +385,7 @@ function setupTraitListeners(traitId) {
       }
 
       TraitManager.getTrait(traitId).variants = [];
-      traitImages = traitImages.filter(img => !img.id.startsWith(`preview-trait${traitId}`));
+      traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
 
       for (const file of files) {
         const variationName = file.name.split('.').slice(0, -1).join('.');
@@ -399,7 +400,7 @@ function setupTraitListeners(traitId) {
       }
 
       traitsPanel.update(getTraitsContent());
-      setupTraitListeners(traitId); // Reattach listeners
+      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updateMintButton();
       updatePreviewSamples();
     });
@@ -425,7 +426,7 @@ function setupTraitListeners(traitId) {
       let newPosition = trait.position === 1 ? TraitManager.getAllTraits().length : trait.position - 1;
       TraitManager.moveTrait(traitId, newPosition);
       traitsPanel.update(getTraitsContent());
-      setupTraitListeners(traitId);
+      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updatePreviewSamples();
     });
 
@@ -434,7 +435,7 @@ function setupTraitListeners(traitId) {
       let newPosition = trait.position === TraitManager.getAllTraits().length ? 1 : trait.position + 1;
       TraitManager.moveTrait(traitId, newPosition);
       traitsPanel.update(getTraitsContent());
-      setupTraitListeners(traitId);
+      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updatePreviewSamples();
     });
 
@@ -707,6 +708,7 @@ function selectVariation(traitId, variationId) {
     previewImage.id = `preview-trait${traitId}`;
     traitImages.push(previewImage);
     document.getElementById('preview').appendChild(previewImage);
+    setupDragAndDrop(previewImage, TraitManager.getAllTraits().findIndex(t => t.id === traitId));
   }
 
   previewImage.src = trait.variants[variationIndex].url;
@@ -744,6 +746,7 @@ function selectVariation(traitId, variationId) {
   updateZIndices();
   updateCoordinates(currentImage, document.getElementById('coordinates'));
   traitsPanel.update(getTraitsContent());
+  TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
 }
 
 function setupDragAndDrop(img, traitIndex) {
@@ -927,7 +930,7 @@ function updateMintButton() {
 }
 
 window.mintNFT = async function() {
-  const status = document.getElementById('status') || document.createElement('div'); // Fallback if status not found
+  const status = document.getElementById('status') || document.createElement('div');
   status.id = 'status';
   mintingPanel.element.appendChild(status);
 
