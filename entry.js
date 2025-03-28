@@ -470,33 +470,22 @@ function addTrait(trait) {
     traitContainer.appendChild(traitSection);
   }
 
-  // Only create and append the preview image if a variant is selected
-  if (trait.variants.length > 0) {
-    const newTraitImage = document.createElement('img');
-    newTraitImage.id = `preview-trait${trait.id}`;
-    newTraitImage.src = trait.variants[trait.selected].url;
-    newTraitImage.alt = `Trait ${traitContainer.children.length}`;
-    newTraitImage.style.zIndex = trait.zIndex;
-    newTraitImage.style.visibility = 'visible';
-    traitImages.push(newTraitImage);
+  // Always create the preview image to ensure it exists in the DOM
+  const newTraitImage = document.createElement('img');
+  newTraitImage.id = `preview-trait${trait.id}`;
+  newTraitImage.src = trait.variants.length > 0 ? trait.variants[trait.selected].url : '';
+  newTraitImage.alt = `Trait ${traitContainer.children.length}`;
+  newTraitImage.style.zIndex = trait.zIndex;
+  newTraitImage.style.visibility = trait.variants.length > 0 ? 'visible' : 'hidden';
+  traitImages.push(newTraitImage);
 
-    // Re-render all preview images in order of position (lowest to highest)
-    if (preview) {
-      preview.innerHTML = '';
-      const sortedImages = traitImages
-        .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx].position }))
-        .sort((a, b) => a.position - b.position); // Sort by position (ascending)
-      sortedImages.forEach(({ img }) => preview.appendChild(img));
-    }
-  } else {
-    // Create the image element but don't append it yet
-    const newTraitImage = document.createElement('img');
-    newTraitImage.id = `preview-trait${trait.id}`;
-    newTraitImage.src = '';
-    newTraitImage.alt = `Trait ${traitContainer.children.length}`;
-    newTraitImage.style.zIndex = trait.zIndex;
-    newTraitImage.style.visibility = 'hidden';
-    traitImages.push(newTraitImage);
+  // Re-render all preview images in order of position (lowest to highest)
+  if (preview) {
+    preview.innerHTML = '';
+    const sortedImages = traitImages
+      .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx]?.position || 0 }))
+      .sort((a, b) => a.position - b.position); // Sort by position (ascending)
+    sortedImages.forEach(({ img }) => preview.appendChild(img));
   }
 
   setupTraitListeners(trait.id);
@@ -575,7 +564,6 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
-
 /* Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) */
 
 
@@ -596,12 +584,23 @@ function setupTraitListeners(traitId) {
       title.textContent = `TRAIT ${position}${trait.name ? ` - ${trait.name}` : ''}`;
     });
 
+    // Ensure name is saved before operations that trigger re-rendering
+    const saveNameBeforeOperation = () => {
+      const trait = TraitManager.getTrait(traitId);
+      trait.name = nameInput.value.trim();
+    };
+
     fileInput.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
 
-      const traitName = nameInput.value.trim() || `Trait ${Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1}`;
-      TraitManager.getTrait(traitId).name = traitName;
+      // Only set a default name if no name has been assigned
+      const trait = TraitManager.getTrait(traitId);
+      if (!trait.name) {
+        const traitName = nameInput.value.trim() || `Trait ${Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1}`;
+        TraitManager.getTrait(traitId).name = traitName;
+      }
+
       TraitManager.getTrait(traitId).variants = [];
 
       grid.innerHTML = '';
@@ -661,66 +660,21 @@ function setupTraitListeners(traitId) {
       updateMintButton();
       updatePreviewSamples();
     });
-  }
 
-  const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
-  const downArrow = document.querySelector(`.down-arrow[data-trait="${traitId}"]`);
-  const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
-  const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitId}"]`);
+    const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
+    const downArrow = document.querySelector(`.down-arrow[data-trait="${traitId}"]`);
+    const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
+    const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitId}"]`);
 
-  upArrow.addEventListener('click', () => {
-    const trait = TraitManager.getTrait(traitId);
-    if (trait.position === 1) {
-      const lastPosition = TraitManager.getAllTraits().length;
-      TraitManager.moveTrait(traitId, lastPosition);
-    } else {
-      TraitManager.moveTrait(traitId, trait.position - 1);
-    }
-
-    // Re-render all traits
-    traitContainer.innerHTML = '';
-    traitImages = [];
-    TraitManager.getAllTraits().forEach(trait => {
-      addTrait(trait);
-      refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) {
-        selectVariation(trait.id, trait.variants[trait.selected].id);
-      }
-    });
-
-    updateZIndices();
-    updatePreviewSamples();
-  });
-
-  downArrow.addEventListener('click', () => {
-    const trait = TraitManager.getTrait(traitId);
-    const lastPosition = TraitManager.getAllTraits().length;
-    if (trait.position === lastPosition) {
-      TraitManager.moveTrait(traitId, 1);
-    } else {
-      TraitManager.moveTrait(traitId, trait.position + 1);
-    }
-
-    // Re-render all traits
-    traitContainer.innerHTML = '';
-    traitImages = [];
-    TraitManager.getAllTraits().forEach(trait => {
-      addTrait(trait);
-      refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) {
-        selectVariation(trait.id, trait.variants[trait.selected].id);
-      }
-    });
-
-    updateZIndices();
-    updatePreviewSamples();
-  });
-
-  addTraitBtn.addEventListener('click', () => {
-    if (TraitManager.getAllTraits().length < 20) {
+    upArrow.addEventListener('click', () => {
+      saveNameBeforeOperation();
       const trait = TraitManager.getTrait(traitId);
-      const newPosition = trait.position;
-      TraitManager.addTrait(newPosition);
+      if (trait.position === 1) {
+        const lastPosition = TraitManager.getAllTraits().length;
+        TraitManager.moveTrait(traitId, lastPosition);
+      } else {
+        TraitManager.moveTrait(traitId, trait.position - 1);
+      }
 
       // Re-render all traits
       traitContainer.innerHTML = '';
@@ -735,10 +689,61 @@ function setupTraitListeners(traitId) {
 
       updateZIndices();
       updatePreviewSamples();
-    }
-  });
+    });
 
-  removeTraitBtn.addEventListener('click', () => removeTrait(traitId));
+    downArrow.addEventListener('click', () => {
+      saveNameBeforeOperation();
+      const trait = TraitManager.getTrait(traitId);
+      const lastPosition = TraitManager.getAllTraits().length;
+      if (trait.position === lastPosition) {
+        TraitManager.moveTrait(traitId, 1);
+      } else {
+        TraitManager.moveTrait(traitId, trait.position + 1);
+      }
+
+      // Re-render all traits
+      traitContainer.innerHTML = '';
+      traitImages = [];
+      TraitManager.getAllTraits().forEach(trait => {
+        addTrait(trait);
+        refreshTraitGrid(trait.id);
+        if (trait.variants.length > 0) {
+          selectVariation(trait.id, trait.variants[trait.selected].id);
+        }
+      });
+
+      updateZIndices();
+      updatePreviewSamples();
+    });
+
+    addTraitBtn.addEventListener('click', () => {
+      saveNameBeforeOperation();
+      if (TraitManager.getAllTraits().length < 20) {
+        const trait = TraitManager.getTrait(traitId);
+        const newPosition = trait.position;
+        TraitManager.addTrait(newPosition);
+
+        // Re-render all traits
+        traitContainer.innerHTML = '';
+        traitImages = [];
+        TraitManager.getAllTraits().forEach(trait => {
+          addTrait(trait);
+          refreshTraitGrid(trait.id);
+          if (trait.variants.length > 0) {
+            selectVariation(trait.id, trait.variants[trait.selected].id);
+          }
+        });
+
+        updateZIndices();
+        updatePreviewSamples();
+      }
+    });
+
+    removeTraitBtn.addEventListener('click', () => {
+      saveNameBeforeOperation();
+      removeTrait(traitId);
+    });
+  }
 }
 
 function refreshTraitGrid(traitId) {
