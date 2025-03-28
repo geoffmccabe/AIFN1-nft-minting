@@ -824,16 +824,15 @@ function renumberTraits() {
 }
 
 function updateMintButton() {
-  const allTraitsSet = TraitManager
+  const allTraitsSet = TraitManager.getAllTraits().every(trait => trait.name && trait.variants.length > 0);
+  const mintBtn = document.getElementById('mintButton');
+  if (mintBtn) mintBtn.disabled = !allTraitsSet;
+}
 
-
-  
 
 
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
 
-
-  
 
 
 function updateZIndices() {
