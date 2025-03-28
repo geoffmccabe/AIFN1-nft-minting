@@ -788,6 +788,8 @@ function refreshTraitGrid(traitId) {
 
   grid.innerHTML = '';
   const trait = TraitManager.getTrait(traitId);
+  // Ensure chances are calculated before rendering
+  TraitManager.calculateChances(trait);
   for (const variant of trait.variants) {
     const container = document.createElement('div');
     container.className = 'variation-container';
