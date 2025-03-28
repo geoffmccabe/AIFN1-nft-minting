@@ -1,23 +1,15 @@
-<!-- Section 1 - HTML HEADER AND METADATA -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Mint Your AIFN NFT</title>
   <link rel="icon" type="image/x-icon" href="/AIFN1-nft-minting/favicon.ico">
-  <!-- Include Rowdies font from Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
-  <!-- Include Poppins font for modern look -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script defer src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script defer src="config.js"></script>
   <script defer src="entry.js"></script>
 </head>
-
-
-
-<!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
 <style>
   body {
@@ -29,7 +21,6 @@
     color: black;
     padding: 20px;
     margin: 0;
-    display: flex;
     position: relative;
     min-height: 100vh;
   }
@@ -41,16 +32,29 @@
     color: #333;
     z-index: 10;
   }
-  #left-panel {
-    flex: 1;
-    padding-right: 20px;
-    padding-top: 30px;
-    min-width: 300px;
+  #panel-container {
+    width: 100%;
+    position: relative;
+  }
+  .panel {
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    width: 300px;
+    box-sizing: border-box;
+    cursor: grab;
+  }
+  .panel h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    margin: 0 0 10px;
+    text-align: left;
   }
   #logo {
     display: block;
-    margin: 0 auto 20px;
-    width: 600px;
+    margin: 0 auto;
+    width: 100%;
     max-width: 600px;
     height: auto;
   }
@@ -65,17 +69,10 @@
     align-items: center;
     margin-bottom: 10px;
   }
-  .trait-section h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
-    margin: 0;
-    text-align: left;
-    flex-grow: 1;
-  }
   .trait-controls {
     display: flex;
     gap: 10px;
-    position: relative; /* Added to ensure tooltips are positioned correctly */
+    position: relative;
   }
   .trait-controls span {
     cursor: pointer;
@@ -131,10 +128,10 @@
     height: 32px;
   }
   input[type="text"]::placeholder {
-    color: #ccc; /* Placeholder text in grey */
+    color: #ccc;
   }
   input[type="text"]:not(:placeholder-shown) {
-    color: black; /* Typed text in black */
+    color: black;
   }
   input[type="file"] {
     display: none;
@@ -153,15 +150,14 @@
     line-height: 22px;
     box-sizing: border-box;
     text-align: center;
-    min-width: 120px; /* Minimum width for "Choose Files" */
-    width: auto; /* Allow width to grow */
-    white-space: nowrap; /* Prevent text wrapping */
-    vertical-align: middle; /* Ensure alignment with input */
+    min-width: 120px;
+    width: auto;
+    white-space: nowrap;
+    vertical-align: middle;
   }
   .file-input-label:hover {
     background: #bbb;
   }
-  /* Tooltip for up-arrow */
   .up-arrow:hover::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -186,7 +182,6 @@
     border-top-color: #333;
     z-index: 1000;
   }
-  /* Tooltip for down-arrow */
   .down-arrow:hover::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -211,25 +206,6 @@
     border-top-color: #333;
     z-index: 1000;
   }
-</style>
-
-  
-
-<!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
-
-<style>
-  #right-panel {
-    width: 600px;
-    padding-left: 20px;
-    max-width: 100%;
-  }
-  #right-panel h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
-    text-align: left; /* Left-justify to align with PREVIEW SAMPLES */
-    margin: 0 0 10px;
-    text-transform: uppercase; /* Convert to all caps */
-  }
   #preview {
     position: relative;
     width: 600px;
@@ -238,8 +214,6 @@
     background-size: cover;
     margin-bottom: 10px;
     overflow: hidden;
-    border: 1px solid #ccc; /* Match left panel border color and width */
-    border-radius: 10px;
     max-width: 100%;
   }
   #preview img {
@@ -291,21 +265,6 @@
     position: absolute;
     object-fit: contain;
   }
-  #preview-samples {
-    margin-top: 20px;
-  }
-  #preview-samples-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  #preview-samples h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
-    text-align: left;
-    margin: 0;
-  }
   #preview-samples-grid {
     display: grid;
     grid-template-columns: repeat(4, 140px);
@@ -319,8 +278,6 @@
     height: 140px;
     background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
     background-size: 140px 140px;
-    border: 1px solid #ccc; /* Match left panel border color and width */
-    border-radius: 5px;
     overflow: hidden;
     cursor: pointer;
   }
@@ -341,27 +298,8 @@
   #update-previews:hover {
     background: #bbb;
   }
-</style>
-
-
-  
-<!-- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -->
-
-  
-
-  
-<style>
-  #background-section h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
-    text-align: center;
-    margin: 0 0 10px;
-  }
   #prompt-section {
     margin-top: 10px;
-  }
-  #prompt-section p {
-    margin: 5px 0;
   }
   #prompt-section textarea {
     width: 100%;
@@ -383,8 +321,6 @@
     height: 600px;
     background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
     background-size: 600px 600px;
-    border-radius: 10px;
-    border: 1px solid black;
   }
   button {
     padding: 10px 20px;
@@ -444,11 +380,32 @@
   .confirmation-dialog .no-button {
     background: #ae645a;
   }
+  .tab-bar {
+    margin-bottom: 10px;
+  }
+  .tab {
+    display: inline-block;
+    padding: 5px 10px;
+    cursor: pointer;
+    background: #ddd;
+    border-radius: 5px 5px 0 0;
+    margin-right: 5px;
+  }
+  .tab:hover {
+    background: #ccc;
+  }
   @media (max-width: 900px) {
-    body { flex-direction: column; }
-    #left-panel, #right-panel { width: 100%; padding: 10px; }
-    #preview { width: 100%; height: auto; aspect-ratio: 1 / 1; }
-    #logo { width: 100%; max-width: 600px; }
+    body { padding: 10px; }
+    .panel {
+      position: static;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    #preview, #background-image {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1;
+    }
     #preview-samples-grid { 
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
       width: 100%; 
@@ -456,78 +413,8 @@
   }
 </style>
 
-
-
-<!-- Section 5 - BODY OPENING AND LEFT PANEL -->
-
 <body>
   <div id="version">Version 93</div>
-  <div id="left-panel">
-    <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
-    <div id="trait-container">
-      <!-- Trait groups will be added dynamically -->
-    </div>
-
-
-
-<!-- Section 6 - BACKGROUND SECTION -->
-
-    <div id="background-section">
-      <h2>AI Background</h2>
-      <div id="prompt-section">
-        <label for="base-prompt">Basic Prompt:</label>
-        <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
-        <label for="user-prompt">User Prompt:</label>
-        <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
-      </div>
-      <button id="generate-background">Generate Bkgd</button>
-      <div id="background-details">
-        <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
-        <p id="background-metadata">Loading...</p>
-      </div>
-    </div>
-
-
-
-<!-- Section 7 - MINT SECTION -->
-
-    <div id="mint-section">
-      <button id="mintButton" disabled>Mint NFT</button>
-      <div id="mintFeeDisplay">Mint Fee: Loading...</div>
-    </div>
-  </div>
-
-
-
-<!-- Section 8 - RIGHT PANEL -->
-
-  <div id="right-panel">
-    <h2>Preview</h2>
-    <div id="preview">
-      <!-- Preview images will be added dynamically -->
-    </div>
-    <div id="controls">
-      <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
-      <span>   </span>
-      <span class="direction-emoji" data-direction="up">⬆️</span>
-      <span class="direction-emoji" data-direction="down">⬇️</span>
-      <span class="direction-emoji" data-direction="left">⬅️</span>
-      <span class="direction-emoji" data-direction="right">➡️</span>
-      <span class="magnify-emoji">🔍</span>
-    </div>
-    <div id="preview-samples">
-      <div id="preview-samples-header">
-        <h2>PREVIEW SAMPLES</h2>
-        <button id="update-previews">UPDATE</button>
-      </div>
-      <div id="preview-samples-grid">
-        <!-- 5x4 grid of preview samples will be added dynamically -->
-      </div>
-    </div>
-  </div>
-
-  <div id="enlarged-preview">
-    <!-- Enlarged preview images will be added dynamically -->
-  </div>
+  <div id="panel-container"></div>
 </body>
 </html>
