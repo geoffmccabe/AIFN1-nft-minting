@@ -129,10 +129,12 @@
     margin-bottom: 5px;
     box-sizing: border-box;
     height: 32px;
-    color: #ccc; /* Set text color to grey to match border */
   }
   input[type="text"]::placeholder {
-    color: #ccc; /* Match the border color */
+    color: #ccc; /* Placeholder text in grey */
+  }
+  input[type="text"]:not(:placeholder-shown) {
+    color: black; /* Typed text in black */
   }
   input[type="file"] {
     display: none;
@@ -211,10 +213,11 @@
   }
 </style>
 
-
   
 
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
+
+  
 
 <style>
   #right-panel {
@@ -459,7 +462,7 @@
 <!-- Section 5 - BODY OPENING AND LEFT PANEL -->
 
 <body>
-  <div id="version">Version 92</div>
+  <div id="version">Version 93</div>
   <div id="left-panel">
     <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
     <div id="trait-container">
