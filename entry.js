@@ -703,246 +703,199 @@ class PanelManager {
 
 
 
-    function selectVariation(traitId, variationId) {
-      const trait = TraitManager.getTrait(traitId);
-      const variationIndex = trait.variants.findIndex(v => v.id === variationId);
-      if (variationIndex === -1) {
-        console.error(`Variation ${variationId} not found in Trait ${traitId}`);
-        return;
-      }
-      trait.selected = variationIndex;
+function selectVariation(traitId, variationId) {
+  const trait = TraitManager.getTrait(traitId);
+  const variationIndex = trait.variants.findIndex(v => v.id === variationId);
+  if (variationIndex === -1) return;
+  trait.selected = variationIndex;
 
-      let previewImage = document.getElementById(`preview-trait${traitId}`);
-      if (!previewImage) {
-        previewImage = document.createElement('img');
-        previewImage.id = `preview-trait${traitId}`;
-        traitImages.push(previewImage);
-        const previewDiv = document.getElementById('preview');
-        if (previewDiv) {
-          previewDiv.appendChild(previewImage);
-        } else {
-          console.error('Preview div not found');
-          return;
-        }
-        setupDragAndDrop(previewImage, TraitManager.getAllTraits().findIndex(t => t.id === traitId));
-      }
+  let previewImage = document.getElementById(`preview-trait${traitId}`);
+  if (!previewImage) {
+    previewImage = document.createElement('img');
+    previewImage.id = `preview-trait${traitId}`;
+    document.getElementById('preview').appendChild(previewImage);
+    traitImages.push(previewImage);
+  }
 
-      previewImage.src = trait.variants[variationIndex].url;
-      previewImage.onerror = () => {
-        console.error(`Failed to load image for trait ${traitId}`);
-        previewImage.style.visibility = 'hidden';
-      };
-      previewImage.style.visibility = 'visible';
-      const key = `${traitId}-${trait.variants[variationIndex].name}`;
-      const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
-      if (savedPosition) {
-        const { left, top } = JSON.parse(savedPosition);
-        previewImage.style.left = `${left}px`;
-        previewImage.style.top = `${top}px`;
-        if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
-      } else {
-        let lastPosition = null;
-        for (let i = 0; i < trait.variants.length; i++) {
-          if (i === variationIndex) continue;
-          const otherVariationName = trait.variants[i].name;
-          const otherKey = `${traitId}-${otherVariationName}`;
-          if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
-            lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
-          }
-        }
-        if (lastPosition) {
-          previewImage.style.left = `${lastPosition.left}px`;
-          previewImage.style.top = `${lastPosition.top}px`;
-          variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
-          try {
-            localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
-          } catch (e) {
-            console.error('Failed to save to localStorage:', e);
-          }
-        } else {
-          previewImage.style.left = '0px';
-          previewImage.style.top = '0px';
-          variantHistories[key] = [{ left: 0, top: 0 }];
-          try {
-            localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
-          } catch (e) {
-            console.error('Failed to save to localStorage:', e);
-          }
-        }
-      }
-      currentImage = previewImage;
-      updateZIndices();
-      updateCoordinates(currentImage, document.getElementById('coordinates'));
-    }
+  previewImage.src = trait.variants[variationIndex].url;
+  previewImage.onerror = () => {
+    previewImage.style.visibility = 'hidden';
+  };
+  previewImage.style.visibility = 'visible';
 
-    function setupPreviewListeners() {
-      const preview = document.getElementById('preview');
-      const coordinates = document.getElementById('coordinates');
-      const directionEmojis = document.querySelectorAll('.direction-emoji');
-      const magnifyEmoji = document.querySelector('.magnify-emoji');
-      const enlargedPreview = document.getElementById('enlarged-preview');
+  const key = `${traitId}-${trait.variants[variationIndex].name}`;
+  const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
+  let position = { left: 0, top: 0 };
 
-      if (preview) {
-        preview.addEventListener('mousemove', (e) => {
-          if (!isDragging || !currentImage) return;
-          const rect = preview.getBoundingClientRect();
-          let newLeft = e.clientX - rect.left - offsetX;
-          let newTop = e.clientY - rect.top - offsetY;
-          newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
-          newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
-          currentImage.style.left = `${newLeft}px`;
-          currentImage.style.top = `${newTop}px`;
-          updateCoordinates(currentImage, coordinates);
-        });
-
-        document.addEventListener('mouseup', (e) => {
-          if (isDragging && currentImage) {
-            const traitIndex = traitImages.indexOf(currentImage);
-            if (traitIndex !== -1) {
-              const trait = TraitManager.getAllTraits()[traitIndex];
-              const variationName = trait.variants[trait.selected].name;
-              savePosition(currentImage, trait.id, variationName);
-            }
-            isDragging = false;
-            currentImage.style.cursor = 'grab';
-            currentImage.classList.remove('dragging');
-            updateZIndices();
-          }
-        });
-      }
-
-      directionEmojis.forEach(emoji => {
-        const direction = emoji.getAttribute('data-direction');
-        emoji.addEventListener('mousedown', () => {
-          if (!currentImage || currentImage.src === '') return;
-          moveInterval = setInterval(() => {
-            let left = parseFloat(currentImage.style.left) || 0;
-            let top = parseFloat(currentImage.style.top) || 0;
-            if (direction === 'up') top -= 1;
-            if (direction === 'down') top += 1;
-            if (direction === 'left') left -= 1;
-            if (direction === 'right') left += 1;
-            left = Math.max(0, Math.min(left, 600 - currentImage.width));
-            top = Math.max(0, Math.min(top, 600 - currentImage.height));
-            currentImage.style.left = `${left}px`;
-            currentImage.style.top = `${top}px`;
-            currentImage.classList.add('dragging');
-            updateCoordinates(currentImage, coordinates);
-          }, 50);
-        });
-
-        emoji.addEventListener('mouseup', () => {
-          if (moveInterval) {
-            clearInterval(moveInterval);
-            moveInterval = null;
-            if (currentImage) {
-              const traitIndex = traitImages.indexOf(currentImage);
-              const trait = TraitManager.getAllTraits()[traitIndex];
-              const variationName = trait.variants[trait.selected].name;
-              savePosition(currentImage, trait.id, variationName);
-              currentImage.classList.remove('dragging');
-            }
-          }
-        });
-
-        emoji.addEventListener('mouseleave', () => {
-          if (moveInterval) {
-            clearInterval(moveInterval);
-            moveInterval = null;
-            if (currentImage) {
-              const traitIndex = traitImages.indexOf(currentImage);
-              const trait = TraitManager.getAllTraits()[traitIndex];
-              const variationName = trait.variants[trait.selected].name;
-              savePosition(currentImage, trait.id, variationName);
-              currentImage.classList.remove('dragging');
-            }
-          }
-        });
-      });
-
-      magnifyEmoji.addEventListener('click', () => {
-        enlargedPreview.innerHTML = '';
-        const maxWidth = window.innerWidth * 0.9;
-        const maxHeight = window.innerHeight * 0.9;
-        let scale = 1;
-        if (maxWidth / maxHeight > 1) {
-          enlargedPreview.style.height = `${maxHeight}px`;
-          enlargedPreview.style.width = `${maxHeight}px`;
-          scale = maxHeight / 600;
-        } else {
-          enlargedPreview.style.width = `${maxWidth}px`;
-          enlargedPreview.style.height = `${maxWidth}px`;
-          scale = maxWidth / 600;
-        }
-
-        const sortedImages = traitImages
-          .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx].position }))
-          .sort((a, b) => a.position - b.position);
-
-        sortedImages.forEach(({ img }) => {
-          if (img && img.src && img.style.visibility !== 'hidden') {
-            const clonedImg = img.cloneNode(true);
-            clonedImg.style.width = `${img.width * scale}px`;
-            clonedImg.style.height = `${img.height * scale}px`;
-            clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
-            clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
-            clonedImg.style.zIndex = String(img.style.zIndex);
-            clonedImg.style.visibility = 'visible';
-            enlargedPreview.appendChild(clonedImg);
-          }
-        });
-
-        enlargedPreview.style.display = 'block';
-        enlargedPreview.addEventListener('click', () => enlargedPreview.style.display = 'none', { once: true });
-      });
-    }
-
-    function setupDragAndDrop(img, traitIndex) {
-      if (img) {
-        img.addEventListener('dragstart', (e) => e.preventDefault());
-
-        img.addEventListener('mousedown', (e) => {
-          if (img.src === '' || img !== currentImage) return;
-          isDragging = true;
-          currentImage = img;
-          const rect = img.getBoundingClientRect();
-          offsetX = e.clientX - rect.left;
-          offsetY = e.clientY - rect.top;
-          img.style.cursor = 'grabbing';
-          img.classList.add('dragging');
-          updateCoordinates(img, document.getElementById('coordinates'));
-        });
-
-        img.addEventListener('click', () => {
-          if (img.src !== '') {
-            currentImage = img;
-            updateCoordinates(img, document.getElementById('coordinates'));
-          }
-        });
+  if (savedPosition) {
+    position = JSON.parse(savedPosition);
+  } else {
+    let lastPosition = null;
+    for (let i = 0; i < trait.variants.length; i++) {
+      if (i === variationIndex) continue;
+      const otherKey = `${traitId}-${trait.variants[i].name}`;
+      if (variantHistories[otherKey]?.length) {
+        lastPosition = variantHistories[otherKey].slice(-1)[0];
       }
     }
+    if (lastPosition) position = lastPosition;
+    try {
+      localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(position));
+    } catch (e) {}
+  }
 
-    function updateCoordinates(img, coordsElement) {
-      if (img && coordsElement) {
-        const left = parseFloat(img.style.left) || 0;
-        const top = parseFloat(img.style.top) || 0;
-        coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
+  previewImage.style.left = `${position.left}px`;
+  previewImage.style.top = `${position.top}px`;
+
+  if (!variantHistories[key]) variantHistories[key] = [position];
+
+  setupDragAndDrop(previewImage, TraitManager.getAllTraits().findIndex(t => t.id === traitId));
+  currentImage = previewImage;
+  updateZIndices();
+  updateCoordinates(currentImage, document.getElementById('coordinates'));
+}
+
+function setupPreviewListeners() {
+  const preview = document.getElementById('preview');
+  const coordinates = document.getElementById('coordinates');
+  const directionEmojis = document.querySelectorAll('.direction-emoji');
+  const magnifyEmoji = document.querySelector('.magnify-emoji');
+  const enlargedPreview = document.getElementById('enlarged-preview');
+
+  if (preview) {
+    preview.addEventListener('mousemove', (e) => {
+      if (!isDragging || !currentImage) return;
+      const rect = preview.getBoundingClientRect();
+      let newLeft = e.clientX - rect.left - offsetX;
+      let newTop = e.clientY - rect.top - offsetY;
+      newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
+      newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
+      currentImage.style.left = `${newLeft}px`;
+      currentImage.style.top = `${newTop}px`;
+      updateCoordinates(currentImage, coordinates);
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging && currentImage) {
+        const traitIndex = traitImages.indexOf(currentImage);
+        const trait = TraitManager.getAllTraits()[traitIndex];
+        const variationName = trait.variants[trait.selected].name;
+        savePosition(currentImage, trait.id, variationName);
+        isDragging = false;
+        currentImage.style.cursor = 'grab';
+        currentImage.classList.remove('dragging');
+        updateZIndices();
       }
-    }
+    });
+  }
 
-    function updateZIndices() {
-      traitImages.forEach((img, index) => {
-        if (img) {
-          const trait = TraitManager.getAllTraits()[index];
-          if (trait && trait.variants.length > 0) {
-            img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
-          } else {
-            img.style.zIndex = '0';
-          }
-        }
-      });
-      if (previewPanel.element) previewPanel.element.offsetHeight;
+  directionEmojis.forEach(emoji => {
+    const direction = emoji.getAttribute('data-direction');
+    emoji.addEventListener('mousedown', () => {
+      if (!currentImage || !currentImage.src) return;
+      moveInterval = setInterval(() => {
+        let left = parseFloat(currentImage.style.left) || 0;
+        let top = parseFloat(currentImage.style.top) || 0;
+        if (direction === 'up') top -= 1;
+        if (direction === 'down') top += 1;
+        if (direction === 'left') left -= 1;
+        if (direction === 'right') left += 1;
+        left = Math.max(0, Math.min(left, 600 - currentImage.width));
+        top = Math.max(0, Math.min(top, 600 - currentImage.height));
+        currentImage.style.left = `${left}px`;
+        currentImage.style.top = `${top}px`;
+        currentImage.classList.add('dragging');
+        updateCoordinates(currentImage, coordinates);
+      }, 50);
+    });
+
+    emoji.addEventListener('mouseup', () => stopArrowMovement());
+    emoji.addEventListener('mouseleave', () => stopArrowMovement());
+  });
+
+  magnifyEmoji.addEventListener('click', () => {
+    const maxWidth = window.innerWidth * 0.9;
+    const maxHeight = window.innerHeight * 0.9;
+    const enlargedPreview = document.getElementById('enlarged-preview');
+    enlargedPreview.innerHTML = '';
+    let scale = maxWidth / 600;
+    if (maxHeight / 600 < scale) scale = maxHeight / 600;
+    enlargedPreview.style.width = `${600 * scale}px`;
+    enlargedPreview.style.height = `${600 * scale}px`;
+
+    const sorted = traitImages
+      .map((img, i) => ({ img, z: TraitManager.getAllTraits()[i].zIndex }))
+      .sort((a, b) => b.z - a.z);
+
+    sorted.forEach(({ img }) => {
+      const clone = img.cloneNode(true);
+      clone.style.width = `${img.width * scale}px`;
+      clone.style.height = `${img.height * scale}px`;
+      clone.style.left = `${parseFloat(img.style.left) * scale}px`;
+      clone.style.top = `${parseFloat(img.style.top) * scale}px`;
+      clone.style.position = 'absolute';
+      clone.style.zIndex = img.style.zIndex;
+      clone.style.visibility = 'visible';
+      enlargedPreview.appendChild(clone);
+    });
+
+    enlargedPreview.style.display = 'block';
+    enlargedPreview.addEventListener('click', () => {
+      enlargedPreview.style.display = 'none';
+    }, { once: true });
+  });
+}
+
+function setupDragAndDrop(img, traitIndex) {
+  img.addEventListener('dragstart', e => e.preventDefault());
+
+  img.addEventListener('mousedown', (e) => {
+    if (!img.src) return;
+    isDragging = true;
+    currentImage = img;
+    const rect = img.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    img.style.cursor = 'grabbing';
+    img.classList.add('dragging');
+    updateCoordinates(img, document.getElementById('coordinates'));
+  });
+
+  img.addEventListener('click', () => {
+    currentImage = img;
+    updateCoordinates(img, document.getElementById('coordinates'));
+  });
+}
+
+function stopArrowMovement() {
+  if (moveInterval) {
+    clearInterval(moveInterval);
+    moveInterval = null;
+    if (currentImage) {
+      const traitIndex = traitImages.indexOf(currentImage);
+      const trait = TraitManager.getAllTraits()[traitIndex];
+      const variationName = trait.variants[trait.selected].name;
+      savePosition(currentImage, trait.id, variationName);
+      currentImage.classList.remove('dragging');
     }
+  }
+}
+
+function updateCoordinates(img, coordsElement) {
+  if (img && coordsElement) {
+    const left = parseFloat(img.style.left) || 0;
+    const top = parseFloat(img.style.top) || 0;
+    coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
+  }
+}
+
+function updateZIndices() {
+  traitImages.forEach((img, index) => {
+    const trait = TraitManager.getAllTraits()[index];
+    img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
+  });
+  if (previewPanel.element) previewPanel.element.offsetHeight;
+}
 
 
 
