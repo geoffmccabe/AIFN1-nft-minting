@@ -27,7 +27,7 @@ class Panel {
       this.element.innerHTML = this.id === 'logo-panel' ? this.content : `<h2>${this.title}</h2>${this.content}`;
       Object.assign(this.element.style, {
         ...this.style,
-        position: 'relative', // For drag-and-drop
+        position: 'relative',
         cursor: 'grab'
       });
     }
@@ -124,7 +124,7 @@ class PanelManager {
       }
 
       this.renderAll();
-      this.panels.forEach(p => this.setupDrag(p)); // Reattach listeners
+      this.panels.forEach(p => this.setupDrag(p));
     });
   }
 }
@@ -195,7 +195,6 @@ const TraitManager = {
 
     if (newPosition === oldPosition) return;
 
-    // Special case: swap with first or last trait
     if (oldPosition === 1 && newPosition === maxPosition) {
       const lastTrait = this.traits.find(t => t.position === maxPosition);
       if (lastTrait) {
@@ -209,7 +208,6 @@ const TraitManager = {
         trait.position = 1;
       }
     } else {
-      // Normal swap between adjacent positions
       const targetTrait = this.traits.find(t => t.position === newPosition);
       if (targetTrait) {
         targetTrait.position = oldPosition;
@@ -271,9 +269,6 @@ const TraitManager = {
     return [...this.traits];
   }
 };
-
-
-
 
 /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
@@ -418,9 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
   traitImages.forEach((img, index) => setupDragAndDrop(img, index));
 });
 
-
-
-
 /* Section 4 - TRAIT MANAGEMENT LOGIC */
 
 
@@ -470,17 +462,7 @@ function setupTraitListeners(traitId) {
   const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
   const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitId}"]`);
 
-  if (nameInput) {
-    nameInput.addEventListener('input', () => {
-      const trait = TraitManager.getTrait(traitId);
-      trait.name = nameInput.value.trim();
-      trait.isUserAssignedName = true;
-      const title = nameInput.parentElement.querySelector('h2');
-      title.textContent = `TRAIT ${trait.position}${trait.name ? ` - ${trait.name}` : ''}`;
-    });
-  }
-
-  if (fileInput && fileInputLabel && grid) {
+  if (fileInput) {
     fileInput.addEventListener('change', async (event) => {
       console.log(`File input triggered for trait ${traitId}`);
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
@@ -512,7 +494,19 @@ function setupTraitListeners(traitId) {
       updateMintButton();
       updatePreviewSamples();
     });
+  }
 
+  if (nameInput) {
+    nameInput.addEventListener('input', () => {
+      const trait = TraitManager.getTrait(traitId);
+      trait.name = nameInput.value.trim();
+      trait.isUserAssignedName = true;
+      const title = nameInput.parentElement.querySelector('h2');
+      title.textContent = `TRAIT ${trait.position}${trait.name ? ` - ${trait.name}` : ''}`;
+    });
+  }
+
+  if (grid) {
     grid.querySelectorAll('.variation-container').forEach(container => {
       container.addEventListener('click', () => {
         const traitId = container.dataset.traitId;
@@ -628,9 +622,6 @@ function removeTrait(traitId) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
-
-
-
 
 /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
@@ -859,9 +850,6 @@ function updateZIndices() {
   if (previewPanel.element) previewPanel.element.offsetHeight;
 }
 
-
-
-
 /* Section 6 - PREVIEW SAMPLES LOGIC */
 
 
@@ -910,9 +898,6 @@ function updatePreviewSamples() {
     });
   });
 }
-
-
-
 
 /* Section 7 - BACKGROUND AND MINTING LOGIC */
 
