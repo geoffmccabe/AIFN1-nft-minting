@@ -39,12 +39,14 @@
     padding-top: 30px;
     display: flex;
     flex-direction: column;
+    max-width: 66.67%;
   }
   #right-column {
     flex: 1;
     padding-left: 20px;
     display: flex;
     flex-direction: column;
+    max-width: 33.33%;
   }
   .panel {
     background-color: rgba(255, 255, 255, 0.6);
@@ -54,18 +56,19 @@
     box-sizing: border-box;
     margin-bottom: 20px;
     position: relative;
+    width: 100%;
   }
   .panel h2 {
     font-family: 'Rowdies', sans-serif;
     font-weight: 400;
     font-size: 12px;
-    color: #cbcccb; /* Lighter grey */
+    color: #cbcccb;
     margin: 0 0 10px;
     text-align: center;
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
     width: 100%;
   }
   #logo-panel {
@@ -86,7 +89,7 @@
   }
   .trait-section {
     margin-bottom: 20px;
-    margin-top: 30px; /* Space for centered title */
+    margin-top: 30px;
   }
   .trait-header {
     display: flex;
@@ -152,6 +155,7 @@
     box-sizing: border-box;
     height: 32px;
     font-size: 16px;
+    display: block;
   }
   input[type="text"]::placeholder {
     color: #ccc;
@@ -409,7 +413,7 @@
   }
   @media (max-width: 900px) {
     body { flex-direction: column; padding: 10px; }
-    #left-column, #right-column { flex: none; width: 100%; padding: 0; }
+    #left-column, #right-column { flex: none; width: 100%; padding: 0; max-width: 100%; }
     #preview, #background-image { height: auto; aspect-ratio: 1 / 1; }
     #preview-samples-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
     .panel { width: 100% !important; }
@@ -417,7 +421,7 @@
 </style>
 
 <body>
-  <div id="version">Version 96</div>
+  <div id="version">Version 97</div>
   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
