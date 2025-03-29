@@ -95,17 +95,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: auto;
-    min-height: 200px;
+    height: 200px; /* Fixed height for consistent centering */
+    width: 100%;
+    padding: 0; /* Remove padding to ensure true centering */
   }
   #logo {
     display: block;
-    width: 100%;
     max-width: 600px;
+    max-height: 100%; /* Ensure the logo fits within the panel height */
+    width: auto; /* Let the width adjust based on height to maintain aspect ratio */
     height: auto;
   }
   @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    #logo { width: 300px; }
+    #logo { max-width: 300px; } /* Use max-width to allow centering */
   }
   .trait-section {
     margin-bottom: 20px;
@@ -139,10 +141,6 @@
     gap: 10px;
     margin-top: 10px;
   }
-
-
-
-
 
     /* Section 2 - Styles for Variations and Inputs */
 
@@ -316,10 +314,6 @@
   .direction-emoji:hover, .magnify-emoji:hover {
     opacity: 0.8;
   }
-
-
-
-
 
     /* Section 3 - Styles for Enlarged Preview and Samples */
 
