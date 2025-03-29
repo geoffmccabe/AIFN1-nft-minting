@@ -37,23 +37,28 @@
     flex: 2;
     padding-right: 20px;
     padding-top: 30px;
+    display: flex;
+    flex-direction: column;
   }
   #right-column {
     flex: 1;
     padding-left: 20px;
+    display: flex;
+    flex-direction: column;
   }
   .panel {
-    background-color: rgba(255, 255, 255, 0.6); /* 40% transparent */
+    background-color: rgba(255, 255, 255, 0.6);
     border-radius: 10px;
     padding: 10px;
     border: 1px solid #ccc;
-    width: 100%;
     box-sizing: border-box;
     margin-bottom: 20px;
   }
   .panel h2 {
     font-family: 'Rowdies', sans-serif;
     font-weight: 400;
+    font-size: 12px; /* Half of ~24px */
+    color: #666; /* Matches trait-controls grey */
     margin: 0 0 10px;
     text-align: left;
   }
@@ -62,7 +67,7 @@
     align-items: center;
     justify-content: center;
     height: auto;
-    min-height: 200px; /* Adjust as needed */
+    min-height: 200px;
   }
   #logo {
     display: block;
@@ -139,6 +144,7 @@
     margin-bottom: 5px;
     box-sizing: border-box;
     height: 32px;
+    font-size: 16px; /* 2/3 of ~24px */
   }
   input[type="text"]::placeholder {
     color: #ccc;
@@ -399,11 +405,12 @@
     #left-column, #right-column { flex: none; width: 100%; padding: 0; }
     #preview, #background-image { height: auto; aspect-ratio: 1 / 1; }
     #preview-samples-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .panel { width: 100% !important; }
   }
 </style>
 
 <body>
-  <div id="version">Version 93</div>
+  <div id="version">Version 95</div>
   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
