@@ -25,11 +25,12 @@
           this.element = document.createElement('div');
           this.element.id = this.id;
           this.element.className = 'panel';
-          this.element.innerHTML = this.id === 'logo-panel' ? this.content : `<h2>${this.title}</h2>${this.content}`;
+          const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
+          this.element.innerHTML = header + this.content;
           Object.assign(this.element.style, {
             ...this.style,
             position: 'relative',
-            cursor: 'grab',
+            cursor: 'default',
             display: 'block',
             width: '100%'
           });
@@ -39,7 +40,7 @@
 
       update(content) {
         if (this.element) {
-          const header = this.id === 'logo-panel' ? '' : `<h2>${this.title}</h2>`;
+          const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
           this.element.innerHTML = header + (content || this.content);
           Object.assign(this.element.style, {
             position: 'relative',
@@ -103,7 +104,7 @@
         let offsetX, offsetY;
 
         el.addEventListener('mousedown', (e) => {
-          if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'LABEL') return;
+          if (!e.target.classList.contains('panel-top-bar')) return;
           isDragging = true;
           const rect = el.getBoundingClientRect();
           offsetX = e.clientX - rect.left;
@@ -122,7 +123,7 @@
         document.addEventListener('mouseup', (e) => {
           if (!isDragging) return;
           isDragging = false;
-          el.style.cursor = 'grab';
+          el.style.cursor = 'default';
           el.style.zIndex = '1';
           const dropX = e.clientX;
           const windowWidth = window.innerWidth;
@@ -142,9 +143,6 @@
         });
       }
     }
-
-
-
 
 
    
@@ -277,6 +275,7 @@
 
 
 
+   
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -426,8 +425,6 @@
 
 
 
-   
-    
     /* Section 4 - TRAIT MANAGEMENT LOGIC */
 
 
@@ -450,7 +447,7 @@
             </div>
             <input type="text" id="trait${trait.id}-name" placeholder="Trait ${trait.position}" ${trait.isUserAssignedName ? `value="${trait.name}"` : ''}>
             <input type="file" id="trait${trait.id}-files" accept="image/png,image/webp" multiple onchange="handleFileChange('${trait.id}', this)">
-            <label class="file-input-label" for="trait${trait.id}-files" onclick="document.getElementById('trait${trait.id}-files').click()">Choose Files</label>
+            <label class="file-input-label" for="trait${trait.id}-files">Choose Files</label>
             <div id="trait${trait.id}-grid" class="trait-grid">`;
         trait.variants.forEach(variant => {
           html += `
@@ -518,6 +515,7 @@
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updateMintButton();
       updatePreviewSamples();
+      input.value = ''; // Clear the input to prevent double triggering
     }
 
     function setupTraitListeners(traitId) {
@@ -668,7 +666,7 @@
 
 
 
-    
+
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -915,6 +913,7 @@
       });
       if (previewPanel.element) previewPanel.element.offsetHeight;
     }
+
 
 
 
