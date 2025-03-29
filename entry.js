@@ -30,7 +30,8 @@
             ...this.style,
             position: 'relative',
             cursor: 'grab',
-            display: 'block'
+            display: 'block',
+            width: '100%'
           });
         }
         return this.element;
@@ -38,7 +39,12 @@
 
       update(content) {
         if (this.element) {
-          this.element.innerHTML = this.id === 'logo-panel' ? content || this.content : `<h2>${this.title}</h2>${content || this.content}`;
+          const header = this.id === 'logo-panel' ? '' : `<h2>${this.title}</h2>`;
+          this.element.innerHTML = header + (content || this.content);
+          Object.assign(this.element.style, {
+            position: 'relative',
+            width: '100%'
+          });
         }
       }
 
@@ -71,8 +77,7 @@
         }
         const leftPanels = this.panels.filter(p => p.column === 'left');
         const rightPanels = this.panels.filter(p => p.column === 'right');
-        
-        // Update left column
+
         leftPanels.forEach(panel => {
           if (!document.getElementById(panel.id)) {
             leftColumn.appendChild(panel.render());
@@ -81,7 +86,6 @@
           }
         });
 
-        // Update right column
         rightPanels.forEach(panel => {
           if (!document.getElementById(panel.id)) {
             rightColumn.appendChild(panel.render());
@@ -99,7 +103,7 @@
         let offsetX, offsetY;
 
         el.addEventListener('mousedown', (e) => {
-          if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'LABEL') return;
           isDragging = true;
           const rect = el.getBoundingClientRect();
           offsetX = e.clientX - rect.left;
@@ -202,7 +206,7 @@
         const maxPosition = this.traits.length;
         if (newPosition === oldPosition) return;
         if (oldPosition === 1 && newPosition === maxPosition) {
-          const lastTrait = this.traits.find(t => t.position === maxPosition);
+          const lastTrait = this.traits.find(t => t.position W=== maxPosition);
           if (lastTrait) {
             lastTrait.position = 1;
             trait.position = maxPosition;
@@ -442,8 +446,7 @@
               </div>
             </div>
             <input type="text" id="trait${trait.id}-name" placeholder="Trait ${trait.position}" ${trait.isUserAssignedName ? `value="${trait.name}"` : ''}>
-            <input type="file" id="trait${trait.id}-files" accept="image/png,image/webp" multiple onchange="handleFileChange('${trait.id}', this)">
-            <label class="file-input-label" for="trait${trait.id}-files">Choose Files</label>
+            <div id="trait${trait.id}-file-input"></div>
             <div id="trait${trait.id}-grid" class="trait-grid">`;
         trait.variants.forEach(variant => {
           html += `
@@ -460,12 +463,23 @@
       return html;
     }
 
+    function updateTraitFileInputs() {
+      TraitManager.getAllTraits().forEach(trait => {
+        const fileInputContainer = document.getElementById(`trait${trait.id}-file-input`);
+        if (fileInputContainer) {
+          fileInputContainer.innerHTML = `
+            <input type="file" id="trait${trait.id}-files" accept="image/png,image/webp" multiple onchange="handleFileChange('${trait.id}', this)">
+            <label class="file-input-label" for="trait${trait.id}-files">Choose Files</label>
+          `;
+        }
+      });
+    }
+
     function handleFileChange(traitId, input) {
       console.log(`File input triggered for trait ${traitId}`);
       const files = Array.from(input.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
 
-      // Validate file types
       const validTypes = ['image/png', 'image/webp'];
       for (let file of files) {
         if (!validTypes.includes(file.type)) {
@@ -480,7 +494,6 @@
         trait.name = `Trait ${position}`;
       }
 
-      // Revoke old URLs to prevent memory leaks
       trait.variants.forEach(variant => {
         if (variant.url && variant.url.startsWith('blob:')) {
           URL.revokeObjectURL(variant.url);
@@ -503,6 +516,7 @@
       }
 
       traitsPanel.update(getTraitsContent());
+      updateTraitFileInputs();
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updateMintButton();
       updatePreviewSamples();
@@ -560,6 +574,7 @@
             return img;
           }).filter(img => img);
           traitsPanel.update(getTraitsContent());
+          updateTraitFileInputs();
           TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
           traitImages.forEach((img, index) => setupDragAndDrop(img, index));
           updatePreviewSamples();
@@ -587,6 +602,7 @@
             return img;
           }).filter(img => img);
           traitsPanel.update(getTraitsContent());
+          updateTraitFileInputs();
           TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
           traitImages.forEach((img, index) => setupDragAndDrop(img, index));
           updatePreviewSamples();
@@ -599,6 +615,7 @@
             const trait = TraitManager.getTrait(traitId);
             TraitManager.addTrait(trait.position);
             traitsPanel.update(getTraitsContent());
+            updateTraitFileInputs();
             TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
             updatePreviewSamples();
           }
@@ -630,6 +647,7 @@
         TraitManager.removeTrait(traitId);
         traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
         traitsPanel.update(getTraitsContent());
+        updateTraitFileInputs();
         TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
         traitImages.forEach((img, index) => setupDragAndDrop(img, index));
         updatePreviewSamples();
@@ -728,6 +746,7 @@
       updateZIndices();
       updateCoordinates(currentImage, document.getElementById('coordinates'));
       traitsPanel.update(getTraitsContent());
+      updateTraitFileInputs();
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
     }
 
