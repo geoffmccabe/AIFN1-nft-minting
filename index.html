@@ -65,7 +65,7 @@
   .panel {
     background-color: rgba(255, 255, 255, 0.6);
     border-radius: 10px;
-    padding: 10px;
+    padding: 20px 10px 10px 10px; /* Increased top padding to accommodate the bar */
     border: 1px solid #ccc;
     box-sizing: border-box;
     margin-bottom: 20px;
@@ -73,10 +73,15 @@
     width: 100%;
   }
   .panel-top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 10px;
-    background-color: #ccc;
+    background-color: #e6e6e6; /* Halfway between #ccc and #fff */
     cursor: grab;
+    border-top-left-radius: 10px; /* Match panel's border-radius */
+    border-top-right-radius: 10px;
   }
   .panel h2 {
     font-family: 'Rowdies', sans-serif;
@@ -95,19 +100,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 200px; /* Fixed height for consistent centering */
+    height: 200px;
     width: 100%;
-    padding: 0; /* Remove padding to ensure true centering */
+    padding: 0;
   }
   #logo {
     display: block;
     max-width: 600px;
-    max-height: 100%; /* Ensure the logo fits within the panel height */
-    width: auto; /* Let the width adjust based on height to maintain aspect ratio */
+    max-height: 100%;
+    width: auto;
     height: auto;
   }
   @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    #logo { max-width: 300px; } /* Use max-width to allow centering */
+    #logo { max-width: 300px; }
   }
   .trait-section {
     margin-bottom: 20px;
@@ -463,7 +468,7 @@
 </style>
 
 <body>
-  <div id="version">Version 105</div>
+  <div id="version">Version 106</div>
   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
