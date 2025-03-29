@@ -39,8 +39,8 @@
     padding-top: 30px;
     display: flex;
     flex-direction: column;
-    max-width: 66.67%;
-    width: 66.67%;
+    max-width: 60%;
+    width: 60%;
     box-sizing: border-box;
     overflow: hidden;
   }
@@ -49,8 +49,8 @@
     padding-left: 20px;
     display: flex;
     flex-direction: column;
-    max-width: 33.33%;
-    width: 33.33%;
+    max-width: 40%;
+    width: 40%;
     box-sizing: border-box;
     overflow: hidden;
   }
@@ -256,8 +256,7 @@
   #preview {
     position: relative;
     width: 100%;
-    max-width: 600px;
-    height: 600px;
+    aspect-ratio: 1 / 1;
     background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
     background-size: cover;
     margin-bottom: 10px;
@@ -266,8 +265,6 @@
   }
   #preview img {
     position: absolute;
-    max-width: 600px;
-    max-height: 600px;
     object-fit: contain;
   }
   #preview img.dragging {
@@ -315,24 +312,23 @@
   }
   #preview-samples-grid {
     display: grid;
-    grid-template-columns: repeat(4, 140px);
-    grid-template-rows: repeat(4, 140px);
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
     gap: 13px;
     width: 100%;
   }
   #preview-samples-grid .sample-container {
     position: relative;
-    width: 140px;
-    height: 140px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
     background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: 140px 140px;
+    background-size: cover;
     overflow: hidden;
     cursor: pointer;
     border-radius: 5px;
   }
   #preview-samples-grid img {
     position: absolute;
-    transform: scale(0.23333);
     transform-origin: top left;
   }
   #update-previews {
@@ -439,7 +435,7 @@
 </style>
 
 <body>
-  <div id="version">Version 100</div>
+  <div id="version">Version 93</div>
   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
