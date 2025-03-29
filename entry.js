@@ -427,6 +427,7 @@
 
 
    
+    
     /* Section 4 - TRAIT MANAGEMENT LOGIC */
 
 
@@ -469,7 +470,10 @@
     function handleFileChange(traitId, input) {
       console.log(`File input triggered for trait ${traitId}`);
       const files = Array.from(input.files).sort((a, b) => a.name.localeCompare(b.name));
-      if (!files.length) return;
+      if (!files.length) {
+        console.log('No files selected');
+        return;
+      }
 
       const validTypes = ['image/png', 'image/webp'];
       for (let file of files) {
@@ -501,9 +505,13 @@
 
       if (trait.variants.length > 0) {
         console.log(`Selecting variant for trait ${traitId}`);
-        selectVariation(traitId, trait.variants[0].id);
+        setTimeout(() => {
+          selectVariation(traitId, trait.variants[0].id);
+        }, 100);
         document.querySelector(`label[for="trait${traitId}-files"]`).textContent = 'Choose New Files';
         autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
+      } else {
+        console.log('No variants added for trait', traitId);
       }
 
       traitsPanel.update(getTraitsContent());
@@ -660,7 +668,7 @@
 
 
 
-
+    
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -681,7 +689,13 @@
         previewImage = document.createElement('img');
         previewImage.id = `preview-trait${traitId}`;
         traitImages.push(previewImage);
-        document.getElementById('preview').appendChild(previewImage);
+        const previewDiv = document.getElementById('preview');
+        if (previewDiv) {
+          previewDiv.appendChild(previewImage);
+        } else {
+          console.error('Preview div not found');
+          return;
+        }
         setupDragAndDrop(previewImage, TraitManager.getAllTraits().findIndex(t => t.id === traitId));
       }
 
@@ -731,9 +745,6 @@
       currentImage = previewImage;
       updateZIndices();
       updateCoordinates(currentImage, document.getElementById('coordinates'));
-      traitsPanel.update(getTraitsContent());
-      updateTraitFileInputs();
-      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
     }
 
     function setupPreviewListeners() {
@@ -904,7 +915,6 @@
       });
       if (previewPanel.element) previewPanel.element.offsetHeight;
     }
-
 
 
 
