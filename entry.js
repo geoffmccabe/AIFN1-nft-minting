@@ -426,6 +426,7 @@
 
 
 
+   
     /* Section 4 - TRAIT MANAGEMENT LOGIC */
 
 
@@ -447,7 +448,8 @@
               </div>
             </div>
             <input type="text" id="trait${trait.id}-name" placeholder="Trait ${trait.position}" ${trait.isUserAssignedName ? `value="${trait.name}"` : ''}>
-            <div id="trait${trait.id}-file-input"></div>
+            <input type="file" id="trait${trait.id}-files" accept="image/png,image/webp" multiple onchange="handleFileChange('${trait.id}', this)">
+            <label class="file-input-label" for="trait${trait.id}-files" onclick="document.getElementById('trait${trait.id}-files').click()">Choose Files</label>
             <div id="trait${trait.id}-grid" class="trait-grid">`;
         trait.variants.forEach(variant => {
           html += `
@@ -462,18 +464,6 @@
       });
       html += '</div>';
       return html;
-    }
-
-    function updateTraitFileInputs() {
-      TraitManager.getAllTraits().forEach(trait => {
-        const fileInputContainer = document.getElementById(`trait${trait.id}-file-input`);
-        if (fileInputContainer) {
-          fileInputContainer.innerHTML = `
-            <input type="file" id="trait${trait.id}-files" accept="image/png,image/webp" multiple onchange="handleFileChange('${trait.id}', this)">
-            <label class="file-input-label" for="trait${trait.id}-files">Choose Files</label>
-          `;
-        }
-      });
     }
 
     function handleFileChange(traitId, input) {
@@ -517,7 +507,6 @@
       }
 
       traitsPanel.update(getTraitsContent());
-      updateTraitFileInputs();
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updateMintButton();
       updatePreviewSamples();
@@ -575,7 +564,6 @@
             return img;
           }).filter(img => img);
           traitsPanel.update(getTraitsContent());
-          updateTraitFileInputs();
           TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
           traitImages.forEach((img, index) => setupDragAndDrop(img, index));
           updatePreviewSamples();
@@ -603,7 +591,6 @@
             return img;
           }).filter(img => img);
           traitsPanel.update(getTraitsContent());
-          updateTraitFileInputs();
           TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
           traitImages.forEach((img, index) => setupDragAndDrop(img, index));
           updatePreviewSamples();
@@ -616,7 +603,6 @@
             const trait = TraitManager.getTrait(traitId);
             TraitManager.addTrait(trait.position);
             traitsPanel.update(getTraitsContent());
-            updateTraitFileInputs();
             TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
             updatePreviewSamples();
           }
@@ -648,7 +634,6 @@
         TraitManager.removeTrait(traitId);
         traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
         traitsPanel.update(getTraitsContent());
-        updateTraitFileInputs();
         TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
         traitImages.forEach((img, index) => setupDragAndDrop(img, index));
         updatePreviewSamples();
