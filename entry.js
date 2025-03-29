@@ -150,11 +150,8 @@
     }
 
 
-
-
-
-
   
+    
     
     /* Section 2 - TRAIT MANAGER FRAMEWORK */
 
@@ -168,13 +165,7 @@
       initialize() {
         this.traits = [];
         for (let i = 0; i < 3; i++) {
-          const trait = this.addTrait(i + 1);
-          // Add a default variant to each trait for initial rendering
-          this.addVariant(trait.id, {
-            name: `Default Variant ${i + 1}`,
-            url: `https://picsum.photos/100?random=${i + 1}` // Reliable placeholder image
-          });
-          trait.selected = 0; // Ensure the default variant is selected
+          this.addTrait(i + 1);
         }
       },
 
@@ -286,6 +277,7 @@
         return [...this.traits];
       }
     };
+
 
 
 
@@ -440,609 +432,445 @@
 
 
 
-    /* Section 4 - TRAIT MANAGEMENT LOGIC */
-
-
-
-
-
-    function getTraitsContent() {
-      let html = '<div id="trait-container">';
-      TraitManager.getAllTraits().forEach(trait => {
-        html += `
-          <div id="trait${trait.id}" class="trait-section">
-            <div class="trait-header">
-              <h2>TRAIT ${trait.position}${trait.isUserAssignedName && trait.name ? ` - ${trait.name}` : ''}</h2>
-              <div class="trait-controls">
-                <span class="up-arrow" data-trait="${trait.id}" data-tooltip="Swap Trait Order">⬆️</span>
-                <span class="down-arrow" data-trait="${trait.id}" data-tooltip="Swap Trait Order">⬇️</span>
-                <span class="add-trait" data-trait="${trait.id}">➕</span>
-                <span class="remove-trait" data-trait="${trait.id}">➖</span>
-              </div>
-            </div>
-            <input type="text" id="trait${trait.id}-name" placeholder="Trait ${trait.position}" ${trait.isUserAssignedName ? `value="${trait.name}"` : ''}>
-            <input type="file" id="trait${trait.id}-files" accept="image/png,image/webp" multiple onchange="handleFileChange('${trait.id}', this)">
-            <label class="file-input-label" for="trait${trait.id}-files">Choose Files</label>
-            <div id="trait${trait.id}-grid" class="trait-grid">`;
-        trait.variants.forEach(variant => {
-          html += `
-            <div class="variation-container" data-trait-id="${trait.id}" data-variation-id="${variant.id}">
-              <div class="variation-image-wrapper${trait.selected === trait.variants.indexOf(variant) ? ' selected' : ''}">
-                <img src="${variant.url}" alt="${variant.name}" class="variation">
-              </div>
-              <div class="variation-filename">${variant.name}</div>
-            </div>`;
-        });
-        html += `</div></div>`;
-      });
-      html += '</div>';
-      return html;
-    }
-
-    function handleFileChange(traitId, input) {
-      console.log(`File input triggered for trait ${traitId}`);
-      const files = Array.from(input.files).sort((a, b) => a.name.localeCompare(b.name));
-      if (!files.length) {
-        console.log('No files selected');
-        return;
-      }
-
-      const validTypes = ['image/png', 'image/webp'];
-      for (let file of files) {
-        if (!validTypes.includes(file.type)) {
-          console.error(`Invalid file type: ${file.name} (${file.type})`);
-          return;
-        }
-      }
-
-      const trait = TraitManager.getTrait(traitId);
-      if (!trait.isUserAssignedName) {
-        const position = TraitManager.getAllTraits().findIndex(t => t.id === traitId) + 1;
-        trait.name = `Trait ${position}`;
-      }
-
-      trait.variants.forEach(variant => {
-        if (variant.url && variant.url.startsWith('blob:')) {
-          URL.revokeObjectURL(variant.url);
-        }
-      });
-
-      trait.variants = [];
-      traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
-      files.forEach(file => {
-        const variationName = file.name.split('.').slice(0, -1).join('.');
-        const url = URL.createObjectURL(file);
-        TraitManager.addVariant(traitId, { name: variationName, url });
-      });
-
-      if (trait.variants.length > 0) {
-        console.log(`Selecting variant for trait ${traitId}`);
-        setTimeout(() => {
-          selectVariation(traitId, trait.variants[0].id);
-        }, 100);
-        document.querySelector(`label[for="trait${traitId}-files"]`).textContent = 'Choose New Files';
-        autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
-      } else {
-        console.log('No variants added for trait', traitId);
-      }
-
-      traitsPanel.update(getTraitsContent());
-      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
-      updateMintButton();
-      updatePreviewSamples();
-      input.value = ''; // Clear the input to prevent double triggering
-    }
-
-    function setupTraitListeners(traitId) {
-      const nameInput = document.getElementById(`trait${traitId}-name`);
-      const grid = document.getElementById(`trait${traitId}-grid`);
-      const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
-      const downArrow = document.querySelector(`.down-arrow[data-trait="${traitId}"]`);
-      const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
-      const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitId}"]`);
-
-      if (nameInput) {
-        nameInput.addEventListener('input', () => {
-          const trait = TraitManager.getTrait(traitId);
-          trait.name = nameInput.value.trim();
-          trait.isUserAssignedName = true;
-          const title = nameInput.parentElement.querySelector('h2');
-          title.textContent = `TRAIT ${trait.position}${trait.name ? ` - ${trait.name}` : ''}`;
-        });
-      }
-
-      if (grid) {
-        grid.querySelectorAll('.variation-container').forEach(container => {
-          container.addEventListener('click', () => {
-            const traitId = container.dataset.traitId;
-            const variantId = container.dataset.variationId;
-            const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
-            allWrappers.forEach(w => w.classList.remove('selected'));
-            container.querySelector('.variation-image-wrapper').classList.add('selected');
-            selectVariation(traitId, variantId);
-          });
-        });
-      }
-
-      if (upArrow) {
-        upArrow.addEventListener('click', () => {
-          const trait = TraitManager.getTrait(traitId);
-          let newPosition = trait.position === 1 ? TraitManager.getAllTraits().length : trait.position - 1;
-          TraitManager.moveTrait(traitId, newPosition);
-          traitImages = TraitManager.getAllTraits().map(trait => {
-            let img = document.getElementById(`preview-trait${trait.id}`);
-            if (!img && trait.variants.length > 0) {
-              img = document.createElement('img');
-              img.id = `preview-trait${trait.id}`;
-              img.src = trait.variants[trait.selected].url;
-              img.onerror = () => {
-                console.error(`Failed to load image for trait ${trait.id}`);
-                img.style.visibility = 'hidden';
-              };
-              document.getElementById('preview').appendChild(img);
-              setupDragAndDrop(img, TraitManager.getAllTraits().findIndex(t => t.id === trait.id));
-            }
-            return img;
-          }).filter(img => img);
-          traitsPanel.update(getTraitsContent());
-          TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
-          traitImages.forEach((img, index) => setupDragAndDrop(img, index));
-          updatePreviewSamples();
-        });
-      }
-
-      if (downArrow) {
-        downArrow.addEventListener('click', () => {
-          const trait = TraitManager.getTrait(traitId);
-          let newPosition = trait.position === TraitManager.getAllTraits().length ? 1 : trait.position + 1;
-          TraitManager.moveTrait(traitId, newPosition);
-          traitImages = TraitManager.getAllTraits().map(trait => {
-            let img = document.getElementById(`preview-trait${trait.id}`);
-            if (!img && trait.variants.length > 0) {
-              img = document.createElement('img');
-              img.id = `preview-trait${trait.id}`;
-              img.src = trait.variants[trait.selected].url;
-              img.onerror = () => {
-                console.error(`Failed to load image for trait ${trait.id}`);
-                img.style.visibility = 'hidden';
-              };
-              document.getElementById('preview').appendChild(img);
-              setupDragAndDrop(img, TraitManager.getAllTraits().findIndex(t => t.id === trait.id));
-            }
-            return img;
-          }).filter(img => img);
-          traitsPanel.update(getTraitsContent());
-          TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
-          traitImages.forEach((img, index) => setupDragAndDrop(img, index));
-          updatePreviewSamples();
-        });
-      }
-
-      if (addTraitBtn) {
-        addTraitBtn.addEventListener('click', () => {
-          if (TraitManager.getAllTraits().length < 20) {
-            const trait = TraitManager.getTrait(traitId);
-            TraitManager.addTrait(trait.position);
-            traitsPanel.update(getTraitsContent());
-            TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
-            updatePreviewSamples();
-          }
-        });
-      }
-
-      if (removeTraitBtn) {
-        removeTraitBtn.addEventListener('click', () => removeTrait(traitId));
-      }
-    }
-
-    function removeTrait(traitId) {
-      if (TraitManager.getAllTraits().length <= 1) return;
-
-      const confirmationDialog = document.createElement('div');
-      confirmationDialog.className = 'confirmation-dialog';
-      const message = document.createElement('p');
-      message.textContent = `Are you sure you want to delete Trait ${TraitManager.getTrait(traitId).position}?`;
-      const buttonsDiv = document.createElement('div');
-      buttonsDiv.className = 'buttons';
-      const yesButton = document.createElement('button');
-      yesButton.className = 'yes-button';
-      yesButton.textContent = 'Y';
-      const noButton = document.createElement('button');
-      noButton.className = 'no-button';
-      noButton.textContent = 'N';
-
-      const deleteAndRemoveDialog = () => {
-        TraitManager.removeTrait(traitId);
-        traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
-        traitsPanel.update(getTraitsContent());
-        TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
-        traitImages.forEach((img, index) => setupDragAndDrop(img, index));
-        updatePreviewSamples();
-      };
-
-      yesButton.addEventListener('click', () => {
-        deleteAndRemoveDialog();
-        setTimeout(() => {
-          if (confirmationDialog && confirmationDialog.parentNode) {
-            confirmationDialog.parentNode.removeChild(confirmationDialog);
-          }
-        }, 0);
-      });
-
-      noButton.addEventListener('click', () => confirmationDialog.remove());
-
-      buttonsDiv.appendChild(yesButton);
-      buttonsDiv.appendChild(noButton);
-      confirmationDialog.appendChild(message);
-      confirmationDialog.appendChild(buttonsDiv);
-      document.body.appendChild(confirmationDialog);
-    }
-
-
-
-
-
-    /* Section 5 - PREVIEW MANAGEMENT LOGIC */
-
-
-
-
-
-    function selectVariation(traitId, variationId) {
-      const trait = TraitManager.getTrait(traitId);
-      const variationIndex = trait.variants.findIndex(v => v.id === variationId);
-      if (variationIndex === -1) {
-        console.error(`Variation ${variationId} not found in Trait ${traitId}`);
-        return;
-      }
-      trait.selected = variationIndex;
-
-      let previewImage = document.getElementById(`preview-trait${traitId}`);
-      if (!previewImage) {
-        previewImage = document.createElement('img');
-        previewImage.id = `preview-trait${traitId}`;
-        traitImages.push(previewImage);
-        const previewDiv = document.getElementById('preview');
-        if (previewDiv) {
-          previewDiv.appendChild(previewImage);
-        } else {
-          console.error('Preview div not found');
-          return;
-        }
-        setupDragAndDrop(previewImage, TraitManager.getAllTraits().findIndex(t => t.id === traitId));
-      }
-
-      const previewDiv = document.getElementById('preview');
-      const previewWidth = previewDiv ? previewDiv.clientWidth : 600; // Default to 600 if not found
-      const scale = previewWidth / 600; // Scale relative to original 600px
-
-      previewImage.src = trait.variants[variationIndex].url;
-      previewImage.onerror = () => {
-        console.error(`Failed to load image for trait ${traitId}`);
-        previewImage.style.visibility = 'hidden';
-      };
-      previewImage.style.visibility = 'visible';
-      previewImage.style.maxWidth = `${previewWidth}px`;
-      previewImage.style.maxHeight = `${previewWidth}px`;
-
-      const key = `${traitId}-${trait.variants[variationIndex].name}`;
-      const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
-      if (savedPosition) {
-        const { left, top } = JSON.parse(savedPosition);
-        previewImage.style.left = `${left * scale}px`;
-        previewImage.style.top = `${top * scale}px`;
-        if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
-      } else {
-        let lastPosition = null;
-        for (let i = 0; i < trait.variants.length; i++) {
-          if (i === variationIndex) continue;
-          const otherVariationName = trait.variants[i].name;
-          const otherKey = `${traitId}-${otherVariationName}`;
-          if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
-            lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
-          }
-        }
-        if (lastPosition) {
-          previewImage.style.left = `${lastPosition.left * scale}px`;
-          previewImage.style.top = `${lastPosition.top * scale}px`;
-          variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
-          try {
-            localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
-          } catch (e) {
-            console.error('Failed to save to localStorage:', e);
-          }
-        } else {
-          previewImage.style.left = '0px';
-          previewImage.style.top = '0px';
-          variantHistories[key] = [{ left: 0, top: 0 }];
-          try {
-            localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
-          } catch (e) {
-            console.error('Failed to save to localStorage:', e);
-          }
-        }
-      }
-      currentImage = previewImage;
-      updateZIndices();
-      updateCoordinates(currentImage, document.getElementById('coordinates'), scale);
-    }
-
-    function setupPreviewListeners() {
-      const preview = document.getElementById('preview');
-      const coordinates = document.getElementById('coordinates');
-      const directionEmojis = document.querySelectorAll('.direction-emoji');
-      const magnifyEmoji = document.querySelector('.magnify-emoji');
-      const enlargedPreview = document.getElementById('enlarged-preview');
-
-      if (preview) {
-        const previewWidth = preview.clientWidth;
-        const scale = previewWidth / 600; // Scale relative to original 600px
-
-        preview.addEventListener('mousemove', (e) => {
-          if (!isDragging || !currentImage) return;
-          const rect = preview.getBoundingClientRect();
-          let newLeft = e.clientX - rect.left - offsetX;
-          let newTop = e.clientY - rect.top - offsetY;
-          newLeft = Math.max(0, Math.min(newLeft, previewWidth - (currentImage.width * scale)));
-          newTop = Math.max(0, Math.min(newTop, previewWidth - (currentImage.height * scale)));
-          currentImage.style.left = `${newLeft}px`;
-          currentImage.style.top = `${newTop}px`;
-          updateCoordinates(currentImage, coordinates, scale);
-        });
-
-        document.addEventListener('mouseup', (e) => {
-          if (isDragging && currentImage) {
-            const traitIndex = traitImages.indexOf(currentImage);
-            if (traitIndex !== -1) {
-              const trait = TraitManager.getAllTraits()[traitIndex];
-              const variationName = trait.variants[trait.selected].name;
-              savePosition(currentImage, trait.id, variationName, scale);
-            }
-            isDragging = false;
-            currentImage.style.cursor = 'grab';
-            currentImage.classList.remove('dragging');
-            updateZIndices();
-          }
-        });
-      }
-
-      directionEmojis.forEach(emoji => {
-        const direction = emoji.getAttribute('data-direction');
-        emoji.addEventListener('mousedown', () => {
-          if (!currentImage || currentImage.src === '') return;
-          const previewWidth = preview.clientWidth;
-          const scale = previewWidth / 600;
-          const moveAmount = 0.0025 * previewWidth; // 0.25% of the preview width per move
-          moveInterval = setInterval(() => {
-            let left = parseFloat(currentImage.style.left) || 0;
-            let top = parseFloat(currentImage.style.top) || 0;
-            if (direction === 'up') top -= moveAmount;
-            if (direction === 'down') top += moveAmount;
-            if (direction === 'left') left -= moveAmount;
-            if (direction === 'right') left += moveAmount;
-            left = Math.max(0, Math.min(left, previewWidth - (currentImage.width * scale)));
-            top = Math.max(0, Math.min(top, previewWidth - (currentImage.height * scale)));
-            currentImage.style.left = `${left}px`;
-            currentImage.style.top = `${top}px`;
-            currentImage.classList.add('dragging');
-            updateCoordinates(currentImage, coordinates, scale);
-          }, 50);
-        });
-
-        emoji.addEventListener('mouseup', () => {
-          if (moveInterval) {
-            clearInterval(moveInterval);
-            moveInterval = null;
-            if (currentImage) {
-              const previewWidth = preview.clientWidth;
-              const scale = previewWidth / 600;
-              const traitIndex = traitImages.indexOf(currentImage);
-              const trait = TraitManager.getAllTraits()[traitIndex];
-              const variationName = trait.variants[trait.selected].name;
-              savePosition(currentImage, trait.id, variationName, scale);
-              currentImage.classList.remove('dragging');
-            }
-          }
-        });
-
-        emoji.addEventListener('mouseleave', () => {
-          if (moveInterval) {
-            clearInterval(moveInterval);
-            moveInterval = null;
-            if (currentImage) {
-              const previewWidth = preview.clientWidth;
-              const scale = previewWidth / 600;
-              const traitIndex = traitImages.indexOf(currentImage);
-              const trait = TraitManager.getAllTraits()[traitIndex];
-              const variationName = trait.variants[trait.selected].name;
-              savePosition(currentImage, trait.id, variationName, scale);
-              currentImage.classList.remove('dragging');
-            }
-          }
-        });
-      });
-
-      magnifyEmoji.addEventListener('click', () => {
-        enlargedPreview.innerHTML = '';
-        const maxWidth = window.innerWidth * 0.9;
-        const maxHeight = window.innerHeight * 0.9;
-        const previewWidth = preview.clientWidth;
-        const scale = previewWidth / 600;
-        const enlargedSize = Math.min(maxWidth, maxHeight);
-        const enlargedScale = enlargedSize / 600;
-
-        enlargedPreview.style.width = `${enlargedSize}px`;
-        enlargedPreview.style.height = `${enlargedSize}px`;
-
-        const sortedImages = traitImages
-          .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx].position }))
-          .sort((a, b) => a.position - b.position);
-
-        sortedImages.forEach(({ img }) => {
-          if (img && img.src && img.style.visibility !== 'hidden') {
-            const clonedImg = img.cloneNode(true);
-            clonedImg.style.width = `${img.width * enlargedScale}px`;
-            clonedImg.style.height = `${img.height * enlargedScale}px`;
-            clonedImg.style.left = `${parseFloat(img.style.left) * (enlargedScale / scale)}px`;
-            clonedImg.style.top = `${parseFloat(img.style.top) * (enlargedScale / scale)}px`;
-            clonedImg.style.zIndex = String(img.style.zIndex);
-            clonedImg.style.visibility = 'visible';
-            enlargedPreview.appendChild(clonedImg);
-          }
-        });
-
-        enlargedPreview.style.display = 'block';
-        enlargedPreview.addEventListener('click', () => enlargedPreview.style.display = 'none', { once: true });
-      });
-    }
-
-    function setupDragAndDrop(img, traitIndex) {
-      if (img) {
-        img.addEventListener('dragstart', (e) => e.preventDefault());
-
-        img.addEventListener('mousedown', (e) => {
-          if (img.src === '' || img !== currentImage) return;
-          isDragging = true;
-          currentImage = img;
-          const rect = img.getBoundingClientRect();
-          offsetX = e.clientX - rect.left;
-          offsetY = e.clientY - rect.top;
-          img.style.cursor = 'grabbing';
-          img.classList.add('dragging');
-          updateCoordinates(img, document.getElementById('coordinates'), img.parentElement.clientWidth / 600);
-        });
-
-        img.addEventListener('click', () => {
-          if (img.src !== '') {
-            currentImage = img;
-            updateCoordinates(img, document.getElementById('coordinates'), img.parentElement.clientWidth / 600);
-          }
-        });
-      }
-    }
-
-    function updateCoordinates(img, coordsElement, scale) {
-      if (img && coordsElement) {
-        const left = (parseFloat(img.style.left) || 0) / scale;
-        const top = (parseFloat(img.style.top) || 0) / scale;
-        coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
-      }
-    }
-
-    function updateZIndices() {
-      traitImages.forEach((img, index) => {
-        if (img) {
-          const trait = TraitManager.getAllTraits()[index];
-          if (trait && trait.variants.length > 0) {
-            img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
-          } else {
-            img.style.zIndex = '0';
-          }
-        }
-      });
-      if (previewPanel.element) previewPanel.element.offsetHeight;
-    }
-
-    function savePosition(img, traitId, variationName, scale) {
-      const position = { left: (parseFloat(img.style.left) || 0) / scale, top: (parseFloat(img.style.top) || 0) / scale };
-      const key = `${traitId}-${variationName}`;
-      if (!variantHistories[key]) variantHistories[key] = [];
-      variantHistories[key].push(position);
-      try {
-        localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify(position));
-        localStorage.setItem(`trait${traitId}-${variationName}-manuallyMoved`, 'true');
-      } catch (e) {
-        console.error('Failed to save to localStorage:', e);
-      }
-
-      const trait = TraitManager.getTrait(traitId);
-      const traitIndex = TraitManager.getAllTraits().findIndex(t => t.id === traitId);
-      const currentVariationIndex = trait.variants.findIndex(v => v.name === variationName);
-      if (currentVariationIndex === 0 && !autoPositioned[traitIndex]) {
-        for (let i = 1; i < trait.variants.length; i++) {
-          const otherVariationName = trait.variants[i].name;
-          const otherKey = `${traitId}-${otherVariationName}`;
-          variantHistories[otherKey] = [{ left: position.left, top: position.top }];
-          try {
-            localStorage.setItem(`trait${traitId}-${otherVariationName}-position`, JSON.stringify(position));
-            localStorage.removeItem(`trait${traitId}-${otherVariationName}-manuallyMoved`);
-          } catch (e) {
-            console.error('Failed to save to localStorage:', e);
-          }
-          if (trait.selected === i) {
-            const previewImage = document.getElementById(`preview-trait${traitId}`);
-            if (previewImage && previewImage.src) {
-              previewImage.style.left = `${position.left * scale}px`;
-              previewImage.style.top = `${position.top * scale}px`;
-            }
-          }
-        }
-        autoPositioned[traitIndex] = true;
-      }
-
-      updateSamplePositions(traitId, variationName, position);
-      updateSubsequentTraits(traitId, variationName, position);
-    }
-
-
-
-
-
-    /* Section 6 - PREVIEW SAMPLES LOGIC */
-
-
-
-
-
-    function getPreviewSamplesContent() {
-      const previewSamples = document.getElementById('preview-samples');
-      const grid = document.getElementById('preview-samples-grid');
-      if (!previewSamples || !grid) return '';
-
-      const gridWidth = grid.clientWidth;
-      const squareSize = (gridWidth - (13 * 3)) / 4; // 13px gap between squares, 3 gaps for 4 squares
-      const scale = squareSize / 600; // Scale relative to original 600px
-
-      let html = `<div id="preview-samples"><div id="preview-samples-header"><button id="update-previews">UPDATE</button></div><div id="preview-samples-grid">`;
-      sampleData.forEach((sample, i) => {
-        html += `<div class="sample-container">`;
-        sample.forEach(item => {
-          const trait = TraitManager.getTrait(item.traitId);
-          const variant = trait.variants.find(v => v.id === item.variantId);
-          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * scale}px; top: ${item.position.top * scale}px; transform: scale(${scale}); transform-origin: top left;">`;
-        });
-        html += `</div>`;
-      });
-      html += `</div></div>`;
-      return html;
-    }
-
-    function updatePreviewSamples() {
-      sampleData = Array(16).fill(null).map(() => []);
-      const traits = TraitManager.getAllTraits().slice().sort((a, b) => a.position - b.position);
-      for (let i = 0; i < 16; i++) {
-        traits.forEach(trait => {
-          if (trait.variants.length === 0) return;
-          const randomIndex = Math.floor(Math.random() * trait.variants.length);
-          const variant = trait.variants[randomIndex];
-          const key = `${trait.id}-${variant.name}`;
-          const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`) || JSON.stringify({ left: 0, top: 0 });
-          const position = JSON.parse(savedPosition);
-          if (!variantHistories[key]) variantHistories[key] = [position];
-          sampleData[i].push({ traitId: trait.id, variantId: variant.id, position });
-        });
-      }
-      previewSamplesPanel.update(getPreviewSamplesContent());
-      const updateButton = document.getElementById('update-previews');
-      if (updateButton) {
-        updateButton.addEventListener('click', updatePreviewSamples);
-      }
-      document.querySelectorAll('#preview-samples-grid .sample-container').forEach((container, i) => {
-        container.addEventListener('click', () => {
-          sampleData[i].forEach(sample => selectVariation(sample.traitId, sample.variantId));
-        });
-      });
-    }
+   <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mint Your AIFN NFT</title>
+  <link rel="icon" type="image/x-icon" href="/AIFN1-nft-minting/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script defer src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script defer src="config.js"></script>
+  <script defer src="entry.js"></script>
+</head>
+
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background-image: url('/AIFN1-nft-minting/images/background.webp');
+    background-repeat: repeat-y;
+    background-position: center top;
+    background-size: 100% auto;
+    color: black;
+    padding: 20px;
+    margin: 0;
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+  }
+  #version {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 12px;
+    color: #333;
+    z-index: 10;
+  }
+  #left-column {
+    flex: 2;
+    padding-right: 20px;
+    padding-top: 30px;
+    display: flex;
+    flex-direction: column;
+    max-width: 60%;
+    width: 60%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  #right-column {
+    flex: 1;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    max-width: 40%;
+    width: 40%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .panel {
+    background-color: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    position: relative;
+    width: 100%;
+  }
+  .panel-top-bar {
+    width: 100%;
+    height: 10px;
+    background-color: #ccc;
+    cursor: grab;
+  }
+  .panel h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    color: #cbcccb;
+    margin: 0 0 10px;
+    text-align: center;
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+  }
+  #logo-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    width: 100%;
+  }
+  #logo {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 600px;
+    max-height: 100%;
+  }
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    #logo { max-width: 300px; }
+  }
+  .trait-section {
+    margin-bottom: 20px;
+    margin-top: 30px;
+    position: relative;
+    z-index: 1;
+  }
+  .trait-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    justify-content: space-between;
+  }
+  .trait-controls {
+    display: flex;
+    gap: 10px;
+    position: relative;
+    z-index: 2;
+  }
+  .trait-controls span {
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+  }
+  .trait-controls span:hover {
+    opacity: 0.8;
+  }
+  .trait-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .variation-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+  }
+  .variation-image-wrapper {
+    width: 110px;
+    height: 110px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .variation-image-wrapper.selected {
+    border: 5px solid #f4c149;
+  }
+  .variation {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+  }
+  .variation-filename {
+    font-size: 8px;
+    text-align: center;
+    margin-top: 5px;
+    word-break: break-all;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-bottom: 5px;
+    box-sizing: border-box;
+    height: 32px;
+    font-size: 16px;
+    display: block;
+  }
+  input[type="text"]::placeholder {
+    color: #ccc;
+  }
+  input[type="text"]:not(:placeholder-shown) {
+    color: black;
+  }
+  input[type="file"] {
+    display: none;
+  }
+  .file-input-label {
+    display: inline-block;
+    padding: 5px 10px;
+    background: #ccc;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 5px;
+    height: 32px;
+    line-height: 22px;
+    box-sizing: border-box;
+    text-align: center;
+    min-width: 120px;
+    width: auto;
+    white-space: nowrap;
+    vertical-align: middle;
+    position: relative;
+    z-index: 3;
+  }
+  .file-input-label:hover {
+    background: #bbb;
+  }
+  .up-arrow:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+  }
+  .up-arrow:hover::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+  }
+  .down-arrow:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+  }
+  .down-arrow:hover::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+  }
+  #preview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    margin-bottom: 10px;
+    overflow: hidden;
+    border-radius: 15px;
+    background: transparent; /* Let SampleRenderer handle the background */
+  }
+  #preview img {
+    position: absolute;
+    object-fit: contain;
+  }
+  #preview img.dragging {
+    box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
+  }
+  #controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+  #coordinates {
+    font-size: 14px;
+  }
+  #coordinates strong {
+    font-weight: bold;
+  }
+  .direction-emoji, .magnify-emoji {
+    font-size: 16px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    color: #666;
+  }
+  .direction-emoji:hover, .magnify-emoji:hover {
+    opacity: 0.8;
+  }
+  #enlarged-preview {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid black;
+    z-index: 1000;
+    overflow: hidden;
+    background: transparent; /* Let SampleRenderer handle the background */
+  }
+  #enlarged-preview img {
+    position: absolute;
+    object-fit: contain;
+  }
+  #preview-samples-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 13px;
+    width: 100%;
+  }
+  #preview-samples-grid .sample-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    cursor: pointer;
+    border-radius: 5px;
+    background: transparent; /* Let SampleRenderer handle the background */
+  }
+  #preview-samples-grid img {
+    position: absolute;
+    transform-origin: top left;
+  }
+  #update-previews {
+    padding: 5px 10px;
+    background: #ccc;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #update-previews:hover {
+    background: #bbb;
+  }
+  #prompt-section {
+    margin-top: 10px;
+  }
+  #prompt-section textarea {
+    width: 100%;
+    height: 140px;
+    resize: none;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  #prompt-section label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  #background-details {
+    text-align: center;
+  }
+  #background-image {
+    width: 100%;
+    height: 600px;
+    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: cover;
+  }
+  button {
+    padding: 10px 20px;
+    background: grey;
+    color: black;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+    margin: 10px 0;
+  }
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  button:not(:disabled) {
+    background: #4CAF50;
+  }
+  #mint-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #mintFeeDisplay {
+    font-size: 14px;
+  }
+  .confirmation-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  .confirmation-dialog p {
+    margin: 0 0 10px;
+    text-align: center;
+  }
+  .confirmation-dialog .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  .confirmation-dialog button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .confirmation-dialog .yes-button {
+    background: #739c6c;
+  }
+  .confirmation-dialog .no-button {
+    background: #ae645a;
+  }
+  @media (max-width: 900px) {
+    body { flex-direction: column; padding: 10px; }
+    #left-column, #right-column { flex: none; width: 100%; max-width: 100%; padding: 0; }
+    #preview, #background-image { height: auto; aspect-ratio: 1 / 1; }
+    #preview-samples-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .panel { width: 100% !important; }
+  }
+</style>
+
+<body>
+  <div id="version">
 
 
 
@@ -1244,7 +1072,7 @@
 
 
 
-    /* Section 8 - SAMPLE RENDERER */
+/* Section 8 - SAMPLE RENDERER */
 
 
 
@@ -1254,14 +1082,16 @@
       const scale = width / scaleRelativeTo;
       container.style.width = `${width}px`;
       container.style.height = `${width}px`;
+      container.style.background = `url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp')`;
+      container.style.backgroundSize = 'cover';
 
       images.forEach(({ img, position, zIndex }) => {
         if (img && img.src && img.style.visibility !== 'hidden') {
           const clonedImg = img.cloneNode(true);
           clonedImg.style.width = `${img.width * scale}px`;
           clonedImg.style.height = `${img.height * scale}px`;
-          clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
-          clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
+          clonedImg.style.left = `${position.left * scale}px`;
+          clonedImg.style.top = `${position.top * scale}px`;
           clonedImg.style.zIndex = String(zIndex);
           clonedImg.style.visibility = 'visible';
           container.appendChild(clonedImg);
