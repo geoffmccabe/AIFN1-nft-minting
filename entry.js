@@ -306,6 +306,7 @@ class PanelManager {
 
 
    
+    
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -330,7 +331,7 @@ class PanelManager {
     const panelManager = new PanelManager();
 
     const logoPanel = new Panel('logo-panel', '', 
-      `<img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">`,
+      `<img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo">`,
       'left'
     );
 
