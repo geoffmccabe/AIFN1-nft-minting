@@ -15,20 +15,18 @@ class Panel {
   }
 
   render() {
-    if (!this.element) {
-      this.element = document.createElement('div');
-      this.element.id = this.id;
-      this.element.className = 'panel';
-      const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
-      this.element.innerHTML = header + this.content;
-      Object.assign(this.element.style, {
-        ...this.style,
-        position: 'relative',
-        cursor: 'default',
-        display: 'block',
-        width: '100%'
-      });
-    }
+    this.element = document.createElement('div');
+    this.element.id = this.id;
+    this.element.className = 'panel';
+    const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
+    this.element.innerHTML = header + this.content;
+    Object.assign(this.element.style, {
+      ...this.style,
+      position: 'relative',
+      cursor: 'default',
+      display: 'block',
+      width: '100%'
+    });
     return this.element;
   }
 
@@ -56,41 +54,42 @@ class PanelManager {
   addPanel(panel) {
     this.panels.push(panel);
     this.renderAll();
+    this.panels.forEach(p => this.setupDrag(p));
   }
 
   removePanel(panelId) {
     this.panels = this.panels.filter(p => p.id !== panelId);
     this.renderAll();
+    this.panels.forEach(p => this.setupDrag(p));
   }
 
   renderAll() {
     const leftColumn = document.getElementById('left-column');
     const rightColumn = document.getElementById('right-column');
-    if (!leftColumn || !rightColumn) {
-      console.error('Columns not found during renderAll');
-      return;
-    }
+    if (!leftColumn || !rightColumn) return;
+
+    leftColumn.innerHTML = '';
+    rightColumn.innerHTML = '';
 
     const leftPanels = this.panels.filter(p => p.column === 'left');
     const rightPanels = this.panels.filter(p => p.column === 'right');
 
     leftPanels.forEach(panel => {
-      if (!document.getElementById(panel.id)) {
-        leftColumn.appendChild(panel.render());
-      } else {
-        panel.update(panel.content);
-      }
+      panel.element = panel.render();
+      leftColumn.appendChild(panel.element);
     });
 
     rightPanels.forEach(panel => {
-      if (!document.getElementById(panel.id)) {
-        rightColumn.appendChild(panel.render());
-      } else {
-        panel.update(panel.content);
-      }
+      panel.element = panel.render();
+      rightColumn.appendChild(panel.element);
     });
 
-    console.log(`Rendered ${leftPanels.length} panels in left column, ${rightPanels.length} in right column`);
+    // Rehydrate Traits Panel if it exists
+    const traits = this.panels.find(p => p.id === 'traits-panel');
+    if (traits) {
+      traits.update(getTraitsContent());
+      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
+    }
   }
 
   setupDrag(panel) {
@@ -152,7 +151,6 @@ class PanelManager {
         this.panels.splice(globalIndex, 0, panel);
       }
 
-      // Reset drag styles
       el.style.position = '';
       el.style.left = '';
       el.style.top = '';
@@ -167,6 +165,7 @@ class PanelManager {
     });
   }
 }
+
 
 
 
