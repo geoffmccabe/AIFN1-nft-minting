@@ -29,7 +29,8 @@
           Object.assign(this.element.style, {
             ...this.style,
             position: 'relative',
-            cursor: 'grab'
+            cursor: 'grab',
+            display: 'block'
           });
         }
         return this.element;
@@ -37,13 +38,12 @@
 
       update(content) {
         if (this.element) {
-          this.element.innerHTML = this.id === 'logo-panel' ? content || this.content : `<h2>${this.title}</h2>${this.content}`;
+          this.element.innerHTML = this.id === 'logo-panel' ? content || this.content : `<h2>${this.title}</h2>${content || this.content}`;
         }
       }
 
       setColumn(column) {
         this.column = column;
-        this.element.style.width = column === 'left' ? '100%' : '100%'; // Controlled by column max-width
       }
     }
 
@@ -364,30 +364,7 @@
       });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
-      signer = provider.getSigner();
-      contractWithSigner = contract.connect(signer);
-
-      panelManager.addPanel(logoPanel);
-      panelManager.addPanel(traitsPanel);
-      panelManager.addPanel(backgroundPanel);
-      panelManager.addPanel(previewPanel);
-      panelManager.addPanel(previewSamplesPanel);
-      panelManager.addPanel(mintingPanel);
-
-      TraitManager.initialize();
-      traitsPanel.update(getTraitsContent());
-      previewSamplesPanel.update(getPreviewSamplesContent());
-      fetchMintFee();
-
-      document.getElementById('generate-background').addEventListener('click', fetchBackground);
-      document.getElementById('mintButton').addEventListener('click', window.mintNFT);
-
-      setupPreviewListeners();
-      setupUndoListener();
-
+    function attachFileListeners() {
       TraitManager.getAllTraits().forEach(trait => {
         const fileInput = document.getElementById(`trait${trait.id}-files`);
         if (fileInput) {
@@ -418,11 +395,41 @@
             }
 
             traitsPanel.update(getTraitsContent());
+            attachFileListeners();
             TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
             updateMintButton();
             updatePreviewSamples();
           });
         }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
+      signer = provider.getSigner();
+      contractWithSigner = contract.connect(signer);
+
+      panelManager.addPanel(logoPanel);
+      panelManager.addPanel(traitsPanel);
+      panelManager.addPanel(backgroundPanel);
+      panelManager.addPanel(previewPanel);
+      panelManager.addPanel(previewSamplesPanel);
+      panelManager.addPanel(mintingPanel);
+
+      TraitManager.initialize();
+      traitsPanel.update(getTraitsContent());
+      previewSamplesPanel.update(getPreviewSamplesContent());
+      fetchMintFee();
+
+      document.getElementById('generate-background').addEventListener('click', fetchBackground);
+      document.getElementById('mintButton').addEventListener('click', window.mintNFT);
+
+      setupPreviewListeners();
+      setupUndoListener();
+      attachFileListeners();
+
+      TraitManager.getAllTraits().forEach(trait => {
         if (trait.variants.length > 0) {
           selectVariation(trait.id, trait.variants[0].id);
         }
@@ -522,6 +529,7 @@
             return img;
           }).filter(img => img);
           traitsPanel.update(getTraitsContent());
+          attachFileListeners();
           TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
           traitImages.forEach((img, index) => setupDragAndDrop(img, index));
           updatePreviewSamples();
@@ -544,6 +552,7 @@
             return img;
           }).filter(img => img);
           traitsPanel.update(getTraitsContent());
+          attachFileListeners();
           TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
           traitImages.forEach((img, index) => setupDragAndDrop(img, index));
           updatePreviewSamples();
@@ -556,6 +565,7 @@
             const trait = TraitManager.getTrait(traitId);
             TraitManager.addTrait(trait.position);
             traitsPanel.update(getTraitsContent());
+            attachFileListeners();
             TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
             updatePreviewSamples();
           }
@@ -587,6 +597,7 @@
         TraitManager.removeTrait(traitId);
         traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
         traitsPanel.update(getTraitsContent());
+        attachFileListeners();
         TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
         traitImages.forEach((img, index) => setupDragAndDrop(img, index));
         updatePreviewSamples();
@@ -673,6 +684,7 @@
       updateZIndices();
       updateCoordinates(currentImage, document.getElementById('coordinates'));
       traitsPanel.update(getTraitsContent());
+      attachFileListeners();
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
     }
 
@@ -845,7 +857,7 @@
 
 
 
-    /* Section 5 - PREVIEW SAMPLES LOGIC */
+    /* Section 6 - PREVIEW SAMPLES LOGIC */
 
 
 
@@ -898,7 +910,7 @@
 
 
 
-    /* Section 6 - BACKGROUND AND MINTING LOGIC */
+    /* Section 7 - BACKGROUND AND MINTING LOGIC */
 
 
 
