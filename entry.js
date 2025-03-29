@@ -376,6 +376,7 @@ function setupTraitListeners(traitId) {
       trait.name = nameInput.value.trim();
       trait.isUserAssignedName = true;
       traitsPanel.update(getTraitsContent());
+      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
     });
   }
 
@@ -403,9 +404,9 @@ function setupTraitListeners(traitId) {
       }
 
       traitsPanel.update(getTraitsContent());
+      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updateMintButton();
       updatePreviewSamples();
-      setupTraitListeners(traitId); // Reattach for this trait only
     });
 
     grid.querySelectorAll('.variation-container').forEach(container => {
@@ -425,8 +426,19 @@ function setupTraitListeners(traitId) {
       const trait = TraitManager.getTrait(traitId);
       let newPosition = trait.position === 1 ? TraitManager.getAllTraits().length : trait.position - 1;
       TraitManager.moveTrait(traitId, newPosition);
+      traitImages = TraitManager.getAllTraits().map(trait => {
+        let img = document.getElementById(`preview-trait${trait.id}`);
+        if (!img && trait.variants.length > 0) {
+          img = document.createElement('img');
+          img.id = `preview-trait${trait.id}`;
+          img.src = trait.variants[trait.selected].url;
+          document.getElementById('preview').appendChild(img);
+        }
+        return img;
+      }).filter(img => img);
       traitsPanel.update(getTraitsContent());
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
+      traitImages.forEach((img, index) => setupDragAndDrop(img, index));
       updatePreviewSamples();
     });
   }
@@ -436,8 +448,19 @@ function setupTraitListeners(traitId) {
       const trait = TraitManager.getTrait(traitId);
       let newPosition = trait.position === TraitManager.getAllTraits().length ? 1 : trait.position + 1;
       TraitManager.moveTrait(traitId, newPosition);
+      traitImages = TraitManager.getAllTraits().map(trait => {
+        let img = document.getElementById(`preview-trait${trait.id}`);
+        if (!img && trait.variants.length > 0) {
+          img = document.createElement('img');
+          img.id = `preview-trait${trait.id}`;
+          img.src = trait.variants[trait.selected].url;
+          document.getElementById('preview').appendChild(img);
+        }
+        return img;
+      }).filter(img => img);
       traitsPanel.update(getTraitsContent());
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
+      traitImages.forEach((img, index) => setupDragAndDrop(img, index));
       updatePreviewSamples();
     });
   }
@@ -480,6 +503,7 @@ function removeTrait(traitId) {
     traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
     traitsPanel.update(getTraitsContent());
     TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
+    traitImages.forEach((img, index) => setupDragAndDrop(img, index));
     updatePreviewSamples();
   };
 
@@ -564,7 +588,7 @@ function setupPreviewListeners() {
       updateCoordinates(currentImage, coordinates);
     });
 
-    document.addEventListener('mouseup', () => {
+    document.addEventListener('mouseup', (e) => {
       if (isDragging && currentImage) {
         const traitIndex = traitImages.indexOf(currentImage);
         if (traitIndex !== -1) {
