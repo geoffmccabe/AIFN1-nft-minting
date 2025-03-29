@@ -4,6 +4,50 @@
 
 
 
+class Panel {
+  constructor(id, title, content, column = 'left', style = {}) {
+    this.id = id;
+    this.title = title;
+    this.content = content;
+    this.column = column;
+    this.style = { backgroundColor: '#ffffff', ...style };
+    this.element = null;
+  }
+
+  render() {
+    if (!this.element) {
+      this.element = document.createElement('div');
+      this.element.id = this.id;
+      this.element.className = 'panel';
+      const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
+      this.element.innerHTML = header + this.content;
+      Object.assign(this.element.style, {
+        ...this.style,
+        position: 'relative',
+        cursor: 'default',
+        display: 'block',
+        width: '100%'
+      });
+    }
+    return this.element;
+  }
+
+  update(content) {
+    if (this.element) {
+      const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
+      this.element.innerHTML = header + (content || this.content);
+      Object.assign(this.element.style, {
+        position: 'relative',
+        width: '100%'
+      });
+    }
+  }
+
+  setColumn(column) {
+    this.column = column;
+  }
+}
+
 class PanelManager {
   constructor() {
     this.panels = [];
@@ -108,7 +152,7 @@ class PanelManager {
         this.panels.splice(globalIndex, 0, panel);
       }
 
-      // Clear manual styles after drop
+      // Reset drag styles
       el.style.position = '';
       el.style.left = '';
       el.style.top = '';
@@ -123,6 +167,7 @@ class PanelManager {
     });
   }
 }
+
 
 
 
