@@ -961,357 +961,313 @@ class PanelManager {
 
 
 function selectVariation(traitId, variationId) {
-  const trait = TraitManager.getTrait(traitId);
-  if (!trait) { console.error(`selectVariation: Trait not found for id ${traitId}`); return; }
+  const trait = TraitManager.getTrait(traitId);
+  if (!trait) { console.error(`selectVariation: Trait not found for id ${traitId}`); return; }
 
-  const variationIndex = trait.variants.findIndex(v => v.id === variationId);
-  if (variationIndex === -1) { console.error(`selectVariation: Variant not found for id ${variationId} in trait ${traitId}`); return; }
+  const variationIndex = trait.variants.findIndex(v => v.id === variationId);
+  if (variationIndex === -1) { console.error(`selectVariation: Variant not found for id ${variationId} in trait ${traitId}`); return; }
 
-  trait.selected = variationIndex;
-  const selectedVariant = trait.variants[variationIndex];
+  trait.selected = variationIndex;
+  const selectedVariant = trait.variants[variationIndex];
 
-  const previewContainer = document.getElementById('preview');
-  if (!previewContainer) { console.error("selectVariation: Preview container not found"); return; }
+  // Use querySelector for potentially better scoping if needed, but ID should be unique
+  const previewContainer = document.getElementById('preview');
+  if (!previewContainer) { console.error("selectVariation: Preview container (#preview) not found"); return; }
 
-  let previewImage = document.getElementById(`preview-trait${traitId}`);
-  if (!previewImage) {
-    previewImage = document.createElement('img');
-    previewImage.id = `preview-trait${traitId}`;
-    previewContainer.appendChild(previewImage);
-    // Add to traitImages array if still used elsewhere, ensure uniqueness
-    if (!traitImages.some(img => img.id === previewImage.id)) {
-        traitImages.push(previewImage);
-        // Ensure traitImages array stays synchronized with TraitManager.traits order if necessary
-        traitImages.sort((a, b) => {
-            const traitAIndex = TraitManager.getAllTraits().findIndex(t => `preview-trait${t.id}` === a.id);
-            const traitBIndex = TraitManager.getAllTraits().findIndex(t => `preview-trait${t.id}` === b.id);
-            return traitAIndex - traitBIndex;
-        });
-    }
-  }
+  let previewImage = document.getElementById(`preview-trait${traitId}`);
+  if (!previewImage) {
+    previewImage = document.createElement('img');
+    previewImage.id = `preview-trait${traitId}`;
+    previewContainer.appendChild(previewImage);
+    // Add to traitImages array for potential external reference (ensure sync if used)
+    if (!traitImages.some(img => img.id === previewImage.id)) {
+        traitImages.push(previewImage);
+        // Simple sort based on current TraitManager order
+        traitImages.sort((a, b) => {
+            const traitAIndex = TraitManager.getAllTraits().findIndex(t => `preview-trait${t.id}` === a.id);
+            const traitBIndex = TraitManager.getAllTraits().findIndex(t => `preview-trait${t.id}` === b.id);
+            return (traitAIndex === -1 ? Infinity : traitAIndex) - (traitBIndex === -1 ? Infinity : traitBIndex);
+        });
+    }
+  }
 
-  previewImage.src = selectedVariant.url;
-  previewImage.alt = selectedVariant.name; // Set alt text
-  previewImage.style.visibility = 'visible'; // Make sure it's visible
-  previewImage.onerror = () => {
-      console.error(`Failed to load image: ${selectedVariant.url}`);
-      previewImage.style.visibility = 'hidden'; // Hide on error
-  };
+  previewImage.src = selectedVariant.url;
+  previewImage.alt = selectedVariant.name;
+  previewImage.style.visibility = 'visible';
+  previewImage.onerror = () => {
+      console.error(`Failed to load image: ${selectedVariant.url}`);
+      previewImage.style.visibility = 'hidden';
+  };
 
-  // --- Position Loading ---
-  const key = `${traitId}-${selectedVariant.name}`;
-  const savedPositionStr = localStorage.getItem(`trait${traitId}-${selectedVariant.name}-position`);
-  let position = { left: 0, top: 0 }; // Default position
+  // --- Position Loading ---
+  const key = `${traitId}-${selectedVariant.name}`;
+  const savedPositionStr = localStorage.getItem(`trait${traitId}-${selectedVariant.name}-position`);
+  let position = { left: 0, top: 0 };
 
-  if (savedPositionStr) {
-      try {
-          position = JSON.parse(savedPositionStr);
-          // Basic validation
-          if (typeof position.left !== 'number' || typeof position.top !== 'number') {
-              console.warn(`Invalid position data found in localStorage for ${key}, resetting.`);
-              position = { left: 0, top: 0 };
-              localStorage.removeItem(`trait${traitId}-${selectedVariant.name}-position`); // Clear invalid data
-          }
-      } catch (e) {
-          console.error(`Failed to parse position from localStorage for ${key}:`, e);
-          position = { left: 0, top: 0 }; // Fallback to default
-          localStorage.removeItem(`trait${traitId}-${selectedVariant.name}-position`); // Clear invalid data
-      }
-  } else {
-      // Optional: Try to inherit position from another variant if this one wasn't saved
-      // (Consider if this logic is desired or if default (0,0) is better)
-  }
+  if (savedPositionStr) {
+      try {
+          position = JSON.parse(savedPositionStr);
+          if (typeof position.left !== 'number' || typeof position.top !== 'number') {
+              position = { left: 0, top: 0 };
+              localStorage.removeItem(`trait${traitId}-${selectedVariant.name}-position`);
+          }
+      } catch (e) {
+          position = { left: 0, top: 0 };
+          localStorage.removeItem(`trait${traitId}-${selectedVariant.name}-position`);
+      }
+  }
 
-  previewImage.style.left = `${position.left}px`;
-  previewImage.style.top = `${position.top}px`;
+  previewImage.style.left = `${position.left}px`;
+  previewImage.style.top = `${position.top}px`;
 
-  if (!variantHistories[key]) variantHistories[key] = [];
-  // Avoid adding duplicate initial positions if needed
-  if (variantHistories[key].length === 0 || JSON.stringify(variantHistories[key].slice(-1)[0]) !== JSON.stringify(position)) {
-      variantHistories[key].push(position);
-  }
-  // --- End Position Loading ---
+  if (!variantHistories[key]) variantHistories[key] = [];
+  if (variantHistories[key].length === 0 || JSON.stringify(variantHistories[key].slice(-1)[0]) !== JSON.stringify(position)) {
+      variantHistories[key].push(position);
+  }
+  // --- End Position Loading ---
 
+  const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === traitId);
+  if (currentTraitIndex !== -1) {
+      setupDragAndDrop(previewImage, currentTraitIndex); // Setup image drag
+  }
 
-  // Find the correct index in the potentially reordered TraitManager.traits
-  const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === traitId);
-  if (currentTraitIndex !== -1) {
-      setupDragAndDrop(previewImage, currentTraitIndex); // Setup drag for this specific image
-  } else {
-      console.error(`selectVariation: Could not find index for trait ${traitId} to setup drag`);
-  }
-
-  currentImage = previewImage; // Set as the currently selected image for controls
-  updateZIndices(); // Update layering
-  // Update coordinates display only if the element exists
-  const coordsElement = document.getElementById('coordinates');
-  if (coordsElement) {
-      updateCoordinates(currentImage, coordsElement);
-  } else {
-      console.warn("selectVariation: Coordinates display element not found.");
-  }
+  currentImage = previewImage; // Set global reference
+  updateZIndices();
+  const coordsElement = document.getElementById('coordinates'); // Find globally ok here? Maybe query context too.
+  if (coordsElement) {
+      updateCoordinates(currentImage, coordsElement);
+  }
 }
 
-// *** FIX for Issue 1 & 4: Make setupPreviewListeners robust ***
+// *** MODIFIED: Make setupPreviewListeners robust and use context ***
 function setupPreviewListeners(panelElementContext) {
-  // If no context provided, attempt to find the panel, but prefer context
-  const context = panelElementContext || document.getElementById('preview-panel');
-  if (!context) {
-    console.warn("setupPreviewListeners: Preview panel element not found. Skipping listener setup.");
-    return; // Exit if the main panel isn't found
-  }
-  console.log("setupPreviewListeners: Setting up listeners within context:", context.id); // Debug Log
+  // If no context provided, maybe exit or try global (but context is preferred)
+  const context = panelElementContext || document.getElementById('preview-panel');
+  if (!context) {
+    console.warn("setupPreviewListeners: Preview panel context not found. Skipping listener setup.");
+    return;
+  }
+  // console.log("setupPreviewListeners: Setting up listeners within context:", context.id); // Debug Log
 
-  // Query elements *within* the panel context to avoid global scope issues
-  const preview = context.querySelector('#preview');
-  const coordinates = context.querySelector('#coordinates');
-  const directionEmojis = context.querySelectorAll('.direction-emoji'); // Returns NodeList (empty if none found)
-  const magnifyEmoji = context.querySelector('.magnify-emoji');
-  const enlargedPreview = document.getElementById('enlarged-preview'); // This is likely outside the panel, use global ID
-
-  // --- Add Listeners with Null Checks ---
-  if (preview) {
-    console.log("setupPreviewListeners: Attaching listeners to #preview"); // Debug Log
-    // --- Dragging within Preview ---
-    const handlePreviewMouseMove = (e) => {
-        if (!isDragging || !currentImage || currentImage.parentElement !== preview) return; // Check dragging state and context
-        const rect = preview.getBoundingClientRect();
-        let newLeft = e.clientX - rect.left - offsetX;
-        let newTop = e.clientY - rect.top - offsetY;
-        // Constrain within preview bounds (assuming preview is 600x600 or its current size)
-        const previewWidth = preview.clientWidth;
-        const previewHeight = preview.clientHeight;
-        const imgWidth = currentImage.clientWidth;
-        const imgHeight = currentImage.clientHeight;
-
-        newLeft = Math.max(0, Math.min(newLeft, previewWidth - imgWidth));
-        newTop = Math.max(0, Math.min(newTop, previewHeight - imgHeight));
-
-        currentImage.style.left = `${newLeft}px`;
-        currentImage.style.top = `${newTop}px`;
-        if (coordinates) updateCoordinates(currentImage, coordinates); // Update coords if element exists
-    };
-
-    const handlePreviewMouseUpOrLeave = () => { // Handle mouseup or leave on preview itself
-        if (isDragging && currentImage && currentImage.parentElement === preview) {
-            const traitIndex = traitImages.findIndex(img => img === currentImage); // Find based on object reference
-             if (traitIndex !== -1) {
-                 const trait = TraitManager.getAllTraits()[traitIndex];
-                 if (trait && trait.variants.length > trait.selected) { // Ensure trait and selected variant exist
-                     const variationName = trait.variants[trait.selected].name;
-                     savePosition(currentImage, trait.id, variationName); // Save final position
-                 }
-             } else {
-                 console.warn("MouseUp in Preview: Could not find trait index for currentImage", currentImage);
-             }
-            // isDragging = false; // Global mouseup handler should manage this state
-            // currentImage.style.cursor = 'grab'; // Restore cursor via CSS preferably
-            // currentImage.classList.remove('dragging');
-            // updateZIndices(); // Z-index doesn't change on mouseup
-        }
-    };
-
-    // Attach listeners (consider cleanup if this setup runs multiple times without element replacement)
-    preview.removeEventListener('mousemove', handlePreviewMouseMove); // Basic cleanup
-    preview.addEventListener('mousemove', handlePreviewMouseMove);
-
-    preview.removeEventListener('mouseup', handlePreviewMouseUpOrLeave); // Basic cleanup
-    preview.addEventListener('mouseup', handlePreviewMouseUpOrLeave);
-
-    preview.removeEventListener('mouseleave', handlePreviewMouseUpOrLeave); // Handle mouse leaving preview area during drag
-    preview.addEventListener('mouseleave', handlePreviewMouseUpOrLeave);
-
-    // Note: Global mouseup listener in setupDrag should handle final state cleanup (isDragging=false)
-
-  } else {
-      console.warn("setupPreviewListeners: #preview element not found within context.");
-  }
-
-  // --- Arrow Controls ---
-  if (directionEmojis.length > 0) {
-    console.log("setupPreviewListeners: Attaching listeners to direction emojis"); // Debug Log
-    directionEmojis.forEach(emoji => {
-        const direction = emoji.getAttribute('data-direction');
-        if (!emoji.hasAttribute('data-listener-attached')) { // Prevent multiple listeners
-             const arrowMouseDownHandler = () => {
-                if (!currentImage || !currentImage.src || !document.contains(currentImage)) return; // Check if image exists and is in DOM
-                // Ensure coordinates element exists before starting interval
-                const currentCoordsElement = context.querySelector('#coordinates');
-                if (!currentCoordsElement) return;
-
-                stopArrowMovement(); // Clear any existing interval first
-                moveInterval = setInterval(() => {
-                    if (!currentImage || !document.contains(currentImage)) { stopArrowMovement(); return; } // Stop if image disappears
-                    let left = parseFloat(currentImage.style.left) || 0;
-                    let top = parseFloat(currentImage.style.top) || 0;
-                    if (direction === 'up') top -= 1;
-                    if (direction === 'down') top += 1;
-                    if (direction === 'left') left -= 1;
-                    if (direction === 'right') right += 1;
-
-                    // Constrain movement (ensure preview exists for bounds)
-                    const previewContainer = context.querySelector('#preview');
-                    if(previewContainer){
-                        const previewWidth = previewContainer.clientWidth;
-                        const previewHeight = previewContainer.clientHeight;
-                        const imgWidth = currentImage.clientWidth;
-                        const imgHeight = currentImage.clientHeight;
-                        left = Math.max(0, Math.min(left, previewWidth - imgWidth));
-                        top = Math.max(0, Math.min(top, previewHeight - imgHeight));
-                    }
-
-                    currentImage.style.left = `${left}px`;
-                    currentImage.style.top = `${top}px`;
-                    if (!currentImage.classList.contains('dragging')) {
-                        currentImage.classList.add('dragging'); // Add visual feedback
-                    }
-                    updateCoordinates(currentImage, currentCoordsElement);
-                }, 50); // Interval speed
-             };
-             const arrowMouseUpOrLeaveHandler = () => {
-                stopArrowMovement(); // Call the function that handles cleanup and saving
-             };
-
-             emoji.removeEventListener('mousedown', arrowMouseDownHandler); // Cleanup
-             emoji.addEventListener('mousedown', arrowMouseDownHandler);
-
-             emoji.removeEventListener('mouseup', arrowMouseUpOrLeaveHandler); // Cleanup
-             emoji.addEventListener('mouseup', arrowMouseUpOrLeaveHandler);
-
-             emoji.removeEventListener('mouseleave', arrowMouseUpOrLeaveHandler); // Cleanup
-             emoji.addEventListener('mouseleave', arrowMouseUpOrLeaveHandler);
-
-             emoji.setAttribute('data-listener-attached', 'true');
-        }
-    });
-  } else {
-      console.warn("setupPreviewListeners: Direction emojis not found within context.");
-  }
+  // --- Use flags to prevent duplicate listeners ---
+  const markListenerAttached = (el, type) => el.setAttribute(`data-listener-${type}`, 'true');
+  const isListenerAttached = (el, type) => el.hasAttribute(`data-listener-${type}`);
 
 
-  // --- Magnify Control ---
-  if (magnifyEmoji) {
-     console.log("setupPreviewListeners: Attaching listener to magnify emoji"); // Debug Log
-     if (!magnifyEmoji.hasAttribute('data-listener-attached')) {
-         const magnifyClickHandler = () => {
-            const currentPreviewContainer = context.querySelector('#preview'); // Find preview relative to context
-            const currentEnlargedPreview = document.getElementById('enlarged-preview'); // Global ID ok here
-            if (!currentPreviewContainer || !currentEnlargedPreview) return;
+  // Query elements *within* the provided panel context
+  const preview = context.querySelector('#preview');
+  const coordinates = context.querySelector('#coordinates');
+  const directionEmojis = context.querySelectorAll('.direction-emoji');
+  const magnifyEmoji = context.querySelector('.magnify-emoji');
+  // enlargedPreview is likely outside the panel, keep global search but check null
+  const enlargedPreview = document.getElementById('enlarged-preview');
 
-            const visibleTraitImages = TraitManager.getAllTraits()
-                .map(trait => document.getElementById(`preview-trait${trait.id}`))
-                .filter(img => img && img.style.visibility !== 'hidden' && img.src); // Get valid, visible images
+  // --- Add Listeners with Null Checks ---
+  if (preview && !isListenerAttached(preview, 'preview-move')) {
+    // console.log("setupPreviewListeners: Attaching listeners to #preview"); // Debug Log
+    // Use named functions for handlers to allow potential removal if needed (though flags prevent duplicates now)
+    const handlePreviewMouseMove = (e) => {
+        if (!isDragging || !currentImage || currentImage.parentElement !== preview) return;
+        const rect = preview.getBoundingClientRect();
+        let newLeft = e.clientX - rect.left - offsetX;
+        let newTop = e.clientY - rect.top - offsetY;
+        const previewWidth = preview.clientWidth;
+        const previewHeight = preview.clientHeight;
+        const imgWidth = currentImage.clientWidth;
+        const imgHeight = currentImage.clientHeight;
+        newLeft = Math.max(0, Math.min(newLeft, previewWidth - imgWidth));
+        newTop = Math.max(0, Math.min(newTop, previewHeight - imgHeight));
+        currentImage.style.left = `${newLeft}px`;
+        currentImage.style.top = `${newTop}px`;
+        // Ensure coordinates element exists before updating
+        const currentCoords = context.querySelector('#coordinates');
+        if (currentCoords) updateCoordinates(currentImage, currentCoords);
+    };
 
-            if(visibleTraitImages.length === 0) return; // Don't show empty preview
+    const handlePreviewMouseUpOrLeave = () => {
+        if (isDragging && currentImage && currentImage.parentElement === preview) {
+            const traitIndex = traitImages.findIndex(img => img === currentImage);
+             if (traitIndex !== -1) {
+                 const trait = TraitManager.getAllTraits()[traitIndex];
+                 if (trait && trait.variants.length > trait.selected) {
+                     const variationName = trait.variants[trait.selected].name;
+                     savePosition(currentImage, trait.id, variationName);
+                 }
+             }
+            // Let the global mouseup handler in setupPanelActions handle isDragging=false
+        }
+    };
 
-            const maxWidth = window.innerWidth * 0.9;
-            const maxHeight = window.innerHeight * 0.9;
-            const previewRect = currentPreviewContainer.getBoundingClientRect(); // Use current preview size
-            const baseWidth = previewRect.width;
-            const baseHeight = previewRect.height;
+    preview.addEventListener('mousemove', handlePreviewMouseMove);
+    preview.addEventListener('mouseup', handlePreviewMouseUpOrLeave);
+    preview.addEventListener('mouseleave', handlePreviewMouseUpOrLeave);
+    markListenerAttached(preview, 'preview-move');
 
-            let scale = maxWidth / baseWidth;
-            if (maxHeight / baseHeight < scale) scale = maxHeight / baseHeight;
+  } else if (!preview) {
+      console.warn("setupPreviewListeners: #preview element not found within context.");
+  }
 
-            currentEnlargedPreview.innerHTML = ''; // Clear previous
-            currentEnlargedPreview.style.width = `${baseWidth * scale}px`;
-            currentEnlargedPreview.style.height = `${baseHeight * scale}px`;
+  // --- Arrow Controls ---
+  if (directionEmojis.length > 0) {
+    // console.log("setupPreviewListeners: Attaching listeners to direction emojis"); // Debug Log
+    directionEmojis.forEach(emoji => {
+        const direction = emoji.getAttribute('data-direction');
+        if (!isListenerAttached(emoji, 'arrow-move')) { // Check flag before adding
+             const arrowMouseDownHandler = () => {
+                if (!currentImage || !currentImage.src || !document.contains(currentImage)) return;
+                const currentCoordsElement = context.querySelector('#coordinates'); // Use context
+                if (!currentCoordsElement) return;
 
-            // Sort images by z-index before cloning
-             const sortedImages = visibleTraitImages
-                 .map(img => ({ img, z: parseInt(img.style.zIndex || '0', 10) }))
-                 .sort((a, b) => a.z - b.z); // Sort ascending for correct layering
+                stopArrowMovement();
+                moveInterval = setInterval(() => {
+                    if (!currentImage || !document.contains(currentImage)) { stopArrowMovement(); return; }
+                    let left = parseFloat(currentImage.style.left) || 0;
+                    let top = parseFloat(currentImage.style.top) || 0;
+                    if (direction === 'up') top -= 1; if (direction === 'down') top += 1;
+                    if (direction === 'left') left -= 1; if (direction === 'right') right += 1;
 
-             sortedImages.forEach(({ img }) => {
-                const clone = img.cloneNode(true);
-                // Ensure dimensions are scaled correctly
-                const imgRect = img.getBoundingClientRect(); // Get rendered size if possible
-                const imgStyle = window.getComputedStyle(img);
-                const originalWidth = imgRect.width || parseFloat(imgStyle.width) || img.naturalWidth;
-                const originalHeight = imgRect.height || parseFloat(imgStyle.height) || img.naturalHeight;
-                const originalLeft = parseFloat(img.style.left) || 0;
-                const originalTop = parseFloat(img.style.top) || 0;
+                    const previewContainer = context.querySelector('#preview'); // Use context
+                    if(previewContainer){
+                        const previewWidth = previewContainer.clientWidth; const previewHeight = previewContainer.clientHeight;
+                        const imgWidth = currentImage.clientWidth; const imgHeight = currentImage.clientHeight;
+                        left = Math.max(0, Math.min(left, previewWidth - imgWidth));
+                        top = Math.max(0, Math.min(top, previewHeight - imgHeight));
+                    }
+                    currentImage.style.left = `${left}px`; currentImage.style.top = `${top}px`;
+                    if (!currentImage.classList.contains('dragging')) currentImage.classList.add('dragging');
+                    updateCoordinates(currentImage, currentCoordsElement);
+                }, 50);
+             };
+             const arrowMouseUpOrLeaveHandler = () => { stopArrowMovement(); };
 
-                clone.style.width = `${originalWidth * scale}px`;
-                clone.style.height = `${originalHeight * scale}px`;
-                clone.style.left = `${originalLeft * scale}px`;
-                clone.style.top = `${originalTop * scale}px`;
-                clone.style.position = 'absolute';
-                clone.style.zIndex = img.style.zIndex; // Preserve z-index
-                clone.style.visibility = 'visible';
-                currentEnlargedPreview.appendChild(clone);
-             });
+             emoji.addEventListener('mousedown', arrowMouseDownHandler);
+             emoji.addEventListener('mouseup', arrowMouseUpOrLeaveHandler);
+             emoji.addEventListener('mouseleave', arrowMouseUpOrLeaveHandler);
+              markListenerAttached(emoji, 'arrow-move'); // Mark as attached
+        }
+    });
+  } else {
+      console.warn("setupPreviewListeners: Direction emojis not found within context.");
+  }
 
-            currentEnlargedPreview.style.display = 'block';
-            // Add listener to close enlarged view
-             const closeEnlargedHandler = () => {
-                 currentEnlargedPreview.style.display = 'none';
-                 currentEnlargedPreview.removeEventListener('click', closeEnlargedHandler); // Clean up listener
-             };
-            currentEnlargedPreview.removeEventListener('click', closeEnlargedHandler); // Clean up previous before adding
-            currentEnlargedPreview.addEventListener('click', closeEnlargedHandler);
+
+  // --- Magnify Control ---
+  if (magnifyEmoji && !isListenerAttached(magnifyEmoji, 'magnify-click')) { // Check flag
+     // console.log("setupPreviewListeners: Attaching listener to magnify emoji"); // Debug Log
+     const magnifyClickHandler = () => {
+            const currentPreviewContainer = context.querySelector('#preview'); // Use context
+            // Use global ID for enlargedPreview, but check if it exists
+         const currentEnlargedPreview = document.getElementById('enlarged-preview');
+            if (!currentPreviewContainer || !currentEnlargedPreview) {
+            console.error("Magnify Error: Preview or Enlarged container not found."); return;
+         }
+
+            const visibleTraitImages = TraitManager.getAllTraits()
+                .map(trait => document.getElementById(`preview-trait${trait.id}`))
+                .filter(img => img && img.style.visibility !== 'hidden' && img.src);
+
+            if(visibleTraitImages.length === 0) return;
+
+            const maxWidth = window.innerWidth * 0.9; const maxHeight = window.innerHeight * 0.9;
+            const previewRect = currentPreviewContainer.getBoundingClientRect();
+            const baseWidth = previewRect.width; const baseHeight = previewRect.height;
+
+            let scale = maxWidth / baseWidth;
+            if (maxHeight / baseHeight < scale) scale = maxHeight / baseHeight;
+
+            currentEnlargedPreview.innerHTML = ''; // Clear
+            currentEnlargedPreview.style.width = `${baseWidth * scale}px`;
+            currentEnlargedPreview.style.height = `${baseHeight * scale}px`;
+
+            const sortedImages = visibleTraitImages
+                 .map(img => ({ img, z: parseInt(img.style.zIndex || '0', 10) }))
+                 .sort((a, b) => a.z - b.z);
+
+            sortedImages.forEach(({ img }) => {
+                const clone = img.cloneNode(true);
+                const imgStyle = window.getComputedStyle(img);
+                const originalWidth = parseFloat(imgStyle.width); const originalHeight = parseFloat(imgStyle.height);
+                const originalLeft = parseFloat(img.style.left) || 0; const originalTop = parseFloat(img.style.top) || 0;
+
+                clone.style.width = `${originalWidth * scale}px`; clone.style.height = `${originalHeight * scale}px`;
+                clone.style.left = `${originalLeft * scale}px`; clone.style.top = `${originalTop * scale}px`;
+                clone.style.position = 'absolute'; clone.style.zIndex = img.style.zIndex;
+                clone.style.visibility = 'visible';
+                currentEnlargedPreview.appendChild(clone);
+             });
+
+            currentEnlargedPreview.style.display = 'block';
+         // Use a named handler for easy removal
+         const closeEnlargedHandler = () => {
+             currentEnlargedPreview.style.display = 'none';
+             currentEnlargedPreview.removeEventListener('click', closeEnlargedHandler);
          };
-         magnifyEmoji.removeEventListener('click', magnifyClickHandler); // Cleanup
-         magnifyEmoji.addEventListener('click', magnifyClickHandler);
-         magnifyEmoji.setAttribute('data-listener-attached', 'true');
-     }
-  } else {
-      console.warn("setupPreviewListeners: Magnify emoji not found within context.");
-  }
-
+         // Remove existing listener before adding new one
+         currentEnlargedPreview.removeEventListener('click', closeEnlargedHandler);
+         currentEnlargedPreview.addEventListener('click', closeEnlargedHandler);
+     };
+     magnifyEmoji.addEventListener('click', magnifyClickHandler);
+      markListenerAttached(magnifyEmoji, 'magnify-click'); // Mark as attached
+  } else if (!magnifyEmoji) {
+      console.warn("setupPreviewListeners: Magnify emoji not found within context.");
+  }
 }
+
 
 function setupDragAndDrop(img, traitIndex) {
-  if (!img || !img.parentElement || img.parentElement.id !== 'preview') {
-      // Only setup drag for images directly within the main preview container
-      // console.warn(`setupDragAndDrop: Image not in preview container or invalid:`, img);
-      return;
-  }
+  if (!img || !img.parentElement || img.parentElement.id !== 'preview') {
+      return; // Only setup for images in main preview
+  }
+  img.addEventListener('dragstart', e => e.preventDefault());
 
-  // Prevent native browser image dragging
-  img.addEventListener('dragstart', e => e.preventDefault());
+  // Use flag to prevent duplicate listeners on the img element
+  const listenerFlag = 'data-dragdrop-listener';
+  if (img.hasAttribute(listenerFlag)) return;
 
-  // Use a flag to avoid attaching listener multiple times to the same image instance
-  if (img.hasAttribute('data-dragdrop-listener')) return;
+  const handleImageMouseDown = (e) => {
+    if (!img.src || !document.contains(img)) return;
+    e.stopPropagation(); // Prevent panel drag/resize
 
-  const handleImageMouseDown = (e) => {
-    if (!img.src || !document.contains(img)) return; // Check image validity
-    e.stopPropagation(); // Prevent panel drag if clicking on image
+    isDragging = true; // Global flag for preview image drag
+    currentImage = img;
 
-    isDragging = true; // Set global dragging flag
-    currentImage = img; // Set global reference to image being dragged
+    const rect = img.getBoundingClientRect();
+    offsetX = e.clientX - rect.left; // Offset relative to image top-left
+    offsetY = e.clientY - rect.top;
 
-    const rect = img.getBoundingClientRect();
-    const previewRect = img.parentElement.getBoundingClientRect(); // Get container rect
+    img.style.cursor = 'grabbing';
+    img.classList.add('dragging');
+    // Temporarily boost z-index while dragging THIS image
+    const originalZIndex = img.style.zIndex; // Store original z-index
+    img.style.zIndex = '999';
+    // Store original z-index on the element for restoration on mouseup
+    img.setAttribute('data-original-zindex', originalZIndex);
 
-    // Calculate offset relative to the containing preview div
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
+    // Update coordinates display if available globally or within context
+    const coordsElement = document.getElementById('coordinates'); // Assume global for now
+    if (coordsElement) updateCoordinates(img, coordsElement);
 
-    img.style.cursor = 'grabbing';
-    img.classList.add('dragging'); // Add visual style
-    updateZIndices(); // Ensure dragged image is on top (or based on trait order)
-    img.style.zIndex = '999'; // Temporarily boost z-index while dragging
+    // Global mouseup listener (from setupPanelActions) should handle isDragging = false
+    // Add a one-time listener specifically to restore z-index for this image drag
+    const restoreZIndexOnMouseUp = () => {
+        if (img && img.hasAttribute('data-original-zindex')) {
+            img.style.zIndex = img.getAttribute('data-original-zindex');
+            img.removeAttribute('data-original-zindex');
+        }
+        // Also remove dragging class and reset cursor here for safety
+        if (img) {
+            img.classList.remove('dragging');
+            img.style.cursor = 'grab'; // Or default inherit
+        }
+        document.removeEventListener('mouseup', restoreZIndexOnMouseUp, { once: true });
+    };
+    document.addEventListener('mouseup', restoreZIndexOnMouseUp, { once: true });
 
-    // Update coordinates display if available
-    const coordsElement = document.getElementById('coordinates');
-    if (coordsElement) updateCoordinates(img, coordsElement);
+  };
 
-    // Note: The mousemove/mouseup listeners attached to the #preview container
-    // in setupPreviewListeners handle the actual movement and position saving.
-    // We just initiate the state here.
-  };
+  img.addEventListener('mousedown', handleImageMouseDown);
+  img.setAttribute(listenerFlag, 'true'); // Mark listener as attached
 
-  img.removeEventListener('mousedown', handleImageMouseDown); // Cleanup previous
-  img.addEventListener('mousedown', handleImageMouseDown);
-  img.setAttribute('data-dragdrop-listener', 'true'); // Mark as having listener
-
-  // Optional: Add click listener if needed separate from drag
-  // img.addEventListener('click', () => {
-  //   currentImage = img;
-  //   const coordsElement = document.getElementById('coordinates');
-  //   if (coordsElement) updateCoordinates(img, coordsElement);
-  // });
 }
 
 function stopArrowMovement() {
@@ -1319,43 +1275,38 @@ function stopArrowMovement() {
     clearInterval(moveInterval);
     moveInterval = null;
     if (currentImage && document.contains(currentImage)) {
-        currentImage.classList.remove('dragging'); // Remove visual feedback
-      const traitIndex = traitImages.findIndex(img => img === currentImage); // Find by reference
+        currentImage.classList.remove('dragging');
+      const traitIndex = traitImages.findIndex(img => img === currentImage);
        if(traitIndex !== -1){
             const trait = TraitManager.getAllTraits()[traitIndex];
             if (trait && trait.variants.length > trait.selected) {
                 const variationName = trait.variants[trait.selected].name;
-                savePosition(currentImage, trait.id, variationName); // Save final position
+                savePosition(currentImage, trait.id, variationName);
             }
-       } else {
-            console.warn("stopArrowMovement: Could not find trait index for currentImage", currentImage);
        }
     }
   }
 }
 
 function updateCoordinates(img, coordsElement) {
-  if (img && coordsElement && document.contains(img)) { // Check if img still in DOM
+  if (img && coordsElement && document.contains(img)) {
     const left = parseFloat(img.style.left) || 0;
     const top = parseFloat(img.style.top) || 0;
-    coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left)}, ${Math.round(top)})`; // Zero-based coords are less confusing
+    coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left)}, ${Math.round(top)})`;
   }
 }
 
 function updateZIndices() {
-    const traits = TraitManager.getAllTraits();
-    traits.forEach((trait) => {
-        const img = document.getElementById(`preview-trait${trait.id}`);
-        if (img) {
-            // Higher position number = lower layer = lower z-index
-            img.style.zIndex = String(traits.length - trait.position);
-        }
-    });
-    // Force redraw if needed (usually not necessary)
-    // const preview = document.getElementById('preview');
-    // if (preview) preview.offsetHeight;
+    const traits = TraitManager.getAllTraits();
+    traits.forEach((trait) => {
+        const img = document.getElementById(`preview-trait${trait.id}`);
+        if (img && !img.hasAttribute('data-original-zindex')) { // Don't override if being dragged
+            // Trait position 1 = highest layer = highest z-index
+            // Z-index relative to other traits
+            img.style.zIndex = String(traits.length - trait.position + 1); // +1 to start z-index > 0
+        }
+    });
 }
-
 
 
 
