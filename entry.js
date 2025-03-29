@@ -147,6 +147,7 @@
 
 
 
+   
     /* Section 2 - TRAIT MANAGER FRAMEWORK */
 
 
@@ -206,7 +207,7 @@
         const maxPosition = this.traits.length;
         if (newPosition === oldPosition) return;
         if (oldPosition === 1 && newPosition === maxPosition) {
-          const lastTrait = this.traits.find(t => t.position W=== maxPosition);
+          const lastTrait = this.traits.find(t => t.position === maxPosition);
           if (lastTrait) {
             lastTrait.position = 1;
             trait.position = maxPosition;
@@ -271,7 +272,6 @@
         return [...this.traits];
       }
     };
-
 
 
 
