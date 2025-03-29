@@ -69,17 +69,28 @@
           console.error('Columns not found during renderAll');
           return;
         }
-        leftColumn.innerHTML = '';
-        rightColumn.innerHTML = '';
-        this.panels.forEach(panel => {
-          const el = panel.render();
-          console.log(`Rendering panel: ${panel.id} in ${panel.column} column`);
-          if (panel.column === 'left') {
-            leftColumn.appendChild(el);
+        const leftPanels = this.panels.filter(p => p.column === 'left');
+        const rightPanels = this.panels.filter(p => p.column === 'right');
+        
+        // Update left column
+        leftPanels.forEach(panel => {
+          if (!document.getElementById(panel.id)) {
+            leftColumn.appendChild(panel.render());
           } else {
-            rightColumn.appendChild(el);
+            panel.update(panel.content);
           }
         });
+
+        // Update right column
+        rightPanels.forEach(panel => {
+          if (!document.getElementById(panel.id)) {
+            rightColumn.appendChild(panel.render());
+          } else {
+            panel.update(panel.content);
+          }
+        });
+
+        console.log(`Rendered ${leftPanels.length} panels in left column, ${rightPanels.length} in right column`);
       }
 
       setupDrag(panel) {
@@ -359,7 +370,11 @@
             const previousPosition = variantHistories[key][variantHistories[key].length - 1];
             currentImage.style.left = `${previousPosition.left}px`;
             currentImage.style.top = `${previousPosition.top}px`;
-            localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
+            try {
+              localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
+            } catch (e) {
+              console.error('Failed to save to localStorage:', e);
+            }
             updateCoordinates(currentImage, document.getElementById('coordinates'));
             updateSamplePositions(trait.id, trait.variants[trait.selected].id, previousPosition);
             updateSubsequentTraits(trait.id, variationName, previousPosition);
@@ -450,11 +465,27 @@
       const files = Array.from(input.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
 
+      // Validate file types
+      const validTypes = ['image/png', 'image/webp'];
+      for (let file of files) {
+        if (!validTypes.includes(file.type)) {
+          console.error(`Invalid file type: ${file.name} (${file.type})`);
+          return;
+        }
+      }
+
       const trait = TraitManager.getTrait(traitId);
       if (!trait.isUserAssignedName) {
         const position = TraitManager.getAllTraits().findIndex(t => t.id === traitId) + 1;
         trait.name = `Trait ${position}`;
       }
+
+      // Revoke old URLs to prevent memory leaks
+      trait.variants.forEach(variant => {
+        if (variant.url && variant.url.startsWith('blob:')) {
+          URL.revokeObjectURL(variant.url);
+        }
+      });
 
       trait.variants = [];
       traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
@@ -519,7 +550,12 @@
               img = document.createElement('img');
               img.id = `preview-trait${trait.id}`;
               img.src = trait.variants[trait.selected].url;
+              img.onerror = () => {
+                console.error(`Failed to load image for trait ${trait.id}`);
+                img.style.visibility = 'hidden';
+              };
               document.getElementById('preview').appendChild(img);
+              setupDragAndDrop(img, TraitManager.getAllTraits().findIndex(t => t.id === trait.id));
             }
             return img;
           }).filter(img => img);
@@ -541,7 +577,12 @@
               img = document.createElement('img');
               img.id = `preview-trait${trait.id}`;
               img.src = trait.variants[trait.selected].url;
+              img.onerror = () => {
+                console.error(`Failed to load image for trait ${trait.id}`);
+                img.style.visibility = 'hidden';
+              };
               document.getElementById('preview').appendChild(img);
+              setupDragAndDrop(img, TraitManager.getAllTraits().findIndex(t => t.id === trait.id));
             }
             return img;
           }).filter(img => img);
@@ -641,6 +682,10 @@
       }
 
       previewImage.src = trait.variants[variationIndex].url;
+      previewImage.onerror = () => {
+        console.error(`Failed to load image for trait ${traitId}`);
+        previewImage.style.visibility = 'hidden';
+      };
       previewImage.style.visibility = 'visible';
       const key = `${traitId}-${trait.variants[variationIndex].name}`;
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
@@ -663,12 +708,20 @@
           previewImage.style.left = `${lastPosition.left}px`;
           previewImage.style.top = `${lastPosition.top}px`;
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
-          localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
+          try {
+            localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
+          } catch (e) {
+            console.error('Failed to save to localStorage:', e);
+          }
         } else {
           previewImage.style.left = '0px';
           previewImage.style.top = '0px';
           variantHistories[key] = [{ left: 0, top: 0 }];
-          localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
+          try {
+            localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
+          } catch (e) {
+            console.error('Failed to save to localStorage:', e);
+          }
         }
       }
       currentImage = previewImage;
@@ -837,7 +890,11 @@
       traitImages.forEach((img, index) => {
         if (img) {
           const trait = TraitManager.getAllTraits()[index];
-          img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
+          if (trait && trait.variants.length > 0) {
+            img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
+          } else {
+            img.style.zIndex = '0';
+          }
         }
       });
       if (previewPanel.element) previewPanel.element.offsetHeight;
@@ -969,8 +1026,12 @@
       const key = `${traitId}-${variationName}`;
       if (!variantHistories[key]) variantHistories[key] = [];
       variantHistories[key].push(position);
-      localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify(position));
-      localStorage.setItem(`trait${traitId}-${variationName}-manuallyMoved`, 'true');
+      try {
+        localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify(position));
+        localStorage.setItem(`trait${traitId}-${variationName}-manuallyMoved`, 'true');
+      } catch (e) {
+        console.error('Failed to save to localStorage:', e);
+      }
 
       const trait = TraitManager.getTrait(traitId);
       const traitIndex = TraitManager.getAllTraits().findIndex(t => t.id === traitId);
@@ -980,8 +1041,12 @@
           const otherVariationName = trait.variants[i].name;
           const otherKey = `${traitId}-${otherVariationName}`;
           variantHistories[otherKey] = [{ left: position.left, top: position.top }];
-          localStorage.setItem(`trait${traitId}-${otherVariationName}-position`, JSON.stringify(position));
-          localStorage.removeItem(`trait${traitId}-${otherVariationName}-manuallyMoved`);
+          try {
+            localStorage.setItem(`trait${traitId}-${otherVariationName}-position`, JSON.stringify(position));
+            localStorage.removeItem(`trait${traitId}-${otherVariationName}-manuallyMoved`);
+          } catch (e) {
+            console.error('Failed to save to localStorage:', e);
+          }
           if (trait.selected === i) {
             const previewImage = document.getElementById(`preview-trait${traitId}`);
             if (previewImage && previewImage.src) {
@@ -1009,7 +1074,11 @@
           const manuallyMoved = localStorage.getItem(`trait${currentTraitId}-${nextVariationName}-manuallyMoved`);
           if (!manuallyMoved && !variantHistories[key]) {
             variantHistories[key] = [{ left: position.left, top: position.top }];
-            localStorage.setItem(`trait${currentTraitId}-${nextVariationName}-position`, JSON.stringify(position));
+            try {
+              localStorage.setItem(`trait${currentTraitId}-${nextVariationName}-position`, JSON.stringify(position));
+            } catch (e) {
+              console.error('Failed to save to localStorage:', e);
+            }
             if (currentTrait.selected === i) {
               const previewImage = document.getElementById(`preview-trait${currentTraitId}`);
               if (previewImage && previewImage.src) {
@@ -1030,7 +1099,11 @@
           const manuallyMoved = localStorage.getItem(`trait${nextTrait.id}-${nextVariationName}-manuallyMoved`);
           if (!manuallyMoved && !variantHistories[key]) {
             variantHistories[key] = [{ left: position.left, top: position.top }];
-            localStorage.setItem(`trait${nextTrait.id}-${nextVariationName}-position`, JSON.stringify(position));
+            try {
+              localStorage.setItem(`trait${nextTrait.id}-${nextVariationName}-position`, JSON.stringify(position));
+            } catch (e) {
+              console.error('Failed to save to localStorage:', e);
+            }
             if (nextTrait.selected === i) {
               const previewImage = document.getElementById(`preview-trait${nextTrait.id}`);
               if (previewImage && previewImage.src) {
