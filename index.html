@@ -1,17 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Mint Your AIFN NFT</title>
-  <link rel="icon" type="image/x-icon" href="/AIFN1-nft-minting/favicon.ico">
-  <link href="https://fonts.googleapis.com/css2?family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <script defer src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script defer src="config.js"></script>
-  <script defer src="entry.js"></script>
-</head>
+/* ------------------ Section 1 ------------------------------------------------------------------------------------------------------------------------------*/
 
-<style>
   body {
     font-family: 'Poppins', sans-serif;
     background-image: url('/AIFN1-nft-minting/images/background.webp');
@@ -57,7 +45,7 @@
   .panel {
     background-color: rgba(255, 255, 255, 0.6);
     border-radius: 10px;
-    padding: 10px;
+    padding: 20px 10px 10px 10px; /* Increased top padding to make room for the bar */
     border: 1px solid #ccc;
     box-sizing: border-box;
     margin-bottom: 20px;
@@ -65,10 +53,15 @@
     width: 100%;
   }
   .panel-top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 10px;
-    background-color: #ccc;
+    background-color: #e6e6e6; /* Half as dark as #ccc */
     cursor: grab;
+    border-top-left-radius: 10px; /* Match panel's border-radius */
+    border-top-right-radius: 10px;
   }
   .panel h2 {
     font-family: 'Rowdies', sans-serif;
