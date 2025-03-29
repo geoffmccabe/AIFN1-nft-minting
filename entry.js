@@ -154,6 +154,7 @@
 
 
 
+  
     /* Section 2 - TRAIT MANAGER FRAMEWORK */
 
 
@@ -170,7 +171,7 @@
           // Add a default variant to each trait for initial rendering
           this.addVariant(trait.id, {
             name: `Default Variant ${i + 1}`,
-            url: "https://via.placeholder.com/100?text=Default+Variant+" + (i + 1) // Placeholder image
+            url: `https://picsum.photos/100?random=${i + 1}` // Reliable placeholder image
           });
           trait.selected = 0; // Ensure the default variant is selected
         }
@@ -233,7 +234,7 @@
         } else {
           const targetTrait = this.traits.find(t => t.position === newPosition);
           if (targetTrait) {
-            targetTrait.position = oldPosition;
+            targetTrait integralPosition = oldPosition;
             trait.position = newPosition;
           }
         }
@@ -284,7 +285,6 @@
         return [...this.traits];
       }
     };
-
 
 
 
