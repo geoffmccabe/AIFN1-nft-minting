@@ -504,7 +504,7 @@ class PanelManager {
 
    
     
-   /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
+  /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
 
@@ -592,8 +592,122 @@ class PanelManager {
         // Simple debounce
         if (now - lastUndoTime < 300) return;
 
-        //
+        // Check for Ctrl+Z or Cmd+Z
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+          e.preventDefault();
+          lastUndoTime = now; // Update time after action
 
+          if (!currentImage || !document.contains(currentImage)) return; // Ensure current image is valid
+
+          // Find corresponding trait and variant based on currentImage ID
+          const traitId = currentImage.id.replace('preview-trait', '');
+          const trait = TraitManager.getTrait(traitId);
+          if (!trait || trait.variants.length <= trait.selected) return; // Ensure trait/variant valid
+
+          const variationName = trait.variants[trait.selected].name;
+          const key = `${trait.id}-${variationName}`; // History key
+
+          if (variantHistories[key] && variantHistories[key].length > 1) {
+            console.log(`Undo detected for ${key}`); // Debug Log
+            variantHistories[key].pop(); // Remove current position
+            const previousPosition = variantHistories[key][variantHistories[key].length - 1]; // Get previous
+
+            // Apply previous position
+            currentImage.style.left = `${previousPosition.left}px`;
+            currentImage.style.top = `${previousPosition.top}px`;
+
+            // Update localStorage (optional, but keeps it synced)
+            try {
+              localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
+            } catch (err) { console.error('Failed to save undo position to localStorage:', err); }
+
+            // Update UI elements
+            const coordsElement = document.getElementById('coordinates');
+            if (coordsElement) updateCoordinates(currentImage, coordsElement);
+            // Update samples if needed (might be slow if called frequently)
+            // updateSamplePositions(trait.id, trait.variants[trait.selected].id, previousPosition);
+          } else {
+            console.log(`Undo ignored for ${key}: No history or only one entry.`); // Debug Log
+          }
+        }
+      });
+    }
+
+    // --- DOMContentLoaded --- Initial setup ---
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("DOMContentLoaded: Setting up application."); // Debug Log
+      try {
+          // Ethers setup (potential point of failure if MetaMask not present/ready)
+          if (typeof window.ethereum !== 'undefined') {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                // Use the config object directly (ensure config.js loaded)
+                if (window.config && window.config.sepolia && window.config.abi) {
+                     contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
+                     signer = provider.getSigner(); // Get signer instance
+                     contractWithSigner = contract.connect(signer); // Contract instance connected to signer
+                     console.log("Ethers setup complete. Contract Address:", config.sepolia.contractAddress); // Debug Log
+                } else {
+                    console.error("Blockchain config not found or incomplete in config.js!");
+                    // Display error to user?
+                }
+          } else {
+               console.error("MetaMask (or other Ethereum provider) not detected!");
+               // Display message to user?
+          }
+
+          // Add panels to the manager - renderAll is called internally by addPanel
+          console.log("Adding panels..."); // Debug Log
+          panelManager.addPanel(logoPanel);
+          panelManager.addPanel(traitsPanel);
+          panelManager.addPanel(backgroundPanel); // Add in desired initial order
+          panelManager.addPanel(previewPanel);
+          panelManager.addPanel(previewSamplesPanel);
+          panelManager.addPanel(mintingPanel);
+          console.log("Finished adding panels."); // Debug Log
+
+
+          // Initialize Trait Manager (creates default traits)
+          TraitManager.initialize();
+          // Initial population of Traits Panel requires manual update after initialize
+          const traitsPanelInstance = panelManager.panels.find(p=>p.id==='traits-panel');
+          if(traitsPanelInstance) traitsPanelInstance.update(getTraitsContent());
+
+          // Initial population of samples panel
+          updatePreviewSamples(); // Now also sets up listeners via reAttach
+
+          // Fetch initial mint fee (implement actual fetch later)
+          fetchMintFee();
+
+
+          // Setup global listeners like Undo
+          setupUndoListener();
+
+
+          // Initial selection for traits (if they have variants after initialize - maybe none do?)
+          TraitManager.getAllTraits().forEach(trait => {
+                if (trait.variants.length > 0) {
+                    selectVariation(trait.id, trait.variants[0].id); // Select first variant if exists
+                }
+          });
+
+          // *** FIX: Remove redundant/incorrect call to non-existent setupDrag ***
+          // The drag/resize setup is now handled within renderAll -> setupPanelActions
+          // panelManager.panels.forEach(panel => panelManager.setupDrag(panel)); // DELETE THIS LINE
+
+          // Setup for initial trait images if traitImages array is populated (might be empty initially)
+          // This might be better handled after first file upload/variation selection
+          // traitImages.forEach((img, index) => setupDragAndDrop(img, index)); // DELETE or move this logic
+
+
+          console.log("Initial setup complete."); // Debug Log
+
+      } catch (error) {
+            console.error("Error during initial setup:", error);
+            // Display a user-friendly error message on the page?
+            const body = document.querySelector('body');
+            if(body) body.innerHTML = `<p style="color:red; font-weight:bold; padding:20px;">Error during application initialization. Please check the console (F12) for details. Error: ${error.message}</p>`;
+      }
+    });
 
 
 
