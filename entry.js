@@ -20,23 +20,21 @@ class Panel {
   }
 
   applyLogoCenteringStyles() {
-    // Helper function to apply centering styles via JS
     if (this.id === 'logo-panel' && this.element) {
         Object.assign(this.element.style, {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '200px',
-            padding: '0'
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            height: '200px', padding: '0'
         });
         const logoImg = this.element.querySelector('#logo');
         if (logoImg) {
             Object.assign(logoImg.style, {
                 margin: 'auto',
-                // *** FIX for Issue 2: Enlarged Logo ***
-                maxWidth: '600px', // Re-apply specific max-width
-                maxHeight: '100%',
-                display: 'block'
+                // *** FIX for Issue 1: Logo Size ***
+                maxWidth: '600px',   // Explicit max width
+                maxHeight: '100%',  // Max height relative to parent (200px)
+                width: 'auto',      // Maintain aspect ratio
+                height: 'auto',     // Maintain aspect ratio
+                display: 'block'    // Helps margin:auto work reliably
             });
         }
     }
@@ -50,13 +48,8 @@ class Panel {
     const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
     this.element.innerHTML = header + this.content;
 
-    Object.assign(this.element.style, {
-      ...this.style,
-      position: 'relative',
-      cursor: 'default',
-    });
-
-    this.applyLogoCenteringStyles(); // Apply centering via JS
+    Object.assign(this.element.style, { ...this.style, position: 'relative', cursor: 'default' });
+    this.applyLogoCenteringStyles();
 
     return this.element;
   }
@@ -65,11 +58,8 @@ class Panel {
     if (this.element) {
       const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
       this.element.innerHTML = header + (content || this.content);
-      Object.assign(this.element.style, {
-        position: 'relative',
-        cursor: 'default',
-      });
-      this.applyLogoCenteringStyles(); // Apply centering via JS
+      Object.assign(this.element.style, { position: 'relative', cursor: 'default' });
+      this.applyLogoCenteringStyles();
     }
   }
 
@@ -81,9 +71,12 @@ class Panel {
 class PanelManager {
   constructor() {
     this.panels = [];
+    // State for dragging/resizing
     this.boundHandleMouseMove = null;
     this.boundHandleMouseUp = null;
     this.draggedElement = null;
+    this.isResizingColumns = false; // Flag for column resize
+    this.initialColumnWidths = null; // To store widths at resize start
   }
 
   addPanel(panel) {
@@ -97,247 +90,284 @@ class PanelManager {
   }
 
   renderAll() {
-    console.log("PanelManager: Starting renderAll"); // Debug Log
     const leftColumn = document.getElementById('left-column');
     const rightColumn = document.getElementById('right-column');
-    if (!leftColumn || !rightColumn) {
-        console.error("PanelManager: Columns not found!"); return; // Early exit
-    }
+    if (!leftColumn || !rightColumn) return;
 
     const scrollTops = { left: leftColumn.scrollTop, right: rightColumn.scrollTop };
-    leftColumn.innerHTML = '';
-    rightColumn.innerHTML = '';
+    leftColumn.innerHTML = ''; rightColumn.innerHTML = ''; // Clear
+
+    // *** NEW FEATURE: Set initial column widths if not resizing ***
+    if (!this.isResizingColumns) {
+        // Set initial widths (can be adjusted)
+        leftColumn.style.width = '66.67%';
+        rightColumn.style.width = '33.33%';
+    }
 
     const leftFrag = document.createDocumentFragment();
     const rightFrag = document.createDocumentFragment();
 
     this.panels.forEach(panel => {
-      console.log(`PanelManager: Rendering panel ${panel.id} into column ${panel.column}`); // Debug Log
-      panel.element = panel.render(); // Ensure element is created/updated
-      if (!panel.element) {
-          console.error(`PanelManager: Failed to render panel ${panel.id}`);
-          return; // Skip if render failed
-      }
-      if (panel.column === 'left') {
-          leftFrag.appendChild(panel.element);
-      } else {
-          rightFrag.appendChild(panel.element);
-      }
-      this.setupDrag(panel); // Setup drag for the specific element instance
+      panel.element = panel.render();
+      if (!panel.element) return;
+      if (panel.column === 'left') { leftFrag.appendChild(panel.element); }
+      else { rightFrag.appendChild(panel.element); }
+      // Setup both panel drag and column resize listeners
+      this.setupPanelActions(panel);
     });
 
     leftColumn.appendChild(leftFrag);
     rightColumn.appendChild(rightFrag);
-
     leftColumn.scrollTop = scrollTops.left;
     rightColumn.scrollTop = scrollTops.right;
 
-    console.log("PanelManager: Appended panels, re-attaching dynamic listeners..."); // Debug Log
-    // Re-attach listeners AFTER all panels are in the DOM
     this.reAttachDynamicListeners();
-    console.log("PanelManager: Finished renderAll"); // Debug Log
   }
 
   reAttachDynamicListeners() {
-    console.log("PanelManager: Re-attaching dynamic listeners..."); // Debug Log
+    console.log("Re-attaching dynamic listeners...");
     // --- Preview Panel Listeners ---
-    // *** FIX for Issue 1 & 4: Only call setup if panel exists ***
     const previewPanel = this.panels.find(p => p.id === 'preview-panel');
     if (previewPanel && previewPanel.element && document.contains(previewPanel.element)) {
-        console.log("PanelManager: Found preview panel, setting up listeners."); // Debug Log
-        setupPreviewListeners(previewPanel.element); // Pass panel element as context
-    } else {
-        console.log("PanelManager: Preview panel not found or not in DOM, skipping its listeners."); // Debug Log
+        setupPreviewListeners(previewPanel.element);
     }
 
     // --- Traits Panel Listeners ---
     const traitsPanel = this.panels.find(p => p.id === 'traits-panel');
     if (traitsPanel && traitsPanel.element && document.contains(traitsPanel.element)) {
-        console.log("PanelManager: Found traits panel, setting up its listeners."); // Debug Log
-      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id)); // Assumes setupTraitListeners queries globally or within #traits-panel
-    } else {
-         console.log("PanelManager: Traits panel not found or not in DOM, skipping its listeners."); // Debug Log
-    }
-
-    // --- Preview Samples Panel Listeners ---
-    const samplesPanel = this.panels.find(p => p.id === 'preview-samples-panel');
-    if (samplesPanel && samplesPanel.element && document.contains(samplesPanel.element)) {
-        console.log("PanelManager: Found samples panel, setting up its listeners."); // Debug Log
-        const updateButton = samplesPanel.element.querySelector('#update-previews');
-        // Simple re-attachment for demo, could be more robust
-        if (updateButton) {
-            updateButton.removeEventListener('click', updatePreviewSamples);
-            updateButton.addEventListener('click', updatePreviewSamples);
+        // *** FIX for Issue 2: Traits Disappearing ***
+        // Explicitly update content before setting listeners
+        console.log("Updating traits panel content before setting listeners.");
+        try {
+             traitsPanel.update(getTraitsContent()); // Ensure content is present
+             TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
+        } catch (error) {
+            console.error("Error during traits panel update/listener setup:", error);
         }
-        samplesPanel.element.querySelectorAll('#preview-samples-grid .sample-container').forEach((container, i) => {
-             // Simple re-attachment, might duplicate if not careful in handler itself
-            const sampleClickHandler = () => {
-                 if (sampleData[i]) {
-                     sampleData[i].forEach(sample => selectVariation(sample.traitId, sample.variantId));
-                 }
-             };
-             container.removeEventListener('click', sampleClickHandler); // Basic cleanup
-             container.addEventListener('click', sampleClickHandler);
-        });
-    } else {
-         console.log("PanelManager: Samples panel not found or not in DOM, skipping its listeners."); // Debug Log
-    }
+    }
 
-    // --- Background Panel Listeners ---
-    const backgroundPanel = this.panels.find(p => p.id === 'background-panel');
-    if (backgroundPanel && backgroundPanel.element && document.contains(backgroundPanel.element)) {
-        console.log("PanelManager: Found background panel, setting up its listeners."); // Debug Log
-        const genBgBtn = backgroundPanel.element.querySelector('#generate-background');
-        if (genBgBtn) {
-            genBgBtn.removeEventListener('click', fetchBackground);
-            genBgBtn.addEventListener('click', fetchBackground);
+    // --- Other Panels ---
+    // (Simplified re-attachment logic from previous example)
+    this.panels.forEach(panel => {
+        if (!panel.element || !document.contains(panel.element)) return;
+        // Re-attach listeners for specific elements within known panels
+        if (panel.id === 'preview-samples-panel') {
+            const updateBtn = panel.element.querySelector('#update-previews');
+            if (updateBtn && !updateBtn.hasAttribute('data-listener')) {
+                 updateBtn.addEventListener('click', updatePreviewSamples); updateBtn.setAttribute('data-listener', 'true');
+            }
+            panel.element.querySelectorAll('#preview-samples-grid .sample-container').forEach((c,i) => {
+                if (!c.hasAttribute('data-listener')) {
+                     c.addEventListener('click', () => { if (sampleData[i]) sampleData[i].forEach(s => selectVariation(s.traitId, s.variantId)); }); c.setAttribute('data-listener', 'true');
+                }
+            });
+        } else if (panel.id === 'background-panel') {
+            const genBgBtn = panel.element.querySelector('#generate-background');
+            if (genBgBtn && !genBgBtn.hasAttribute('data-listener')) {
+                genBgBtn.addEventListener('click', fetchBackground); genBgBtn.setAttribute('data-listener', 'true');
+            }
+        } else if (panel.id === 'minting-panel') {
+             const mintBtn = panel.element.querySelector('#mintButton');
+             if (mintBtn && !mintBtn.hasAttribute('data-listener')) {
+                 mintBtn.addEventListener('click', window.mintNFT); mintBtn.setAttribute('data-listener', 'true');
+             }
         }
-    } else {
-        console.log("PanelManager: Background panel not found or not in DOM, skipping its listeners."); // Debug Log
-    }
-
-    // --- Minting Panel Listeners ---
-    const mintingPanel = this.panels.find(p => p.id === 'minting-panel');
-    if (mintingPanel && mintingPanel.element && document.contains(mintingPanel.element)) {
-         console.log("PanelManager: Found minting panel, setting up its listeners."); // Debug Log
-        const mintBtn = mintingPanel.element.querySelector('#mintButton');
-        if (mintBtn) {
-            mintBtn.removeEventListener('click', window.mintNFT);
-            mintBtn.addEventListener('click', window.mintNFT);
-        }
-    } else {
-        console.log("PanelManager: Minting panel not found or not in DOM, skipping its listeners."); // Debug Log
-    }
-    console.log("PanelManager: Finished re-attaching dynamic listeners."); // Debug Log
+    });
+    console.log("Finished re-attaching dynamic listeners.");
   }
 
 
-  setupDrag(panel) {
+  // Combined setup for panel actions (drag panel, resize columns)
+  setupPanelActions(panel) {
     const el = panel.element;
-    // Prevent adding listener multiple times to the same element instance
-    if (!el || el.hasAttribute('data-drag-listener-attached')) return;
+    if (!el || el.hasAttribute('data-action-listener')) return;
 
-    let isDragging = false;
-    let offsetX = 0, offsetY = 0;
+    let actionType = null; // 'drag', 'resize', or null
+    let offsetX = 0, offsetY = 0; // For panel drag
+    let initialMouseX = 0; // For resize
 
+    // --- MOUSE DOWN --- determines action type ---
     const handleMouseDown = (e) => {
-      const isLogoPanel = el.id === 'logo-panel';
-      const isTopBarClick = e.target.classList.contains('panel-top-bar');
-      let isLogoTopAreaClick = false;
+      actionType = null; // Reset action type
+      const rect = el.getBoundingClientRect();
+      const clickXRelative = e.clientX - rect.left;
+      const clickYRelative = e.clientY - rect.top;
 
-      // console.log(`Mousedown on panel: ${el.id}`); // Keep this debug if needed
+      // Check for Panel Drag First (Top 10px takes precedence)
+      const isLogoPanel = el.id === 'logo-panel';
+      const isTopBarClick = e.target.classList.contains('panel-top-bar');
+      const isLogoTopAreaClick = isLogoPanel && clickYRelative >= 0 && clickYRelative <= 10;
 
-      if (isLogoPanel) {
-        const rect = el.getBoundingClientRect();
-        const clickYRelativeToPanel = e.clientY - rect.top;
-        isLogoTopAreaClick = clickYRelativeToPanel >= 0 && clickYRelativeToPanel <= 10;
-        // console.log(`  isLogoPanel: ${isLogoPanel}, clickYRelative: ${clickYRelativeToPanel.toFixed(1)}, isLogoTopAreaClick: ${isLogoTopAreaClick}`);
-      } else {
-        // console.log(`  isTopBarClick: ${isTopBarClick}`);
+      if (isTopBarClick || isLogoTopAreaClick) {
+          actionType = 'drag';
+          console.log(`Mousedown: Action=drag on ${el.id}`);
+      } else {
+          // Check for Column Resize
+          const resizeZone = 6; // 6px grab area
+          if (panel.column === 'left' && clickXRelative >= rect.width - resizeZone && clickXRelative <= rect.width) {
+              actionType = 'resize';
+              console.log(`Mousedown: Action=resize on left panel ${el.id}`);
+          } else if (panel.column === 'right' && clickXRelative >= 0 && clickXRelative <= resizeZone) {
+              actionType = 'resize';
+              console.log(`Mousedown: Action=resize on right panel ${el.id}`);
+          }
       }
 
-      if (!isTopBarClick && !isLogoTopAreaClick) {
-        // console.log("  Invalid drag start area, returning.");
-        return;
-      }
+      // If no action determined, do nothing
+      if (!actionType) {
+           console.log(`Mousedown: No action on ${el.id}`);
+           return;
+      }
 
-      // console.log("  Valid drag start.");
-      e.preventDefault();
+      e.preventDefault(); // Prevent default for either action
 
-      isDragging = true;
-      this.draggedElement = el;
+      // --- Initialize Action ---
+      if (actionType === 'drag') {
+          this.isResizingColumns = false; // Ensure resize flag is off
+          isDragging = true;
+          this.draggedElement = el;
+          offsetX = e.clientX - rect.left;
+          offsetY = e.clientY - rect.top;
+          Object.assign(el.style, { // Drag styles
+              position: 'absolute', left: `${rect.left}px`, top: `${rect.top}px`,
+              width: `${rect.width}px`, height: `${rect.height}px`,
+              zIndex: '1000', cursor: 'grabbing', opacity: '0.8',
+              boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
+          });
+      } else if (actionType === 'resize') {
+          isDragging = false; // Ensure drag flag is off
+          this.isResizingColumns = true;
+          initialMouseX = e.clientX;
+          const leftCol = document.getElementById('left-column');
+          const rightCol = document.getElementById('right-column');
+          // Store initial widths as percentages
+          this.initialColumnWidths = {
+              left: parseFloat(leftCol.style.width || '66.67'),
+              right: parseFloat(rightCol.style.width || '33.33')
+          };
+          // Add visual indicator for resizing
+          document.body.style.cursor = 'col-resize';
+      }
 
-      const dragRect = el.getBoundingClientRect();
-      offsetX = e.clientX - dragRect.left;
-      offsetY = e.clientY - dragRect.top;
-
-      Object.assign(el.style, {
-          position: 'absolute', left: `${dragRect.left}px`, top: `${dragRect.top}px`,
-          width: `${dragRect.width}px`, height: `${dragRect.height}px`,
-          zIndex: '1000', cursor: 'grabbing', opacity: '0.8',
-          boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
-      });
-
-      this.boundHandleMouseMove = handleMouseMove; //.bind(this);
-      this.boundHandleMouseUp = handleMouseUp; //.bind(this);
-
+      // --- Add Global Listeners ---
+      // Bind move/up handlers
+      this.boundHandleMouseMove = handleMouseMove.bind(this);
+      this.boundHandleMouseUp = handleMouseUp.bind(this);
+      // Add listeners
       document.addEventListener('mousemove', this.boundHandleMouseMove);
       document.addEventListener('mouseup', this.boundHandleMouseUp);
-    };
+    }; // End handleMouseDown
 
+    // --- MOUSE MOVE --- handles active action ---
     const handleMouseMove = (e) => {
-      if (!isDragging || !this.draggedElement) return;
-      e.preventDefault();
-      this.draggedElement.style.left = `${e.clientX - offsetX}px`;
-      this.draggedElement.style.top = `${e.clientY - offsetY}px`;
-    };
+      e.preventDefault(); // Prevent selection during move
+      if (actionType === 'drag') {
+          if (!this.draggedElement) return;
+          this.draggedElement.style.left = `${e.clientX - offsetX}px`;
+          this.draggedElement.style.top = `${e.clientY - offsetY}px`;
+      } else if (actionType === 'resize') {
+          if (!this.isResizingColumns) return;
+          const leftCol = document.getElementById('left-column');
+          const rightCol = document.getElementById('right-column');
+          if (!leftCol || !rightCol || !this.initialColumnWidths) return;
 
+          const deltaX = e.clientX - initialMouseX;
+          const totalWidth = leftCol.parentElement.clientWidth; // Use body or container width
+          const minWidthPx = 50; // Minimum column width in pixels
+
+          // Calculate new width based on delta, converting px delta to percentage
+          let newLeftWidthPercent = this.initialColumnWidths.left + (deltaX / totalWidth) * 100;
+
+          // Constrain percentages (e.g., between 10% and 90%)
+          const minPercent = (minWidthPx / totalWidth) * 100;
+          const maxPercent = 100 - minPercent;
+          newLeftWidthPercent = Math.max(minPercent, Math.min(newLeftWidthPercent, maxPercent));
+
+          const newRightWidthPercent = 100 - newLeftWidthPercent;
+
+          leftCol.style.width = `${newLeftWidthPercent}%`;
+          rightCol.style.width = `${newRightWidthPercent}%`;
+      }
+    }; // End handleMouseMove
+
+    // --- MOUSE UP --- cleans up active action ---
     const handleMouseUp = (e) => {
-      if (!isDragging || !this.draggedElement) return;
+      if (actionType === 'drag') {
+          if (!this.draggedElement) return;
+          const droppedElement = this.draggedElement;
+          isDragging = false;
+          this.draggedElement = null;
+          console.log(`Mouseup: Dropped panel ${droppedElement.id}`);
 
-      const droppedElement = this.draggedElement;
-      isDragging = false;
-      this.draggedElement = null;
-      // console.log(`Mouseup, dropping panel: ${droppedElement.id}`);
+          // Clear inline styles
+          droppedElement.style.cursor = ''; droppedElement.style.zIndex = '';
+          droppedElement.style.opacity = ''; droppedElement.style.position = '';
+          droppedElement.style.left = ''; droppedElement.style.top = '';
+          droppedElement.style.width = ''; droppedElement.style.height = '';
+          droppedElement.style.boxShadow = '';
 
-      document.removeEventListener('mousemove', this.boundHandleMouseMove);
-      document.removeEventListener('mouseup', this.boundHandleMouseUp);
-      this.boundHandleMouseMove = null;
-      this.boundHandleMouseUp = null;
+          // --- Determine Drop Location & Reorder ---
+          const dropX = e.clientX; const windowWidth = window.innerWidth;
+          const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
+          const droppedPanelObject = this.panels.find(p => p.element === droppedElement);
+          if (!droppedPanelObject) return;
+          droppedPanelObject.setColumn(newColumn);
 
-      // Clear inline styles
-      droppedElement.style.cursor = ''; droppedElement.style.zIndex = '';
-      droppedElement.style.opacity = ''; droppedElement.style.position = '';
-      droppedElement.style.left = ''; droppedElement.style.top = '';
-      droppedElement.style.width = ''; droppedElement.style.height = '';
-      droppedElement.style.boxShadow = '';
+          const dropY = e.clientY;
+          const targetColumnElement = document.getElementById(newColumn === 'left' ? 'left-column' : 'right-column');
+          if (!targetColumnElement) return;
 
-      // --- Determine Drop Location & Reorder panels array ---
-      const dropX = e.clientX; const windowWidth = window.innerWidth;
-      const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
-      const droppedPanelObject = this.panels.find(p => p.element === droppedElement);
-      if (!droppedPanelObject) return;
-      droppedPanelObject.setColumn(newColumn);
-      // console.log(`  Setting column to: ${newColumn}`);
-
-      const dropY = e.clientY;
-      const targetColumnElement = document.getElementById(newColumn === 'left' ? 'left-column' : 'right-column');
-      if (!targetColumnElement) return;
-
-      const siblingsInColumn = Array.from(targetColumnElement.children);
-      let insertBeforeElement = null;
-      for (const sibling of siblingsInColumn) {
-          if (sibling === droppedElement) continue;
-          const rect = sibling.getBoundingClientRect();
-          if (dropY < rect.top + rect.height / 2) { insertBeforeElement = sibling; break; }
-      }
-
-      const currentPanelIndex = this.panels.findIndex(p => p === droppedPanelObject);
-      if (currentPanelIndex > -1) { this.panels.splice(currentPanelIndex, 1); }
-
-      let insertAtIndex = -1;
-      if (insertBeforeElement) {
-          const insertBeforePanelObj = this.panels.find(p => p.element === insertBeforeElement);
-          if (insertBeforePanelObj) { insertAtIndex = this.panels.findIndex(p => p === insertBeforePanelObj); }
-      }
-      if (insertAtIndex !== -1) {
-          this.panels.splice(insertAtIndex, 0, droppedPanelObject);
-          // console.log(`  Inserting panel logically before: ${insertBeforeElement ? insertBeforeElement.id : 'null'}`);
-      } else {
-          let lastPanelInColumnIndex = -1;
-          for (let i = this.panels.length - 1; i >= 0; i--) {
-              if (this.panels[i].column === newColumn) { lastPanelInColumnIndex = i; break; }
+          const siblingsInColumn = Array.from(targetColumnElement.children);
+          let insertBeforeElement = null;
+          for (const sibling of siblingsInColumn) {
+              if (sibling === droppedElement) continue;
+              const rect = sibling.getBoundingClientRect();
+              if (dropY < rect.top + rect.height / 2) { insertBeforeElement = sibling; break; }
           }
-          this.panels.splice(lastPanelInColumnIndex + 1, 0, droppedPanelObject);
-          // console.log(`  Inserting panel logically at end of column ${newColumn}`);
-      }
-      this.renderAll(); // Re-render everything based on new logical order
-    };
 
-    // Use a flag to prevent adding the listener more than once to the same DOM element instance
-    el.removeEventListener('mousedown', handleMouseDown); // Clean up just in case
+          const currentPanelIndex = this.panels.findIndex(p => p === droppedPanelObject);
+          if (currentPanelIndex > -1) { this.panels.splice(currentPanelIndex, 1); }
+
+          let insertAtIndex = -1;
+          if (insertBeforeElement) {
+              const insertBeforePanelObj = this.panels.find(p => p.element === insertBeforeElement);
+              if (insertBeforePanelObj) { insertAtIndex = this.panels.findIndex(p => p === insertBeforePanelObj); }
+          }
+          if (insertAtIndex !== -1) {
+              this.panels.splice(insertAtIndex, 0, droppedPanelObject);
+          } else {
+              let lastPanelInColumnIndex = -1;
+              for (let i = this.panels.length - 1; i >= 0; i--) {
+                  if (this.panels[i].column === newColumn) { lastPanelInColumnIndex = i; break; }
+              }
+              this.panels.splice(lastPanelInColumnIndex + 1, 0, droppedPanelObject);
+          }
+          this.renderAll(); // Re-render
+
+      } else if (actionType === 'resize') {
+          console.log("Mouseup: Finished resizing columns.");
+          this.isResizingColumns = false;
+          this.initialColumnWidths = null;
+          document.body.style.cursor = ''; // Reset body cursor
+      }
+
+      // Remove global listeners regardless of action type
+      if (this.boundHandleMouseMove) {
+          document.removeEventListener('mousemove', this.boundHandleMouseMove);
+          this.boundHandleMouseMove = null;
+      }
+      if (this.boundHandleMouseUp) {
+          document.removeEventListener('mouseup', this.boundHandleMouseUp);
+          this.boundHandleMouseUp = null;
+      }
+      actionType = null; // Reset action type
+    }; // End handleMouseUp
+
+    // --- Attach Listener ---
+    // Use a flag attribute to prevent double-listening if setup is called again
+    el.removeEventListener('mousedown', handleMouseDown); // Clean first
     el.addEventListener('mousedown', handleMouseDown);
-    el.setAttribute('data-drag-listener-attached', 'true'); // Mark as attached
+    el.setAttribute('data-action-listener', 'true');
   }
 }
 
