@@ -356,6 +356,33 @@ const mintingPanel = new Panel('minting-panel', 'Minting',
   'right'
 );
 
+function setupUndoListener() {
+  document.addEventListener('keydown', (e) => {
+    const now = Date.now();
+    if (now - lastUndoTime < 300) return;
+    lastUndoTime = now;
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      e.preventDefault();
+      if (!currentImage) return;
+      const traitIndex = traitImages.indexOf(currentImage);
+      const trait = TraitManager.getAllTraits()[traitIndex];
+      const variationName = trait.variants[trait.selected].name;
+      const key = `${trait.id}-${variationName}`;
+      if (variantHistories[key] && variantHistories[key].length > 1) {
+        variantHistories[key].pop();
+        const previousPosition = variantHistories[key][variantHistories[key].length - 1];
+        currentImage.style.left = `${previousPosition.left}px`;
+        currentImage.style.top = `${previousPosition.top}px`;
+        localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
+        updateCoordinates(currentImage, document.getElementById('coordinates'));
+        updateSamplePositions(trait.id, trait.variants[trait.selected].id, previousPosition);
+        updateSubsequentTraits(trait.id, variationName, previousPosition);
+      }
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   provider = new ethers.providers.Web3Provider(window.ethereum);
   contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
@@ -455,6 +482,7 @@ function setupTraitListeners(traitId) {
 
   if (fileInput && fileInputLabel && grid) {
     fileInput.addEventListener('change', async (event) => {
+      console.log(`File input triggered for trait ${traitId}`);
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
 
@@ -473,6 +501,7 @@ function setupTraitListeners(traitId) {
       });
 
       if (trait.variants.length > 0) {
+        console.log(`Selecting variant for trait ${traitId}`);
         selectVariation(traitId, trait.variants[0].id);
         fileInputLabel.textContent = 'Choose New Files';
         autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
