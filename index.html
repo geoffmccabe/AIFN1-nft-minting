@@ -87,7 +87,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 200px; /* Fixed height for consistent centering */
+    height: 200px;
     width: 100%;
   }
   #logo {
@@ -258,11 +258,10 @@
     position: relative;
     width: 100%;
     aspect-ratio: 1 / 1;
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: cover;
     margin-bottom: 10px;
     overflow: hidden;
     border-radius: 15px;
+    background: transparent; /* Let SampleRenderer handle the background */
   }
   #preview img {
     position: absolute;
@@ -277,6 +276,9 @@
     align-items: center;
     gap: 10px;
     margin-top: 5px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
   }
   #coordinates {
     font-size: 14px;
@@ -301,11 +303,10 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: cover;
     border: 1px solid black;
     z-index: 1000;
     overflow: hidden;
+    background: transparent; /* Let SampleRenderer handle the background */
   }
   #enlarged-preview img {
     position: absolute;
@@ -322,11 +323,10 @@
     position: relative;
     width: 100%;
     aspect-ratio: 1 / 1;
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: cover;
     overflow: hidden;
     cursor: pointer;
     border-radius: 5px;
+    background: transparent; /* Let SampleRenderer handle the background */
   }
   #preview-samples-grid img {
     position: absolute;
@@ -436,7 +436,7 @@
 </style>
 
 <body>
-  <div id="version">Version 102</div>
+  <div id="version">Version 105</div>
   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
