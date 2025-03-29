@@ -22,22 +22,21 @@ class Panel {
   applyLogoCenteringStyles() {
     // Helper function to apply centering styles via JS
     if (this.id === 'logo-panel' && this.element) {
-        // Style the panel itself for flex centering
         Object.assign(this.element.style, {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            height: '200px', // Explicit height needed
-            padding: '0' // Remove panel padding
+            height: '200px',
+            padding: '0'
         });
-        // Style the logo image within the panel
         const logoImg = this.element.querySelector('#logo');
         if (logoImg) {
             Object.assign(logoImg.style, {
-                margin: 'auto', // Center block/image in flex
-                maxWidth: '100%', // Fit panel
-                maxHeight: '100%', // Fit panel
-                display: 'block' // Ensure block behavior for margin:auto
+                margin: 'auto',
+                // *** FIX for Issue 2: Enlarged Logo ***
+                maxWidth: '600px', // Re-apply specific max-width
+                maxHeight: '100%',
+                display: 'block'
             });
         }
     }
@@ -46,20 +45,18 @@ class Panel {
   render() {
     this.element = document.createElement('div');
     this.element.id = this.id;
-    this.element.className = 'panel'; // Base class for CSS
+    this.element.className = 'panel';
 
     const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
     this.element.innerHTML = header + this.content;
 
-    // Apply minimal essential inline styles common to all panels
     Object.assign(this.element.style, {
       ...this.style,
-      position: 'relative', // Needed for drag positioning context
+      position: 'relative',
       cursor: 'default',
     });
 
-    // *** JS FIX for Issue 1: Logo Centering ***
-    this.applyLogoCenteringStyles();
+    this.applyLogoCenteringStyles(); // Apply centering via JS
 
     return this.element;
   }
@@ -68,14 +65,11 @@ class Panel {
     if (this.element) {
       const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
       this.element.innerHTML = header + (content || this.content);
-      // Re-apply minimal styles after innerHTML potentially clears them
       Object.assign(this.element.style, {
         position: 'relative',
         cursor: 'default',
       });
-
-      // *** JS FIX for Issue 1: Logo Centering (apply on update too) ***
-      this.applyLogoCenteringStyles();
+      this.applyLogoCenteringStyles(); // Apply centering via JS
     }
   }
 
@@ -87,10 +81,9 @@ class Panel {
 class PanelManager {
   constructor() {
     this.panels = [];
-    // Store references to bound listeners for correct removal
     this.boundHandleMouseMove = null;
     this.boundHandleMouseUp = null;
-    this.draggedElement = null; // Track the element being dragged
+    this.draggedElement = null;
   }
 
   addPanel(panel) {
@@ -104,91 +97,125 @@ class PanelManager {
   }
 
   renderAll() {
+    console.log("PanelManager: Starting renderAll"); // Debug Log
     const leftColumn = document.getElementById('left-column');
     const rightColumn = document.getElementById('right-column');
-    if (!leftColumn || !rightColumn) return;
+    if (!leftColumn || !rightColumn) {
+        console.error("PanelManager: Columns not found!"); return; // Early exit
+    }
 
     const scrollTops = { left: leftColumn.scrollTop, right: rightColumn.scrollTop };
-    leftColumn.innerHTML = ''; // Clear columns
+    leftColumn.innerHTML = '';
     rightColumn.innerHTML = '';
 
     const leftFrag = document.createDocumentFragment();
     const rightFrag = document.createDocumentFragment();
 
     this.panels.forEach(panel => {
-      panel.element = panel.render(); // Create/update element
+      console.log(`PanelManager: Rendering panel ${panel.id} into column ${panel.column}`); // Debug Log
+      panel.element = panel.render(); // Ensure element is created/updated
+      if (!panel.element) {
+          console.error(`PanelManager: Failed to render panel ${panel.id}`);
+          return; // Skip if render failed
+      }
       if (panel.column === 'left') {
           leftFrag.appendChild(panel.element);
       } else {
           rightFrag.appendChild(panel.element);
       }
-      this.setupDrag(panel); // Setup drag listeners for the element
+      this.setupDrag(panel); // Setup drag for the specific element instance
     });
 
     leftColumn.appendChild(leftFrag);
     rightColumn.appendChild(rightFrag);
 
-    // Restore scroll positions
     leftColumn.scrollTop = scrollTops.left;
     rightColumn.scrollTop = scrollTops.right;
 
-    // Re-attach listeners for dynamic content inside panels after render
+    console.log("PanelManager: Appended panels, re-attaching dynamic listeners..."); // Debug Log
+    // Re-attach listeners AFTER all panels are in the DOM
     this.reAttachDynamicListeners();
+    console.log("PanelManager: Finished renderAll"); // Debug Log
   }
 
   reAttachDynamicListeners() {
-    // Central place to re-attach listeners potentially lost by innerHTML changes
-    // Ensure event handlers have unique references if needed for removal
-    const traitsPanel = this.panels.find(p => p.id === 'traits-panel');
-    if (traitsPanel && traitsPanel.element) {
-      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id)); // Assumes setupTraitListeners handles its own cleanup/idempotency
-    }
+    console.log("PanelManager: Re-attaching dynamic listeners..."); // Debug Log
+    // --- Preview Panel Listeners ---
+    // *** FIX for Issue 1 & 4: Only call setup if panel exists ***
+    const previewPanel = this.panels.find(p => p.id === 'preview-panel');
+    if (previewPanel && previewPanel.element && document.contains(previewPanel.element)) {
+        console.log("PanelManager: Found preview panel, setting up listeners."); // Debug Log
+        setupPreviewListeners(previewPanel.element); // Pass panel element as context
+    } else {
+        console.log("PanelManager: Preview panel not found or not in DOM, skipping its listeners."); // Debug Log
+    }
 
+    // --- Traits Panel Listeners ---
+    const traitsPanel = this.panels.find(p => p.id === 'traits-panel');
+    if (traitsPanel && traitsPanel.element && document.contains(traitsPanel.element)) {
+        console.log("PanelManager: Found traits panel, setting up its listeners."); // Debug Log
+      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id)); // Assumes setupTraitListeners queries globally or within #traits-panel
+    } else {
+         console.log("PanelManager: Traits panel not found or not in DOM, skipping its listeners."); // Debug Log
+    }
+
+    // --- Preview Samples Panel Listeners ---
     const samplesPanel = this.panels.find(p => p.id === 'preview-samples-panel');
-    if (samplesPanel && samplesPanel.element) {
+    if (samplesPanel && samplesPanel.element && document.contains(samplesPanel.element)) {
+        console.log("PanelManager: Found samples panel, setting up its listeners."); // Debug Log
         const updateButton = samplesPanel.element.querySelector('#update-previews');
-        if (updateButton && !updateButton.hasAttribute('data-listener-attached')) { // Prevent multiple listeners
+        // Simple re-attachment for demo, could be more robust
+        if (updateButton) {
+            updateButton.removeEventListener('click', updatePreviewSamples);
             updateButton.addEventListener('click', updatePreviewSamples);
-            updateButton.setAttribute('data-listener-attached', 'true');
         }
         samplesPanel.element.querySelectorAll('#preview-samples-grid .sample-container').forEach((container, i) => {
-            if (!container.hasAttribute('data-listener-attached')) {
-                const sampleClickHandler = () => {
-                    if (sampleData[i]) {
-                        sampleData[i].forEach(sample => selectVariation(sample.traitId, sample.variantId));
-                    }
-                };
-                container.addEventListener('click', sampleClickHandler);
-                container.setAttribute('data-listener-attached', 'true');
-            }
+             // Simple re-attachment, might duplicate if not careful in handler itself
+            const sampleClickHandler = () => {
+                 if (sampleData[i]) {
+                     sampleData[i].forEach(sample => selectVariation(sample.traitId, sample.variantId));
+                 }
+             };
+             container.removeEventListener('click', sampleClickHandler); // Basic cleanup
+             container.addEventListener('click', sampleClickHandler);
         });
+    } else {
+         console.log("PanelManager: Samples panel not found or not in DOM, skipping its listeners."); // Debug Log
     }
 
-    const backgroundPanelElem = this.panels.find(p => p.id === 'background-panel')?.element;
-    if (backgroundPanelElem) {
-        const genBgBtn = backgroundPanelElem.querySelector('#generate-background');
-         if (genBgBtn && !genBgBtn.hasAttribute('data-listener-attached')) {
+    // --- Background Panel Listeners ---
+    const backgroundPanel = this.panels.find(p => p.id === 'background-panel');
+    if (backgroundPanel && backgroundPanel.element && document.contains(backgroundPanel.element)) {
+        console.log("PanelManager: Found background panel, setting up its listeners."); // Debug Log
+        const genBgBtn = backgroundPanel.element.querySelector('#generate-background');
+        if (genBgBtn) {
+            genBgBtn.removeEventListener('click', fetchBackground);
             genBgBtn.addEventListener('click', fetchBackground);
-            genBgBtn.setAttribute('data-listener-attached', 'true');
         }
+    } else {
+        console.log("PanelManager: Background panel not found or not in DOM, skipping its listeners."); // Debug Log
     }
 
-    const mintingPanelElem = this.panels.find(p => p.id === 'minting-panel')?.element;
-    if (mintingPanelElem) {
-        const mintBtn = mintingPanelElem.querySelector('#mintButton');
-        if (mintBtn && !mintBtn.hasAttribute('data-listener-attached')) {
+    // --- Minting Panel Listeners ---
+    const mintingPanel = this.panels.find(p => p.id === 'minting-panel');
+    if (mintingPanel && mintingPanel.element && document.contains(mintingPanel.element)) {
+         console.log("PanelManager: Found minting panel, setting up its listeners."); // Debug Log
+        const mintBtn = mintingPanel.element.querySelector('#mintButton');
+        if (mintBtn) {
+            mintBtn.removeEventListener('click', window.mintNFT);
             mintBtn.addEventListener('click', window.mintNFT);
-            mintBtn.setAttribute('data-listener-attached', 'true');
         }
+    } else {
+        console.log("PanelManager: Minting panel not found or not in DOM, skipping its listeners."); // Debug Log
     }
-    // Re-run setup for preview controls which might be inside a re-rendered panel
-    setupPreviewListeners();
+    console.log("PanelManager: Finished re-attaching dynamic listeners."); // Debug Log
   }
 
 
   setupDrag(panel) {
     const el = panel.element;
-    if (!el || el.hasAttribute('data-drag-listener')) return; // Safety check and prevent duplicates
+    // Prevent adding listener multiple times to the same element instance
+    if (!el || el.hasAttribute('data-drag-listener-attached')) return;
 
     let isDragging = false;
     let offsetX = 0, offsetY = 0;
@@ -198,46 +225,39 @@ class PanelManager {
       const isTopBarClick = e.target.classList.contains('panel-top-bar');
       let isLogoTopAreaClick = false;
 
-      console.log(`Mousedown on panel: ${el.id}`); // Debug Log
+      // console.log(`Mousedown on panel: ${el.id}`); // Keep this debug if needed
 
       if (isLogoPanel) {
         const rect = el.getBoundingClientRect();
         const clickYRelativeToPanel = e.clientY - rect.top;
         isLogoTopAreaClick = clickYRelativeToPanel >= 0 && clickYRelativeToPanel <= 10;
-        console.log(`  isLogoPanel: ${isLogoPanel}, clickYRelative: ${clickYRelativeToPanel.toFixed(1)}, isLogoTopAreaClick: ${isLogoTopAreaClick}`); // Debug Log
+        // console.log(`  isLogoPanel: ${isLogoPanel}, clickYRelative: ${clickYRelativeToPanel.toFixed(1)}, isLogoTopAreaClick: ${isLogoTopAreaClick}`);
       } else {
-        console.log(`  isTopBarClick: ${isTopBarClick}`); // Debug Log
+        // console.log(`  isTopBarClick: ${isTopBarClick}`);
       }
 
       if (!isTopBarClick && !isLogoTopAreaClick) {
-        console.log("  Invalid drag start area, returning."); // Debug Log
+        // console.log("  Invalid drag start area, returning.");
         return;
       }
 
-      console.log("  Valid drag start."); // Debug Log
-      e.preventDefault(); // Prevent text selection/default drag
+      // console.log("  Valid drag start.");
+      e.preventDefault();
 
       isDragging = true;
-      this.draggedElement = el; // Track dragged element
+      this.draggedElement = el;
 
       const dragRect = el.getBoundingClientRect();
       offsetX = e.clientX - dragRect.left;
       offsetY = e.clientY - dragRect.top;
 
-      Object.assign(el.style, { // Apply dragging styles
-          position: 'absolute',
-          left: `${dragRect.left}px`,
-          top: `${dragRect.top}px`,
-          width: `${dragRect.width}px`,
-          height: `${dragRect.height}px`,
-          zIndex: '1000',
-          cursor: 'grabbing',
-          opacity: '0.8',
+      Object.assign(el.style, {
+          position: 'absolute', left: `${dragRect.left}px`, top: `${dragRect.top}px`,
+          width: `${dragRect.width}px`, height: `${dragRect.height}px`,
+          zIndex: '1000', cursor: 'grabbing', opacity: '0.8',
           boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
       });
 
-      // Bind listeners and store references FOR THIS DRAG INSTANCE
-      // Important: Use .bind to maintain 'this' context if methods need it (handleMouseMove/Up don't here)
       this.boundHandleMouseMove = handleMouseMove; //.bind(this);
       this.boundHandleMouseUp = handleMouseUp; //.bind(this);
 
@@ -255,99 +275,71 @@ class PanelManager {
     const handleMouseUp = (e) => {
       if (!isDragging || !this.draggedElement) return;
 
-      const droppedElement = this.draggedElement; // Temp store before nulling
+      const droppedElement = this.draggedElement;
       isDragging = false;
-      this.draggedElement = null; // Clear tracked element
-      console.log(`Mouseup, dropping panel: ${droppedElement.id}`); // Debug Log
+      this.draggedElement = null;
+      // console.log(`Mouseup, dropping panel: ${droppedElement.id}`);
 
-      // ** Remove the specific listeners bound for this drag instance **
       document.removeEventListener('mousemove', this.boundHandleMouseMove);
       document.removeEventListener('mouseup', this.boundHandleMouseUp);
-      this.boundHandleMouseMove = null; // Clear references
+      this.boundHandleMouseMove = null;
       this.boundHandleMouseUp = null;
 
-      // Restore styles by clearing inline styles
-      droppedElement.style.cursor = '';
-      droppedElement.style.zIndex = '';
-      droppedElement.style.opacity = '';
-      droppedElement.style.position = '';
-      droppedElement.style.left = '';
-      droppedElement.style.top = '';
-      droppedElement.style.width = '';
-      droppedElement.style.height = '';
+      // Clear inline styles
+      droppedElement.style.cursor = ''; droppedElement.style.zIndex = '';
+      droppedElement.style.opacity = ''; droppedElement.style.position = '';
+      droppedElement.style.left = ''; droppedElement.style.top = '';
+      droppedElement.style.width = ''; droppedElement.style.height = '';
       droppedElement.style.boxShadow = '';
 
       // --- Determine Drop Location & Reorder panels array ---
-      const dropX = e.clientX;
-      const windowWidth = window.innerWidth;
+      const dropX = e.clientX; const windowWidth = window.innerWidth;
       const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
       const droppedPanelObject = this.panels.find(p => p.element === droppedElement);
-
-      if (!droppedPanelObject) { console.error("Dropped panel object not found!"); return; }
-
+      if (!droppedPanelObject) return;
       droppedPanelObject.setColumn(newColumn);
-      console.log(`  Setting column to: ${newColumn}`); // Debug Log
+      // console.log(`  Setting column to: ${newColumn}`);
 
       const dropY = e.clientY;
       const targetColumnElement = document.getElementById(newColumn === 'left' ? 'left-column' : 'right-column');
       if (!targetColumnElement) return;
 
-      // Find visual insertion point based on elements currently in the DOM column
       const siblingsInColumn = Array.from(targetColumnElement.children);
       let insertBeforeElement = null;
       for (const sibling of siblingsInColumn) {
           if (sibling === droppedElement) continue;
           const rect = sibling.getBoundingClientRect();
-          if (dropY < rect.top + rect.height / 2) {
-              insertBeforeElement = sibling;
-              break;
-          }
+          if (dropY < rect.top + rect.height / 2) { insertBeforeElement = sibling; break; }
       }
 
-      // Reorder the internal `this.panels` array
       const currentPanelIndex = this.panels.findIndex(p => p === droppedPanelObject);
-      if (currentPanelIndex > -1) {
-          this.panels.splice(currentPanelIndex, 1); // Remove from old logical position
-      }
+      if (currentPanelIndex > -1) { this.panels.splice(currentPanelIndex, 1); }
 
       let insertAtIndex = -1;
       if (insertBeforeElement) {
           const insertBeforePanelObj = this.panels.find(p => p.element === insertBeforeElement);
-          if (insertBeforePanelObj) {
-              insertAtIndex = this.panels.findIndex(p => p === insertBeforePanelObj);
-          }
+          if (insertBeforePanelObj) { insertAtIndex = this.panels.findIndex(p => p === insertBeforePanelObj); }
       }
-
       if (insertAtIndex !== -1) {
           this.panels.splice(insertAtIndex, 0, droppedPanelObject);
-          console.log(`  Inserting panel logically before: ${insertBeforeElement ? insertBeforeElement.id : 'null'}`); // Debug Log
+          // console.log(`  Inserting panel logically before: ${insertBeforeElement ? insertBeforeElement.id : 'null'}`);
       } else {
-          // Insert after the last panel that *should* be in the target column
           let lastPanelInColumnIndex = -1;
           for (let i = this.panels.length - 1; i >= 0; i--) {
-              if (this.panels[i].column === newColumn) {
-                  lastPanelInColumnIndex = i;
-                  break;
-              }
+              if (this.panels[i].column === newColumn) { lastPanelInColumnIndex = i; break; }
           }
           this.panels.splice(lastPanelInColumnIndex + 1, 0, droppedPanelObject);
-          console.log(`  Inserting panel logically at end of column ${newColumn}`); // Debug Log
+          // console.log(`  Inserting panel logically at end of column ${newColumn}`);
       }
-
-      // Re-render all panels from the updated `this.panels` array order
-      this.renderAll();
+      this.renderAll(); // Re-render everything based on new logical order
     };
 
-    // Prevent adding multiple mousedown listeners to the same element
-    el.removeEventListener('mousedown', handleMouseDown); // Remove listener using the exact handler reference
+    // Use a flag to prevent adding the listener more than once to the same DOM element instance
+    el.removeEventListener('mousedown', handleMouseDown); // Clean up just in case
     el.addEventListener('mousedown', handleMouseDown);
-    el.setAttribute('data-drag-listener', 'true'); // Mark as having listener attached
-
+    el.setAttribute('data-drag-listener-attached', 'true'); // Mark as attached
   }
 }
-
-
-
 
 
    
@@ -873,7 +865,7 @@ class PanelManager {
 
 
 
-    /* Section 5 - PREVIEW MANAGEMENT LOGIC */
+/* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
 
@@ -881,198 +873,399 @@ class PanelManager {
 
 function selectVariation(traitId, variationId) {
   const trait = TraitManager.getTrait(traitId);
+  if (!trait) { console.error(`selectVariation: Trait not found for id ${traitId}`); return; }
+
   const variationIndex = trait.variants.findIndex(v => v.id === variationId);
-  if (variationIndex === -1) return;
+  if (variationIndex === -1) { console.error(`selectVariation: Variant not found for id ${variationId} in trait ${traitId}`); return; }
+
   trait.selected = variationIndex;
+  const selectedVariant = trait.variants[variationIndex];
+
+  const previewContainer = document.getElementById('preview');
+  if (!previewContainer) { console.error("selectVariation: Preview container not found"); return; }
 
   let previewImage = document.getElementById(`preview-trait${traitId}`);
   if (!previewImage) {
     previewImage = document.createElement('img');
     previewImage.id = `preview-trait${traitId}`;
-    document.getElementById('preview').appendChild(previewImage);
-    traitImages.push(previewImage);
+    previewContainer.appendChild(previewImage);
+    // Add to traitImages array if still used elsewhere, ensure uniqueness
+    if (!traitImages.some(img => img.id === previewImage.id)) {
+        traitImages.push(previewImage);
+        // Ensure traitImages array stays synchronized with TraitManager.traits order if necessary
+        traitImages.sort((a, b) => {
+            const traitAIndex = TraitManager.getAllTraits().findIndex(t => `preview-trait${t.id}` === a.id);
+            const traitBIndex = TraitManager.getAllTraits().findIndex(t => `preview-trait${t.id}` === b.id);
+            return traitAIndex - traitBIndex;
+        });
+    }
   }
 
-  previewImage.src = trait.variants[variationIndex].url;
+  previewImage.src = selectedVariant.url;
+  previewImage.alt = selectedVariant.name; // Set alt text
+  previewImage.style.visibility = 'visible'; // Make sure it's visible
   previewImage.onerror = () => {
-    previewImage.style.visibility = 'hidden';
+      console.error(`Failed to load image: ${selectedVariant.url}`);
+      previewImage.style.visibility = 'hidden'; // Hide on error
   };
-  previewImage.style.visibility = 'visible';
 
-  const key = `${traitId}-${trait.variants[variationIndex].name}`;
-  const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
-  let position = { left: 0, top: 0 };
+  // --- Position Loading ---
+  const key = `${traitId}-${selectedVariant.name}`;
+  const savedPositionStr = localStorage.getItem(`trait${traitId}-${selectedVariant.name}-position`);
+  let position = { left: 0, top: 0 }; // Default position
 
-  if (savedPosition) {
-    position = JSON.parse(savedPosition);
-  } else {
-    let lastPosition = null;
-    for (let i = 0; i < trait.variants.length; i++) {
-      if (i === variationIndex) continue;
-      const otherKey = `${traitId}-${trait.variants[i].name}`;
-      if (variantHistories[otherKey]?.length) {
-        lastPosition = variantHistories[otherKey].slice(-1)[0];
+  if (savedPositionStr) {
+      try {
+          position = JSON.parse(savedPositionStr);
+          // Basic validation
+          if (typeof position.left !== 'number' || typeof position.top !== 'number') {
+              console.warn(`Invalid position data found in localStorage for ${key}, resetting.`);
+              position = { left: 0, top: 0 };
+              localStorage.removeItem(`trait${traitId}-${selectedVariant.name}-position`); // Clear invalid data
+          }
+      } catch (e) {
+          console.error(`Failed to parse position from localStorage for ${key}:`, e);
+          position = { left: 0, top: 0 }; // Fallback to default
+          localStorage.removeItem(`trait${traitId}-${selectedVariant.name}-position`); // Clear invalid data
       }
-    }
-    if (lastPosition) position = lastPosition;
-    try {
-      localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(position));
-    } catch (e) {}
+  } else {
+      // Optional: Try to inherit position from another variant if this one wasn't saved
+      // (Consider if this logic is desired or if default (0,0) is better)
   }
 
   previewImage.style.left = `${position.left}px`;
   previewImage.style.top = `${position.top}px`;
 
-  if (!variantHistories[key]) variantHistories[key] = [position];
+  if (!variantHistories[key]) variantHistories[key] = [];
+  // Avoid adding duplicate initial positions if needed
+  if (variantHistories[key].length === 0 || JSON.stringify(variantHistories[key].slice(-1)[0]) !== JSON.stringify(position)) {
+      variantHistories[key].push(position);
+  }
+  // --- End Position Loading ---
 
-  setupDragAndDrop(previewImage, TraitManager.getAllTraits().findIndex(t => t.id === traitId));
-  currentImage = previewImage;
-  updateZIndices();
-  updateCoordinates(currentImage, document.getElementById('coordinates'));
-}
 
-function setupPreviewListeners() {
-  const preview = document.getElementById('preview');
-  const coordinates = document.getElementById('coordinates');
-  const directionEmojis = document.querySelectorAll('.direction-emoji');
-  const magnifyEmoji = document.querySelector('.magnify-emoji');
-  const enlargedPreview = document.getElementById('enlarged-preview');
-
-  if (preview) {
-    preview.addEventListener('mousemove', (e) => {
-      if (!isDragging || !currentImage) return;
-      const rect = preview.getBoundingClientRect();
-      let newLeft = e.clientX - rect.left - offsetX;
-      let newTop = e.clientY - rect.top - offsetY;
-      newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
-      newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
-      currentImage.style.left = `${newLeft}px`;
-      currentImage.style.top = `${newTop}px`;
-      updateCoordinates(currentImage, coordinates);
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (isDragging && currentImage) {
-        const traitIndex = traitImages.indexOf(currentImage);
-        const trait = TraitManager.getAllTraits()[traitIndex];
-        const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, trait.id, variationName);
-        isDragging = false;
-        currentImage.style.cursor = 'grab';
-        currentImage.classList.remove('dragging');
-        updateZIndices();
-      }
-    });
+  // Find the correct index in the potentially reordered TraitManager.traits
+  const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === traitId);
+  if (currentTraitIndex !== -1) {
+      setupDragAndDrop(previewImage, currentTraitIndex); // Setup drag for this specific image
+  } else {
+      console.error(`selectVariation: Could not find index for trait ${traitId} to setup drag`);
   }
 
-  directionEmojis.forEach(emoji => {
-    const direction = emoji.getAttribute('data-direction');
-    emoji.addEventListener('mousedown', () => {
-      if (!currentImage || !currentImage.src) return;
-      moveInterval = setInterval(() => {
-        let left = parseFloat(currentImage.style.left) || 0;
-        let top = parseFloat(currentImage.style.top) || 0;
-        if (direction === 'up') top -= 1;
-        if (direction === 'down') top += 1;
-        if (direction === 'left') left -= 1;
-        if (direction === 'right') left += 1;
-        left = Math.max(0, Math.min(left, 600 - currentImage.width));
-        top = Math.max(0, Math.min(top, 600 - currentImage.height));
-        currentImage.style.left = `${left}px`;
-        currentImage.style.top = `${top}px`;
-        currentImage.classList.add('dragging');
-        updateCoordinates(currentImage, coordinates);
-      }, 50);
+  currentImage = previewImage; // Set as the currently selected image for controls
+  updateZIndices(); // Update layering
+  // Update coordinates display only if the element exists
+  const coordsElement = document.getElementById('coordinates');
+  if (coordsElement) {
+      updateCoordinates(currentImage, coordsElement);
+  } else {
+      console.warn("selectVariation: Coordinates display element not found.");
+  }
+}
+
+// *** FIX for Issue 1 & 4: Make setupPreviewListeners robust ***
+function setupPreviewListeners(panelElementContext) {
+  // If no context provided, attempt to find the panel, but prefer context
+  const context = panelElementContext || document.getElementById('preview-panel');
+  if (!context) {
+    console.warn("setupPreviewListeners: Preview panel element not found. Skipping listener setup.");
+    return; // Exit if the main panel isn't found
+  }
+  console.log("setupPreviewListeners: Setting up listeners within context:", context.id); // Debug Log
+
+  // Query elements *within* the panel context to avoid global scope issues
+  const preview = context.querySelector('#preview');
+  const coordinates = context.querySelector('#coordinates');
+  const directionEmojis = context.querySelectorAll('.direction-emoji'); // Returns NodeList (empty if none found)
+  const magnifyEmoji = context.querySelector('.magnify-emoji');
+  const enlargedPreview = document.getElementById('enlarged-preview'); // This is likely outside the panel, use global ID
+
+  // --- Add Listeners with Null Checks ---
+  if (preview) {
+    console.log("setupPreviewListeners: Attaching listeners to #preview"); // Debug Log
+    // --- Dragging within Preview ---
+    const handlePreviewMouseMove = (e) => {
+        if (!isDragging || !currentImage || currentImage.parentElement !== preview) return; // Check dragging state and context
+        const rect = preview.getBoundingClientRect();
+        let newLeft = e.clientX - rect.left - offsetX;
+        let newTop = e.clientY - rect.top - offsetY;
+        // Constrain within preview bounds (assuming preview is 600x600 or its current size)
+        const previewWidth = preview.clientWidth;
+        const previewHeight = preview.clientHeight;
+        const imgWidth = currentImage.clientWidth;
+        const imgHeight = currentImage.clientHeight;
+
+        newLeft = Math.max(0, Math.min(newLeft, previewWidth - imgWidth));
+        newTop = Math.max(0, Math.min(newTop, previewHeight - imgHeight));
+
+        currentImage.style.left = `${newLeft}px`;
+        currentImage.style.top = `${newTop}px`;
+        if (coordinates) updateCoordinates(currentImage, coordinates); // Update coords if element exists
+    };
+
+    const handlePreviewMouseUpOrLeave = () => { // Handle mouseup or leave on preview itself
+        if (isDragging && currentImage && currentImage.parentElement === preview) {
+            const traitIndex = traitImages.findIndex(img => img === currentImage); // Find based on object reference
+             if (traitIndex !== -1) {
+                 const trait = TraitManager.getAllTraits()[traitIndex];
+                 if (trait && trait.variants.length > trait.selected) { // Ensure trait and selected variant exist
+                     const variationName = trait.variants[trait.selected].name;
+                     savePosition(currentImage, trait.id, variationName); // Save final position
+                 }
+             } else {
+                 console.warn("MouseUp in Preview: Could not find trait index for currentImage", currentImage);
+             }
+            // isDragging = false; // Global mouseup handler should manage this state
+            // currentImage.style.cursor = 'grab'; // Restore cursor via CSS preferably
+            // currentImage.classList.remove('dragging');
+            // updateZIndices(); // Z-index doesn't change on mouseup
+        }
+    };
+
+    // Attach listeners (consider cleanup if this setup runs multiple times without element replacement)
+    preview.removeEventListener('mousemove', handlePreviewMouseMove); // Basic cleanup
+    preview.addEventListener('mousemove', handlePreviewMouseMove);
+
+    preview.removeEventListener('mouseup', handlePreviewMouseUpOrLeave); // Basic cleanup
+    preview.addEventListener('mouseup', handlePreviewMouseUpOrLeave);
+
+    preview.removeEventListener('mouseleave', handlePreviewMouseUpOrLeave); // Handle mouse leaving preview area during drag
+    preview.addEventListener('mouseleave', handlePreviewMouseUpOrLeave);
+
+    // Note: Global mouseup listener in setupDrag should handle final state cleanup (isDragging=false)
+
+  } else {
+      console.warn("setupPreviewListeners: #preview element not found within context.");
+  }
+
+  // --- Arrow Controls ---
+  if (directionEmojis.length > 0) {
+    console.log("setupPreviewListeners: Attaching listeners to direction emojis"); // Debug Log
+    directionEmojis.forEach(emoji => {
+        const direction = emoji.getAttribute('data-direction');
+        if (!emoji.hasAttribute('data-listener-attached')) { // Prevent multiple listeners
+             const arrowMouseDownHandler = () => {
+                if (!currentImage || !currentImage.src || !document.contains(currentImage)) return; // Check if image exists and is in DOM
+                // Ensure coordinates element exists before starting interval
+                const currentCoordsElement = context.querySelector('#coordinates');
+                if (!currentCoordsElement) return;
+
+                stopArrowMovement(); // Clear any existing interval first
+                moveInterval = setInterval(() => {
+                    if (!currentImage || !document.contains(currentImage)) { stopArrowMovement(); return; } // Stop if image disappears
+                    let left = parseFloat(currentImage.style.left) || 0;
+                    let top = parseFloat(currentImage.style.top) || 0;
+                    if (direction === 'up') top -= 1;
+                    if (direction === 'down') top += 1;
+                    if (direction === 'left') left -= 1;
+                    if (direction === 'right') right += 1;
+
+                    // Constrain movement (ensure preview exists for bounds)
+                    const previewContainer = context.querySelector('#preview');
+                    if(previewContainer){
+                        const previewWidth = previewContainer.clientWidth;
+                        const previewHeight = previewContainer.clientHeight;
+                        const imgWidth = currentImage.clientWidth;
+                        const imgHeight = currentImage.clientHeight;
+                        left = Math.max(0, Math.min(left, previewWidth - imgWidth));
+                        top = Math.max(0, Math.min(top, previewHeight - imgHeight));
+                    }
+
+                    currentImage.style.left = `${left}px`;
+                    currentImage.style.top = `${top}px`;
+                    if (!currentImage.classList.contains('dragging')) {
+                        currentImage.classList.add('dragging'); // Add visual feedback
+                    }
+                    updateCoordinates(currentImage, currentCoordsElement);
+                }, 50); // Interval speed
+             };
+             const arrowMouseUpOrLeaveHandler = () => {
+                stopArrowMovement(); // Call the function that handles cleanup and saving
+             };
+
+             emoji.removeEventListener('mousedown', arrowMouseDownHandler); // Cleanup
+             emoji.addEventListener('mousedown', arrowMouseDownHandler);
+
+             emoji.removeEventListener('mouseup', arrowMouseUpOrLeaveHandler); // Cleanup
+             emoji.addEventListener('mouseup', arrowMouseUpOrLeaveHandler);
+
+             emoji.removeEventListener('mouseleave', arrowMouseUpOrLeaveHandler); // Cleanup
+             emoji.addEventListener('mouseleave', arrowMouseUpOrLeaveHandler);
+
+             emoji.setAttribute('data-listener-attached', 'true');
+        }
     });
+  } else {
+      console.warn("setupPreviewListeners: Direction emojis not found within context.");
+  }
 
-    emoji.addEventListener('mouseup', () => stopArrowMovement());
-    emoji.addEventListener('mouseleave', () => stopArrowMovement());
-  });
 
-  magnifyEmoji.addEventListener('click', () => {
-    const maxWidth = window.innerWidth * 0.9;
-    const maxHeight = window.innerHeight * 0.9;
-    const enlargedPreview = document.getElementById('enlarged-preview');
-    enlargedPreview.innerHTML = '';
-    let scale = maxWidth / 600;
-    if (maxHeight / 600 < scale) scale = maxHeight / 600;
-    enlargedPreview.style.width = `${600 * scale}px`;
-    enlargedPreview.style.height = `${600 * scale}px`;
+  // --- Magnify Control ---
+  if (magnifyEmoji) {
+     console.log("setupPreviewListeners: Attaching listener to magnify emoji"); // Debug Log
+     if (!magnifyEmoji.hasAttribute('data-listener-attached')) {
+         const magnifyClickHandler = () => {
+            const currentPreviewContainer = context.querySelector('#preview'); // Find preview relative to context
+            const currentEnlargedPreview = document.getElementById('enlarged-preview'); // Global ID ok here
+            if (!currentPreviewContainer || !currentEnlargedPreview) return;
 
-    const sorted = traitImages
-      .map((img, i) => ({ img, z: TraitManager.getAllTraits()[i].zIndex }))
-      .sort((a, b) => b.z - a.z);
+            const visibleTraitImages = TraitManager.getAllTraits()
+                .map(trait => document.getElementById(`preview-trait${trait.id}`))
+                .filter(img => img && img.style.visibility !== 'hidden' && img.src); // Get valid, visible images
 
-    sorted.forEach(({ img }) => {
-      const clone = img.cloneNode(true);
-      clone.style.width = `${img.width * scale}px`;
-      clone.style.height = `${img.height * scale}px`;
-      clone.style.left = `${parseFloat(img.style.left) * scale}px`;
-      clone.style.top = `${parseFloat(img.style.top) * scale}px`;
-      clone.style.position = 'absolute';
-      clone.style.zIndex = img.style.zIndex;
-      clone.style.visibility = 'visible';
-      enlargedPreview.appendChild(clone);
-    });
+            if(visibleTraitImages.length === 0) return; // Don't show empty preview
 
-    enlargedPreview.style.display = 'block';
-    enlargedPreview.addEventListener('click', () => {
-      enlargedPreview.style.display = 'none';
-    }, { once: true });
-  });
+            const maxWidth = window.innerWidth * 0.9;
+            const maxHeight = window.innerHeight * 0.9;
+            const previewRect = currentPreviewContainer.getBoundingClientRect(); // Use current preview size
+            const baseWidth = previewRect.width;
+            const baseHeight = previewRect.height;
+
+            let scale = maxWidth / baseWidth;
+            if (maxHeight / baseHeight < scale) scale = maxHeight / baseHeight;
+
+            currentEnlargedPreview.innerHTML = ''; // Clear previous
+            currentEnlargedPreview.style.width = `${baseWidth * scale}px`;
+            currentEnlargedPreview.style.height = `${baseHeight * scale}px`;
+
+            // Sort images by z-index before cloning
+             const sortedImages = visibleTraitImages
+                 .map(img => ({ img, z: parseInt(img.style.zIndex || '0', 10) }))
+                 .sort((a, b) => a.z - b.z); // Sort ascending for correct layering
+
+             sortedImages.forEach(({ img }) => {
+                const clone = img.cloneNode(true);
+                // Ensure dimensions are scaled correctly
+                const imgRect = img.getBoundingClientRect(); // Get rendered size if possible
+                const imgStyle = window.getComputedStyle(img);
+                const originalWidth = imgRect.width || parseFloat(imgStyle.width) || img.naturalWidth;
+                const originalHeight = imgRect.height || parseFloat(imgStyle.height) || img.naturalHeight;
+                const originalLeft = parseFloat(img.style.left) || 0;
+                const originalTop = parseFloat(img.style.top) || 0;
+
+                clone.style.width = `${originalWidth * scale}px`;
+                clone.style.height = `${originalHeight * scale}px`;
+                clone.style.left = `${originalLeft * scale}px`;
+                clone.style.top = `${originalTop * scale}px`;
+                clone.style.position = 'absolute';
+                clone.style.zIndex = img.style.zIndex; // Preserve z-index
+                clone.style.visibility = 'visible';
+                currentEnlargedPreview.appendChild(clone);
+             });
+
+            currentEnlargedPreview.style.display = 'block';
+            // Add listener to close enlarged view
+             const closeEnlargedHandler = () => {
+                 currentEnlargedPreview.style.display = 'none';
+                 currentEnlargedPreview.removeEventListener('click', closeEnlargedHandler); // Clean up listener
+             };
+            currentEnlargedPreview.removeEventListener('click', closeEnlargedHandler); // Clean up previous before adding
+            currentEnlargedPreview.addEventListener('click', closeEnlargedHandler);
+         };
+         magnifyEmoji.removeEventListener('click', magnifyClickHandler); // Cleanup
+         magnifyEmoji.addEventListener('click', magnifyClickHandler);
+         magnifyEmoji.setAttribute('data-listener-attached', 'true');
+     }
+  } else {
+      console.warn("setupPreviewListeners: Magnify emoji not found within context.");
+  }
+
 }
 
 function setupDragAndDrop(img, traitIndex) {
+  if (!img || !img.parentElement || img.parentElement.id !== 'preview') {
+      // Only setup drag for images directly within the main preview container
+      // console.warn(`setupDragAndDrop: Image not in preview container or invalid:`, img);
+      return;
+  }
+
+  // Prevent native browser image dragging
   img.addEventListener('dragstart', e => e.preventDefault());
 
-  img.addEventListener('mousedown', (e) => {
-    if (!img.src) return;
-    isDragging = true;
-    currentImage = img;
+  // Use a flag to avoid attaching listener multiple times to the same image instance
+  if (img.hasAttribute('data-dragdrop-listener')) return;
+
+  const handleImageMouseDown = (e) => {
+    if (!img.src || !document.contains(img)) return; // Check image validity
+    e.stopPropagation(); // Prevent panel drag if clicking on image
+
+    isDragging = true; // Set global dragging flag
+    currentImage = img; // Set global reference to image being dragged
+
     const rect = img.getBoundingClientRect();
+    const previewRect = img.parentElement.getBoundingClientRect(); // Get container rect
+
+    // Calculate offset relative to the containing preview div
     offsetX = e.clientX - rect.left;
     offsetY = e.clientY - rect.top;
-    img.style.cursor = 'grabbing';
-    img.classList.add('dragging');
-    updateCoordinates(img, document.getElementById('coordinates'));
-  });
 
-  img.addEventListener('click', () => {
-    currentImage = img;
-    updateCoordinates(img, document.getElementById('coordinates'));
-  });
+    img.style.cursor = 'grabbing';
+    img.classList.add('dragging'); // Add visual style
+    updateZIndices(); // Ensure dragged image is on top (or based on trait order)
+    img.style.zIndex = '999'; // Temporarily boost z-index while dragging
+
+    // Update coordinates display if available
+    const coordsElement = document.getElementById('coordinates');
+    if (coordsElement) updateCoordinates(img, coordsElement);
+
+    // Note: The mousemove/mouseup listeners attached to the #preview container
+    // in setupPreviewListeners handle the actual movement and position saving.
+    // We just initiate the state here.
+  };
+
+  img.removeEventListener('mousedown', handleImageMouseDown); // Cleanup previous
+  img.addEventListener('mousedown', handleImageMouseDown);
+  img.setAttribute('data-dragdrop-listener', 'true'); // Mark as having listener
+
+  // Optional: Add click listener if needed separate from drag
+  // img.addEventListener('click', () => {
+  //   currentImage = img;
+  //   const coordsElement = document.getElementById('coordinates');
+  //   if (coordsElement) updateCoordinates(img, coordsElement);
+  // });
 }
 
 function stopArrowMovement() {
-  if (moveInterval) {
-    clearInterval(moveInterval);
-    moveInterval = null;
-    if (currentImage) {
-      const traitIndex = traitImages.indexOf(currentImage);
-      const trait = TraitManager.getAllTraits()[traitIndex];
-      const variationName = trait.variants[trait.selected].name;
-      savePosition(currentImage, trait.id, variationName);
-      currentImage.classList.remove('dragging');
-    }
-  }
+  if (moveInterval) {
+    clearInterval(moveInterval);
+    moveInterval = null;
+    if (currentImage && document.contains(currentImage)) {
+        currentImage.classList.remove('dragging'); // Remove visual feedback
+      const traitIndex = traitImages.findIndex(img => img === currentImage); // Find by reference
+       if(traitIndex !== -1){
+            const trait = TraitManager.getAllTraits()[traitIndex];
+            if (trait && trait.variants.length > trait.selected) {
+                const variationName = trait.variants[trait.selected].name;
+                savePosition(currentImage, trait.id, variationName); // Save final position
+            }
+       } else {
+            console.warn("stopArrowMovement: Could not find trait index for currentImage", currentImage);
+       }
+    }
+  }
 }
 
 function updateCoordinates(img, coordsElement) {
-  if (img && coordsElement) {
-    const left = parseFloat(img.style.left) || 0;
-    const top = parseFloat(img.style.top) || 0;
-    coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
-  }
+  if (img && coordsElement && document.contains(img)) { // Check if img still in DOM
+    const left = parseFloat(img.style.left) || 0;
+    const top = parseFloat(img.style.top) || 0;
+    coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left)}, ${Math.round(top)})`; // Zero-based coords are less confusing
+  }
 }
 
 function updateZIndices() {
-  traitImages.forEach((img, index) => {
-    const trait = TraitManager.getAllTraits()[index];
-    img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
-  });
-  if (previewPanel.element) previewPanel.element.offsetHeight;
+    const traits = TraitManager.getAllTraits();
+    traits.forEach((trait) => {
+        const img = document.getElementById(`preview-trait${trait.id}`);
+        if (img) {
+            // Higher position number = lower layer = lower z-index
+            img.style.zIndex = String(traits.length - trait.position);
+        }
+    });
+    // Force redraw if needed (usually not necessary)
+    // const preview = document.getElementById('preview');
+    // if (preview) preview.offsetHeight;
 }
-
 
 
 
