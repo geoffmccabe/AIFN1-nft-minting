@@ -1,4 +1,5 @@
 
+   
     /* Section 1 - PANELS MANAGER FRAMEWORK */
 
 
@@ -41,7 +42,12 @@
       update(content) {
         if (this.element) {
           const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
-          this.element.innerHTML = header + (content || this.content);
+          const existingContent = this.element.querySelector('#preview, #trait-container, #preview-samples, #prompt-section, #mint-section');
+          if (existingContent) {
+            existingContent.innerHTML = (content || this.content).replace(/<[^>]+>/g, '');
+          } else {
+            this.element.innerHTML = header + (content || this.content);
+          }
           Object.assign(this.element.style, {
             position: 'relative',
             width: '100%'
@@ -143,6 +149,7 @@
         });
       }
     }
+
 
 
    
@@ -667,6 +674,7 @@
 
 
 
+   
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -697,18 +705,25 @@
         setupDragAndDrop(previewImage, TraitManager.getAllTraits().findIndex(t => t.id === traitId));
       }
 
+      const previewDiv = document.getElementById('preview');
+      const previewWidth = previewDiv ? previewDiv.clientWidth : 600; // Default to 600 if not found
+      const scale = previewWidth / 600; // Scale relative to original 600px
+
       previewImage.src = trait.variants[variationIndex].url;
       previewImage.onerror = () => {
         console.error(`Failed to load image for trait ${traitId}`);
         previewImage.style.visibility = 'hidden';
       };
       previewImage.style.visibility = 'visible';
+      previewImage.style.maxWidth = `${previewWidth}px`;
+      previewImage.style.maxHeight = `${previewWidth}px`;
+
       const key = `${traitId}-${trait.variants[variationIndex].name}`;
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
         const { left, top } = JSON.parse(savedPosition);
-        previewImage.style.left = `${left}px`;
-        previewImage.style.top = `${top}px`;
+        previewImage.style.left = `${left * scale}px`;
+        previewImage.style.top = `${top * scale}px`;
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
         let lastPosition = null;
@@ -721,8 +736,8 @@
           }
         }
         if (lastPosition) {
-          previewImage.style.left = `${lastPosition.left}px`;
-          previewImage.style.top = `${lastPosition.top}px`;
+          previewImage.style.left = `${lastPosition.left * scale}px`;
+          previewImage.style.top = `${lastPosition.top * scale}px`;
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
@@ -742,7 +757,7 @@
       }
       currentImage = previewImage;
       updateZIndices();
-      updateCoordinates(currentImage, document.getElementById('coordinates'));
+      updateCoordinates(currentImage, document.getElementById('coordinates'), scale);
     }
 
     function setupPreviewListeners() {
@@ -753,16 +768,19 @@
       const enlargedPreview = document.getElementById('enlarged-preview');
 
       if (preview) {
+        const previewWidth = preview.clientWidth;
+        const scale = previewWidth / 600; // Scale relative to original 600px
+
         preview.addEventListener('mousemove', (e) => {
           if (!isDragging || !currentImage) return;
           const rect = preview.getBoundingClientRect();
           let newLeft = e.clientX - rect.left - offsetX;
           let newTop = e.clientY - rect.top - offsetY;
-          newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
-          newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
+          newLeft = Math.max(0, Math.min(newLeft, previewWidth - (currentImage.width * scale)));
+          newTop = Math.max(0, Math.min(newTop, previewWidth - (currentImage.height * scale)));
           currentImage.style.left = `${newLeft}px`;
           currentImage.style.top = `${newTop}px`;
-          updateCoordinates(currentImage, coordinates);
+          updateCoordinates(currentImage, coordinates, scale);
         });
 
         document.addEventListener('mouseup', (e) => {
@@ -771,7 +789,7 @@
             if (traitIndex !== -1) {
               const trait = TraitManager.getAllTraits()[traitIndex];
               const variationName = trait.variants[trait.selected].name;
-              savePosition(currentImage, trait.id, variationName);
+              savePosition(currentImage, trait.id, variationName, scale);
             }
             isDragging = false;
             currentImage.style.cursor = 'grab';
@@ -785,19 +803,22 @@
         const direction = emoji.getAttribute('data-direction');
         emoji.addEventListener('mousedown', () => {
           if (!currentImage || currentImage.src === '') return;
+          const previewWidth = preview.clientWidth;
+          const scale = previewWidth / 600;
+          const moveAmount = 0.0025 * previewWidth; // 0.25% of the preview width per move
           moveInterval = setInterval(() => {
             let left = parseFloat(currentImage.style.left) || 0;
             let top = parseFloat(currentImage.style.top) || 0;
-            if (direction === 'up') top -= 1;
-            if (direction === 'down') top += 1;
-            if (direction === 'left') left -= 1;
-            if (direction === 'right') left += 1;
-            left = Math.max(0, Math.min(left, 600 - currentImage.width));
-            top = Math.max(0, Math.min(top, 600 - currentImage.height));
+            if (direction === 'up') top -= moveAmount;
+            if (direction === 'down') top += moveAmount;
+            if (direction === 'left') left -= moveAmount;
+            if (direction === 'right') left += moveAmount;
+            left = Math.max(0, Math.min(left, previewWidth - (currentImage.width * scale)));
+            top = Math.max(0, Math.min(top, previewWidth - (currentImage.height * scale)));
             currentImage.style.left = `${left}px`;
             currentImage.style.top = `${top}px`;
             currentImage.classList.add('dragging');
-            updateCoordinates(currentImage, coordinates);
+            updateCoordinates(currentImage, coordinates, scale);
           }, 50);
         });
 
@@ -806,10 +827,12 @@
             clearInterval(moveInterval);
             moveInterval = null;
             if (currentImage) {
+              const previewWidth = preview.clientWidth;
+              const scale = previewWidth / 600;
               const traitIndex = traitImages.indexOf(currentImage);
               const trait = TraitManager.getAllTraits()[traitIndex];
               const variationName = trait.variants[trait.selected].name;
-              savePosition(currentImage, trait.id, variationName);
+              savePosition(currentImage, trait.id, variationName, scale);
               currentImage.classList.remove('dragging');
             }
           }
@@ -820,10 +843,12 @@
             clearInterval(moveInterval);
             moveInterval = null;
             if (currentImage) {
+              const previewWidth = preview.clientWidth;
+              const scale = previewWidth / 600;
               const traitIndex = traitImages.indexOf(currentImage);
               const trait = TraitManager.getAllTraits()[traitIndex];
               const variationName = trait.variants[trait.selected].name;
-              savePosition(currentImage, trait.id, variationName);
+              savePosition(currentImage, trait.id, variationName, scale);
               currentImage.classList.remove('dragging');
             }
           }
@@ -834,16 +859,13 @@
         enlargedPreview.innerHTML = '';
         const maxWidth = window.innerWidth * 0.9;
         const maxHeight = window.innerHeight * 0.9;
-        let scale = 1;
-        if (maxWidth / maxHeight > 1) {
-          enlargedPreview.style.height = `${maxHeight}px`;
-          enlargedPreview.style.width = `${maxHeight}px`;
-          scale = maxHeight / 600;
-        } else {
-          enlargedPreview.style.width = `${maxWidth}px`;
-          enlargedPreview.style.height = `${maxWidth}px`;
-          scale = maxWidth / 600;
-        }
+        const previewWidth = preview.clientWidth;
+        const scale = previewWidth / 600;
+        const enlargedSize = Math.min(maxWidth, maxHeight);
+        const enlargedScale = enlargedSize / 600;
+
+        enlargedPreview.style.width = `${enlargedSize}px`;
+        enlargedPreview.style.height = `${enlargedSize}px`;
 
         const sortedImages = traitImages
           .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx].position }))
@@ -852,10 +874,10 @@
         sortedImages.forEach(({ img }) => {
           if (img && img.src && img.style.visibility !== 'hidden') {
             const clonedImg = img.cloneNode(true);
-            clonedImg.style.width = `${img.width * scale}px`;
-            clonedImg.style.height = `${img.height * scale}px`;
-            clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
-            clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
+            clonedImg.style.width = `${img.width * enlargedScale}px`;
+            clonedImg.style.height = `${img.height * enlargedScale}px`;
+            clonedImg.style.left = `${parseFloat(img.style.left) * (enlargedScale / scale)}px`;
+            clonedImg.style.top = `${parseFloat(img.style.top) * (enlargedScale / scale)}px`;
             clonedImg.style.zIndex = String(img.style.zIndex);
             clonedImg.style.visibility = 'visible';
             enlargedPreview.appendChild(clonedImg);
@@ -880,22 +902,22 @@
           offsetY = e.clientY - rect.top;
           img.style.cursor = 'grabbing';
           img.classList.add('dragging');
-          updateCoordinates(img, document.getElementById('coordinates'));
+          updateCoordinates(img, document.getElementById('coordinates'), img.parentElement.clientWidth / 600);
         });
 
         img.addEventListener('click', () => {
           if (img.src !== '') {
             currentImage = img;
-            updateCoordinates(img, document.getElementById('coordinates'));
+            updateCoordinates(img, document.getElementById('coordinates'), img.parentElement.clientWidth / 600);
           }
         });
       }
     }
 
-    function updateCoordinates(img, coordsElement) {
+    function updateCoordinates(img, coordsElement, scale) {
       if (img && coordsElement) {
-        const left = parseFloat(img.style.left) || 0;
-        const top = parseFloat(img.style.top) || 0;
+        const left = (parseFloat(img.style.left) || 0) / scale;
+        const top = (parseFloat(img.style.top) || 0) / scale;
         coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
       }
     }
@@ -918,6 +940,7 @@
 
 
 
+   
     /* Section 6 - PREVIEW SAMPLES LOGIC */
 
 
@@ -925,14 +948,21 @@
 
 
     function getPreviewSamplesContent() {
+      const previewSamples = document.getElementById('preview-samples');
+      const grid = document.getElementById('preview-samples-grid');
+      if (!previewSamples || !grid) return '';
+
+      const gridWidth = grid.clientWidth;
+      const squareSize = (gridWidth - (13 * 3)) / 4; // 13px gap between squares, 3 gaps for 4 squares
+      const scale = squareSize / 600; // Scale relative to original 600px
+
       let html = `<div id="preview-samples"><div id="preview-samples-header"><button id="update-previews">UPDATE</button></div><div id="preview-samples-grid">`;
       sampleData.forEach((sample, i) => {
         html += `<div class="sample-container">`;
         sample.forEach(item => {
           const trait = TraitManager.getTrait(item.traitId);
           const variant = trait.variants.find(v => v.id === item.variantId);
-          const scale = 140 / 600;
-          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * scale}px; top: ${item.position.top * scale}px; transform: scale(0.23333); transform-origin: top left;">`;
+          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * scale}px; top: ${item.position.top * scale}px; transform: scale(${scale}); transform-origin: top left;">`;
         });
         html += `</div>`;
       });
@@ -966,6 +996,7 @@
         });
       });
     }
+
 
 
 
