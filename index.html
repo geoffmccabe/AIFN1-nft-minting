@@ -40,6 +40,8 @@
     display: flex;
     flex-direction: column;
     max-width: 66.67%;
+    width: 66.67%;
+    box-sizing: border-box;
   }
   #right-column {
     flex: 1;
@@ -47,6 +49,8 @@
     display: flex;
     flex-direction: column;
     max-width: 33.33%;
+    width: 33.33%;
+    box-sizing: border-box;
   }
   .panel {
     background-color: rgba(255, 255, 255, 0.6);
@@ -239,6 +243,7 @@
   #preview {
     position: relative;
     width: 100%;
+    max-width: 600px;
     height: 600px;
     background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
     background-size: cover;
@@ -413,7 +418,7 @@
   }
   @media (max-width: 900px) {
     body { flex-direction: column; padding: 10px; }
-    #left-column, #right-column { flex: none; width: 100%; padding: 0; max-width: 100%; }
+    #left-column, #right-column { flex: none; width: 100%; max-width: 100%; padding: 0; }
     #preview, #background-image { height: auto; aspect-ratio: 1 / 1; }
     #preview-samples-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
     .panel { width: 100% !important; }
@@ -421,7 +426,7 @@
 </style>
 
 <body>
-  <div id="version">Version 97</div>
+  <div id="version">Version 93</div>
   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
