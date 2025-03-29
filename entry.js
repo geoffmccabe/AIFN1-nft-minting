@@ -1,5 +1,5 @@
 
-    /* Section 1 - PANELS MANAGER FRAMEWORK */
+    /* Section 1 - PANELS MANAGER FRAMEWORK 
 
 
 
@@ -124,6 +124,164 @@
           if (!isDragging) return;
           isDragging = false;
           el.style.cursor = 'default';
+          el.style.zIndex = '1';
+          const dropX = e.clientX;
+          const windowWidth = window.innerWidth;
+          const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
+          panel.setColumn(newColumn);
+          const sameColumnPanels = this.panels.filter(p => p.column === newColumn);
+          const insertIndex = sameColumnPanels.findIndex(p => p.element.getBoundingClientRect().top > e.clientY);
+          if (insertIndex === -1) {
+            this.panels = this.panels.filter(p => p !== panel).concat(panel);
+          } else {
+            const globalIndex = this.panels.findIndex(p => p.id === sameColumnPanels[insertIndex].id);
+            this.panels = this.panels.filter(p => p !== panel);
+            this.panels.splice(globalIndex, 0, panel);
+          }
+          this.renderAll();
+          this.panels.forEach(p => this.setupDrag(p));
+        });
+      }
+    }
+
+*/
+
+
+    /* Section 1 - PANELS MANAGER FRAMEWORK */
+
+
+
+
+
+    let idCounter = 0;
+    function generateId() {
+      return `id-${idCounter++}`;
+    }
+
+    class Panel {
+      constructor(id, title, content, column = 'left', style = {}) {
+        this.id = id;
+        this.title = title;
+        this.content = content;
+        this.column = column;
+        this.style = { backgroundColor: '#ffffff', ...style };
+        this.element = null;
+      }
+
+      render() {
+        if (!this.element) {
+          this.element = document.createElement('div');
+          this.element.id = this.id;
+          this.element.className = 'panel';
+          const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
+          this.element.innerHTML = header + this.content;
+          Object.assign(this.element.style, {
+            ...this.style,
+            position: 'relative',
+            cursor: 'default',
+            display: 'block',
+            width: '100%'
+          });
+        }
+        return this.element;
+      }
+
+      update(content) {
+        if (this.element) {
+          const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
+          this.element.innerHTML = header + (content || this.content);
+          Object.assign(this.element.style, {
+            position: 'relative',
+            width: '100%'
+          });
+        }
+      }
+
+      setColumn(column) {
+        this.column = column;
+      }
+    }
+
+    class PanelManager {
+      constructor() {
+        this.panels = [];
+      }
+
+      addPanel(panel) {
+        this.panels.push(panel);
+        console.log(`Added panel ${panel.id} to column ${panel.column}, fam!`);
+        this.renderAll();
+      }
+
+      removePanel(panelId) {
+        this.panels = this.panels.filter(p => p.id !== panelId);
+        console.log(`Removed panel ${panelId}, dawg!`);
+        this.renderAll();
+      }
+
+      renderAll() {
+        const leftColumn = document.getElementById('left-column');
+        const rightColumn = document.getElementById('right-column');
+        if (!leftColumn || !rightColumn) {
+          console.error('Columns not found during renderAll, homie! Check yo DOM, ya slow-ass!');
+          return;
+        }
+        const leftPanels = this.panels.filter(p => p.column === 'left');
+        const rightPanels = this.panels.filter(p => p.column === 'right');
+
+        leftPanels.forEach(panel => {
+          if (!document.getElementById(panel.id)) {
+            leftColumn.appendChild(panel.render());
+            console.log(`Rendered panel ${panel.id} in left column, fam!`);
+          } else {
+            panel.update(panel.content);
+            console.log(`Updated panel ${panel.id} in left column, dawg!`);
+          }
+        });
+
+        rightPanels.forEach(panel => {
+          if (!document.getElementById(panel.id)) {
+            rightColumn.appendChild(panel.render());
+            console.log(`Rendered panel ${panel.id} in right column, fam!`);
+          } else {
+            panel.update(panel.content);
+            console.log(`Updated panel ${panel.id} in right column, dawg!`);
+          }
+        });
+
+        console.log(`Rendered ${leftPanels.length} panels in left column, ${rightPanels.length} in right column, fo’ shizzle!`);
+      }
+
+      setupDrag(panel) {
+        const el = panel.element;
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        el.addEventListener('mousedown', (e) => {
+          if (!e.target.classList.contains('panel-top-bar')) return;
+          isDragging = true;
+          const rect = el.getBoundingClientRect();
+          offsetX = e.clientX - rect.left;
+          offsetY = e.clientY - rect.top;
+          el.style.position = 'absolute';
+          el.style.width = `${rect.width}px`; /* Keep the current width while draggin’, fam */
+          el.style.opacity = '0.8'; /* 80% transparent, dawg */
+          el.style.zIndex = '1000';
+          el.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          el.style.left = `${e.clientX - offsetX}px`;
+          el.style.top = `${e.clientY - offsetY}px`;
+        });
+
+        document.addEventListener('mouseup', (e) => {
+          if (!isDragging) return;
+          isDragging = false;
+          el.style.cursor = 'default';
+          el.style.opacity = '1'; /* Back to full opacity, homie */
+          el.style.width = ''; /* Clear the width so it adjusts to the new column, fam */
           el.style.zIndex = '1';
           const dropX = e.clientX;
           const windowWidth = window.innerWidth;
