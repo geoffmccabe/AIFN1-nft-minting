@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Mint Your AIFN NFT</title>
-  <link rel="icon" type="image/x-icon" href="/AIFN1-nft-minting/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link href="https://fonts.googleapis.com/css2?family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script defer src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
@@ -11,6 +11,7 @@
   <script defer src="entry.js"></script>
 </head>
 
+<style>
 
 
     
@@ -18,10 +19,7 @@
 
 
     
-
     
-<style>
-
   body {
     font-family: 'Poppins', sans-serif;
     background-image: url('/AIFN1-nft-minting/images/background.webp');
@@ -34,7 +32,7 @@
     position: relative;
     min-height: 100vh;
     display: flex;
-    overflow: hidden; /* Prevent body scroll during resize */
+    overflow: hidden; /* Keep hidden to prevent whole page scroll */
   }
   #version {
     position: absolute;
@@ -44,47 +42,44 @@
     color: #333;
     z-index: 10;
   }
+  /* Simplified Column CSS */
   #left-column {
-    /* width, max-width, flex removed - JS controls width */
-    padding-right: 10px; /* Adjusted for resize handle space */
-    padding-top: 30px;
+    flex: 0 0 60%; /* Fixed 60% width, don't grow or shrink initially */
+    max-width: 60%; /* Ensure it doesn't exceed */
+    padding: 30px 10px 20px 0; /* Adjusted padding */
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    overflow-y: auto; /* Allow column content to scroll */
+    height: calc(100vh - 40px); /* Maintain height */
+    overflow-y: auto; /* Allow column scroll */
     overflow-x: hidden;
-    height: calc(100vh - 40px); /* Set height */
     gap: 20px;
     position: relative;
   }
   #right-column {
-    /* width, max-width, flex removed - JS controls width */
-    padding-left: 10px; /* Adjusted for resize handle space */
-    padding-top: 30px;
+    flex: 1 1 40%; /* Take remaining space (40%), allow grow/shrink */
+    padding: 30px 0 20px 10px; /* Adjusted padding */
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    overflow-y: auto; /* Allow column content to scroll */
+    height: calc(100vh - 40px); /* Maintain height */
+    overflow-y: auto; /* Allow column scroll */
     overflow-x: hidden;
-    height: calc(100vh - 40px); /* Set height */
     gap: 20px;
     position: relative;
   }
   .panel {
     background-color: rgba(255, 255, 255, 0.6);
     border-radius: 10px;
-    padding: 20px 10px 10px 10px;
+    padding: 20px 10px 10px 10px; /* Consistent padding */
     border: 1px solid #ccc;
     box-sizing: border-box;
     position: relative;
-    width: 100%;
+    width: 100%; /* Panels take full width of their column */
     flex-shrink: 0; /* Prevent panels shrinking vertically */
   }
-  /* Class added by JS when hovering over resize zone */
-  .resize-cursor-ew {
-     cursor: ew-resize;
-  }
-  .panel-top-bar {
+  /* Removed .resize-cursor-ew */
+  .panel-top-bar { /* For dragging */
     position: absolute;
     top: 0;
     left: 0;
@@ -102,9 +97,9 @@
     color: #cbcccb;
     margin: 0 0 10px;
     text-align: center;
-    position: relative;
+    position: relative; /* Keep for stacking context if needed */
     width: 100%;
-    user-select: text;
+    user-select: text; /* Allow selecting title */
   }
   #logo-panel {
     background-color: rgba(255, 255, 255, 0.6);
@@ -113,12 +108,12 @@
     box-sizing: border-box;
     position: relative;
     width: 100%;
-    flex-shrink: 0; /* Prevent shrinking */
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     height: 200px;
-    padding: 0;
+    padding: 0; /* Reset padding */
   }
   #logo {
     display: block;
@@ -130,7 +125,7 @@
     object-fit: contain;
   }
   @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-     /* #logo { max-width: 300px; } */ /* Original rule kept commented */
+     /* #logo { max-width: 300px; } */
   }
   .trait-section {
     margin-bottom: 20px;
@@ -432,32 +427,25 @@
   .confirmation-dialog .no-button { background: #ae645a; }
  .confirmation-dialog .no-button:hover { background: #9d544a; }
 
-  @media (max-width: 900px) { /* Apply necessary overrides for resize */
-    body { flex-direction: column; padding: 10px; }
-    /* Ensure columns take full width and allow content height on mobile */
+  @media (max-width: 900px) { /* Revert @media rules closer to original simple state */
+    body { flex-direction: column; padding: 10px; overflow: auto; /* Allow scroll on small screens */ }
     #left-column, #right-column {
-        flex: none !important;
-        width: 100% !important; /* Force full width */
+        flex: none !important; /* Disable flex sizing */
+        width: 100% !important; /* Full width */
         max-width: 100% !important;
+        height: auto !important; /* Auto height */
+        overflow: visible !important; /* Prevent internal scroll */
         padding: 10px !important; /* Consistent padding */
-        box-sizing: border-box !important;
-        height: auto !important; /* Allow height to grow */
-        overflow: visible !important; /* Prevent content clipping if height grows */
-        margin-bottom: 20px; /* Spacing between stacked columns */
+        margin-bottom: 20px;
     }
-    #right-column { margin-bottom: 0; } /* No margin on last column */
-    #preview, #background-image { /* Center preview/bg and limit width */
-        height: auto; aspect-ratio: 1 / 1;
-        max-width: 90vw;
-        margin-left: auto; margin-right: auto;
-    }
-    #preview-samples-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 5px;} /* Adjust samples grid */
-    /* .panel { width: 100% !important; } */ /* Panel width is already 100% from column */
+    #right-column { margin-bottom: 0; }
+    #preview, #background-image { height: auto; aspect-ratio: 1 / 1; max-width: 90vw; margin-left: auto; margin-right: auto;}
+    #preview-samples-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 5px;}
   }
 </style>
 
 <body>
-  <div id="version">Version 108</div>   <div id="left-column"></div>
+  <div id="version">Version 110</div>   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
 </html>
