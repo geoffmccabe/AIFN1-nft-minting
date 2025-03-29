@@ -43,7 +43,7 @@
     padding-left: 20px;
   }
   .panel {
-    background-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.6); /* 40% transparent */
     border-radius: 10px;
     padding: 10px;
     border: 1px solid #ccc;
@@ -57,9 +57,15 @@
     margin: 0 0 10px;
     text-align: left;
   }
+  #logo-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    min-height: 200px; /* Adjust as needed */
+  }
   #logo {
     display: block;
-    margin: 0 auto 20px;
     width: 100%;
     max-width: 600px;
     height: auto;
@@ -74,7 +80,7 @@
     display: flex;
     align-items: center;
     margin-bottom: 10px;
-    justify-content: space-between; /* Ensures controls are right-aligned */
+    justify-content: space-between;
   }
   .trait-controls {
     display: flex;
@@ -397,7 +403,7 @@
 </style>
 
 <body>
-  <div id="version">Version 94</div>
+  <div id="version">Version 93</div>
   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
