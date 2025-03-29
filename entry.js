@@ -65,11 +65,15 @@
       renderAll() {
         const leftColumn = document.getElementById('left-column');
         const rightColumn = document.getElementById('right-column');
-        if (!leftColumn || !rightColumn) return;
+        if (!leftColumn || !rightColumn) {
+          console.error('Columns not found during renderAll');
+          return;
+        }
         leftColumn.innerHTML = '';
         rightColumn.innerHTML = '';
         this.panels.forEach(panel => {
           const el = panel.render();
+          console.log(`Rendering panel: ${panel.id} in ${panel.column} column`);
           if (panel.column === 'left') {
             leftColumn.appendChild(el);
           } else {
@@ -364,46 +368,6 @@
       });
     }
 
-    function attachFileListeners() {
-      TraitManager.getAllTraits().forEach(trait => {
-        const fileInput = document.getElementById(`trait${trait.id}-files`);
-        if (fileInput) {
-          fileInput.addEventListener('change', async (event) => {
-            console.log(`File input triggered for trait ${trait.id}`);
-            const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
-            if (!files.length) return;
-
-            const traitObj = TraitManager.getTrait(trait.id);
-            if (!traitObj.isUserAssignedName) {
-              const position = TraitManager.getAllTraits().findIndex(t => t.id === trait.id) + 1;
-              traitObj.name = `Trait ${position}`;
-            }
-
-            traitObj.variants = [];
-            traitImages = traitImages.filter(img => img.id !== `preview-trait${trait.id}`);
-            files.forEach(file => {
-              const variationName = file.name.split('.').slice(0, -1).join('.');
-              const url = URL.createObjectURL(file);
-              TraitManager.addVariant(trait.id, { name: variationName, url });
-            });
-
-            if (traitObj.variants.length > 0) {
-              console.log(`Selecting variant for trait ${trait.id}`);
-              selectVariation(trait.id, traitObj.variants[0].id);
-              document.querySelector(`label[for="trait${trait.id}-files"]`).textContent = 'Choose New Files';
-              autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === trait.id)] = false;
-            }
-
-            traitsPanel.update(getTraitsContent());
-            attachFileListeners();
-            TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
-            updateMintButton();
-            updatePreviewSamples();
-          });
-        }
-      });
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
       provider = new ethers.providers.Web3Provider(window.ethereum);
       contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
@@ -427,7 +391,6 @@
 
       setupPreviewListeners();
       setupUndoListener();
-      attachFileListeners();
 
       TraitManager.getAllTraits().forEach(trait => {
         if (trait.variants.length > 0) {
@@ -464,7 +427,7 @@
               </div>
             </div>
             <input type="text" id="trait${trait.id}-name" placeholder="Trait ${trait.position}" ${trait.isUserAssignedName ? `value="${trait.name}"` : ''}>
-            <input type="file" id="trait${trait.id}-files" accept="image/png,image/webp" multiple>
+            <input type="file" id="trait${trait.id}-files" accept="image/png,image/webp" multiple onchange="handleFileChange('${trait.id}', this)">
             <label class="file-input-label" for="trait${trait.id}-files">Choose Files</label>
             <div id="trait${trait.id}-grid" class="trait-grid">`;
         trait.variants.forEach(variant => {
@@ -480,6 +443,38 @@
       });
       html += '</div>';
       return html;
+    }
+
+    function handleFileChange(traitId, input) {
+      console.log(`File input triggered for trait ${traitId}`);
+      const files = Array.from(input.files).sort((a, b) => a.name.localeCompare(b.name));
+      if (!files.length) return;
+
+      const trait = TraitManager.getTrait(traitId);
+      if (!trait.isUserAssignedName) {
+        const position = TraitManager.getAllTraits().findIndex(t => t.id === traitId) + 1;
+        trait.name = `Trait ${position}`;
+      }
+
+      trait.variants = [];
+      traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
+      files.forEach(file => {
+        const variationName = file.name.split('.').slice(0, -1).join('.');
+        const url = URL.createObjectURL(file);
+        TraitManager.addVariant(traitId, { name: variationName, url });
+      });
+
+      if (trait.variants.length > 0) {
+        console.log(`Selecting variant for trait ${traitId}`);
+        selectVariation(traitId, trait.variants[0].id);
+        document.querySelector(`label[for="trait${traitId}-files"]`).textContent = 'Choose New Files';
+        autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
+      }
+
+      traitsPanel.update(getTraitsContent());
+      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
+      updateMintButton();
+      updatePreviewSamples();
     }
 
     function setupTraitListeners(traitId) {
@@ -529,7 +524,6 @@
             return img;
           }).filter(img => img);
           traitsPanel.update(getTraitsContent());
-          attachFileListeners();
           TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
           traitImages.forEach((img, index) => setupDragAndDrop(img, index));
           updatePreviewSamples();
@@ -552,7 +546,6 @@
             return img;
           }).filter(img => img);
           traitsPanel.update(getTraitsContent());
-          attachFileListeners();
           TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
           traitImages.forEach((img, index) => setupDragAndDrop(img, index));
           updatePreviewSamples();
@@ -565,7 +558,6 @@
             const trait = TraitManager.getTrait(traitId);
             TraitManager.addTrait(trait.position);
             traitsPanel.update(getTraitsContent());
-            attachFileListeners();
             TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
             updatePreviewSamples();
           }
@@ -597,7 +589,6 @@
         TraitManager.removeTrait(traitId);
         traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
         traitsPanel.update(getTraitsContent());
-        attachFileListeners();
         TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
         traitImages.forEach((img, index) => setupDragAndDrop(img, index));
         updatePreviewSamples();
@@ -684,7 +675,6 @@
       updateZIndices();
       updateCoordinates(currentImage, document.getElementById('coordinates'));
       traitsPanel.update(getTraitsContent());
-      attachFileListeners();
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
     }
 
@@ -969,7 +959,9 @@
     function updateMintButton() {
       const allTraitsSet = TraitManager.getAllTraits().every(trait => trait.name && trait.variants.length > 0);
       const mintBtn = document.getElementById('mintButton');
-      if (mintBtn) mintBtn.disabled = !allTraitsSet;
+      if (mintBtn) {
+        mintBtn.disabled = !allTraitsSet;
+      }
     }
 
     function savePosition(img, traitId, variationName) {
