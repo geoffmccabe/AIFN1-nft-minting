@@ -431,6 +431,7 @@
 
 
 
+   
     /* Section 4 - TRAIT MANAGEMENT LOGIC */
 
 
@@ -487,7 +488,7 @@
       }
 
       const trait = TraitManager.getTrait(traitId);
-      if (!trait.isUserAssignedName) 
+      if (!trait.isUserAssignedName) {
         const position = TraitManager.getAllTraits().findIndex(t => t.id === traitId) + 1;
         trait.name = `Trait ${position}`;
       }
