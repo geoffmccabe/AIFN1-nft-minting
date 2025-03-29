@@ -391,6 +391,9 @@ function setupTraitListeners(traitId) {
         trait.name = `Trait ${position}`;
       }
 
+      // Replace variants instead of appending
+      trait.variants = [];
+      traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
       files.forEach(file => {
         const variationName = file.name.split('.').slice(0, -1).join('.');
         const url = URL.createObjectURL(file);
