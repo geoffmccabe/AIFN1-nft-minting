@@ -1,5 +1,4 @@
 
-   
     /* Section 1 - PANELS MANAGER FRAMEWORK */
 
 
@@ -152,8 +151,8 @@
 
 
 
-   
-  
+
+
     /* Section 2 - TRAIT MANAGER FRAMEWORK */
 
 
@@ -282,7 +281,7 @@
 
 
 
-   
+
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -488,7 +487,7 @@
       }
 
       const trait = TraitManager.getTrait(traitId);
-      if (!trait.isUserAssignedName) {
+      if (!trait.isUserAssignedName) 
         const position = TraitManager.getAllTraits().findIndex(t => t.id === traitId) + 1;
         trait.name = `Trait ${position}`;
       }
@@ -674,7 +673,6 @@
 
 
 
-   
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -936,11 +934,51 @@
       if (previewPanel.element) previewPanel.element.offsetHeight;
     }
 
+    function savePosition(img, traitId, variationName, scale) {
+      const position = { left: (parseFloat(img.style.left) || 0) / scale, top: (parseFloat(img.style.top) || 0) / scale };
+      const key = `${traitId}-${variationName}`;
+      if (!variantHistories[key]) variantHistories[key] = [];
+      variantHistories[key].push(position);
+      try {
+        localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify(position));
+        localStorage.setItem(`trait${traitId}-${variationName}-manuallyMoved`, 'true');
+      } catch (e) {
+        console.error('Failed to save to localStorage:', e);
+      }
+
+      const trait = TraitManager.getTrait(traitId);
+      const traitIndex = TraitManager.getAllTraits().findIndex(t => t.id === traitId);
+      const currentVariationIndex = trait.variants.findIndex(v => v.name === variationName);
+      if (currentVariationIndex === 0 && !autoPositioned[traitIndex]) {
+        for (let i = 1; i < trait.variants.length; i++) {
+          const otherVariationName = trait.variants[i].name;
+          const otherKey = `${traitId}-${otherVariationName}`;
+          variantHistories[otherKey] = [{ left: position.left, top: position.top }];
+          try {
+            localStorage.setItem(`trait${traitId}-${otherVariationName}-position`, JSON.stringify(position));
+            localStorage.removeItem(`trait${traitId}-${otherVariationName}-manuallyMoved`);
+          } catch (e) {
+            console.error('Failed to save to localStorage:', e);
+          }
+          if (trait.selected === i) {
+            const previewImage = document.getElementById(`preview-trait${traitId}`);
+            if (previewImage && previewImage.src) {
+              previewImage.style.left = `${position.left * scale}px`;
+              previewImage.style.top = `${position.top * scale}px`;
+            }
+          }
+        }
+        autoPositioned[traitIndex] = true;
+      }
+
+      updateSamplePositions(traitId, variationName, position);
+      updateSubsequentTraits(traitId, variationName, position);
+    }
 
 
 
 
-   
+
     /* Section 6 - PREVIEW SAMPLES LOGIC */
 
 
@@ -996,7 +1034,6 @@
         });
       });
     }
-
 
 
 
@@ -1066,47 +1103,6 @@
       }
     }
 
-    function savePosition(img, traitId, variationName) {
-      const position = { left: parseFloat(img.style.left) || 0, top: parseFloat(img.style.top) || 0 };
-      const key = `${traitId}-${variationName}`;
-      if (!variantHistories[key]) variantHistories[key] = [];
-      variantHistories[key].push(position);
-      try {
-        localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify(position));
-        localStorage.setItem(`trait${traitId}-${variationName}-manuallyMoved`, 'true');
-      } catch (e) {
-        console.error('Failed to save to localStorage:', e);
-      }
-
-      const trait = TraitManager.getTrait(traitId);
-      const traitIndex = TraitManager.getAllTraits().findIndex(t => t.id === traitId);
-      const currentVariationIndex = trait.variants.findIndex(v => v.name === variationName);
-      if (currentVariationIndex === 0 && !autoPositioned[traitIndex]) {
-        for (let i = 1; i < trait.variants.length; i++) {
-          const otherVariationName = trait.variants[i].name;
-          const otherKey = `${traitId}-${otherVariationName}`;
-          variantHistories[otherKey] = [{ left: position.left, top: position.top }];
-          try {
-            localStorage.setItem(`trait${traitId}-${otherVariationName}-position`, JSON.stringify(position));
-            localStorage.removeItem(`trait${traitId}-${otherVariationName}-manuallyMoved`);
-          } catch (e) {
-            console.error('Failed to save to localStorage:', e);
-          }
-          if (trait.selected === i) {
-            const previewImage = document.getElementById(`preview-trait${traitId}`);
-            if (previewImage && previewImage.src) {
-              previewImage.style.left = `${position.left}px`;
-              previewImage.style.top = `${position.top}px`;
-            }
-          }
-        }
-        autoPositioned[traitIndex] = true;
-      }
-
-      updateSamplePositions(traitId, variationName, position);
-      updateSubsequentTraits(traitId, variationName, position);
-    }
-
     function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
       const currentTrait = TraitManager.getTrait(currentTraitId);
       const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === currentTraitId);
@@ -1127,8 +1123,10 @@
             if (currentTrait.selected === i) {
               const previewImage = document.getElementById(`preview-trait${currentTraitId}`);
               if (previewImage && previewImage.src) {
-                previewImage.style.left = `${position.left}px`;
-                previewImage.style.top = `${position.top}px`;
+                const previewWidth = document.getElementById('preview').clientWidth;
+                const scale = previewWidth / 600;
+                previewImage.style.left = `${position.left * scale}px`;
+                previewImage.style.top = `${position.top * scale}px`;
               }
             }
           }
@@ -1152,8 +1150,10 @@
             if (nextTrait.selected === i) {
               const previewImage = document.getElementById(`preview-trait${nextTrait.id}`);
               if (previewImage && previewImage.src) {
-                previewImage.style.left = `${position.left}px`;
-                previewImage.style.top = `${position.top}px`;
+                const previewWidth = document.getElementById('preview').clientWidth;
+                const scale = previewWidth / 600;
+                previewImage.style.left = `${position.left * scale}px`;
+                previewImage.style.top = `${position.top * scale}px`;
               }
             }
           }
@@ -1230,3 +1230,32 @@
         status.innerText = `Error: ${error.message}`;
       }
     };
+
+
+
+
+
+    /* Section 8 - SAMPLE RENDERER */
+
+
+
+
+
+    function SampleRenderer(container, width, images, scaleRelativeTo = 600) {
+      const scale = width / scaleRelativeTo;
+      container.style.width = `${width}px`;
+      container.style.height = `${width}px`;
+
+      images.forEach(({ img, position, zIndex }) => {
+        if (img && img.src && img.style.visibility !== 'hidden') {
+          const clonedImg = img.cloneNode(true);
+          clonedImg.style.width = `${img.width * scale}px`;
+          clonedImg.style.height = `${img.height * scale}px`;
+          clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
+          clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
+          clonedImg.style.zIndex = String(zIndex);
+          clonedImg.style.visibility = 'visible';
+          container.appendChild(clonedImg);
+        }
+      });
+    }
