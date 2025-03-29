@@ -25,7 +25,11 @@ class Panel {
       this.element.id = this.id;
       this.element.className = 'panel';
       this.element.innerHTML = this.id === 'logo-panel' ? this.content : `<h2>${this.title}</h2>${this.content}`;
-      Object.assign(this.element.style, this.style);
+      Object.assign(this.element.style, {
+        ...this.style,
+        position: 'relative', // For drag-and-drop
+        cursor: 'grab'
+      });
     }
     return this.element;
   }
@@ -34,6 +38,11 @@ class Panel {
     if (this.element) {
       this.element.innerHTML = this.id === 'logo-panel' ? content || this.content : `<h2>${this.title}</h2>${content || this.content}`;
     }
+  }
+
+  setColumn(column) {
+    this.column = column;
+    this.element.style.width = column === 'left' ? '66.67%' : '33.33%';
   }
 }
 
@@ -68,6 +77,54 @@ class PanelManager {
       } else {
         rightColumn.appendChild(el);
       }
+    });
+  }
+
+  setupDrag(panel) {
+    const el = panel.element;
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    el.addEventListener('mousedown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+      isDragging = true;
+      const rect = el.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      el.style.position = 'absolute';
+      el.style.zIndex = '1000';
+      el.style.cursor = 'grabbing';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      el.style.left = `${e.clientX - offsetX}px`;
+      el.style.top = `${e.clientY - offsetY}px`;
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      el.style.cursor = 'grab';
+      el.style.zIndex = '1';
+
+      const dropX = e.clientX;
+      const windowWidth = window.innerWidth;
+      const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
+      panel.setColumn(newColumn);
+
+      const sameColumnPanels = this.panels.filter(p => p.column === newColumn);
+      const insertIndex = sameColumnPanels.findIndex(p => p.element.getBoundingClientRect().top > e.clientY);
+      if (insertIndex === -1) {
+        this.panels = this.panels.filter(p => p !== panel).concat(panel);
+      } else {
+        const globalIndex = this.panels.findIndex(p => p.id === sameColumnPanels[insertIndex].id);
+        this.panels = this.panels.filter(p => p !== panel);
+        this.panels.splice(globalIndex, 0, panel);
+      }
+
+      this.renderAll();
+      this.panels.forEach(p => this.setupDrag(p)); // Reattach listeners
     });
   }
 }
@@ -134,22 +191,31 @@ const TraitManager = {
     if (!trait) return;
 
     const oldPosition = trait.position;
+    const maxPosition = this.traits.length;
 
-    if (newPosition < oldPosition) {
-      this.traits.forEach(t => {
-        if (t.position >= newPosition && t.position < oldPosition) {
-          t.position++;
-        }
-      });
-    } else if (newPosition > oldPosition) {
-      this.traits.forEach(t => {
-        if (t.position > oldPosition && t.position <= newPosition) {
-          t.position--;
-        }
-      });
+    if (newPosition === oldPosition) return;
+
+    // Special case: swap with first or last trait
+    if (oldPosition === 1 && newPosition === maxPosition) {
+      const lastTrait = this.traits.find(t => t.position === maxPosition);
+      if (lastTrait) {
+        lastTrait.position = 1;
+        trait.position = maxPosition;
+      }
+    } else if (oldPosition === maxPosition && newPosition === 1) {
+      const firstTrait = this.traits.find(t => t.position === 1);
+      if (firstTrait) {
+        firstTrait.position = maxPosition;
+        trait.position = 1;
+      }
+    } else {
+      // Normal swap between adjacent positions
+      const targetTrait = this.traits.find(t => t.position === newPosition);
+      if (targetTrait) {
+        targetTrait.position = oldPosition;
+        trait.position = newPosition;
+      }
     }
-
-    trait.position = newPosition;
 
     this.traits.sort((a, b) => a.position - b.position);
     this.traits.forEach((t, idx) => {
@@ -205,6 +271,9 @@ const TraitManager = {
     return [...this.traits];
   }
 };
+
+
+
 
 /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
@@ -318,10 +387,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  panelManager.panels.forEach(panel => panelManager.setupDrag(panel));
   traitImages.forEach((img, index) => setupDragAndDrop(img, index));
 });
 
-/* Section 4 - PANEL LOGIC */
+
+
+
+/* Section 4 - TRAIT MANAGEMENT LOGIC */
 
 
 
@@ -375,8 +448,8 @@ function setupTraitListeners(traitId) {
       const trait = TraitManager.getTrait(traitId);
       trait.name = nameInput.value.trim();
       trait.isUserAssignedName = true;
-      traitsPanel.update(getTraitsContent());
-      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
+      const title = nameInput.parentElement.querySelector('h2');
+      title.textContent = `TRAIT ${trait.position}${trait.name ? ` - ${trait.name}` : ''}`;
     });
   }
 
@@ -391,7 +464,6 @@ function setupTraitListeners(traitId) {
         trait.name = `Trait ${position}`;
       }
 
-      // Replace variants instead of appending
       trait.variants = [];
       traitImages = traitImages.filter(img => img.id !== `preview-trait${traitId}`);
       files.forEach(file => {
@@ -528,47 +600,69 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
-function getPreviewSamplesContent() {
-  let html = `<div id="preview-samples"><div id="preview-samples-header"><button id="update-previews">UPDATE</button></div><div id="preview-samples-grid">`;
-  sampleData.forEach((sample, i) => {
-    html += `<div class="sample-container">`;
-    sample.forEach(item => {
-      const trait = TraitManager.getTrait(item.traitId);
-      const variant = trait.variants.find(v => v.id === item.variantId);
-      const scale = 140 / 600;
-      html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * scale}px; top: ${item.position.top * scale}px; transform: scale(0.23333); transform-origin: top left;">`;
-    });
-    html += `</div>`;
-  });
-  html += `</div></div>`;
-  return html;
-}
 
-function updatePreviewSamples() {
-  sampleData = Array(16).fill(null).map(() => []);
-  const traits = TraitManager.getAllTraits().slice().sort((a, b) => a.position - b.position);
-  for (let i = 0; i < 16; i++) {
-    traits.forEach(trait => {
-      if (trait.variants.length === 0) return;
-      const randomIndex = Math.floor(Math.random() * trait.variants.length);
-      const variant = trait.variants[randomIndex];
-      const key = `${trait.id}-${variant.name}`;
-      const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`) || JSON.stringify({ left: 0, top: 0 });
-      const position = JSON.parse(savedPosition);
-      if (!variantHistories[key]) variantHistories[key] = [position];
-      sampleData[i].push({ traitId: trait.id, variantId: variant.id, position });
-    });
+
+
+/* Section 5 - PREVIEW MANAGEMENT LOGIC */
+
+
+
+
+
+function selectVariation(traitId, variationId) {
+  const trait = TraitManager.getTrait(traitId);
+  const variationIndex = trait.variants.findIndex(v => v.id === variationId);
+  if (variationIndex === -1) {
+    console.error(`Variation ${variationId} not found in Trait ${traitId}`);
+    return;
   }
-  previewSamplesPanel.update(getPreviewSamplesContent());
-  const updateButton = document.getElementById('update-previews');
-  if (updateButton) {
-    updateButton.addEventListener('click', updatePreviewSamples);
+  trait.selected = variationIndex;
+
+  let previewImage = document.getElementById(`preview-trait${traitId}`);
+  if (!previewImage) {
+    previewImage = document.createElement('img');
+    previewImage.id = `preview-trait${traitId}`;
+    traitImages.push(previewImage);
+    document.getElementById('preview').appendChild(previewImage);
+    setupDragAndDrop(previewImage, TraitManager.getAllTraits().findIndex(t => t.id === traitId));
   }
-  document.querySelectorAll('#preview-samples-grid .sample-container').forEach((container, i) => {
-    container.addEventListener('click', () => {
-      sampleData[i].forEach(sample => selectVariation(sample.traitId, sample.variantId));
-    });
-  });
+
+  previewImage.src = trait.variants[variationIndex].url;
+  previewImage.style.visibility = 'visible';
+  const key = `${traitId}-${trait.variants[variationIndex].name}`;
+  const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
+  if (savedPosition) {
+    const { left, top } = JSON.parse(savedPosition);
+    previewImage.style.left = `${left}px`;
+    previewImage.style.top = `${top}px`;
+    if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
+  } else {
+    let lastPosition = null;
+    for (let i = 0; i < trait.variants.length; i++) {
+      if (i === variationIndex) continue;
+      const otherVariationName = trait.variants[i].name;
+      const otherKey = `${traitId}-${otherVariationName}`;
+      if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
+        lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
+      }
+    }
+    if (lastPosition) {
+      previewImage.style.left = `${lastPosition.left}px`;
+      previewImage.style.top = `${lastPosition.top}px`;
+      variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
+      localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
+    } else {
+      previewImage.style.left = '0px';
+      previewImage.style.top = '0px';
+      variantHistories[key] = [{ left: 0, top: 0 }];
+      localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
+    }
+  }
+  currentImage = previewImage;
+  updateZIndices();
+  updateCoordinates(currentImage, document.getElementById('coordinates'));
+  traitsPanel.update(getTraitsContent());
+  TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
 }
 
 function setupPreviewListeners() {
@@ -693,99 +787,6 @@ function setupPreviewListeners() {
   });
 }
 
-function setupUndoListener() {
-  document.addEventListener('keydown', (e) => {
-    const now = Date.now();
-    if (now - lastUndoTime < 300) return;
-    lastUndoTime = now;
-
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-      e.preventDefault();
-      if (!currentImage) return;
-      const traitIndex = traitImages.indexOf(currentImage);
-      const trait = TraitManager.getAllTraits()[traitIndex];
-      const variationName = trait.variants[trait.selected].name;
-      const key = `${trait.id}-${variationName}`;
-      if (variantHistories[key] && variantHistories[key].length > 1) {
-        variantHistories[key].pop();
-        const previousPosition = variantHistories[key][variantHistories[key].length - 1];
-        currentImage.style.left = `${previousPosition.left}px`;
-        currentImage.style.top = `${previousPosition.top}px`;
-        localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
-        updateCoordinates(currentImage, document.getElementById('coordinates'));
-        updateSamplePositions(trait.id, trait.variants[trait.selected].id, previousPosition);
-        updateSubsequentTraits(trait.id, variationName, previousPosition);
-      }
-    }
-  });
-}
-
-function updateZIndices() {
-  traitImages.forEach((img, index) => {
-    if (img) {
-      const trait = TraitManager.getAllTraits()[index];
-      img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
-    }
-  });
-  if (previewPanel.element) previewPanel.element.offsetHeight;
-}
-
-function selectVariation(traitId, variationId) {
-  const trait = TraitManager.getTrait(traitId);
-  const variationIndex = trait.variants.findIndex(v => v.id === variationId);
-  if (variationIndex === -1) {
-    console.error(`Variation ${variationId} not found in Trait ${traitId}`);
-    return;
-  }
-  trait.selected = variationIndex;
-
-  let previewImage = document.getElementById(`preview-trait${traitId}`);
-  if (!previewImage) {
-    previewImage = document.createElement('img');
-    previewImage.id = `preview-trait${traitId}`;
-    traitImages.push(previewImage);
-    document.getElementById('preview').appendChild(previewImage);
-    setupDragAndDrop(previewImage, TraitManager.getAllTraits().findIndex(t => t.id === traitId));
-  }
-
-  previewImage.src = trait.variants[variationIndex].url;
-  previewImage.style.visibility = 'visible';
-  const key = `${traitId}-${trait.variants[variationIndex].name}`;
-  const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
-  if (savedPosition) {
-    const { left, top } = JSON.parse(savedPosition);
-    previewImage.style.left = `${left}px`;
-    previewImage.style.top = `${top}px`;
-    if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
-  } else {
-    let lastPosition = null;
-    for (let i = 0; i < trait.variants.length; i++) {
-      if (i === variationIndex) continue;
-      const otherVariationName = trait.variants[i].name;
-      const otherKey = `${traitId}-${otherVariationName}`;
-      if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
-        lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
-      }
-    }
-    if (lastPosition) {
-      previewImage.style.left = `${lastPosition.left}px`;
-      previewImage.style.top = `${lastPosition.top}px`;
-      variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
-      localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
-    } else {
-      previewImage.style.left = '0px';
-      previewImage.style.top = '0px';
-      variantHistories[key] = [{ left: 0, top: 0 }];
-      localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
-    }
-  }
-  currentImage = previewImage;
-  updateZIndices();
-  updateCoordinates(currentImage, document.getElementById('coordinates'));
-  traitsPanel.update(getTraitsContent());
-  TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
-}
-
 function setupDragAndDrop(img, traitIndex) {
   if (img) {
     img.addEventListener('dragstart', (e) => e.preventDefault());
@@ -817,6 +818,133 @@ function updateCoordinates(img, coordsElement) {
     const top = parseFloat(img.style.top) || 0;
     coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
   }
+}
+
+function updateZIndices() {
+  traitImages.forEach((img, index) => {
+    if (img) {
+      const trait = TraitManager.getAllTraits()[index];
+      img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
+    }
+  });
+  if (previewPanel.element) previewPanel.element.offsetHeight;
+}
+
+
+
+
+/* Section 6 - PREVIEW SAMPLES LOGIC */
+
+
+
+
+
+function getPreviewSamplesContent() {
+  let html = `<div id="preview-samples"><div id="preview-samples-header"><button id="update-previews">UPDATE</button></div><div id="preview-samples-grid">`;
+  sampleData.forEach((sample, i) => {
+    html += `<div class="sample-container">`;
+    sample.forEach(item => {
+      const trait = TraitManager.getTrait(item.traitId);
+      const variant = trait.variants.find(v => v.id === item.variantId);
+      const scale = 140 / 600;
+      html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * scale}px; top: ${item.position.top * scale}px; transform: scale(0.23333); transform-origin: top left;">`;
+    });
+    html += `</div>`;
+  });
+  html += `</div></div>`;
+  return html;
+}
+
+function updatePreviewSamples() {
+  sampleData = Array(16).fill(null).map(() => []);
+  const traits = TraitManager.getAllTraits().slice().sort((a, b) => a.position - b.position);
+  for (let i = 0; i < 16; i++) {
+    traits.forEach(trait => {
+      if (trait.variants.length === 0) return;
+      const randomIndex = Math.floor(Math.random() * trait.variants.length);
+      const variant = trait.variants[randomIndex];
+      const key = `${trait.id}-${variant.name}`;
+      const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`) || JSON.stringify({ left: 0, top: 0 });
+      const position = JSON.parse(savedPosition);
+      if (!variantHistories[key]) variantHistories[key] = [position];
+      sampleData[i].push({ traitId: trait.id, variantId: variant.id, position });
+    });
+  }
+  previewSamplesPanel.update(getPreviewSamplesContent());
+  const updateButton = document.getElementById('update-previews');
+  if (updateButton) {
+    updateButton.addEventListener('click', updatePreviewSamples);
+  }
+  document.querySelectorAll('#preview-samples-grid .sample-container').forEach((container, i) => {
+    container.addEventListener('click', () => {
+      sampleData[i].forEach(sample => selectVariation(sample.traitId, sample.variantId));
+    });
+  });
+}
+
+
+
+
+/* Section 7 - BACKGROUND AND MINTING LOGIC */
+
+
+
+
+
+async function fetchBackground() {
+  try {
+    clickSound.play().catch(error => console.error('Error playing click sound:', error));
+    let seconds = 0;
+    const generateButton = document.getElementById('generate-background');
+    generateButton.disabled = true;
+    generateButton.innerText = `Processing ${seconds}...`;
+    timerInterval = setInterval(() => {
+      seconds++;
+      generateButton.innerText = `Processing ${seconds}...`;
+    }, 1000);
+
+    const userPrompt = document.getElementById('user-prompt').value.trim();
+    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background${userPrompt ? `?prompt=${encodeURIComponent(userPrompt)}` : ''}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch background: ${response.statusText}`);
+    const data = await response.json();
+    backgroundPanel.update(
+      backgroundPanel.content.replace(
+        /<img id="background-image"[^>]+>/,
+        `<img id="background-image" src="${data.imageUrl}" alt="AI Background">`
+      ).replace(
+        /<p id="background-metadata">[^<]+<\/p>/,
+        `<p id="background-metadata">${data.metadata}</p>`
+      )
+    );
+  } catch (error) {
+    console.error('Error fetching background:', error);
+    backgroundPanel.update(
+      backgroundPanel.content.replace(
+        /<img id="background-image"[^>]+>/,
+        `<img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">`
+      ).replace(
+        /<p id="background-metadata">[^<]+<\/p>/,
+        `<p id="background-metadata">Failed to load background: ${error.message}</p>`
+      )
+    );
+  } finally {
+    clearInterval(timerInterval);
+    const generateButton = document.getElementById('generate-background');
+    generateButton.innerText = 'Generate Bkgd';
+    generateButton.disabled = false;
+  }
+}
+
+function fetchMintFee() {
+  const mintFeeDisplay = document.getElementById('mintFeeDisplay');
+  if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
+}
+
+function updateMintButton() {
+  const allTraitsSet = TraitManager.getAllTraits().every(trait => trait.name && trait.variants.length > 0);
+  const mintBtn = document.getElementById('mintButton');
+  if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
 function savePosition(img, traitId, variationName) {
@@ -908,62 +1036,6 @@ function updateSamplePositions(traitId, variationId, position) {
     }
   }
   updatePreviewSamples();
-}
-
-async function fetchBackground() {
-  try {
-    clickSound.play().catch(error => console.error('Error playing click sound:', error));
-    let seconds = 0;
-    const generateButton = document.getElementById('generate-background');
-    generateButton.disabled = true;
-    generateButton.innerText = `Processing ${seconds}...`;
-    timerInterval = setInterval(() => {
-      seconds++;
-      generateButton.innerText = `Processing ${seconds}...`;
-    }, 1000);
-
-    const userPrompt = document.getElementById('user-prompt').value.trim();
-    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background${userPrompt ? `?prompt=${encodeURIComponent(userPrompt)}` : ''}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch background: ${response.statusText}`);
-    const data = await response.json();
-    backgroundPanel.update(
-      backgroundPanel.content.replace(
-        /<img id="background-image"[^>]+>/,
-        `<img id="background-image" src="${data.imageUrl}" alt="AI Background">`
-      ).replace(
-        /<p id="background-metadata">[^<]+<\/p>/,
-        `<p id="background-metadata">${data.metadata}</p>`
-      )
-    );
-  } catch (error) {
-    console.error('Error fetching background:', error);
-    backgroundPanel.update(
-      backgroundPanel.content.replace(
-        /<img id="background-image"[^>]+>/,
-        `<img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">`
-      ).replace(
-        /<p id="background-metadata">[^<]+<\/p>/,
-        `<p id="background-metadata">Failed to load background: ${error.message}</p>`
-      )
-    );
-  } finally {
-    clearInterval(timerInterval);
-    const generateButton = document.getElementById('generate-background');
-    generateButton.innerText = 'Generate Bkgd';
-    generateButton.disabled = false;
-  }
-}
-
-function fetchMintFee() {
-  const mintFeeDisplay = document.getElementById('mintFeeDisplay');
-  if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
-}
-
-function updateMintButton() {
-  const allTraitsSet = TraitManager.getAllTraits().every(trait => trait.name && trait.variants.length > 0);
-  const mintBtn = document.getElementById('mintButton');
-  if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
 window.mintNFT = async function() {
