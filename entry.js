@@ -1,148 +1,129 @@
-
-    /* Section 1 - PANELS MANAGER FRAMEWORK */
-
+/* Section 1 - PANELS MANAGER FRAMEWORK */
 
 
 
 
-    let idCounter = 0;
-    function generateId() {
-      return `id-${idCounter++}`;
+
+class PanelManager {
+  constructor() {
+    this.panels = [];
+  }
+
+  addPanel(panel) {
+    this.panels.push(panel);
+    this.renderAll();
+  }
+
+  removePanel(panelId) {
+    this.panels = this.panels.filter(p => p.id !== panelId);
+    this.renderAll();
+  }
+
+  renderAll() {
+    const leftColumn = document.getElementById('left-column');
+    const rightColumn = document.getElementById('right-column');
+    if (!leftColumn || !rightColumn) {
+      console.error('Columns not found during renderAll');
+      return;
     }
 
-    class Panel {
-      constructor(id, title, content, column = 'left', style = {}) {
-        this.id = id;
-        this.title = title;
-        this.content = content;
-        this.column = column;
-        this.style = { backgroundColor: '#ffffff', ...style };
-        this.element = null;
+    const leftPanels = this.panels.filter(p => p.column === 'left');
+    const rightPanels = this.panels.filter(p => p.column === 'right');
+
+    leftPanels.forEach(panel => {
+      if (!document.getElementById(panel.id)) {
+        leftColumn.appendChild(panel.render());
+      } else {
+        panel.update(panel.content);
+      }
+    });
+
+    rightPanels.forEach(panel => {
+      if (!document.getElementById(panel.id)) {
+        rightColumn.appendChild(panel.render());
+      } else {
+        panel.update(panel.content);
+      }
+    });
+
+    console.log(`Rendered ${leftPanels.length} panels in left column, ${rightPanels.length} in right column`);
+  }
+
+  setupDrag(panel) {
+    const el = panel.element;
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    el.addEventListener('mousedown', (e) => {
+      if (!e.target.classList.contains('panel-top-bar')) return;
+      isDragging = true;
+
+      const rect = el.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+
+      el.style.position = 'absolute';
+      el.style.left = `${rect.left}px`;
+      el.style.top = `${rect.top}px`;
+      el.style.width = `${rect.width}px`;
+      el.style.height = `${rect.height}px`;
+      el.style.zIndex = '1000';
+      el.style.cursor = 'grabbing';
+      el.style.opacity = '0.8';
+      el.style.pointerEvents = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      el.style.left = `${e.clientX - offsetX}px`;
+      el.style.top = `${e.clientY - offsetY}px`;
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+
+      el.style.cursor = 'default';
+      el.style.zIndex = '';
+      el.style.opacity = '';
+      el.style.pointerEvents = '';
+
+      const dropX = e.clientX;
+      const dropY = e.clientY;
+      const windowWidth = window.innerWidth;
+      const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
+      panel.setColumn(newColumn);
+
+      const sameColumnPanels = this.panels.filter(p => p.column === newColumn);
+      const insertIndex = sameColumnPanels.findIndex(p => {
+        const rect = p.element.getBoundingClientRect();
+        return dropY < rect.top + rect.height / 2;
+      });
+
+      if (insertIndex === -1) {
+        this.panels = this.panels.filter(p => p !== panel).concat(panel);
+      } else {
+        const globalIndex = this.panels.findIndex(p => p.id === sameColumnPanels[insertIndex].id);
+        this.panels = this.panels.filter(p => p !== panel);
+        this.panels.splice(globalIndex, 0, panel);
       }
 
-      render() {
-        if (!this.element) {
-          this.element = document.createElement('div');
-          this.element.id = this.id;
-          this.element.className = 'panel';
-          const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
-          this.element.innerHTML = header + this.content;
-          Object.assign(this.element.style, {
-            ...this.style,
-            position: 'relative',
-            cursor: 'default',
-            display: 'block',
-            width: '100%'
-          });
-        }
-        return this.element;
-      }
+      // Clear manual styles after drop
+      el.style.position = '';
+      el.style.left = '';
+      el.style.top = '';
+      el.style.width = '';
+      el.style.height = '';
+      el.style.zIndex = '';
+      el.style.opacity = '';
+      el.style.pointerEvents = '';
 
-      update(content) {
-        if (this.element) {
-          const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
-          this.element.innerHTML = header + (content || this.content);
-          Object.assign(this.element.style, {
-            position: 'relative',
-            width: '100%'
-          });
-        }
-      }
+      this.renderAll();
+      this.panels.forEach(p => this.setupDrag(p));
+    });
+  }
+}
 
-      setColumn(column) {
-        this.column = column;
-      }
-    }
-
-    class PanelManager {
-      constructor() {
-        this.panels = [];
-      }
-
-      addPanel(panel) {
-        this.panels.push(panel);
-        this.renderAll();
-      }
-
-      removePanel(panelId) {
-        this.panels = this.panels.filter(p => p.id !== panelId);
-        this.renderAll();
-      }
-
-      renderAll() {
-        const leftColumn = document.getElementById('left-column');
-        const rightColumn = document.getElementById('right-column');
-        if (!leftColumn || !rightColumn) {
-          console.error('Columns not found during renderAll');
-          return;
-        }
-        const leftPanels = this.panels.filter(p => p.column === 'left');
-        const rightPanels = this.panels.filter(p => p.column === 'right');
-
-        leftPanels.forEach(panel => {
-          if (!document.getElementById(panel.id)) {
-            leftColumn.appendChild(panel.render());
-          } else {
-            panel.update(panel.content);
-          }
-        });
-
-        rightPanels.forEach(panel => {
-          if (!document.getElementById(panel.id)) {
-            rightColumn.appendChild(panel.render());
-          } else {
-            panel.update(panel.content);
-          }
-        });
-
-        console.log(`Rendered ${leftPanels.length} panels in left column, ${rightPanels.length} in right column`);
-      }
-
-      setupDrag(panel) {
-        const el = panel.element;
-        let isDragging = false;
-        let offsetX, offsetY;
-
-        el.addEventListener('mousedown', (e) => {
-          if (!e.target.classList.contains('panel-top-bar')) return;
-          isDragging = true;
-          const rect = el.getBoundingClientRect();
-          offsetX = e.clientX - rect.left;
-          offsetY = e.clientY - rect.top;
-          el.style.position = 'absolute';
-          el.style.zIndex = '1000';
-          el.style.cursor = 'grabbing';
-        });
-
-        document.addEventListener('mousemove', (e) => {
-          if (!isDragging) return;
-          el.style.left = `${e.clientX - offsetX}px`;
-          el.style.top = `${e.clientY - offsetY}px`;
-        });
-
-        document.addEventListener('mouseup', (e) => {
-          if (!isDragging) return;
-          isDragging = false;
-          el.style.cursor = 'default';
-          el.style.zIndex = '1';
-          const dropX = e.clientX;
-          const windowWidth = window.innerWidth;
-          const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
-          panel.setColumn(newColumn);
-          const sameColumnPanels = this.panels.filter(p => p.column === newColumn);
-          const insertIndex = sameColumnPanels.findIndex(p => p.element.getBoundingClientRect().top > e.clientY);
-          if (insertIndex === -1) {
-            this.panels = this.panels.filter(p => p !== panel).concat(panel);
-          } else {
-            const globalIndex = this.panels.findIndex(p => p.id === sameColumnPanels[insertIndex].id);
-            this.panels = this.panels.filter(p => p !== panel);
-            this.panels.splice(globalIndex, 0, panel);
-          }
-          this.renderAll();
-          this.panels.forEach(p => this.setupDrag(p));
-        });
-      }
-    }
 
 
    
