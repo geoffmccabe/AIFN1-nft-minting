@@ -4,6 +4,11 @@
 
 
 
+let idCounter = 0;
+function generateId() {
+  return `id-${idCounter++}`;
+}
+
 class Panel {
   constructor(id, title, content, column = 'left', style = {}) {
     this.id = id;
