@@ -13,8 +13,6 @@
 
 <style>
 
-/* ------------------ Section 1 ------------------------------------------------------------------------------------------------------------------------------*/
-
   body {
     font-family: 'Poppins', sans-serif;
     background-image: url('/AIFN1-nft-minting/images/background.webp');
