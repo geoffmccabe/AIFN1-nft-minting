@@ -155,6 +155,7 @@
 
 
   
+    
     /* Section 2 - TRAIT MANAGER FRAMEWORK */
 
 
@@ -234,7 +235,7 @@
         } else {
           const targetTrait = this.traits.find(t => t.position === newPosition);
           if (targetTrait) {
-            targetTrait integralPosition = oldPosition;
+            targetTrait.position = oldPosition;
             trait.position = newPosition;
           }
         }
