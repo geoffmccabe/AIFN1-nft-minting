@@ -153,6 +153,7 @@
 
 
 
+
     /* Section 2 - TRAIT MANAGER FRAMEWORK */
 
 
@@ -165,7 +166,13 @@
       initialize() {
         this.traits = [];
         for (let i = 0; i < 3; i++) {
-          this.addTrait(i + 1);
+          const trait = this.addTrait(i + 1);
+          // Add a default variant to each trait for initial rendering
+          this.addVariant(trait.id, {
+            name: `Default Variant ${i + 1}`,
+            url: "https://via.placeholder.com/100?text=Default+Variant+" + (i + 1) // Placeholder image
+          });
+          trait.selected = 0; // Ensure the default variant is selected
         }
       },
 
@@ -277,6 +284,7 @@
         return [...this.traits];
       }
     };
+
 
 
 
