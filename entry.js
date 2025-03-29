@@ -504,150 +504,95 @@ class PanelManager {
 
    
     
-    /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
+   /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
 
 
 
-    let provider, contract, signer, contractWithSigner;
-    let traitImages = [];
-    let isDragging = false;
-    let currentImage = null;
-    let offsetX = 0;
-    let offsetY = 0;
-    let moveInterval = null;
-    let variantHistories = {};
-    let timerInterval = null;
-    let lastUndoTime = 0;
-    let autoPositioned = new Array(20).fill(false);
-    let sampleData = Array(16).fill(null).map(() => []);
-    const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
-    clickSound.volume = 0.25;
+    let provider, contract, signer, contractWithSigner;
+    let traitImages = []; // Stores references to preview img elements for traits
+    let isDragging = false; // Global flag for dragging trait images in preview
+    let currentImage = null; // Reference to the trait image currently being interacted with/dragged
+    let offsetX = 0; // For trait image dragging
+    let offsetY = 0; // For trait image dragging
+    let moveInterval = null; // Interval ID for arrow key movement
+    let variantHistories = {}; // Stores position history: { "traitId-variantName": [{left, top}, ...] }
+    let timerInterval = null; // Interval ID for background generation timer
+    let lastUndoTime = 0; // Debounce undo
+    let autoPositioned = new Array(20).fill(false); // Tracks if subsequent variants were auto-positioned
+    let sampleData = Array(16).fill(null).map(() => []); // Data for the 16 preview samples
+    const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3'); // UI sound
+    clickSound.volume = 0.25;
 
-    const panelManager = new PanelManager();
+    const panelManager = new PanelManager(); // Instantiate the manager
 
-    const logoPanel = new Panel('logo-panel', '', 
-      `<img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo">`,
-      'left'
-    );
+    // --- Define Panels ---
+    const logoPanel = new Panel('logo-panel', '', // No title for logo panel
+      `<img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo">`,
+      'left' // Initial column
+    );
 
-    const traitsPanel = new Panel('traits-panel', 'Traits Manager', 
-      `<div id="trait-container"></div>`,
-      'left'
-    );
+    const traitsPanel = new Panel('traits-panel', 'Traits Manager',
+      `<div id="trait-container"></div>`, // Placeholder for dynamic content
+      'left'
+    );
 
-    const previewPanel = new Panel('preview-panel', 'Preview', 
-      `<div id="preview"></div>
-       <div id="controls">
-         <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
-         <span>   </span>
-         <span class="direction-emoji" data-direction="up">⬆️</span>
-         <span class="direction-emoji" data-direction="down">⬇️</span>
-         <span class="direction-emoji" data-direction="left">⬅️</span>
-         <span class="direction-emoji" data-direction="right">➡️</span>
-         <span class="magnify-emoji">🔍</span>
-       </div>
-       <div id="enlarged-preview"></div>`,
-      'right'
-    );
+    const previewPanel = new Panel('preview-panel', 'Preview',
+      `<div id="preview"></div>
+       <div id="controls">
+         <span id="coordinates"><strong>Coordinates:</strong> (0, 0)</span>
+         <span>&nbsp;&nbsp;</span>          <span class="direction-emoji" data-direction="up" title="Move Up">⬆️</span>
+         <span class="direction-emoji" data-direction="down" title="Move Down">⬇️</span>
+         <span class="direction-emoji" data-direction="left" title="Move Left">⬅️</span>
+         <span class="direction-emoji" data-direction="right" title="Move Right">➡️</span>
+         <span class="magnify-emoji" title="Enlarge Preview">🔍</span>
+       </div>
+       <div id="enlarged-preview"></div>`, // Placeholder for enlarged view
+      'right'
+    );
 
-    const previewSamplesPanel = new Panel('preview-samples-panel', 'Preview Samples', 
-      `<div id="preview-samples">
-         <div id="preview-samples-header">
-           <button id="update-previews">UPDATE</button>
-         </div>
-         <div id="preview-samples-grid"></div>
-       </div>`,
-      'right'
-    );
+    const previewSamplesPanel = new Panel('preview-samples-panel', 'Preview Samples',
+      `<div id="preview-samples">
+         <div id="preview-samples-header">
+           <button id="update-previews">UPDATE</button>
+         </div>
+         <div id="preview-samples-grid"></div>
+       </div>`,
+      'right'
+    );
 
-    const backgroundPanel = new Panel('background-panel', 'AI Background', 
-      `<div id="prompt-section">
-         <label for="base-prompt">Basic Prompt:</label>
-         <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
-         <label for="user-prompt">User Prompt:</label>
-         <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
-       </div>
-       <button id="generate-background">Generate Bkgd</button>
-       <div id="background-details">
-         <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
-         <p id="background-metadata">Loading...</p>
-       </div>`,
-      'left'
-    );
+    const backgroundPanel = new Panel('background-panel', 'AI Background',
+      `<div id="prompt-section">
+         <label for="base-prompt">Base Prompt:</label>
+         <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
+         <label for="user-prompt">User Prompt:</label>
+         <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
+       </div>
+       <button id="generate-background">Generate Bkgd</button>
+       <div id="background-details">
+                 <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background Preview">
+         <p id="background-metadata">Default background shown.</p>
+       </div>`,
+      'left'
+    );
 
-    const mintingPanel = new Panel('minting-panel', 'Minting', 
-      `<div id="mint-section">
-         <button id="mintButton" disabled>Mint NFT</button>
-         <div id="mintFeeDisplay">Mint Fee: Loading...</div>
-       </div>`,
-      'right'
-    );
+    const mintingPanel = new Panel('minting-panel', 'Minting',
+      `<div id="mint-section">
+         <button id="mintButton" disabled>Mint NFT</button>
+         <div id="mintFeeDisplay">Mint Fee: Loading...</div>
+        <div id="status"></div>        </div>`,
+      'right'
+    );
 
-    function setupUndoListener() {
-      document.addEventListener('keydown', (e) => {
-        const now = Date.now();
-        if (now - lastUndoTime < 300) return;
-        lastUndoTime = now;
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-          e.preventDefault();
-          if (!currentImage) return;
-          const traitIndex = traitImages.indexOf(currentImage);
-          const trait = TraitManager.getAllTraits()[traitIndex];
-          const variationName = trait.variants[trait.selected].name;
-          const key = `${trait.id}-${variationName}`;
-          if (variantHistories[key] && variantHistories[key].length > 1) {
-            variantHistories[key].pop();
-            const previousPosition = variantHistories[key][variantHistories[key].length - 1];
-            currentImage.style.left = `${previousPosition.left}px`;
-            currentImage.style.top = `${previousPosition.top}px`;
-            try {
-              localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
-            } catch (e) {
-              console.error('Failed to save to localStorage:', e);
-            }
-            updateCoordinates(currentImage, document.getElementById('coordinates'));
-            updateSamplePositions(trait.id, trait.variants[trait.selected].id, previousPosition);
-            updateSubsequentTraits(trait.id, variationName, previousPosition);
-          }
-        }
-      });
-    }
+    // --- Undo Listener ---
+    function setupUndoListener() {
+      document.addEventListener('keydown', (e) => {
+        const now = Date.now();
+        // Simple debounce
+        if (now - lastUndoTime < 300) return;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
-      signer = provider.getSigner();
-      contractWithSigner = contract.connect(signer);
-
-      panelManager.addPanel(logoPanel);
-      panelManager.addPanel(traitsPanel);
-      panelManager.addPanel(backgroundPanel);
-      panelManager.addPanel(previewPanel);
-      panelManager.addPanel(previewSamplesPanel);
-      panelManager.addPanel(mintingPanel);
-
-      TraitManager.initialize();
-      traitsPanel.update(getTraitsContent());
-      previewSamplesPanel.update(getPreviewSamplesContent());
-      fetchMintFee();
-
-      document.getElementById('generate-background').addEventListener('click', fetchBackground);
-      document.getElementById('mintButton').addEventListener('click', window.mintNFT);
-
-      setupPreviewListeners();
-      setupUndoListener();
-
-      TraitManager.getAllTraits().forEach(trait => {
-        if (trait.variants.length > 0) {
-          selectVariation(trait.id, trait.variants[0].id);
-        }
-      });
-
-      panelManager.panels.forEach(panel => panelManager.setupDrag(panel));
-      traitImages.forEach((img, index) => setupDragAndDrop(img, index));
-    });
+        //
 
 
 
