@@ -42,6 +42,7 @@
     max-width: 66.67%;
     width: 66.67%;
     box-sizing: border-box;
+    overflow: hidden;
   }
   #right-column {
     flex: 1;
@@ -51,6 +52,7 @@
     max-width: 33.33%;
     width: 33.33%;
     box-sizing: border-box;
+    overflow: hidden;
   }
   .panel {
     background-color: rgba(255, 255, 255, 0.6);
@@ -94,6 +96,8 @@
   .trait-section {
     margin-bottom: 20px;
     margin-top: 30px;
+    position: relative;
+    z-index: 1;
   }
   .trait-header {
     display: flex;
@@ -105,6 +109,7 @@
     display: flex;
     gap: 10px;
     position: relative;
+    z-index: 2;
   }
   .trait-controls span {
     cursor: pointer;
@@ -188,6 +193,8 @@
     width: auto;
     white-space: nowrap;
     vertical-align: middle;
+    position: relative;
+    z-index: 3;
   }
   .file-input-label:hover {
     background: #bbb;
@@ -426,7 +433,7 @@
 </style>
 
 <body>
-  <div id="version">Version 93</div>
+  <div id="version">Version 99</div>
   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
