@@ -15,40 +15,51 @@ class Panel {
     this.title = title;
     this.content = content;
     this.column = column;
-    // Note: Removed backgroundColor default here as it's handled by CSS
     this.style = { ...style };
     this.element = null;
   }
 
+  applyLogoCenteringStyles() {
+    // Helper function to apply centering styles via JS
+    if (this.id === 'logo-panel' && this.element) {
+        // Style the panel itself for flex centering
+        Object.assign(this.element.style, {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '200px', // Explicit height needed
+            padding: '0' // Remove panel padding
+        });
+        // Style the logo image within the panel
+        const logoImg = this.element.querySelector('#logo');
+        if (logoImg) {
+            Object.assign(logoImg.style, {
+                margin: 'auto', // Center block/image in flex
+                maxWidth: '100%', // Fit panel
+                maxHeight: '100%', // Fit panel
+                display: 'block' // Ensure block behavior for margin:auto
+            });
+        }
+    }
+  }
+
   render() {
     this.element = document.createElement('div');
     this.element.id = this.id;
-    this.element.className = 'panel';
-    // Generate header HTML only if NOT logo-panel
+    this.element.className = 'panel'; // Base class for CSS
+
     const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
     this.element.innerHTML = header + this.content;
 
-    // Apply base styles common to panels (excluding potential overrides like display)
+    // Apply minimal essential inline styles common to all panels
     Object.assign(this.element.style, {
-      ...this.style, // Apply any custom styles passed in constructor
-      position: 'relative', // Keep position relative for layout flow
+      ...this.style,
+      position: 'relative', // Needed for drag positioning context
       cursor: 'default',
-      // display: 'block', // REMOVED: Let CSS handle display primarily
-      width: '100%' // Ensure panel takes full column width
     });
 
-    // *** FIX for Issue 1: Logo Centering ***
-    // If it's the logo panel, ensure flex properties from CSS are respected or reapplied
-    if (this.id === 'logo-panel') {
-      // Re-apply flex styles to ensure centering (overrides potential 'display: block' from CSS if needed)
-      Object.assign(this.element.style, {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        // Ensure height is set if it wasn't by CSS (needed for vertical centering)
-        height: this.element.style.height || '200px' // Use existing height or default from CSS
-      });
-    }
+    // *** JS FIX for Issue 1: Logo Centering ***
+    this.applyLogoCenteringStyles();
 
     return this.element;
   }
@@ -57,20 +68,14 @@ class Panel {
     if (this.element) {
       const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
       this.element.innerHTML = header + (content || this.content);
-      // Re-apply essential styles after innerHTML update
+      // Re-apply minimal styles after innerHTML potentially clears them
       Object.assign(this.element.style, {
         position: 'relative',
-        width: '100%'
+        cursor: 'default',
       });
-      // *** FIX for Issue 1 (Consistency): Re-apply flex styles on update if it's the logo panel ***
-      if (this.id === 'logo-panel') {
-        Object.assign(this.element.style, {
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: this.element.style.height || '200px'
-        });
-      }
+
+      // *** JS FIX for Issue 1: Logo Centering (apply on update too) ***
+      this.applyLogoCenteringStyles();
     }
   }
 
@@ -82,18 +87,20 @@ class Panel {
 class PanelManager {
   constructor() {
     this.panels = [];
+    // Store references to bound listeners for correct removal
+    this.boundHandleMouseMove = null;
+    this.boundHandleMouseUp = null;
+    this.draggedElement = null; // Track the element being dragged
   }
 
   addPanel(panel) {
     this.panels.push(panel);
     this.renderAll();
-    this.panels.forEach(p => this.setupDrag(p));
   }
 
   removePanel(panelId) {
     this.panels = this.panels.filter(p => p.id !== panelId);
     this.renderAll();
-    // No need to re-run setupDrag on remove, only on add/renderAll
   }
 
   renderAll() {
@@ -101,159 +108,244 @@ class PanelManager {
     const rightColumn = document.getElementById('right-column');
     if (!leftColumn || !rightColumn) return;
 
-    leftColumn.innerHTML = '';
+    const scrollTops = { left: leftColumn.scrollTop, right: rightColumn.scrollTop };
+    leftColumn.innerHTML = ''; // Clear columns
     rightColumn.innerHTML = '';
 
-    const leftPanels = this.panels.filter(p => p.column === 'left');
-    const rightPanels = this.panels.filter(p => p.column === 'right');
+    const leftFrag = document.createDocumentFragment();
+    const rightFrag = document.createDocumentFragment();
 
-    leftPanels.forEach(panel => {
-      panel.element = panel.render(); // Render returns the element
-      leftColumn.appendChild(panel.element);
-      this.setupDrag(panel); // Setup drag after appending
+    this.panels.forEach(panel => {
+      panel.element = panel.render(); // Create/update element
+      if (panel.column === 'left') {
+          leftFrag.appendChild(panel.element);
+      } else {
+          rightFrag.appendChild(panel.element);
+      }
+      this.setupDrag(panel); // Setup drag listeners for the element
     });
 
-    rightPanels.forEach(panel => {
-      panel.element = panel.render(); // Render returns the element
-      rightColumn.appendChild(panel.element);
-      this.setupDrag(panel); // Setup drag after appending
-    });
+    leftColumn.appendChild(leftFrag);
+    rightColumn.appendChild(rightFrag);
 
-    // Rehydrate Traits Panel listeners if it exists
-    // Note: Rehydrating content might be better handled within the panel's update logic if needed
-    const traitsPanel = this.panels.find(p => p.id === 'traits-panel');
-    if (traitsPanel && traitsPanel.element) {
-      // Ensure content is up-to-date if needed (depends on how state is managed)
-      // traitsPanel.update(getTraitsContent()); // Might cause infinite loops if not careful
-      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
-    }
+    // Restore scroll positions
+    leftColumn.scrollTop = scrollTops.left;
+    rightColumn.scrollTop = scrollTops.right;
+
+    // Re-attach listeners for dynamic content inside panels after render
+    this.reAttachDynamicListeners();
   }
+
+  reAttachDynamicListeners() {
+    // Central place to re-attach listeners potentially lost by innerHTML changes
+    // Ensure event handlers have unique references if needed for removal
+    const traitsPanel = this.panels.find(p => p.id === 'traits-panel');
+    if (traitsPanel && traitsPanel.element) {
+      TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id)); // Assumes setupTraitListeners handles its own cleanup/idempotency
+    }
+
+    const samplesPanel = this.panels.find(p => p.id === 'preview-samples-panel');
+    if (samplesPanel && samplesPanel.element) {
+        const updateButton = samplesPanel.element.querySelector('#update-previews');
+        if (updateButton && !updateButton.hasAttribute('data-listener-attached')) { // Prevent multiple listeners
+            updateButton.addEventListener('click', updatePreviewSamples);
+            updateButton.setAttribute('data-listener-attached', 'true');
+        }
+        samplesPanel.element.querySelectorAll('#preview-samples-grid .sample-container').forEach((container, i) => {
+            if (!container.hasAttribute('data-listener-attached')) {
+                const sampleClickHandler = () => {
+                    if (sampleData[i]) {
+                        sampleData[i].forEach(sample => selectVariation(sample.traitId, sample.variantId));
+                    }
+                };
+                container.addEventListener('click', sampleClickHandler);
+                container.setAttribute('data-listener-attached', 'true');
+            }
+        });
+    }
+
+    const backgroundPanelElem = this.panels.find(p => p.id === 'background-panel')?.element;
+    if (backgroundPanelElem) {
+        const genBgBtn = backgroundPanelElem.querySelector('#generate-background');
+         if (genBgBtn && !genBgBtn.hasAttribute('data-listener-attached')) {
+            genBgBtn.addEventListener('click', fetchBackground);
+            genBgBtn.setAttribute('data-listener-attached', 'true');
+        }
+    }
+
+    const mintingPanelElem = this.panels.find(p => p.id === 'minting-panel')?.element;
+    if (mintingPanelElem) {
+        const mintBtn = mintingPanelElem.querySelector('#mintButton');
+        if (mintBtn && !mintBtn.hasAttribute('data-listener-attached')) {
+            mintBtn.addEventListener('click', window.mintNFT);
+            mintBtn.setAttribute('data-listener-attached', 'true');
+        }
+    }
+    // Re-run setup for preview controls which might be inside a re-rendered panel
+    setupPreviewListeners();
+  }
+
 
   setupDrag(panel) {
     const el = panel.element;
-    if (!el) return; // Ensure element exists
+    if (!el || el.hasAttribute('data-drag-listener')) return; // Safety check and prevent duplicates
 
     let isDragging = false;
-    let offsetX, offsetY;
+    let offsetX = 0, offsetY = 0;
 
-    el.addEventListener('mousedown', (e) => {
-      // *** FIX for Issue 2: Draggable Logo Panel ***
+    const handleMouseDown = (e) => {
       const isLogoPanel = el.id === 'logo-panel';
       const isTopBarClick = e.target.classList.contains('panel-top-bar');
       let isLogoTopAreaClick = false;
 
-      // Check for top area click ONLY if it's the logo panel
+      console.log(`Mousedown on panel: ${el.id}`); // Debug Log
+
       if (isLogoPanel) {
         const rect = el.getBoundingClientRect();
         const clickYRelativeToPanel = e.clientY - rect.top;
-        // Allow drag if click is within top 10 pixels (adjust as needed)
-        isLogoTopAreaClick = clickYRelativeToPanel <= 10;
-      }
+        isLogoTopAreaClick = clickYRelativeToPanel >= 0 && clickYRelativeToPanel <= 10;
+        console.log(`  isLogoPanel: ${isLogoPanel}, clickYRelative: ${clickYRelativeToPanel.toFixed(1)}, isLogoTopAreaClick: ${isLogoTopAreaClick}`); // Debug Log
+      } else {
+        console.log(`  isTopBarClick: ${isTopBarClick}`); // Debug Log
+      }
 
-      // Proceed only if it's a top bar click OR a top area click on the logo panel
       if (!isTopBarClick && !isLogoTopAreaClick) {
-        return; // Don't initiate drag
+        console.log("  Invalid drag start area, returning."); // Debug Log
+        return;
       }
 
-      // Prevent default text selection behavior while dragging
-      e.preventDefault();
+      console.log("  Valid drag start."); // Debug Log
+      e.preventDefault(); // Prevent text selection/default drag
 
       isDragging = true;
+      this.draggedElement = el; // Track dragged element
 
-      const dragRect = el.getBoundingClientRect(); // Get dimensions *before* changing position
+      const dragRect = el.getBoundingClientRect();
       offsetX = e.clientX - dragRect.left;
       offsetY = e.clientY - dragRect.top;
 
-      // Style the element for dragging
-      el.style.position = 'absolute';
-      el.style.left = `${dragRect.left}px`;
-      el.style.top = `${dragRect.top}px`;
-      el.style.width = `${dragRect.width}px`;
-      el.style.height = `${dragRect.height}px`;
-      el.style.zIndex = '1000';
-      el.style.cursor = 'grabbing';
-      el.style.opacity = '0.8';
-      // Remove pointer events only from the element being dragged to allow mousemove over drop targets
-      // el.style.pointerEvents = 'none'; // This can prevent mouseup on the element itself
+      Object.assign(el.style, { // Apply dragging styles
+          position: 'absolute',
+          left: `${dragRect.left}px`,
+          top: `${dragRect.top}px`,
+          width: `${dragRect.width}px`,
+          height: `${dragRect.height}px`,
+          zIndex: '1000',
+          cursor: 'grabbing',
+          opacity: '0.8',
+          boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
+      });
 
-    });
+      // Bind listeners and store references FOR THIS DRAG INSTANCE
+      // Important: Use .bind to maintain 'this' context if methods need it (handleMouseMove/Up don't here)
+      this.boundHandleMouseMove = handleMouseMove; //.bind(this);
+      this.boundHandleMouseUp = handleMouseUp; //.bind(this);
 
-    // Use document for mousemove and mouseup to capture events outside the element
+      document.addEventListener('mousemove', this.boundHandleMouseMove);
+      document.addEventListener('mouseup', this.boundHandleMouseUp);
+    };
+
     const handleMouseMove = (e) => {
-      if (!isDragging) return;
-      el.style.left = `${e.clientX - offsetX}px`;
-      el.style.top = `${e.clientY - offsetY}px`;
+      if (!isDragging || !this.draggedElement) return;
+      e.preventDefault();
+      this.draggedElement.style.left = `${e.clientX - offsetX}px`;
+      this.draggedElement.style.top = `${e.clientY - offsetY}px`;
     };
 
     const handleMouseUp = (e) => {
-      if (!isDragging) return;
-      isDragging = false;
+      if (!isDragging || !this.draggedElement) return;
 
-      // Restore styles
-      el.style.cursor = 'default'; // Or 'grab' if you want to indicate draggability
-      el.style.zIndex = '';
-      el.style.opacity = '';
-      el.style.position = ''; // Return to relative positioning
-      el.style.left = '';
-      el.style.top = '';
-      el.style.width = ''; // Let it resize back based on column
-      el.style.height = '';
-      // el.style.pointerEvents = '';
+      const droppedElement = this.draggedElement; // Temp store before nulling
+      isDragging = false;
+      this.draggedElement = null; // Clear tracked element
+      console.log(`Mouseup, dropping panel: ${droppedElement.id}`); // Debug Log
 
-      // Determine drop target column
+      // ** Remove the specific listeners bound for this drag instance **
+      document.removeEventListener('mousemove', this.boundHandleMouseMove);
+      document.removeEventListener('mouseup', this.boundHandleMouseUp);
+      this.boundHandleMouseMove = null; // Clear references
+      this.boundHandleMouseUp = null;
+
+      // Restore styles by clearing inline styles
+      droppedElement.style.cursor = '';
+      droppedElement.style.zIndex = '';
+      droppedElement.style.opacity = '';
+      droppedElement.style.position = '';
+      droppedElement.style.left = '';
+      droppedElement.style.top = '';
+      droppedElement.style.width = '';
+      droppedElement.style.height = '';
+      droppedElement.style.boxShadow = '';
+
+      // --- Determine Drop Location & Reorder panels array ---
       const dropX = e.clientX;
       const windowWidth = window.innerWidth;
       const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
-      panel.setColumn(newColumn);
+      const droppedPanelObject = this.panels.find(p => p.element === droppedElement);
 
-      // --- Calculate Drop Position ---
+      if (!droppedPanelObject) { console.error("Dropped panel object not found!"); return; }
+
+      droppedPanelObject.setColumn(newColumn);
+      console.log(`  Setting column to: ${newColumn}`); // Debug Log
+
       const dropY = e.clientY;
       const targetColumnElement = document.getElementById(newColumn === 'left' ? 'left-column' : 'right-column');
-      const targetPanels = Array.from(targetColumnElement.children)
-        .map(childEl => this.panels.find(p => p.element === childEl))
-        .filter(p => p && p !== panel); // Get panels currently in the target column (excluding the one being dropped)
+      if (!targetColumnElement) return;
 
-      let insertBeforePanel = null;
-      for (const targetPanel of targetPanels) {
-        const rect = targetPanel.element.getBoundingClientRect();
-        if (dropY < rect.top + rect.height / 2) {
-          insertBeforePanel = targetPanel;
-          break;
-        }
-      }
+      // Find visual insertion point based on elements currently in the DOM column
+      const siblingsInColumn = Array.from(targetColumnElement.children);
+      let insertBeforeElement = null;
+      for (const sibling of siblingsInColumn) {
+          if (sibling === droppedElement) continue;
+          const rect = sibling.getBoundingClientRect();
+          if (dropY < rect.top + rect.height / 2) {
+              insertBeforeElement = sibling;
+              break;
+          }
+      }
 
-      // Reorder the main panels array
-      this.panels = this.panels.filter(p => p !== panel); // Remove from old position
-      if (insertBeforePanel) {
-        const insertIndex = this.panels.findIndex(p => p === insertBeforePanel);
-        this.panels.splice(insertIndex, 0, panel); // Insert before target
-      } else {
-        // If not inserted before any panel, check if it belongs at the end of its new column
-        const lastPanelInNewColumn = this.panels.filter(p => p.column === newColumn).pop();
-        if (lastPanelInNewColumn) {
-          const insertIndex = this.panels.findIndex(p => p === lastPanelInNewColumn) + 1;
-          this.panels.splice(insertIndex, 0, panel);
-        } else {
-          // If column was empty, just add it
-          this.panels.push(panel);
-        }
-      }
+      // Reorder the internal `this.panels` array
+      const currentPanelIndex = this.panels.findIndex(p => p === droppedPanelObject);
+      if (currentPanelIndex > -1) {
+          this.panels.splice(currentPanelIndex, 1); // Remove from old logical position
+      }
 
-      // Re-render everything based on the new order
+      let insertAtIndex = -1;
+      if (insertBeforeElement) {
+          const insertBeforePanelObj = this.panels.find(p => p.element === insertBeforeElement);
+          if (insertBeforePanelObj) {
+              insertAtIndex = this.panels.findIndex(p => p === insertBeforePanelObj);
+          }
+      }
+
+      if (insertAtIndex !== -1) {
+          this.panels.splice(insertAtIndex, 0, droppedPanelObject);
+          console.log(`  Inserting panel logically before: ${insertBeforeElement ? insertBeforeElement.id : 'null'}`); // Debug Log
+      } else {
+          // Insert after the last panel that *should* be in the target column
+          let lastPanelInColumnIndex = -1;
+          for (let i = this.panels.length - 1; i >= 0; i--) {
+              if (this.panels[i].column === newColumn) {
+                  lastPanelInColumnIndex = i;
+                  break;
+              }
+          }
+          this.panels.splice(lastPanelInColumnIndex + 1, 0, droppedPanelObject);
+          console.log(`  Inserting panel logically at end of column ${newColumn}`); // Debug Log
+      }
+
+      // Re-render all panels from the updated `this.panels` array order
       this.renderAll();
-      // Note: renderAll now calls setupDrag for all panels, so no need to call it again here
-
-      // Remove temporary document listeners
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
     };
 
-    // Add temporary listeners to the document to handle dragging outside the element
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    // Prevent adding multiple mousedown listeners to the same element
+    el.removeEventListener('mousedown', handleMouseDown); // Remove listener using the exact handler reference
+    el.addEventListener('mousedown', handleMouseDown);
+    el.setAttribute('data-drag-listener', 'true'); // Mark as having listener attached
 
   }
 }
+
 
 
 
