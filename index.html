@@ -87,17 +87,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: auto;
-    min-height: 200px;
+    height: 200px; /* Fixed height for consistent centering */
+    width: 100%;
   }
   #logo {
     display: block;
-    width: 100%;
-    max-width: 600px;
+    width: auto;
     height: auto;
+    max-width: 600px;
+    max-height: 100%;
   }
   @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    #logo { width: 300px; }
+    #logo { max-width: 300px; }
   }
   .trait-section {
     margin-bottom: 20px;
@@ -435,7 +436,7 @@
 </style>
 
 <body>
-  <div id="version">Version 101</div>
+  <div id="version">Version 102</div>
   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
