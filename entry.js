@@ -224,6 +224,7 @@
 
    
 
+
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -375,7 +376,7 @@
     function setupPreviewSizeListener() {
       const gearEmoji = document.querySelector('.gear-emoji');
       gearEmoji.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent event bubbling that might interfere with input
+        e.stopPropagation();
         const dialog = document.createElement('div');
         dialog.className = 'preview-size-dialog';
         dialog.innerHTML = `
@@ -383,37 +384,57 @@
           <div class="size-inputs">
             <input type="number" id="preview-width" value="${previewSize}" min="100" max="1800">
             <span>x</span>
-            <input type="number" id="preview-height" value="${previewSize}" min="100" max="1800" readonly>
+            <span id="preview-height">${previewSize}</span>
           </div>
         `;
         document.body.appendChild(dialog);
 
         const widthInput = document.getElementById('preview-width');
-        const heightInput = document.getElementById('preview-height');
+        const heightText = document.getElementById('preview-height');
 
-        // Ensure the input is focused and editable
         widthInput.focus();
-        widthInput.select(); // Select the current value for easy replacement
+        widthInput.select();
 
-        widthInput.addEventListener('input', (e) => {
-          e.stopPropagation(); // Prevent input event from bubbling
-          let newSize = parseInt(widthInput.value);
-          if (isNaN(newSize)) {
-            newSize = 600; // Default to 600 if invalid
-          }
-          newSize = Math.max(100, Math.min(1800, newSize));
-          widthInput.value = newSize;
-          heightInput.value = newSize;
+        widthInput.addEventListener('click', () => {
+          widthInput.value = ''; // Clear the input on click
         });
 
-        // Prevent dialog from closing when clicking inside inputs
+        widthInput.addEventListener('input', (e) => {
+          e.stopPropagation();
+          let newSize = parseInt(widthInput.value);
+          if (isNaN(newSize)) {
+            newSize = 600;
+            widthInput.value = '';
+          }
+          newSize = Math.max(100, Math.min(1800, newSize));
+          heightText.textContent = newSize;
+        });
+
+        widthInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            let newSize = parseInt(widthInput.value);
+            if (isNaN(newSize)) {
+              newSize = 600;
+            }
+            newSize = Math.max(100, Math.min(1800, newSize));
+            previewSize = newSize;
+            scaleFactor = newSize / 600;
+            updatePreviewSize();
+            dialog.remove();
+          }
+        });
+
         dialog.querySelector('.size-inputs').addEventListener('click', (e) => {
           e.stopPropagation();
         });
 
         dialog.addEventListener('click', (e) => {
           if (e.target === dialog) {
-            const newSize = parseInt(widthInput.value);
+            let newSize = parseInt(widthInput.value);
+            if (isNaN(newSize)) {
+              newSize = 600;
+            }
+            newSize = Math.max(100, Math.min(1800, newSize));
             previewSize = newSize;
             scaleFactor = newSize / 600;
             updatePreviewSize();
@@ -422,7 +443,6 @@
         });
       });
     }
-
 
 
 
