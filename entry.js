@@ -63,6 +63,7 @@
         this.currentHoleColumn = null;
         this.currentHoleIndex = null;
         this.draggedPanel = null;
+        this.originalHoleIndex = null;
       }
 
       addPanel(panel) {
@@ -100,13 +101,11 @@
 
         leftPanels.forEach((panel, index) => {
           if (panel === this.draggedPanel) {
-            if (this.currentHole && this.currentHoleColumn === 'left' && index === this.currentHoleIndex) {
-              const placeholder = document.createElement('div');
-              placeholder.className = 'placeholder';
-              placeholder.style.height = `${this.currentHole.height}px`;
-              placeholder.id = 'placeholder-left';
-              leftColumn.appendChild(placeholder);
-            }
+            const placeholder = document.createElement('div');
+            placeholder.className = 'placeholder';
+            placeholder.style.height = `${this.currentHole.height}px`;
+            placeholder.id = 'placeholder-left-' + index;
+            leftColumn.appendChild(placeholder);
             return;
           }
           if (panel.element && panel.element.parentElement) {
@@ -123,7 +122,7 @@
             const placeholder = document.createElement('div');
             placeholder.className = 'placeholder';
             placeholder.style.height = `${this.currentHole.height}px`;
-            placeholder.id = 'placeholder-left';
+            placeholder.id = 'placeholder-left-' + index;
             leftColumn.appendChild(placeholder);
           }
           if (!document.getElementById(panel.id)) {
@@ -133,13 +132,11 @@
 
         rightPanels.forEach((panel, index) => {
           if (panel === this.draggedPanel) {
-            if (this.currentHole && this.currentHoleColumn === 'right' && index === this.currentHoleIndex) {
-              const placeholder = document.createElement('div');
-              placeholder.className = 'placeholder';
-              placeholder.style.height = `${this.currentHole.height}px`;
-              placeholder.id = 'placeholder-right';
-              rightColumn.appendChild(placeholder);
-            }
+            const placeholder = document.createElement('div');
+            placeholder.className = 'placeholder';
+            placeholder.style.height = `${this.currentHole.height}px`;
+            placeholder.id = 'placeholder-right-' + index;
+            rightColumn.appendChild(placeholder);
             return;
           }
           if (panel.element && panel.element.parentElement) {
@@ -156,7 +153,7 @@
             const placeholder = document.createElement('div');
             placeholder.className = 'placeholder';
             placeholder.style.height = `${this.currentHole.height}px`;
-            placeholder.id = 'placeholder-right';
+            placeholder.id = 'placeholder-right-' + index;
             rightColumn.appendChild(placeholder);
           }
           if (!document.getElementById(panel.id)) {
@@ -365,6 +362,7 @@
         });
       }
     }
+
 
 
 
