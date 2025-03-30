@@ -87,7 +87,7 @@
         const leftPanels = this.panels.filter(p => p.column === 'left');
         const rightPanels = this.panels.filter(p => p.column === 'right');
 
-        // Only remove placeholders, keep other panels
+        // Only remove placeholders
         Array.from(leftColumn.children).forEach(child => {
           if (child.className === 'placeholder') {
             child.remove();
@@ -197,6 +197,7 @@
         let isDragging = false;
         let offsetX, offsetY;
         let originalRect = null;
+        let dragWrapper = null;
 
         el.addEventListener('mousedown', (e) => {
           if (!e.target.classList.contains('panel-top-bar')) return;
@@ -214,21 +215,28 @@
           this.draggedPanel = panel;
           this.renderAll();
 
-          el.style.position = 'absolute';
-          el.style.width = `${originalRect.width}px`;
-          el.style.height = `${originalRect.height}px`;
-          el.style.left = `${originalRect.left}px`;
-          el.style.top = `${originalRect.top}px`;
+          // Create a wrapper to isolate the dragged panel
+          dragWrapper = document.createElement('div');
+          dragWrapper.style.width = `${originalRect.width}px`;
+          dragWrapper.style.height = `${originalRect.height}px`;
+          dragWrapper.style.position = 'absolute';
+          dragWrapper.style.left = `${originalRect.left}px`;
+          dragWrapper.style.top = `${originalRect.top}px`;
+          dragWrapper.style.zIndex = '1000';
+          dragWrapper.appendChild(el);
+          document.body.appendChild(dragWrapper);
+
+          el.style.position = 'static';
+          el.style.width = '100%';
+          el.style.height = '100%';
           el.style.opacity = '0.8';
-          el.style.zIndex = '1000';
           el.style.cursor = 'grabbing';
-          document.body.appendChild(el);
         });
 
         document.addEventListener('mousemove', (e) => {
           if (!isDragging) return;
-          el.style.left = `${e.clientX - offsetX}px`;
-          el.style.top = `${e.clientY - offsetY}px`;
+          dragWrapper.style.left = `${e.clientX - offsetX}px`;
+          dragWrapper.style.top = `${e.clientY - offsetY}px`;
 
           const mouseY = e.clientY;
           const windowWidth = window.innerWidth;
@@ -244,27 +252,34 @@
             this.renderAll();
           }
 
+          let adjustedIndex = 0;
           for (let i = 0; i < panelsInColumn.length; i++) {
-            if (panelsInColumn[i] === this.draggedPanel) continue;
+            if (panelsInColumn[i] === this.draggedPanel) {
+              if (newColumn === this.originalColumn && i < this.currentHoleIndex) {
+                adjustedIndex--;
+              }
+              continue;
+            }
             const panelRect = panelsInColumn[i].element.getBoundingClientRect();
             const topThreshold = panelRect.top + panelRect.height * 0.1;
             const bottomThreshold = panelRect.bottom - panelRect.height * 0.1;
 
             if (mouseY >= panelRect.top && mouseY <= topThreshold) {
-              newHoleIndex = i;
+              newHoleIndex = adjustedIndex;
               newHoleTop = panelRect.top;
               newHoleBottom = panelRect.top + originalRect.height;
               break;
             } else if (mouseY >= bottomThreshold && mouseY <= panelRect.bottom) {
-              newHoleIndex = i + 1;
+              newHoleIndex = adjustedIndex + 1;
               newHoleTop = panelRect.bottom;
               newHoleBottom = panelRect.bottom + originalRect.height;
               break;
             }
+            adjustedIndex++;
           }
 
           if (newHoleIndex === null && mouseY > panelsInColumn.reduce((max, p) => p === this.draggedPanel ? max : Math.max(max, p.element.getBoundingClientRect().bottom), 0)) {
-            newHoleIndex = panelsInColumn.length;
+            newHoleIndex = adjustedIndex;
             newHoleTop = panelsInColumn.length > 0 ? panelsInColumn[panelsInColumn.length - 1].element.getBoundingClientRect().bottom : document.getElementById(newColumn + '-column').getBoundingClientRect().top;
             newHoleBottom = newHoleTop + originalRect.height;
           }
@@ -330,10 +345,12 @@
           el.style.opacity = '1';
           el.style.zIndex = '1';
           el.style.cursor = 'default';
+          document.body.removeChild(dragWrapper);
           this.renderAll();
         });
       }
     }
+
 
 
    
