@@ -87,21 +87,30 @@
         const leftPanels = this.panels.filter(p => p.column === 'left');
         const rightPanels = this.panels.filter(p => p.column === 'right');
 
-        // Only clear panels that aren't supposed to be there
+        // Only remove placeholders, keep other panels
         Array.from(leftColumn.children).forEach(child => {
-          if (child.className === 'placeholder' || !leftPanels.some(p => p.id === child.id)) {
+          if (child.className === 'placeholder') {
             child.remove();
           }
         });
         Array.from(rightColumn.children).forEach(child => {
-          if (child.className === 'placeholder' || !rightPanels.some(p => p.id === child.id)) {
+          if (child.className === 'placeholder') {
             child.remove();
           }
         });
 
         // Render left panels
         leftPanels.forEach((panel, index) => {
-          if (panel === this.draggedPanel) return;
+          if (panel === this.draggedPanel) {
+            if (this.currentHole && this.currentHoleColumn === 'left' && index === this.currentHoleIndex) {
+              const placeholder = document.createElement('div');
+              placeholder.className = 'placeholder';
+              placeholder.style.height = `${this.currentHole.height}px`;
+              placeholder.id = 'placeholder-left';
+              leftColumn.appendChild(placeholder);
+            }
+            return;
+          }
           if (panel.element && panel.element.parentElement) {
             panel.element.style.position = 'relative';
             panel.element.style.left = '';
@@ -126,7 +135,16 @@
 
         // Render right panels
         rightPanels.forEach((panel, index) => {
-          if (panel === this.draggedPanel) return;
+          if (panel === this.draggedPanel) {
+            if (this.currentHole && this.currentHoleColumn === 'right' && index === this.currentHoleIndex) {
+              const placeholder = document.createElement('div');
+              placeholder.className = 'placeholder';
+              placeholder.style.height = `${this.currentHole.height}px`;
+              placeholder.id = 'placeholder-right';
+              rightColumn.appendChild(placeholder);
+            }
+            return;
+          }
           if (panel.element && panel.element.parentElement) {
             panel.element.style.position = 'relative';
             panel.element.style.left = '';
@@ -194,7 +212,6 @@
           this.currentHoleColumn = panel.column;
           this.currentHoleIndex = this.panels.filter(p => p.column === panel.column).indexOf(panel);
           this.draggedPanel = panel;
-          this.panels.splice(this.originalIndex, 1);
           this.renderAll();
 
           el.style.position = 'absolute';
@@ -228,6 +245,7 @@
           }
 
           for (let i = 0; i < panelsInColumn.length; i++) {
+            if (panelsInColumn[i] === this.draggedPanel) continue;
             const panelRect = panelsInColumn[i].element.getBoundingClientRect();
             const topThreshold = panelRect.top + panelRect.height * 0.1;
             const bottomThreshold = panelRect.bottom - panelRect.height * 0.1;
@@ -245,7 +263,7 @@
             }
           }
 
-          if (newHoleIndex === null && mouseY > panelsInColumn.reduce((max, p) => Math.max(max, p.element.getBoundingClientRect().bottom), 0)) {
+          if (newHoleIndex === null && mouseY > panelsInColumn.reduce((max, p) => p === this.draggedPanel ? max : Math.max(max, p.element.getBoundingClientRect().bottom), 0)) {
             newHoleIndex = panelsInColumn.length;
             newHoleTop = panelsInColumn.length > 0 ? panelsInColumn[panelsInColumn.length - 1].element.getBoundingClientRect().bottom : document.getElementById(newColumn + '-column').getBoundingClientRect().top;
             newHoleBottom = newHoleTop + originalRect.height;
@@ -263,7 +281,7 @@
 
         document.addEventListener('mouseup', (e) => {
           if (!isDragging) return;
-          console.log(`Mouseup on panel ${panel.id}, fam! Droppin’ it, dawg!`);
+          console.log(`Mouseup on panel ${this.draggedPanel.id}, fam! Droppin’ it, dawg!`);
           isDragging = false;
 
           const panelRect = el.getBoundingClientRect();
@@ -276,17 +294,13 @@
 
           let dropped = false;
           if (holeRect && this.calculateOverlap(panelRect, holeRect) > 50) {
-            this.panels.splice(this.originalIndex, 0, panel);
             const newColumnPanels = this.panels.filter(p => p.column === this.currentHoleColumn);
-            const newIndex = newColumnPanels.indexOf(panel);
-            this.panels = this.panels.filter(p => p !== panel);
-            const insertIndex = this.panels.filter(p => p.column === this.currentHoleColumn).findIndex(p => p === newColumnPanels[this.currentHoleIndex]);
-            if (insertIndex === -1) {
-              this.panels.push(panel);
-            } else {
-              this.panels.splice(this.panels.filter(p => p.column === this.currentHoleColumn).indexOf(newColumnPanels[this.currentHoleIndex]), 0, panel);
-            }
-            panel.setColumn(this.currentHoleColumn);
+            const insertIndex = this.currentHoleIndex;
+            this.panels.splice(this.panels.indexOf(this.draggedPanel), 1);
+            const globalIndex = this.panels.filter(p => p.column === this.currentHoleColumn).length > insertIndex ? 
+              this.panels.indexOf(newColumnPanels[insertIndex]) : this.panels.length;
+            this.panels.splice(globalIndex, 0, this.draggedPanel);
+            this.draggedPanel.setColumn(this.currentHoleColumn);
             this.currentHole = null;
             this.currentHoleColumn = null;
             this.currentHoleIndex = null;
@@ -297,8 +311,9 @@
           }
 
           if (!dropped) {
-            this.panels.splice(this.originalIndex, 0, panel);
-            panel.setColumn(this.originalColumn);
+            this.panels.splice(this.panels.indexOf(this.draggedPanel), 1);
+            this.panels.splice(this.originalIndex, 0, this.draggedPanel);
+            this.draggedPanel.setColumn(this.originalColumn);
             this.currentHole = null;
             this.currentHoleColumn = null;
             this.currentHoleIndex = null;
@@ -315,7 +330,6 @@
           el.style.opacity = '1';
           el.style.zIndex = '1';
           el.style.cursor = 'default';
-          document.body.removeChild(el);
           this.renderAll();
         });
       }
