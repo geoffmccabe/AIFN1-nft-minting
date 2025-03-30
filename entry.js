@@ -226,6 +226,7 @@
 
 
 
+   
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -393,19 +394,16 @@
         const widthInput = document.getElementById('preview-width');
         const heightText = document.getElementById('preview-height');
 
-        widthInput.focus();
-        widthInput.select();
-
-        widthInput.addEventListener('click', () => {
-          widthInput.value = ''; // Clear the input on click
-        });
+        setTimeout(() => {
+          widthInput.focus();
+          widthInput.select();
+        }, 0);
 
         widthInput.addEventListener('input', (e) => {
           e.stopPropagation();
           let newSize = parseInt(widthInput.value);
           if (isNaN(newSize)) {
             newSize = 600;
-            widthInput.value = '';
           }
           newSize = Math.max(100, Math.min(1800, newSize));
           heightText.textContent = newSize;
@@ -450,6 +448,7 @@
 
 
 
+   
     /* Section 4 - TRAIT MANAGEMENT LOGIC */
 
 
@@ -551,6 +550,12 @@
       const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
       const removeTraitBtn = document.querySelector(`.remove-trait[data-trait="${traitId}"]`);
 
+      console.log(`Setting up listeners for trait ${traitId}`);
+      console.log('upArrow:', upArrow);
+      console.log('downArrow:', downArrow);
+      console.log('addTraitBtn:', addTraitBtn);
+      console.log('removeTraitBtn:', removeTraitBtn);
+
       if (nameInput) {
         nameInput.addEventListener('input', () => {
           const trait = TraitManager.getTrait(traitId);
@@ -576,6 +581,7 @@
 
       if (upArrow) {
         upArrow.addEventListener('click', () => {
+          console.log(`Up arrow clicked for trait ${traitId}`);
           const trait = TraitManager.getTrait(traitId);
           let newPosition = trait.position === 1 ? TraitManager.getAllTraits().length : trait.position - 1;
           TraitManager.moveTrait(traitId, newPosition);
@@ -603,6 +609,7 @@
 
       if (downArrow) {
         downArrow.addEventListener('click', () => {
+          console.log(`Down arrow clicked for trait ${traitId}`);
           const trait = TraitManager.getTrait(traitId);
           let newPosition = trait.position === TraitManager.getAllTraits().length ? 1 : trait.position + 1;
           TraitManager.moveTrait(traitId, newPosition);
@@ -630,6 +637,7 @@
 
       if (addTraitBtn) {
         addTraitBtn.addEventListener('click', () => {
+          console.log(`Add trait button clicked for trait ${traitId}`);
           if (TraitManager.getAllTraits().length < 20) {
             const trait = TraitManager.getTrait(traitId);
             TraitManager.addTrait(trait.position);
@@ -641,7 +649,10 @@
       }
 
       if (removeTraitBtn) {
-        removeTraitBtn.addEventListener('click', () => removeTrait(traitId));
+        removeTraitBtn.addEventListener('click', () => {
+          console.log(`Remove trait button clicked for trait ${traitId}`);
+          removeTrait(traitId);
+        });
       }
     }
 
@@ -687,6 +698,7 @@
       confirmationDialog.appendChild(buttonsDiv);
       document.body.appendChild(confirmationDialog);
     }
+
 
 
 
