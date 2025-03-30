@@ -1,152 +1,4 @@
 
-    /* Section 1 - PANELS MANAGER FRAMEWORK 
-
-
-
-
-
-    let idCounter = 0;
-    function generateId() {
-      return `id-${idCounter++}`;
-    }
-
-    class Panel {
-      constructor(id, title, content, column = 'left', style = {}) {
-        this.id = id;
-        this.title = title;
-        this.content = content;
-        this.column = column;
-        this.style = { backgroundColor: '#ffffff', ...style };
-        this.element = null;
-      }
-
-      render() {
-        if (!this.element) {
-          this.element = document.createElement('div');
-          this.element.id = this.id;
-          this.element.className = 'panel';
-          const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
-          this.element.innerHTML = header + this.content;
-          Object.assign(this.element.style, {
-            ...this.style,
-            position: 'relative',
-            cursor: 'default',
-            display: 'block',
-            width: '100%'
-          });
-        }
-        return this.element;
-      }
-
-      update(content) {
-        if (this.element) {
-          const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
-          this.element.innerHTML = header + (content || this.content);
-          Object.assign(this.element.style, {
-            position: 'relative',
-            width: '100%'
-          });
-        }
-      }
-
-      setColumn(column) {
-        this.column = column;
-      }
-    }
-
-    class PanelManager {
-      constructor() {
-        this.panels = [];
-      }
-
-      addPanel(panel) {
-        this.panels.push(panel);
-        this.renderAll();
-      }
-
-      removePanel(panelId) {
-        this.panels = this.panels.filter(p => p.id !== panelId);
-        this.renderAll();
-      }
-
-      renderAll() {
-        const leftColumn = document.getElementById('left-column');
-        const rightColumn = document.getElementById('right-column');
-        if (!leftColumn || !rightColumn) {
-          console.error('Columns not found during renderAll');
-          return;
-        }
-        const leftPanels = this.panels.filter(p => p.column === 'left');
-        const rightPanels = this.panels.filter(p => p.column === 'right');
-
-        leftPanels.forEach(panel => {
-          if (!document.getElementById(panel.id)) {
-            leftColumn.appendChild(panel.render());
-          } else {
-            panel.update(panel.content);
-          }
-        });
-
-        rightPanels.forEach(panel => {
-          if (!document.getElementById(panel.id)) {
-            rightColumn.appendChild(panel.render());
-          } else {
-            panel.update(panel.content);
-          }
-        });
-
-        console.log(`Rendered ${leftPanels.length} panels in left column, ${rightPanels.length} in right column`);
-      }
-
-      setupDrag(panel) {
-        const el = panel.element;
-        let isDragging = false;
-        let offsetX, offsetY;
-
-        el.addEventListener('mousedown', (e) => {
-          if (!e.target.classList.contains('panel-top-bar')) return;
-          isDragging = true;
-          const rect = el.getBoundingClientRect();
-          offsetX = e.clientX - rect.left;
-          offsetY = e.clientY - rect.top;
-          el.style.position = 'absolute';
-          el.style.zIndex = '1000';
-          el.style.cursor = 'grabbing';
-        });
-
-        document.addEventListener('mousemove', (e) => {
-          if (!isDragging) return;
-          el.style.left = `${e.clientX - offsetX}px`;
-          el.style.top = `${e.clientY - offsetY}px`;
-        });
-
-        document.addEventListener('mouseup', (e) => {
-          if (!isDragging) return;
-          isDragging = false;
-          el.style.cursor = 'default';
-          el.style.zIndex = '1';
-          const dropX = e.clientX;
-          const windowWidth = window.innerWidth;
-          const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
-          panel.setColumn(newColumn);
-          const sameColumnPanels = this.panels.filter(p => p.column === newColumn);
-          const insertIndex = sameColumnPanels.findIndex(p => p.element.getBoundingClientRect().top > e.clientY);
-          if (insertIndex === -1) {
-            this.panels = this.panels.filter(p => p !== panel).concat(panel);
-          } else {
-            const globalIndex = this.panels.findIndex(p => p.id === sameColumnPanels[insertIndex].id);
-            this.panels = this.panels.filter(p => p !== panel);
-            this.panels.splice(globalIndex, 0, panel);
-          }
-          this.renderAll();
-          this.panels.forEach(p => this.setupDrag(p));
-        });
-      }
-    }
-
-*/
-
-
     /* Section 1 - PANELS MANAGER FRAMEWORK */
 
 
@@ -205,6 +57,11 @@
     class PanelManager {
       constructor() {
         this.panels = [];
+        this.originalIndex = null;
+        this.originalColumn = null;
+        this.currentHole = null;
+        this.currentHoleColumn = null;
+        this.currentHoleIndex = null;
       }
 
       addPanel(panel) {
@@ -229,73 +86,203 @@
         const leftPanels = this.panels.filter(p => p.column === 'left');
         const rightPanels = this.panels.filter(p => p.column === 'right');
 
-        leftPanels.forEach(panel => {
-          if (!document.getElementById(panel.id)) {
-            leftColumn.appendChild(panel.render());
-            console.log(`Rendered panel ${panel.id} in left column, fam!`);
-          } else {
-            panel.update(panel.content);
-            console.log(`Updated panel ${panel.id} in left column, dawg!`);
+        leftColumn.innerHTML = '';
+        rightPanels.forEach((panel, index) => {
+          if (panel.element && panel.element.parentElement) {
+            panel.element.style.position = 'relative';
+            panel.element.style.left = '';
+            panel.element.style.top = '';
+            panel.element.style.width = '';
+            panel.element.style.opacity = '1';
+            panel.element.style.zIndex = '1';
+            panel.element.style.cursor = 'default';
           }
+          if (this.currentHole && this.currentHoleColumn === 'right' && index === this.currentHoleIndex) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'placeholder';
+            placeholder.style.height = `${this.currentHole.height}px`;
+            placeholder.id = 'placeholder-right';
+            rightColumn.appendChild(placeholder);
+          }
+          rightColumn.appendChild(panel.render());
         });
 
-        rightPanels.forEach(panel => {
-          if (!document.getElementById(panel.id)) {
-            rightColumn.appendChild(panel.render());
-            console.log(`Rendered panel ${panel.id} in right column, fam!`);
-          } else {
-            panel.update(panel.content);
-            console.log(`Updated panel ${panel.id} in right column, dawg!`);
+        rightColumn.innerHTML = '';
+        leftPanels.forEach((panel, index) => {
+          if (panel.element && panel.element.parentElement) {
+            panel.element.style.position = 'relative';
+            panel.element.style.left = '';
+            panel.element.style.top = '';
+            panel.element.style.width = '';
+            panel.element.style.opacity = '1';
+            panel.element.style.zIndex = '1';
+            panel.element.style.cursor = 'default';
           }
+          if (this.currentHole && this.currentHoleColumn === 'left' && index === this.currentHoleIndex) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'placeholder';
+            placeholder.style.height = `${this.currentHole.height}px`;
+            placeholder.id = 'placeholder-left';
+            leftColumn.appendChild(placeholder);
+          }
+          leftColumn.appendChild(panel.render());
         });
 
         console.log(`Rendered ${leftPanels.length} panels in left column, ${rightPanels.length} in right column, fo’ shizzle!`);
+      }
+
+      calculateOverlap(panelRect, holeRect) {
+        const overlapLeft = Math.max(panelRect.left, holeRect.left);
+        const overlapRight = Math.min(panelRect.right, holeRect.right);
+        const overlapTop = Math.max(panelRect.top, holeRect.top);
+        const overlapBottom = Math.min(panelRect.bottom, holeRect.bottom);
+
+        if (overlapRight <= overlapLeft || overlapBottom <= overlapTop) {
+          return 0;
+        }
+
+        const overlapArea = (overlapRight - overlapLeft) * (overlapBottom - overlapTop);
+        const panelArea = (panelRect.right - panelRect.left) * (panelRect.bottom - panelRect.top);
+        return (overlapArea / panelArea) * 100;
       }
 
       setupDrag(panel) {
         const el = panel.element;
         let isDragging = false;
         let offsetX, offsetY;
+        let originalRect = null;
 
         el.addEventListener('mousedown', (e) => {
           if (!e.target.classList.contains('panel-top-bar')) return;
           isDragging = true;
-          const rect = el.getBoundingClientRect();
-          offsetX = e.clientX - rect.left;
-          offsetY = e.clientY - rect.top;
+          originalRect = el.getBoundingClientRect();
+          offsetX = e.clientX - originalRect.left;
+          offsetY = e.clientY - originalRect.top;
+
+          this.originalIndex = this.panels.indexOf(panel);
+          this.originalColumn = panel.column;
+          this.currentHole = { height: originalRect.height };
+          this.currentHoleColumn = panel.column;
+          this.currentHoleIndex = this.panels.filter(p => p.column === panel.column).indexOf(panel);
+          this.panels.splice(this.originalIndex, 1);
+          this.renderAll();
+
           el.style.position = 'absolute';
-          el.style.width = `${rect.width}px`; /* Keep the current width while draggin’, fam */
-          el.style.opacity = '0.8'; /* 80% transparent, dawg */
+          el.style.width = `${originalRect.width}px`;
+          el.style.height = `${originalRect.height}px`;
+          el.style.left = `${originalRect.left}px`;
+          el.style.top = `${originalRect.top}px`;
+          el.style.opacity = '0.8';
           el.style.zIndex = '1000';
           el.style.cursor = 'grabbing';
+          document.body.appendChild(el);
         });
 
         document.addEventListener('mousemove', (e) => {
           if (!isDragging) return;
           el.style.left = `${e.clientX - offsetX}px`;
           el.style.top = `${e.clientY - offsetY}px`;
+
+          const mouseY = e.clientY;
+          const windowWidth = window.innerWidth;
+          const newColumn = e.clientX < windowWidth / 2 ? 'left' : 'right';
+          const panelsInColumn = this.panels.filter(p => p.column === newColumn);
+          let newHoleIndex = null;
+          let newHoleTop = null;
+          let newHoleBottom = null;
+
+          if (newColumn !== this.currentHoleColumn) {
+            this.currentHoleColumn = newColumn;
+            this.currentHoleIndex = null;
+            this.renderAll();
+          }
+
+          for (let i = 0; i < panelsInColumn.length; i++) {
+            const panelRect = panelsInColumn[i].element.getBoundingClientRect();
+            const topThreshold = panelRect.top + panelRect.height * 0.1;
+            const bottomThreshold = panelRect.bottom - panelRect.height * 0.1;
+
+            if (mouseY >= panelRect.top && mouseY <= topThreshold) {
+              newHoleIndex = i;
+              newHoleTop = panelRect.top;
+              newHoleBottom = panelRect.top + originalRect.height;
+              break;
+            } else if (mouseY >= bottomThreshold && mouseY <= panelRect.bottom) {
+              newHoleIndex = i + 1;
+              newHoleTop = panelRect.bottom;
+              newHoleBottom = panelRect.bottom + originalRect.height;
+              break;
+            }
+          }
+
+          if (newHoleIndex === null && mouseY > panelsInColumn.reduce((max, p) => Math.max(max, p.element.getBoundingClientRect().bottom), 0)) {
+            newHoleIndex = panelsInColumn.length;
+            newHoleTop = panelsInColumn.length > 0 ? panelsInColumn[panelsInColumn.length - 1].element.getBoundingClientRect().bottom : document.getElementById(newColumn + '-column').getBoundingClientRect().top;
+            newHoleBottom = newHoleTop + originalRect.height;
+          }
+
+          if (newHoleIndex !== null && newHoleIndex !== this.currentHoleIndex) {
+            this.currentHoleIndex = newHoleIndex;
+            this.currentHole.top = newHoleTop;
+            this.currentHole.bottom = newHoleBottom;
+            this.currentHole.left = document.getElementById(newColumn + '-column').getBoundingClientRect().left;
+            this.currentHole.right = this.currentHole.left + originalRect.width;
+            this.renderAll();
+          }
         });
 
         document.addEventListener('mouseup', (e) => {
           if (!isDragging) return;
           isDragging = false;
-          el.style.cursor = 'default';
-          el.style.opacity = '1'; /* Back to full opacity, homie */
-          el.style.width = ''; /* Clear the width so it adjusts to the new column, fam */
-          el.style.zIndex = '1';
-          const dropX = e.clientX;
-          const windowWidth = window.innerWidth;
-          const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
-          panel.setColumn(newColumn);
-          const sameColumnPanels = this.panels.filter(p => p.column === newColumn);
-          const insertIndex = sameColumnPanels.findIndex(p => p.element.getBoundingClientRect().top > e.clientY);
-          if (insertIndex === -1) {
-            this.panels = this.panels.filter(p => p !== panel).concat(panel);
-          } else {
-            const globalIndex = this.panels.findIndex(p => p.id === sameColumnPanels[insertIndex].id);
+
+          const panelRect = el.getBoundingClientRect();
+          const holeRect = this.currentHole ? {
+            left: this.currentHole.left,
+            right: this.currentHole.right,
+            top: this.currentHole.top,
+            bottom: this.currentHole.bottom
+          } : null;
+
+          let dropped = false;
+          if (holeRect && this.calculateOverlap(panelRect, holeRect) > 50) {
+            this.panels.splice(this.originalIndex, 0, panel);
+            const newColumnPanels = this.panels.filter(p => p.column === this.currentHoleColumn);
+            const newIndex = newColumnPanels.indexOf(panel);
             this.panels = this.panels.filter(p => p !== panel);
-            this.panels.splice(globalIndex, 0, panel);
+            const insertIndex = this.panels.filter(p => p.column === this.currentHoleColumn).findIndex(p => p === newColumnPanels[this.currentHoleIndex]);
+            if (insertIndex === -1) {
+              this.panels.push(panel);
+            } else {
+              this.panels.splice(this.panels.filter(p => p.column === this.currentHoleColumn).indexOf(newColumnPanels[this.currentHoleIndex]), 0, panel);
+            }
+            panel.setColumn(this.currentHoleColumn);
+            this.currentHole = null;
+            this.currentHoleColumn = null;
+            this.currentHoleIndex = null;
+            this.originalIndex = null;
+            this.originalColumn = null;
+            clickSound.play().catch(error => console.error('Error playing click sound:', error));
+            dropped = true;
           }
+
+          if (!dropped) {
+            this.panels.splice(this.originalIndex, 0, panel);
+            panel.setColumn(this.originalColumn);
+            this.currentHole = null;
+            this.currentHoleColumn = null;
+            this.currentHoleIndex = null;
+            this.originalIndex = null;
+            this.originalColumn = null;
+          }
+
+          el.style.position = 'relative';
+          el.style.left = '';
+          el.style.top = '';
+          el.style.width = '';
+          el.style.height = '';
+          el.style.opacity = '1';
+          el.style.zIndex = '1';
+          el.style.cursor = 'default';
           this.renderAll();
           this.panels.forEach(p => this.setupDrag(p));
         });
