@@ -200,8 +200,8 @@
           console.log(`Mousedown on panel ${panel.id}, fam! Startin’ drag, dawg!`);
           isDragging = true;
           originalRect = el.getBoundingClientRect();
-          offsetX = e.clientX - originalRect.left;
-          offsetY = e.clientY - originalRect.top;
+          offsetX = e.pageX - originalRect.left;
+          offsetY = e.pageY - originalRect.top;
 
           this.originalIndex = this.panels.indexOf(panel);
           this.originalColumn = panel.column;
@@ -230,12 +230,12 @@
 
         document.addEventListener('mousemove', (e) => {
           if (!isDragging || !dragWrapper) return;
-          dragWrapper.style.left = `${e.clientX - offsetX}px`;
-          dragWrapper.style.top = `${e.clientY - offsetY}px`;
+          dragWrapper.style.left = `${e.pageX - offsetX}px`;
+          dragWrapper.style.top = `${e.pageY - offsetY}px`;
 
-          const mouseY = e.clientY;
+          const mouseY = e.pageY;
           const windowWidth = window.innerWidth;
-          const newColumn = e.clientX < windowWidth / 2 ? 'left' : 'right';
+          const newColumn = e.pageX < windowWidth / 2 ? 'left' : 'right';
           const panelsInColumn = this.panels.filter(p => p.column === newColumn);
           let newHoleIndex = null;
           let newHoleTop = null;
@@ -298,6 +298,10 @@
           if (!isDragging || !dragWrapper) return;
           isDragging = false;
 
+          const windowWidth = window.innerWidth;
+          const newColumn = e.pageX < windowWidth / 2 ? 'left' : 'right';
+          this.currentHoleColumn = newColumn;
+
           const panelRect = el.getBoundingClientRect();
           const holeRect = this.currentHole ? {
             left: this.currentHole.left,
@@ -333,8 +337,10 @@
 
           if (!dropped) {
             this.panels.splice(this.panels.indexOf(this.draggedPanel), 1);
-            this.panels.splice(this.originalIndex, 0, this.draggedPanel);
-            this.draggedPanel.setColumn(this.originalColumn);
+            const newColumnPanels = this.panels.filter(p => p.column === newColumn);
+            const globalIndex = this.panels.filter(p => p.column === newColumn).length;
+            this.panels.splice(globalIndex, 0, this.draggedPanel);
+            this.draggedPanel.setColumn(newColumn);
           }
 
           console.log(`Mouseup on panel ${panel.id}, fam! Droppin’ it, dawg! Dropped: ${dropped}`);
@@ -359,6 +365,7 @@
         });
       }
     }
+
 
 
 
