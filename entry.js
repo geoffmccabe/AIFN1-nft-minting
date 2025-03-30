@@ -86,13 +86,40 @@
         const leftPanels = this.panels.filter(p => p.column === 'left');
         const rightPanels = this.panels.filter(p => p.column === 'right');
 
+        // Clear columns once at the start
         leftColumn.innerHTML = '';
+        rightColumn.innerHTML = '';
+
+        // Render left panels
+        leftPanels.forEach((panel, index) => {
+          if (panel.element && panel.element.parentElement) {
+            panel.element.style.position = 'relative';
+            panel.element.style.left = '';
+            panel.element.style.top = '';
+            panel.element.style.width = '';
+            panel.element.style.height = '';
+            panel.element.style.opacity = '1';
+            panel.element.style.zIndex = '1';
+            panel.element.style.cursor = 'default';
+          }
+          if (this.currentHole && this.currentHoleColumn === 'left' && index === this.currentHoleIndex) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'placeholder';
+            placeholder.style.height = `${this.currentHole.height}px`;
+            placeholder.id = 'placeholder-left';
+            leftColumn.appendChild(placeholder);
+          }
+          leftColumn.appendChild(panel.render());
+        });
+
+        // Render right panels
         rightPanels.forEach((panel, index) => {
           if (panel.element && panel.element.parentElement) {
             panel.element.style.position = 'relative';
             panel.element.style.left = '';
             panel.element.style.top = '';
             panel.element.style.width = '';
+            panel.element.style.height = '';
             panel.element.style.opacity = '1';
             panel.element.style.zIndex = '1';
             panel.element.style.cursor = 'default';
@@ -107,26 +134,8 @@
           rightColumn.appendChild(panel.render());
         });
 
-        rightColumn.innerHTML = '';
-        leftPanels.forEach((panel, index) => {
-          if (panel.element && panel.element.parentElement) {
-            panel.element.style.position = 'relative';
-            panel.element.style.left = '';
-            panel.element.style.top = '';
-            panel.element.style.width = '';
-            panel.element.style.opacity = '1';
-            panel.element.style.zIndex = '1';
-            panel.element.style.cursor = 'default';
-          }
-          if (this.currentHole && this.currentHoleColumn === 'left' && index === this.currentHoleIndex) {
-            const placeholder = document.createElement('div');
-            placeholder.className = 'placeholder';
-            placeholder.style.height = `${this.currentHole.height}px`;
-            placeholder.id = 'placeholder-left';
-            leftColumn.appendChild(placeholder);
-          }
-          leftColumn.appendChild(panel.render());
-        });
+        // Reattach drag listeners after rendering
+        this.panels.forEach(panel => this.setupDrag(panel));
 
         console.log(`Rendered ${leftPanels.length} panels in left column, ${rightPanels.length} in right column, fo’ shizzle!`);
       }
@@ -154,6 +163,7 @@
 
         el.addEventListener('mousedown', (e) => {
           if (!e.target.classList.contains('panel-top-bar')) return;
+          console.log(`Mousedown on panel ${panel.id}, fam! Startin’ drag, dawg!`);
           isDragging = true;
           originalRect = el.getBoundingClientRect();
           offsetX = e.clientX - originalRect.left;
@@ -233,6 +243,7 @@
 
         document.addEventListener('mouseup', (e) => {
           if (!isDragging) return;
+          console.log(`Mouseup on panel ${panel.id}, fam! Droppin’ it, dawg!`);
           isDragging = false;
 
           const panelRect = el.getBoundingClientRect();
@@ -284,7 +295,6 @@
           el.style.zIndex = '1';
           el.style.cursor = 'default';
           this.renderAll();
-          this.panels.forEach(p => this.setupDrag(p));
         });
       }
     }
