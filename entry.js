@@ -25,12 +25,10 @@
           this.element = document.createElement('div');
           this.element.id = this.id;
           this.element.className = 'panel';
-          const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
+          const header = this.id === 'logo-panel' ? '' : `<h2>${this.title}</h2>`;
           this.element.innerHTML = header + this.content;
           Object.assign(this.element.style, {
             ...this.style,
-            position: 'relative',
-            cursor: 'default',
             display: 'block',
             width: '100%'
           });
@@ -40,10 +38,9 @@
 
       update(content) {
         if (this.element) {
-          const header = this.id === 'logo-panel' ? '' : `<div class="panel-top-bar"></div><h2>${this.title}</h2>`;
+          const header = this.id === 'logo-panel' ? '' : `<h2>${this.title}</h2>`;
           this.element.innerHTML = header + (content || this.content);
           Object.assign(this.element.style, {
-            position: 'relative',
             width: '100%'
           });
         }
@@ -79,68 +76,18 @@
         const leftPanels = this.panels.filter(p => p.column === 'left');
         const rightPanels = this.panels.filter(p => p.column === 'right');
 
+        leftColumn.innerHTML = '';
+        rightColumn.innerHTML = '';
+
         leftPanels.forEach(panel => {
-          if (!document.getElementById(panel.id)) {
-            leftColumn.appendChild(panel.render());
-          } else {
-            panel.update(panel.content);
-          }
+          leftColumn.appendChild(panel.render());
         });
 
         rightPanels.forEach(panel => {
-          if (!document.getElementById(panel.id)) {
-            rightColumn.appendChild(panel.render());
-          } else {
-            panel.update(panel.content);
-          }
+          rightColumn.appendChild(panel.render());
         });
 
         console.log(`Rendered ${leftPanels.length} panels in left column, ${rightPanels.length} in right column`);
-      }
-
-      setupDrag(panel) {
-        const el = panel.element;
-        let isDragging = false;
-        let offsetX, offsetY;
-
-        el.addEventListener('mousedown', (e) => {
-          if (!e.target.classList.contains('panel-top-bar')) return;
-          isDragging = true;
-          const rect = el.getBoundingClientRect();
-          offsetX = e.clientX - rect.left;
-          offsetY = e.clientY - rect.top;
-          el.style.position = 'absolute';
-          el.style.zIndex = '1000';
-          el.style.cursor = 'grabbing';
-        });
-
-        document.addEventListener('mousemove', (e) => {
-          if (!isDragging) return;
-          el.style.left = `${e.clientX - offsetX}px`;
-          el.style.top = `${e.clientY - offsetY}px`;
-        });
-
-        document.addEventListener('mouseup', (e) => {
-          if (!isDragging) return;
-          isDragging = false;
-          el.style.cursor = 'default';
-          el.style.zIndex = '1';
-          const dropX = e.clientX;
-          const windowWidth = window.innerWidth;
-          const newColumn = dropX < windowWidth / 2 ? 'left' : 'right';
-          panel.setColumn(newColumn);
-          const sameColumnPanels = this.panels.filter(p => p.column === newColumn);
-          const insertIndex = sameColumnPanels.findIndex(p => p.element.getBoundingClientRect().top > e.clientY);
-          if (insertIndex === -1) {
-            this.panels = this.panels.filter(p => p !== panel).concat(panel);
-          } else {
-            const globalIndex = this.panels.findIndex(p => p.id === sameColumnPanels[insertIndex].id);
-            this.panels = this.panels.filter(p => p !== panel);
-            this.panels.splice(globalIndex, 0, panel);
-          }
-          this.renderAll();
-          this.panels.forEach(p => this.setupDrag(p));
-        });
       }
     }
 
@@ -296,6 +243,8 @@
     let sampleData = Array(16).fill(null).map(() => []);
     const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
     clickSound.volume = 0.25;
+    let previewSize = 600;
+    let scaleFactor = 1;
 
     const panelManager = new PanelManager();
 
@@ -319,6 +268,7 @@
          <span class="direction-emoji" data-direction="left">⬅️</span>
          <span class="direction-emoji" data-direction="right">➡️</span>
          <span class="magnify-emoji">🔍</span>
+         <span class="gear-emoji">⚙️</span>
        </div>
        <div id="enlarged-preview"></div>`,
       'right'
@@ -372,8 +322,8 @@
           if (variantHistories[key] && variantHistories[key].length > 1) {
             variantHistories[key].pop();
             const previousPosition = variantHistories[key][variantHistories[key].length - 1];
-            currentImage.style.left = `${previousPosition.left}px`;
-            currentImage.style.top = `${previousPosition.top}px`;
+            currentImage.style.left = `${previousPosition.left * scaleFactor}px`;
+            currentImage.style.top = `${previousPosition.top * scaleFactor}px`;
             try {
               localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
             } catch (e) {
@@ -410,6 +360,7 @@
 
       setupPreviewListeners();
       setupUndoListener();
+      setupPreviewSizeListener();
 
       TraitManager.getAllTraits().forEach(trait => {
         if (trait.variants.length > 0) {
@@ -417,7 +368,6 @@
         }
       });
 
-      panelManager.panels.forEach(panel => panelManager.setupDrag(panel));
       traitImages.forEach((img, index) => setupDragAndDrop(img, index));
     });
 
@@ -515,7 +465,7 @@
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updateMintButton();
       updatePreviewSamples();
-      input.value = ''; // Clear the input to prevent double triggering
+      input.value = '';
     }
 
     function setupTraitListeners(traitId) {
@@ -707,8 +657,10 @@
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
         const { left, top } = JSON.parse(savedPosition);
-        previewImage.style.left = `${left}px`;
-        previewImage.style.top = `${top}px`;
+        previewImage.style.left = `${left * scaleFactor}px`;
+        previewImage.style.top = `${top * scaleFactor}px`;
+        previewImage.style.maxWidth = `${600 * scaleFactor}px`;
+        previewImage.style.maxHeight = `${600 * scaleFactor}px`;
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
         let lastPosition = null;
@@ -721,8 +673,10 @@
           }
         }
         if (lastPosition) {
-          previewImage.style.left = `${lastPosition.left}px`;
-          previewImage.style.top = `${lastPosition.top}px`;
+          previewImage.style.left = `${lastPosition.left * scaleFactor}px`;
+          previewImage.style.top = `${lastPosition.top * scaleFactor}px`;
+          previewImage.style.maxWidth = `${600 * scaleFactor}px`;
+          previewImage.style.maxHeight = `${600 * scaleFactor}px`;
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
@@ -732,6 +686,8 @@
         } else {
           previewImage.style.left = '0px';
           previewImage.style.top = '0px';
+          previewImage.style.maxWidth = `${600 * scaleFactor}px`;
+          previewImage.style.maxHeight = `${600 * scaleFactor}px`;
           variantHistories[key] = [{ left: 0, top: 0 }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
@@ -756,12 +712,12 @@
         preview.addEventListener('mousemove', (e) => {
           if (!isDragging || !currentImage) return;
           const rect = preview.getBoundingClientRect();
-          let newLeft = e.clientX - rect.left - offsetX;
-          let newTop = e.clientY - rect.top - offsetY;
-          newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
-          newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
-          currentImage.style.left = `${newLeft}px`;
-          currentImage.style.top = `${newTop}px`;
+          let newLeft = (e.clientX - rect.left - offsetX) / scaleFactor;
+          let newTop = (e.clientY - rect.top - offsetY) / scaleFactor;
+          newLeft = Math.max(0, Math.min(newLeft, 600 - (currentImage.width / scaleFactor)));
+          newTop = Math.max(0, Math.min(newTop, 600 - (currentImage.height / scaleFactor)));
+          currentImage.style.left = `${newLeft * scaleFactor}px`;
+          currentImage.style.top = `${newTop * scaleFactor}px`;
           updateCoordinates(currentImage, coordinates);
         });
 
@@ -786,16 +742,16 @@
         emoji.addEventListener('mousedown', () => {
           if (!currentImage || currentImage.src === '') return;
           moveInterval = setInterval(() => {
-            let left = parseFloat(currentImage.style.left) || 0;
-            let top = parseFloat(currentImage.style.top) || 0;
+            let left = (parseFloat(currentImage.style.left) || 0) / scaleFactor;
+            let top = (parseFloat(currentImage.style.top) || 0) / scaleFactor;
             if (direction === 'up') top -= 1;
             if (direction === 'down') top += 1;
             if (direction === 'left') left -= 1;
             if (direction === 'right') left += 1;
-            left = Math.max(0, Math.min(left, 600 - currentImage.width));
-            top = Math.max(0, Math.min(top, 600 - currentImage.height));
-            currentImage.style.left = `${left}px`;
-            currentImage.style.top = `${top}px`;
+            left = Math.max(0, Math.min(left, 600 - (currentImage.width / scaleFactor)));
+            top = Math.max(0, Math.min(top, 600 - (currentImage.height / scaleFactor)));
+            currentImage.style.left = `${left * scaleFactor}px`;
+            currentImage.style.top = `${top * scaleFactor}px`;
             currentImage.classList.add('dragging');
             updateCoordinates(currentImage, coordinates);
           }, 50);
@@ -838,11 +794,11 @@
         if (maxWidth / maxHeight > 1) {
           enlargedPreview.style.height = `${maxHeight}px`;
           enlargedPreview.style.width = `${maxHeight}px`;
-          scale = maxHeight / 600;
+          scale = maxHeight / (600 * scaleFactor);
         } else {
           enlargedPreview.style.width = `${maxWidth}px`;
           enlargedPreview.style.height = `${maxWidth}px`;
-          scale = maxWidth / 600;
+          scale = maxWidth / (600 * scaleFactor);
         }
 
         const sortedImages = traitImages
@@ -865,6 +821,113 @@
         enlargedPreview.style.display = 'block';
         enlargedPreview.addEventListener('click', () => enlargedPreview.style.display = 'none', { once: true });
       });
+    }
+
+    function setupPreviewSizeListener() {
+      const gearEmoji = document.querySelector('.gear-emoji');
+      gearEmoji.addEventListener('click', () => {
+        const dialog = document.createElement('div');
+        dialog.className = 'preview-size-dialog';
+        dialog.innerHTML = `
+          <label>PREVIEW SIZE:</label>
+          <div class="size-inputs">
+            <input type="number" id="preview-width" value="${previewSize}" min="100" max="1800">
+            <span>x</span>
+            <input type="number" id="preview-height" value="${previewSize}" min="100" max="1800" readonly>
+          </div>
+        `;
+        document.body.appendChild(dialog);
+
+        const widthInput = document.getElementById('preview-width');
+        const heightInput = document.getElementById('preview-height');
+
+        widthInput.addEventListener('input', () => {
+          let newSize = parseInt(widthInput.value);
+          newSize = Math.max(100, Math.min(1800, newSize));
+          widthInput.value = newSize;
+          heightInput.value = newSize;
+        });
+
+        dialog.addEventListener('click', (e) => {
+          if (e.target === dialog) {
+            const newSize = parseInt(widthInput.value);
+            previewSize = newSize;
+            scaleFactor = newSize / 600;
+            updatePreviewSize();
+            dialog.remove();
+          }
+        });
+      });
+    }
+
+    function updatePreviewSize() {
+      const preview = document.getElementById('preview');
+      preview.style.maxWidth = `${previewSize}px`;
+      preview.style.height = `${previewSize}px`;
+      preview.style.backgroundSize = `${previewSize}px ${previewSize}px`;
+
+      traitImages.forEach(img => {
+        if (img && img.src && img.style.visibility !== 'hidden') {
+          const left = (parseFloat(img.style.left) || 0) / scaleFactor;
+          const top = (parseFloat(img.style.top) || 0) / scaleFactor;
+          img.style.left = `${left * scaleFactor}px`;
+          img.style.top = `${top * scaleFactor}px`;
+          img.style.maxWidth = `${600 * scaleFactor}px`;
+          img.style.maxHeight = `${600 * scaleFactor}px`;
+        }
+      });
+
+      const previewSamplesGrid = document.getElementById('preview-samples-grid');
+      if (previewSamplesGrid) {
+        const sampleSize = 140 * scaleFactor;
+        previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSize}px)`;
+        previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSize}px)`;
+        previewSamplesGrid.style.gap = `${13 * scaleFactor}px`;
+
+        const sampleContainers = document.querySelectorAll('#preview-samples-grid .sample-container');
+        sampleContainers.forEach(container => {
+          container.style.width = `${sampleSize}px`;
+          container.style.height = `${sampleSize}px`;
+          container.style.backgroundSize = `${sampleSize}px ${sampleSize}px`;
+
+          const images = container.querySelectorAll('img');
+          images.forEach(img => {
+            const left = (parseFloat(img.style.left) || 0) / (140 / 600);
+            const top = (parseFloat(img.style.top) || 0) / (140 / 600);
+            img.style.left = `${left * (sampleSize / 600)}px`;
+            img.style.top = `${top * (sampleSize / 600)}px`;
+            img.style.transform = `scale(${sampleSize / 600 * 0.23333})`;
+          });
+        });
+      }
+
+      const enlargedPreview = document.getElementById('enlarged-preview');
+      if (enlargedPreview.style.display === 'block') {
+        const maxWidth = window.innerWidth * 0.9;
+        const maxHeight = window.innerHeight * 0.9;
+        let scale = 1;
+        if (maxWidth / maxHeight > 1) {
+          enlargedPreview.style.height = `${maxHeight}px`;
+          enlargedPreview.style.width = `${maxHeight}px`;
+          scale = maxHeight / (600 * scaleFactor);
+        } else {
+          enlargedPreview.style.width = `${maxWidth}px`;
+          enlargedPreview.style.height = `${maxWidth}px`;
+          scale = maxWidth / (600 * scaleFactor);
+        }
+
+        const images = enlargedPreview.querySelectorAll('img');
+        images.forEach(img => {
+          const originalWidth = parseFloat(img.style.width) / scale;
+          const originalHeight = parseFloat(img.style.height) / scale;
+          const originalLeft = parseFloat(img.style.left) / scale;
+          const originalTop = parseFloat(img.style.top) / scale;
+          img.style.width = `${originalWidth * scale}px`;
+          img.style.height = `${originalHeight * scale}px`;
+          img.style.left = `${originalLeft * scale}px`;
+          img.style.top = `${originalTop * scale}px`;
+        });
+      }
     }
 
     function setupDragAndDrop(img, traitIndex) {
@@ -894,8 +957,8 @@
 
     function updateCoordinates(img, coordsElement) {
       if (img && coordsElement) {
-        const left = parseFloat(img.style.left) || 0;
-        const top = parseFloat(img.style.top) || 0;
+        const left = (parseFloat(img.style.left) || 0) / scaleFactor;
+        const top = (parseFloat(img.style.top) || 0) / scaleFactor;
         coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
       }
     }
@@ -931,8 +994,8 @@
         sample.forEach(item => {
           const trait = TraitManager.getTrait(item.traitId);
           const variant = trait.variants.find(v => v.id === item.variantId);
-          const scale = 140 / 600;
-          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * scale}px; top: ${item.position.top * scale}px; transform: scale(0.23333); transform-origin: top left;">`;
+          const sampleScale = (140 * scaleFactor) / 600;
+          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * sampleScale}px; top: ${item.position.top * sampleScale}px; transform: scale(${0.23333 * scaleFactor}); transform-origin: top left;">`;
         });
         html += `</div>`;
       });
@@ -1036,7 +1099,7 @@
     }
 
     function savePosition(img, traitId, variationName) {
-      const position = { left: parseFloat(img.style.left) || 0, top: parseFloat(img.style.top) || 0 };
+      const position = { left: (parseFloat(img.style.left) || 0) / scaleFactor, top: (parseFloat(img.style.top) || 0) / scaleFactor };
       const key = `${traitId}-${variationName}`;
       if (!variantHistories[key]) variantHistories[key] = [];
       variantHistories[key].push(position);
@@ -1064,8 +1127,8 @@
           if (trait.selected === i) {
             const previewImage = document.getElementById(`preview-trait${traitId}`);
             if (previewImage && previewImage.src) {
-              previewImage.style.left = `${position.left}px`;
-              previewImage.style.top = `${position.top}px`;
+              previewImage.style.left = `${position.left * scaleFactor}px`;
+              previewImage.style.top = `${position.top * scaleFactor}px`;
             }
           }
         }
@@ -1096,8 +1159,8 @@
             if (currentTrait.selected === i) {
               const previewImage = document.getElementById(`preview-trait${currentTraitId}`);
               if (previewImage && previewImage.src) {
-                previewImage.style.left = `${position.left}px`;
-                previewImage.style.top = `${position.top}px`;
+                previewImage.style.left = `${position.left * scaleFactor}px`;
+                previewImage.style.top = `${position.top * scaleFactor}px`;
               }
             }
           }
@@ -1121,8 +1184,8 @@
             if (nextTrait.selected === i) {
               const previewImage = document.getElementById(`preview-trait${nextTrait.id}`);
               if (previewImage && previewImage.src) {
-                previewImage.style.left = `${position.left}px`;
-                previewImage.style.top = `${position.top}px`;
+                previewImage.style.left = `${position.left * scaleFactor}px`;
+                previewImage.style.top = `${position.top * scaleFactor}px`;
               }
             }
           }
