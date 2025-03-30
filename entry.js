@@ -73,7 +73,7 @@
       }
 
       removePanel(panelId) {
-        this.panels = this.panels.filter(p => p.id !== panelId);
+        this.panels = this.panels.filter(p => p && p.id !== panelId);
         console.log(`Removed panel ${panelId}, dawg!`);
         this.renderAll();
       }
@@ -333,9 +333,26 @@
           }
 
           if (!dropped) {
-            this.panels.splice(this.panels.indexOf(this.draggedPanel), 1);
             const newColumnPanels = this.panels.filter(p => p && p.column === newColumn);
-            const globalIndex = this.panels.filter(p => p && p.column === newColumn).length;
+            let insertIndex = newColumnPanels.indexOf(this.draggedPanel);
+            if (insertIndex === -1) {
+              insertIndex = newColumnPanels.length;
+            }
+            let globalIndex = 0;
+            let currentIndex = 0;
+            for (let i = 0; i < this.panels.length; i++) {
+              if (this.panels[i] && this.panels[i].column === newColumn) {
+                if (currentIndex === insertIndex) {
+                  globalIndex = i;
+                  break;
+                }
+                currentIndex++;
+              }
+            }
+            if (currentIndex < insertIndex) {
+              globalIndex = this.panels.length;
+            }
+            this.panels.splice(this.panels.indexOf(this.draggedPanel), 1);
             this.panels.splice(globalIndex, 0, this.draggedPanel);
             this.draggedPanel.setColumn(newColumn);
           }
@@ -362,6 +379,7 @@
         });
       }
     }
+
 
 
 
