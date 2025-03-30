@@ -224,6 +224,7 @@
 
    
 
+   
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -246,6 +247,8 @@
     clickSound.volume = 0.25;
     let previewSize = 600;
     let scaleFactor = 1;
+    let sampleSize = 140; // Default size for preview samples
+    let sampleScaleFactor = 1; // Independent scale factor for preview samples
 
     const panelManager = new PanelManager();
 
@@ -279,6 +282,7 @@
       `<div id="preview-samples">
          <div id="preview-samples-header">
            <button id="update-previews">UPDATE</button>
+           <span class="sample-gear-emoji" style="float: right; margin-right: 10px;">⚙️</span>
          </div>
          <div id="preview-samples-grid"></div>
        </div>`,
@@ -362,6 +366,7 @@
       setupPreviewListeners();
       setupUndoListener();
       setupPreviewSizeListener();
+      setupSampleSizeListener();
 
       TraitManager.getAllTraits().forEach(trait => {
         if (trait.variants.length > 0) {
@@ -396,14 +401,9 @@
           widthInput.select();
         }, 0);
 
-        widthInput.addEventListener('click', () => {
-          widthInput.value = ''; // Clear the input on click
-        });
-
         widthInput.addEventListener('input', (e) => {
           e.stopPropagation();
           let newSize = widthInput.value;
-          console.log(`Width input changed to: ${newSize}`); // Debug log
           if (newSize === '') {
             heightText.textContent = '600';
           } else {
@@ -447,6 +447,75 @@
       });
     }
 
+    function setupSampleSizeListener() {
+      const sampleGearEmoji = document.querySelector('.sample-gear-emoji');
+      sampleGearEmoji.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dialog = document.createElement('div');
+        dialog.className = 'preview-size-dialog';
+        dialog.innerHTML = `
+          <label>SAMPLE SIZE:</label>
+          <div class="size-inputs">
+            <input type="number" id="sample-width" value="${sampleSize}" min="50" max="300">
+            <span>x</span>
+            <span id="sample-height">${sampleSize}</span>
+          </div>
+        `;
+        document.body.appendChild(dialog);
+
+        const widthInput = document.getElementById('sample-width');
+        const heightText = document.getElementById('sample-height');
+
+        setTimeout(() => {
+          widthInput.focus();
+          widthInput.select();
+        }, 0);
+
+        widthInput.addEventListener('input', (e) => {
+          e.stopPropagation();
+          let newSize = widthInput.value;
+          if (newSize === '') {
+            heightText.textContent = '140';
+          } else {
+            heightText.textContent = newSize;
+          }
+        });
+
+        widthInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            let newSize = parseInt(widthInput.value);
+            if (isNaN(newSize) || newSize < 50) {
+              newSize = 50;
+            } else if (newSize > 300) {
+              newSize = 300;
+            }
+            sampleSize = newSize;
+            sampleScaleFactor = newSize / 140;
+            updatePreviewSize();
+            dialog.remove();
+          }
+        });
+
+        dialog.querySelector('.size-inputs').addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
+
+        dialog.addEventListener('click', (e) => {
+          if (e.target === dialog) {
+            let newSize = parseInt(widthInput.value);
+            if (isNaN(newSize) || newSize < 50) {
+              newSize = 50;
+            } else if (newSize > 300) {
+              newSize = 300;
+            }
+            sampleSize = newSize;
+            sampleScaleFactor = newSize / 140;
+            updatePreviewSize();
+            dialog.remove();
+          }
+        });
+      });
+    }
 
 
 
@@ -704,8 +773,6 @@
 
 
 
-
-
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -912,113 +979,6 @@
       });
     }
 
-    function setupPreviewSizeListener() {
-      const gearEmoji = document.querySelector('.gear-emoji');
-      gearEmoji.addEventListener('click', () => {
-        const dialog = document.createElement('div');
-        dialog.className = 'preview-size-dialog';
-        dialog.innerHTML = `
-          <label>PREVIEW SIZE:</label>
-          <div class="size-inputs">
-            <input type="number" id="preview-width" value="${previewSize}" min="100" max="1800">
-            <span>x</span>
-            <input type="number" id="preview-height" value="${previewSize}" min="100" max="1800" readonly>
-          </div>
-        `;
-        document.body.appendChild(dialog);
-
-        const widthInput = document.getElementById('preview-width');
-        const heightInput = document.getElementById('preview-height');
-
-        widthInput.addEventListener('input', () => {
-          let newSize = parseInt(widthInput.value);
-          newSize = Math.max(100, Math.min(1800, newSize));
-          widthInput.value = newSize;
-          heightInput.value = newSize;
-        });
-
-        dialog.addEventListener('click', (e) => {
-          if (e.target === dialog) {
-            const newSize = parseInt(widthInput.value);
-            previewSize = newSize;
-            scaleFactor = newSize / 600;
-            updatePreviewSize();
-            dialog.remove();
-          }
-        });
-      });
-    }
-
-    function updatePreviewSize() {
-      const preview = document.getElementById('preview');
-      preview.style.maxWidth = `${previewSize}px`;
-      preview.style.height = `${previewSize}px`;
-      preview.style.backgroundSize = `${previewSize}px ${previewSize}px`;
-
-      traitImages.forEach(img => {
-        if (img && img.src && img.style.visibility !== 'hidden') {
-          const left = (parseFloat(img.style.left) || 0) / scaleFactor;
-          const top = (parseFloat(img.style.top) || 0) / scaleFactor;
-          img.style.left = `${left * scaleFactor}px`;
-          img.style.top = `${top * scaleFactor}px`;
-          img.style.maxWidth = `${600 * scaleFactor}px`;
-          img.style.maxHeight = `${600 * scaleFactor}px`;
-        }
-      });
-
-      const previewSamplesGrid = document.getElementById('preview-samples-grid');
-      if (previewSamplesGrid) {
-        const sampleSize = 140 * scaleFactor;
-        previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSize}px)`;
-        previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSize}px)`;
-        previewSamplesGrid.style.gap = `${13 * scaleFactor}px`;
-
-        const sampleContainers = document.querySelectorAll('#preview-samples-grid .sample-container');
-        sampleContainers.forEach(container => {
-          container.style.width = `${sampleSize}px`;
-          container.style.height = `${sampleSize}px`;
-          container.style.backgroundSize = `${sampleSize}px ${sampleSize}px`;
-
-          const images = container.querySelectorAll('img');
-          images.forEach(img => {
-            const left = (parseFloat(img.style.left) || 0) / (140 / 600);
-            const top = (parseFloat(img.style.top) || 0) / (140 / 600);
-            img.style.left = `${left * (sampleSize / 600)}px`;
-            img.style.top = `${top * (sampleSize / 600)}px`;
-            img.style.transform = `scale(${sampleSize / 600 * 0.23333})`;
-          });
-        });
-      }
-
-      const enlargedPreview = document.getElementById('enlarged-preview');
-      if (enlargedPreview.style.display === 'block') {
-        const maxWidth = window.innerWidth * 0.9;
-        const maxHeight = window.innerHeight * 0.9;
-        let scale = 1;
-        if (maxWidth / maxHeight > 1) {
-          enlargedPreview.style.height = `${maxHeight}px`;
-          enlargedPreview.style.width = `${maxHeight}px`;
-          scale = maxHeight / (600 * scaleFactor);
-        } else {
-          enlargedPreview.style.width = `${maxWidth}px`;
-          enlargedPreview.style.height = `${maxWidth}px`;
-          scale = maxWidth / (600 * scaleFactor);
-        }
-
-        const images = enlargedPreview.querySelectorAll('img');
-        images.forEach(img => {
-          const originalWidth = parseFloat(img.style.width) / scale;
-          const originalHeight = parseFloat(img.style.height) / scale;
-          const originalLeft = parseFloat(img.style.left) / scale;
-          const originalTop = parseFloat(img.style.top) / scale;
-          img.style.width = `${originalWidth * scale}px`;
-          img.style.height = `${originalHeight * scale}px`;
-          img.style.left = `${originalLeft * scale}px`;
-          img.style.top = `${originalTop * scale}px`;
-        });
-      }
-    }
-
     function setupDragAndDrop(img, traitIndex) {
       if (img) {
         img.addEventListener('dragstart', (e) => e.preventDefault());
@@ -1066,10 +1026,80 @@
       if (previewPanel.element) previewPanel.element.offsetHeight;
     }
 
+    function updatePreviewSize() {
+      const preview = document.getElementById('preview');
+      preview.style.maxWidth = `${previewSize}px`;
+      preview.style.height = `${previewSize}px`;
+      preview.style.backgroundSize = `${previewSize}px ${previewSize}px`;
+
+      traitImages.forEach(img => {
+        if (img && img.src && img.style.visibility !== 'hidden') {
+          const left = (parseFloat(img.style.left) || 0) / scaleFactor;
+          const top = (parseFloat(img.style.top) || 0) / scaleFactor;
+          img.style.left = `${left * scaleFactor}px`;
+          img.style.top = `${top * scaleFactor}px`;
+          img.style.maxWidth = `${600 * scaleFactor}px`;
+          img.style.maxHeight = `${600 * scaleFactor}px`;
+        }
+      });
+
+      const previewSamplesGrid = document.getElementById('preview-samples-grid');
+      if (previewSamplesGrid) {
+        previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSize}px)`;
+        previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSize}px)`;
+        previewSamplesGrid.style.gap = `${13 * sampleScaleFactor}px`;
+
+        const sampleContainers = document.querySelectorAll('#preview-samples-grid .sample-container');
+        sampleContainers.forEach(container => {
+          container.style.width = `${sampleSize}px`;
+          container.style.height = `${sampleSize}px`;
+          container.style.backgroundSize = `${sampleSize}px ${sampleSize}px`;
+
+          const images = container.querySelectorAll('img');
+          images.forEach(img => {
+            const left = (parseFloat(img.style.left) || 0) / (140 / 600);
+            const top = (parseFloat(img.style.top) || 0) / (140 / 600);
+            img.style.left = `${left * (sampleSize / 600)}px`;
+            img.style.top = `${top * (sampleSize / 600)}px`;
+            img.style.transform = `scale(${sampleSize / 600 * 0.23333})`;
+          });
+        });
+      }
+
+      const enlargedPreview = document.getElementById('enlarged-preview');
+      if (enlargedPreview.style.display === 'block') {
+        const maxWidth = window.innerWidth * 0.9;
+        const maxHeight = window.innerHeight * 0.9;
+        let scale = 1;
+        if (maxWidth / maxHeight > 1) {
+          enlargedPreview.style.height = `${maxHeight}px`;
+          enlargedPreview.style.width = `${maxHeight}px`;
+          scale = maxHeight / (600 * scaleFactor);
+        } else {
+          enlargedPreview.style.width = `${maxWidth}px`;
+          enlargedPreview.style.height = `${maxWidth}px`;
+          scale = maxWidth / (600 * scaleFactor);
+        }
+
+        const images = enlargedPreview.querySelectorAll('img');
+        images.forEach(img => {
+          const originalWidth = parseFloat(img.style.width) / scale;
+          const originalHeight = parseFloat(img.style.height) / scale;
+          const originalLeft = parseFloat(img.style.left) / scale;
+          const originalTop = parseFloat(img.style.top) / scale;
+          img.style.width = `${originalWidth * scale}px`;
+          img.style.height = `${originalHeight * scale}px`;
+          img.style.left = `${originalLeft * scale}px`;
+          img.style.top = `${originalTop * scale}px`;
+        });
+      }
+    }
 
 
 
 
+
+   
     /* Section 6 - PREVIEW SAMPLES LOGIC */
 
 
@@ -1077,14 +1107,14 @@
 
 
     function getPreviewSamplesContent() {
-      let html = `<div id="preview-samples"><div id="preview-samples-header"><button id="update-previews">UPDATE</button></div><div id="preview-samples-grid">`;
+      let html = `<div id="preview-samples"><div id="preview-samples-header"><button id="update-previews">UPDATE</button><span class="sample-gear-emoji" style="float: right; margin-right: 10px;">⚙️</span></div><div id="preview-samples-grid">`;
       sampleData.forEach((sample, i) => {
         html += `<div class="sample-container">`;
         sample.forEach(item => {
           const trait = TraitManager.getTrait(item.traitId);
           const variant = trait.variants.find(v => v.id === item.variantId);
-          const sampleScale = (140 * scaleFactor) / 600;
-          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * sampleScale}px; top: ${item.position.top * sampleScale}px; transform: scale(${0.23333 * scaleFactor}); transform-origin: top left;">`;
+          const sampleScale = (sampleSize / 600);
+          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * sampleScale}px; top: ${item.position.top * sampleScale}px; transform: scale(${0.23333 * sampleScaleFactor}); transform-origin: top left;">`;
         });
         html += `</div>`;
       });
