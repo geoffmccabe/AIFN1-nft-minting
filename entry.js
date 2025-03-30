@@ -87,7 +87,6 @@
         const leftPanels = this.panels.filter(p => p.column === 'left');
         const rightPanels = this.panels.filter(p => p.column === 'right');
 
-        // Only remove placeholders
         Array.from(leftColumn.children).forEach(child => {
           if (child.className === 'placeholder') {
             child.remove();
@@ -99,7 +98,6 @@
           }
         });
 
-        // Render left panels
         leftPanels.forEach((panel, index) => {
           if (panel === this.draggedPanel) {
             if (this.currentHole && this.currentHoleColumn === 'left' && index === this.currentHoleIndex) {
@@ -133,7 +131,6 @@
           }
         });
 
-        // Render right panels
         rightPanels.forEach((panel, index) => {
           if (panel === this.draggedPanel) {
             if (this.currentHole && this.currentHoleColumn === 'right' && index === this.currentHoleIndex) {
@@ -167,7 +164,6 @@
           }
         });
 
-        // Reattach drag listeners after rendering
         this.panels.forEach(panel => {
           if (panel !== this.draggedPanel) {
             this.setupDrag(panel);
@@ -215,7 +211,6 @@
           this.draggedPanel = panel;
           this.renderAll();
 
-          // Create a wrapper to isolate the dragged panel
           dragWrapper = document.createElement('div');
           dragWrapper.style.width = `${originalRect.width}px`;
           dragWrapper.style.height = `${originalRect.height}px`;
@@ -301,7 +296,6 @@
 
         document.addEventListener('mouseup', (e) => {
           if (!isDragging || !dragWrapper) return;
-          console.log(`Mouseup on panel ${this.draggedPanel.id}, fam! Droppin’ it, dawg!`);
           isDragging = false;
 
           const panelRect = el.getBoundingClientRect();
@@ -314,9 +308,22 @@
 
           let dropped = false;
           if (holeRect && this.calculateOverlap(panelRect, holeRect) > 50) {
-            const newColumnPanels = this.panels.filter(p => p.column === this.currentHoleColumn && p !== this.draggedPanel);
-            const insertIndex = this.currentHoleIndex;
-            const globalIndex = this.panels.filter(p => p.column === this.currentHoleColumn).indexOf(newColumnPanels[insertIndex]) || this.panels.filter(p => p.column === this.currentHoleColumn).length;
+            const newColumnPanels = this.panels.filter(p => p.column === this.currentHoleColumn);
+            let insertIndex = this.currentHoleIndex;
+            let globalIndex = 0;
+            let currentIndex = 0;
+            for (let i = 0; i < this.panels.length; i++) {
+              if (this.panels[i].column === this.currentHoleColumn) {
+                if (currentIndex === insertIndex) {
+                  globalIndex = i;
+                  break;
+                }
+                currentIndex++;
+              }
+            }
+            if (currentIndex < insertIndex) {
+              globalIndex = this.panels.length;
+            }
             this.panels.splice(this.panels.indexOf(this.draggedPanel), 1);
             this.panels.splice(globalIndex, 0, this.draggedPanel);
             this.draggedPanel.setColumn(this.currentHoleColumn);
@@ -329,6 +336,8 @@
             this.panels.splice(this.originalIndex, 0, this.draggedPanel);
             this.draggedPanel.setColumn(this.originalColumn);
           }
+
+          console.log(`Mouseup on panel ${panel.id}, fam! Droppin’ it, dawg! Dropped: ${dropped}`);
 
           this.currentHole = null;
           this.currentHoleColumn = null;
@@ -350,7 +359,6 @@
         });
       }
     }
-
 
 
 
