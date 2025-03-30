@@ -234,7 +234,7 @@
         });
 
         document.addEventListener('mousemove', (e) => {
-          if (!isDragging) return;
+          if (!isDragging || !dragWrapper) return;
           dragWrapper.style.left = `${e.clientX - offsetX}px`;
           dragWrapper.style.top = `${e.clientY - offsetY}px`;
 
@@ -260,6 +260,7 @@
               }
               continue;
             }
+            if (!panelsInColumn[i].element || !panelsInColumn[i].element.parentElement) continue;
             const panelRect = panelsInColumn[i].element.getBoundingClientRect();
             const topThreshold = panelRect.top + panelRect.height * 0.1;
             const bottomThreshold = panelRect.bottom - panelRect.height * 0.1;
@@ -278,10 +279,14 @@
             adjustedIndex++;
           }
 
-          if (newHoleIndex === null && mouseY > panelsInColumn.reduce((max, p) => p === this.draggedPanel ? max : Math.max(max, p.element.getBoundingClientRect().bottom), 0)) {
-            newHoleIndex = adjustedIndex;
-            newHoleTop = panelsInColumn.length > 0 ? panelsInColumn[panelsInColumn.length - 1].element.getBoundingClientRect().bottom : document.getElementById(newColumn + '-column').getBoundingClientRect().top;
-            newHoleBottom = newHoleTop + originalRect.height;
+          if (newHoleIndex === null) {
+            const columnRect = document.getElementById(newColumn + '-column').getBoundingClientRect();
+            const maxBottom = panelsInColumn.reduce((max, p) => p === this.draggedPanel || !p.element || !p.element.parentElement ? max : Math.max(max, p.element.getBoundingClientRect().bottom), columnRect.top);
+            if (mouseY > maxBottom) {
+              newHoleIndex = adjustedIndex;
+              newHoleTop = maxBottom;
+              newHoleBottom = newHoleTop + originalRect.height;
+            }
           }
 
           if (newHoleIndex !== null && newHoleIndex !== this.currentHoleIndex) {
@@ -295,7 +300,7 @@
         });
 
         document.addEventListener('mouseup', (e) => {
-          if (!isDragging) return;
+          if (!isDragging || !dragWrapper) return;
           console.log(`Mouseup on panel ${this.draggedPanel.id}, fam! Droppin’ it, dawg!`);
           isDragging = false;
 
@@ -309,18 +314,12 @@
 
           let dropped = false;
           if (holeRect && this.calculateOverlap(panelRect, holeRect) > 50) {
-            const newColumnPanels = this.panels.filter(p => p.column === this.currentHoleColumn);
+            const newColumnPanels = this.panels.filter(p => p.column === this.currentHoleColumn && p !== this.draggedPanel);
             const insertIndex = this.currentHoleIndex;
+            const globalIndex = this.panels.filter(p => p.column === this.currentHoleColumn).indexOf(newColumnPanels[insertIndex]) || this.panels.filter(p => p.column === this.currentHoleColumn).length;
             this.panels.splice(this.panels.indexOf(this.draggedPanel), 1);
-            const globalIndex = this.panels.filter(p => p.column === this.currentHoleColumn).length > insertIndex ? 
-              this.panels.indexOf(newColumnPanels[insertIndex]) : this.panels.length;
             this.panels.splice(globalIndex, 0, this.draggedPanel);
             this.draggedPanel.setColumn(this.currentHoleColumn);
-            this.currentHole = null;
-            this.currentHoleColumn = null;
-            this.currentHoleIndex = null;
-            this.originalIndex = null;
-            this.originalColumn = null;
             clickSound.play().catch(error => console.error('Error playing click sound:', error));
             dropped = true;
           }
@@ -329,14 +328,15 @@
             this.panels.splice(this.panels.indexOf(this.draggedPanel), 1);
             this.panels.splice(this.originalIndex, 0, this.draggedPanel);
             this.draggedPanel.setColumn(this.originalColumn);
-            this.currentHole = null;
-            this.currentHoleColumn = null;
-            this.currentHoleIndex = null;
-            this.originalIndex = null;
-            this.originalColumn = null;
           }
 
+          this.currentHole = null;
+          this.currentHoleColumn = null;
+          this.currentHoleIndex = null;
+          this.originalIndex = null;
+          this.originalColumn = null;
           this.draggedPanel = null;
+
           el.style.position = 'relative';
           el.style.left = '';
           el.style.top = '';
