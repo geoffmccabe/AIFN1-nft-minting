@@ -18,6 +18,7 @@
         this.column = column;
         this.style = { backgroundColor: '#ffffff', ...style };
         this.element = null;
+        this.isDragged = false;
       }
 
       render() {
@@ -90,22 +91,22 @@
         const rightPanels = this.panels.filter(p => p && p.column === 'right');
 
         Array.from(leftColumn.children).forEach(child => {
-          if (child.className === 'placeholder' && child.id !== `original-hole-left-${this.originalHoleIndex}`) {
+          if (child.className === 'placeholder') {
             child.remove();
           }
         });
         Array.from(rightColumn.children).forEach(child => {
-          if (child.className === 'placeholder' && child.id !== `original-hole-right-${this.originalHoleIndex}`) {
+          if (child.className === 'placeholder') {
             child.remove();
           }
         });
 
         leftPanels.forEach((panel, index) => {
-          if (panel === this.draggedPanel && this.originalColumn === 'left' && index === this.originalHoleIndex) {
+          if (panel.isDragged) {
             const placeholder = document.createElement('div');
             placeholder.className = 'placeholder';
-            placeholder.style.height = `${this.currentHole.height}px`;
-            placeholder.id = `original-hole-left-${index}`;
+            placeholder.style.height = `${panel.element.getBoundingClientRect().height}px`;
+            placeholder.id = 'placeholder-left-' + index;
             leftColumn.appendChild(placeholder);
             return;
           }
@@ -132,11 +133,11 @@
         });
 
         rightPanels.forEach((panel, index) => {
-          if (panel === this.draggedPanel && this.originalColumn === 'right' && index === this.originalHoleIndex) {
+          if (panel.isDragged) {
             const placeholder = document.createElement('div');
             placeholder.className = 'placeholder';
-            placeholder.style.height = `${this.currentHole.height}px`;
-            placeholder.id = `original-hole-right-${index}`;
+            placeholder.style.height = `${panel.element.getBoundingClientRect().height}px`;
+            placeholder.id = 'placeholder-right-' + index;
             rightColumn.appendChild(placeholder);
             return;
           }
@@ -163,7 +164,7 @@
         });
 
         this.panels.forEach(panel => {
-          if (panel && panel !== this.draggedPanel) {
+          if (panel && !panel.isDragged) {
             this.setupDrag(panel);
           }
         });
@@ -203,11 +204,11 @@
 
           this.originalIndex = this.panels.indexOf(panel);
           this.originalColumn = panel.column;
-          this.originalHoleIndex = this.panels.filter(p => p && p.column === panel.column).indexOf(panel);
           this.currentHole = { height: originalRect.height };
           this.currentHoleColumn = panel.column;
-          this.currentHoleIndex = this.originalHoleIndex;
+          this.currentHoleIndex = this.panels.filter(p => p && p.column === panel.column).indexOf(panel);
           this.draggedPanel = panel;
+          panel.isDragged = true;
           this.renderAll();
 
           dragWrapper = document.createElement('div');
@@ -367,6 +368,7 @@
           this.originalIndex = null;
           this.originalColumn = null;
           this.originalHoleIndex = null;
+          this.draggedPanel.isDragged = false;
           this.draggedPanel = null;
 
           el.style.position = 'relative';
