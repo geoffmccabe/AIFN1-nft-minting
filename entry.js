@@ -1113,6 +1113,7 @@
 
 
    
+   
     /* Section 6 - PREVIEW SAMPLES LOGIC */
 
 
@@ -1150,7 +1151,44 @@
           sampleData[i].push({ traitId: trait.id, variantId: variant.id, position });
         });
       }
-      previewSamplesPanel.update(getPreviewSamplesContent());
+
+      const previewSamplesGrid = document.getElementById('preview-samples-grid');
+      if (previewSamplesGrid) {
+        previewSamplesGrid.innerHTML = ''; // Clear existing content
+        sampleData.forEach((sample, i) => {
+          const container = document.createElement('div');
+          container.className = 'sample-container';
+          sample.forEach(item => {
+            const trait = TraitManager.getTrait(item.traitId);
+            const variant = trait.variants.find(v => v.id === item.variantId);
+            const sampleScale = (sampleSize / 600);
+            const img = document.createElement('img');
+            img.src = variant.url;
+            img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
+            img.style.position = 'absolute';
+            img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
+            img.style.left = `${item.position.left * sampleScale}px`;
+            img.style.top = `${item.position.top * sampleScale}px`;
+            img.style.transform = `scale(${0.23333 * sampleScaleFactor})`;
+            img.style.transformOrigin = 'top left';
+            container.appendChild(img);
+          });
+          previewSamplesGrid.appendChild(container);
+        });
+
+        // Update styles to preserve sampleSize and sampleScaleFactor
+        previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSize}px)`;
+        previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSize}px)`;
+        previewSamplesGrid.style.gap = `${13 * sampleScaleFactor}px`;
+
+        const sampleContainers = previewSamplesGrid.querySelectorAll('.sample-container');
+        sampleContainers.forEach(container => {
+          container.style.width = `${sampleSize}px`;
+          container.style.height = `${sampleSize}px`;
+          container.style.backgroundSize = `${sampleSize}px ${sampleSize}px`;
+        });
+      }
+
       const updateButton = document.getElementById('update-previews');
       if (updateButton) {
         updateButton.addEventListener('click', updatePreviewSamples);
@@ -1160,6 +1198,8 @@
           sampleData[i].forEach(sample => selectVariation(sample.traitId, sample.variantId));
         });
       });
+
+      setupSampleSizeListener(); // Reattach the listener after DOM update
     }
 
 
