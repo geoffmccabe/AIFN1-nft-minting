@@ -62,6 +62,7 @@
         this.currentHole = null;
         this.currentHoleColumn = null;
         this.currentHoleIndex = null;
+        this.draggedPanel = null;
       }
 
       addPanel(panel) {
@@ -86,12 +87,21 @@
         const leftPanels = this.panels.filter(p => p.column === 'left');
         const rightPanels = this.panels.filter(p => p.column === 'right');
 
-        // Clear columns once at the start
-        leftColumn.innerHTML = '';
-        rightColumn.innerHTML = '';
+        // Only clear panels that aren't supposed to be there
+        Array.from(leftColumn.children).forEach(child => {
+          if (child.className === 'placeholder' || !leftPanels.some(p => p.id === child.id)) {
+            child.remove();
+          }
+        });
+        Array.from(rightColumn.children).forEach(child => {
+          if (child.className === 'placeholder' || !rightPanels.some(p => p.id === child.id)) {
+            child.remove();
+          }
+        });
 
         // Render left panels
         leftPanels.forEach((panel, index) => {
+          if (panel === this.draggedPanel) return;
           if (panel.element && panel.element.parentElement) {
             panel.element.style.position = 'relative';
             panel.element.style.left = '';
@@ -109,11 +119,14 @@
             placeholder.id = 'placeholder-left';
             leftColumn.appendChild(placeholder);
           }
-          leftColumn.appendChild(panel.render());
+          if (!document.getElementById(panel.id)) {
+            leftColumn.appendChild(panel.render());
+          }
         });
 
         // Render right panels
         rightPanels.forEach((panel, index) => {
+          if (panel === this.draggedPanel) return;
           if (panel.element && panel.element.parentElement) {
             panel.element.style.position = 'relative';
             panel.element.style.left = '';
@@ -131,11 +144,17 @@
             placeholder.id = 'placeholder-right';
             rightColumn.appendChild(placeholder);
           }
-          rightColumn.appendChild(panel.render());
+          if (!document.getElementById(panel.id)) {
+            rightColumn.appendChild(panel.render());
+          }
         });
 
         // Reattach drag listeners after rendering
-        this.panels.forEach(panel => this.setupDrag(panel));
+        this.panels.forEach(panel => {
+          if (panel !== this.draggedPanel) {
+            this.setupDrag(panel);
+          }
+        });
 
         console.log(`Rendered ${leftPanels.length} panels in left column, ${rightPanels.length} in right column, fo’ shizzle!`);
       }
@@ -174,6 +193,7 @@
           this.currentHole = { height: originalRect.height };
           this.currentHoleColumn = panel.column;
           this.currentHoleIndex = this.panels.filter(p => p.column === panel.column).indexOf(panel);
+          this.draggedPanel = panel;
           this.panels.splice(this.originalIndex, 1);
           this.renderAll();
 
@@ -286,6 +306,7 @@
             this.originalColumn = null;
           }
 
+          this.draggedPanel = null;
           el.style.position = 'relative';
           el.style.left = '';
           el.style.top = '';
@@ -294,6 +315,7 @@
           el.style.opacity = '1';
           el.style.zIndex = '1';
           el.style.cursor = 'default';
+          document.body.removeChild(el);
           this.renderAll();
         });
       }
