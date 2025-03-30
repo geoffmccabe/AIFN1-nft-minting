@@ -225,6 +225,7 @@
    
 
    
+    
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -448,78 +449,88 @@
     }
 
     function setupSampleSizeListener() {
-      const sampleGearEmoji = document.querySelector('.sample-gear-emoji');
-      sampleGearEmoji.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const dialog = document.createElement('div');
-        dialog.className = 'preview-size-dialog';
-        dialog.innerHTML = `
-          <label>SAMPLE SIZE:</label>
-          <div class="size-inputs">
-            <input type="number" id="sample-width" value="${sampleSize}" min="50" max="300">
-            <span>x</span>
-            <span id="sample-height">${sampleSize}</span>
-          </div>
-        `;
-        document.body.appendChild(dialog);
+      const attachListener = () => {
+        const sampleGearEmoji = document.querySelector('.sample-gear-emoji');
+        if (sampleGearEmoji) {
+          sampleGearEmoji.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dialog = document.createElement('div');
+            dialog.className = 'preview-size-dialog';
+            dialog.innerHTML = `
+              <label>SAMPLE SIZE:</label>
+              <div class="size-inputs">
+                <input type="number" id="sample-width" value="${sampleSize}" min="50" max="300">
+                <span>x</span>
+                <span id="sample-height">${sampleSize}</span>
+              </div>
+            `;
+            document.body.appendChild(dialog);
 
-        const widthInput = document.getElementById('sample-width');
-        const heightText = document.getElementById('sample-height');
+            const widthInput = document.getElementById('sample-width');
+            const heightText = document.getElementById('sample-height');
 
-        setTimeout(() => {
-          widthInput.focus();
-          widthInput.select();
-        }, 0);
+            setTimeout(() => {
+              widthInput.focus();
+              widthInput.select();
+            }, 0);
 
-        widthInput.addEventListener('input', (e) => {
-          e.stopPropagation();
-          let newSize = widthInput.value;
-          if (newSize === '') {
-            heightText.textContent = '140';
-          } else {
-            heightText.textContent = newSize;
-          }
-        });
+            widthInput.addEventListener('input', (e) => {
+              e.stopPropagation();
+              let newSize = widthInput.value;
+              if (newSize === '') {
+                heightText.textContent = '140';
+              } else {
+                heightText.textContent = newSize;
+              }
+            });
 
-        widthInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            let newSize = parseInt(widthInput.value);
-            if (isNaN(newSize) || newSize < 50) {
-              newSize = 50;
-            } else if (newSize > 300) {
-              newSize = 300;
-            }
-            sampleSize = newSize;
-            sampleScaleFactor = newSize / 140;
-            updatePreviewSize();
-            dialog.remove();
-          }
-        });
+            widthInput.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
+                let newSize = parseInt(widthInput.value);
+                if (isNaN(newSize) || newSize < 50) {
+                  newSize = 50;
+                } else if (newSize > 300) {
+                  newSize = 300;
+                }
+                sampleSize = newSize;
+                sampleScaleFactor = newSize / 140;
+                updatePreviewSize();
+                dialog.remove();
+              }
+            });
 
-        dialog.querySelector('.size-inputs').addEventListener('click', (e) => {
-          e.stopPropagation();
-        });
+            dialog.querySelector('.size-inputs').addEventListener('click', (e) => {
+              e.stopPropagation();
+            });
 
-        dialog.addEventListener('click', (e) => {
-          if (e.target === dialog) {
-            let newSize = parseInt(widthInput.value);
-            if (isNaN(newSize) || newSize < 50) {
-              newSize = 50;
-            } else if (newSize > 300) {
-              newSize = 300;
-            }
-            sampleSize = newSize;
-            sampleScaleFactor = newSize / 140;
-            updatePreviewSize();
-            dialog.remove();
-          }
-        });
+            dialog.addEventListener('click', (e) => {
+              if (e.target === dialog) {
+                let newSize = parseInt(widthInput.value);
+                if (isNaN(newSize) || newSize < 50) {
+                  newSize = 50;
+                } else if (newSize > 300) {
+                  newSize = 300;
+                }
+                sampleSize = newSize;
+                sampleScaleFactor = newSize / 140;
+                updatePreviewSize();
+                dialog.remove();
+              }
+            });
+          });
+        }
+      };
+
+      attachListener(); // Initial attachment
+      document.addEventListener('DOMSubtreeModified', (e) => {
+        if (e.target.id === 'preview-samples-header') {
+          attachListener(); // Reattach listener after DOM update
+        }
       });
     }
 
-
-
    
+  
     /* Section 4 - TRAIT MANAGEMENT LOGIC */
 
 
@@ -610,6 +621,7 @@
       TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
       updateMintButton();
       updatePreviewSamples();
+      setupSampleSizeListener(); // Reattach the listener after DOM update
       input.value = '';
     }
 
@@ -675,6 +687,7 @@
           TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
           traitImages.forEach((img, index) => setupDragAndDrop(img, index));
           updatePreviewSamples();
+          setupSampleSizeListener();
         });
       }
 
@@ -703,6 +716,7 @@
           TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
           traitImages.forEach((img, index) => setupDragAndDrop(img, index));
           updatePreviewSamples();
+          setupSampleSizeListener();
         });
       }
 
@@ -715,6 +729,7 @@
             traitsPanel.update(getTraitsContent());
             TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
             updatePreviewSamples();
+            setupSampleSizeListener();
           }
         });
       }
@@ -750,6 +765,7 @@
         TraitManager.getAllTraits().forEach(t => setupTraitListeners(t.id));
         traitImages.forEach((img, index) => setupDragAndDrop(img, index));
         updatePreviewSamples();
+        setupSampleSizeListener();
       };
 
       yesButton.addEventListener('click', () => {
@@ -770,9 +786,8 @@
       document.body.appendChild(confirmationDialog);
     }
 
-
-
-
+   
+  
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -815,6 +830,8 @@
         const { left, top } = JSON.parse(savedPosition);
         previewImage.style.left = `${left * scaleFactor}px`;
         previewImage.style.top = `${top * scaleFactor}px`;
+        previewImage.style.width = `${600 * scaleFactor}px`;
+        previewImage.style.height = `${600 * scaleFactor}px`;
         previewImage.style.maxWidth = `${600 * scaleFactor}px`;
         previewImage.style.maxHeight = `${600 * scaleFactor}px`;
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
@@ -831,6 +848,8 @@
         if (lastPosition) {
           previewImage.style.left = `${lastPosition.left * scaleFactor}px`;
           previewImage.style.top = `${lastPosition.top * scaleFactor}px`;
+          previewImage.style.width = `${600 * scaleFactor}px`;
+          previewImage.style.height = `${600 * scaleFactor}px`;
           previewImage.style.maxWidth = `${600 * scaleFactor}px`;
           previewImage.style.maxHeight = `${600 * scaleFactor}px`;
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
@@ -842,6 +861,8 @@
         } else {
           previewImage.style.left = '0px';
           previewImage.style.top = '0px';
+          previewImage.style.width = `${600 * scaleFactor}px`;
+          previewImage.style.height = `${600 * scaleFactor}px`;
           previewImage.style.maxWidth = `${600 * scaleFactor}px`;
           previewImage.style.maxHeight = `${600 * scaleFactor}px`;
           variantHistories[key] = [{ left: 0, top: 0 }];
@@ -1038,6 +1059,8 @@
           const top = (parseFloat(img.style.top) || 0) / scaleFactor;
           img.style.left = `${left * scaleFactor}px`;
           img.style.top = `${top * scaleFactor}px`;
+          img.style.width = `${600 * scaleFactor}px`;
+          img.style.height = `${600 * scaleFactor}px`;
           img.style.maxWidth = `${600 * scaleFactor}px`;
           img.style.maxHeight = `${600 * scaleFactor}px`;
         }
