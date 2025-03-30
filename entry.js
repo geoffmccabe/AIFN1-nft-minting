@@ -64,6 +64,7 @@
         this.currentHoleIndex = null;
         this.draggedPanel = null;
         this.originalHoleIndex = null;
+        this.originalHoleColumn = null;
       }
 
       addPanel(panel) {
@@ -89,22 +90,22 @@
         const rightPanels = this.panels.filter(p => p && p.column === 'right');
 
         Array.from(leftColumn.children).forEach(child => {
-          if (child.className === 'placeholder') {
+          if (child.className === 'placeholder' && child.id !== `original-hole-left-${this.originalHoleIndex}`) {
             child.remove();
           }
         });
         Array.from(rightColumn.children).forEach(child => {
-          if (child.className === 'placeholder') {
+          if (child.className === 'placeholder' && child.id !== `original-hole-right-${this.originalHoleIndex}`) {
             child.remove();
           }
         });
 
         leftPanels.forEach((panel, index) => {
-          if (panel === this.draggedPanel) {
+          if (panel === this.draggedPanel && this.originalColumn === 'left' && index === this.originalHoleIndex) {
             const placeholder = document.createElement('div');
             placeholder.className = 'placeholder';
             placeholder.style.height = `${this.currentHole.height}px`;
-            placeholder.id = 'placeholder-left-' + index;
+            placeholder.id = `original-hole-left-${index}`;
             leftColumn.appendChild(placeholder);
             return;
           }
@@ -131,11 +132,11 @@
         });
 
         rightPanels.forEach((panel, index) => {
-          if (panel === this.draggedPanel) {
+          if (panel === this.draggedPanel && this.originalColumn === 'right' && index === this.originalHoleIndex) {
             const placeholder = document.createElement('div');
             placeholder.className = 'placeholder';
             placeholder.style.height = `${this.currentHole.height}px`;
-            placeholder.id = 'placeholder-right-' + index;
+            placeholder.id = `original-hole-right-${index}`;
             rightColumn.appendChild(placeholder);
             return;
           }
@@ -202,9 +203,10 @@
 
           this.originalIndex = this.panels.indexOf(panel);
           this.originalColumn = panel.column;
+          this.originalHoleIndex = this.panels.filter(p => p && p.column === panel.column).indexOf(panel);
           this.currentHole = { height: originalRect.height };
           this.currentHoleColumn = panel.column;
-          this.currentHoleIndex = this.panels.filter(p => p && p.column === panel.column).indexOf(panel);
+          this.currentHoleIndex = this.originalHoleIndex;
           this.draggedPanel = panel;
           this.renderAll();
 
@@ -364,6 +366,7 @@
           this.currentHoleIndex = null;
           this.originalIndex = null;
           this.originalColumn = null;
+          this.originalHoleIndex = null;
           this.draggedPanel = null;
 
           el.style.position = 'relative';
