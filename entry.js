@@ -85,8 +85,8 @@
           console.error('Columns not found during renderAll, homie! Check yo DOM, ya slow-ass!');
           return;
         }
-        const leftPanels = this.panels.filter(p => p.column === 'left');
-        const rightPanels = this.panels.filter(p => p.column === 'right');
+        const leftPanels = this.panels.filter(p => p && p.column === 'left');
+        const rightPanels = this.panels.filter(p => p && p.column === 'right');
 
         Array.from(leftColumn.children).forEach(child => {
           if (child.className === 'placeholder') {
@@ -162,7 +162,7 @@
         });
 
         this.panels.forEach(panel => {
-          if (panel !== this.draggedPanel) {
+          if (panel && panel !== this.draggedPanel) {
             this.setupDrag(panel);
           }
         });
@@ -204,7 +204,7 @@
           this.originalColumn = panel.column;
           this.currentHole = { height: originalRect.height };
           this.currentHoleColumn = panel.column;
-          this.currentHoleIndex = this.panels.filter(p => p.column === panel.column).indexOf(panel);
+          this.currentHoleIndex = this.panels.filter(p => p && p.column === panel.column).indexOf(panel);
           this.draggedPanel = panel;
           this.renderAll();
 
@@ -233,7 +233,7 @@
           const mouseY = e.pageY;
           const windowWidth = window.innerWidth;
           const newColumn = e.pageX < windowWidth / 2 ? 'left' : 'right';
-          const panelsInColumn = this.panels.filter(p => p.column === newColumn);
+          const panelsInColumn = this.panels.filter(p => p && p.column === newColumn);
           let newHoleIndex = null;
           let newHoleTop = null;
           let newHoleBottom = null;
@@ -309,12 +309,12 @@
 
           let dropped = false;
           if (holeRect && this.calculateOverlap(panelRect, holeRect) > 50) {
-            const newColumnPanels = this.panels.filter(p => p.column === this.currentHoleColumn);
+            const newColumnPanels = this.panels.filter(p => p && p.column === this.currentHoleColumn);
             let insertIndex = this.currentHoleIndex;
             let globalIndex = 0;
             let currentIndex = 0;
             for (let i = 0; i < this.panels.length; i++) {
-              if (this.panels[i].column === this.currentHoleColumn) {
+              if (this.panels[i] && this.panels[i].column === this.currentHoleColumn) {
                 if (currentIndex === insertIndex) {
                   globalIndex = i;
                   break;
@@ -334,8 +334,8 @@
 
           if (!dropped) {
             this.panels.splice(this.panels.indexOf(this.draggedPanel), 1);
-            const newColumnPanels = this.panels.filter(p => p.column === newColumn);
-            const globalIndex = this.panels.filter(p => p.column === newColumn).length;
+            const newColumnPanels = this.panels.filter(p => p && p.column === newColumn);
+            const globalIndex = this.panels.filter(p => p && p.column === newColumn).length;
             this.panels.splice(globalIndex, 0, this.draggedPanel);
             this.draggedPanel.setColumn(newColumn);
           }
