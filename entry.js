@@ -224,8 +224,6 @@
 
    
 
-   
-    
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -522,11 +520,6 @@
       };
 
       attachListener(); // Initial attachment
-      document.addEventListener('DOMSubtreeModified', (e) => {
-        if (e.target.id === 'preview-samples-header') {
-          attachListener(); // Reattach listener after DOM update
-        }
-      });
     }
 
    
@@ -830,10 +823,10 @@
         const { left, top } = JSON.parse(savedPosition);
         previewImage.style.left = `${left * scaleFactor}px`;
         previewImage.style.top = `${top * scaleFactor}px`;
-        previewImage.style.width = `${600 * scaleFactor}px`;
-        previewImage.style.height = `${600 * scaleFactor}px`;
-        previewImage.style.maxWidth = `${600 * scaleFactor}px`;
-        previewImage.style.maxHeight = `${600 * scaleFactor}px`;
+        previewImage.style.width = `600px`;
+        previewImage.style.height = `600px`;
+        previewImage.style.transform = `scale(${scaleFactor})`;
+        previewImage.style.transformOrigin = 'top left';
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
         let lastPosition = null;
@@ -848,10 +841,10 @@
         if (lastPosition) {
           previewImage.style.left = `${lastPosition.left * scaleFactor}px`;
           previewImage.style.top = `${lastPosition.top * scaleFactor}px`;
-          previewImage.style.width = `${600 * scaleFactor}px`;
-          previewImage.style.height = `${600 * scaleFactor}px`;
-          previewImage.style.maxWidth = `${600 * scaleFactor}px`;
-          previewImage.style.maxHeight = `${600 * scaleFactor}px`;
+          previewImage.style.width = `600px`;
+          previewImage.style.height = `600px`;
+          previewImage.style.transform = `scale(${scaleFactor})`;
+          previewImage.style.transformOrigin = 'top left';
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
@@ -861,10 +854,10 @@
         } else {
           previewImage.style.left = '0px';
           previewImage.style.top = '0px';
-          previewImage.style.width = `${600 * scaleFactor}px`;
-          previewImage.style.height = `${600 * scaleFactor}px`;
-          previewImage.style.maxWidth = `${600 * scaleFactor}px`;
-          previewImage.style.maxHeight = `${600 * scaleFactor}px`;
+          previewImage.style.width = `600px`;
+          previewImage.style.height = `600px`;
+          previewImage.style.transform = `scale(${scaleFactor})`;
+          previewImage.style.transformOrigin = 'top left';
           variantHistories[key] = [{ left: 0, top: 0 }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
@@ -1059,10 +1052,8 @@
           const top = (parseFloat(img.style.top) || 0) / scaleFactor;
           img.style.left = `${left * scaleFactor}px`;
           img.style.top = `${top * scaleFactor}px`;
-          img.style.width = `${600 * scaleFactor}px`;
-          img.style.height = `${600 * scaleFactor}px`;
-          img.style.maxWidth = `${600 * scaleFactor}px`;
-          img.style.maxHeight = `${600 * scaleFactor}px`;
+          img.style.transform = `scale(${scaleFactor})`;
+          img.style.transformOrigin = 'top left';
         }
       });
 
@@ -1117,7 +1108,6 @@
         });
       }
     }
-
 
 
 
