@@ -224,9 +224,6 @@
 
    
 
-
-
-   
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -399,23 +396,29 @@
           widthInput.select();
         }, 0);
 
-        widthInput.addEventListener('input', (e) => {
-          e.stopPropagation();
-          let newSize = parseInt(widthInput.value);
-          if (isNaN(newSize)) {
-            newSize = 600;
-          }
-          newSize = Math.max(100, Math.min(1800, newSize));
-          heightText.textContent = newSize;
+        widthInput.addEventListener('click', () => {
+          widthInput.value = ''; // Clear the input on click
         });
 
-        widthInput.addEventListener('keypress', (e) => {
+        widthInput.addEventListener('input', (e) => {
+          e.stopPropagation();
+          let newSize = widthInput.value;
+          console.log(`Width input changed to: ${newSize}`); // Debug log
+          if (newSize === '') {
+            heightText.textContent = '600';
+          } else {
+            heightText.textContent = newSize;
+          }
+        });
+
+        widthInput.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             let newSize = parseInt(widthInput.value);
-            if (isNaN(newSize)) {
-              newSize = 600;
+            if (isNaN(newSize) || newSize < 100) {
+              newSize = 100;
+            } else if (newSize > 1800) {
+              newSize = 1800;
             }
-            newSize = Math.max(100, Math.min(1800, newSize));
             previewSize = newSize;
             scaleFactor = newSize / 600;
             updatePreviewSize();
@@ -430,10 +433,11 @@
         dialog.addEventListener('click', (e) => {
           if (e.target === dialog) {
             let newSize = parseInt(widthInput.value);
-            if (isNaN(newSize)) {
-              newSize = 600;
+            if (isNaN(newSize) || newSize < 100) {
+              newSize = 100;
+            } else if (newSize > 1800) {
+              newSize = 1800;
             }
-            newSize = Math.max(100, Math.min(1800, newSize));
             previewSize = newSize;
             scaleFactor = newSize / 600;
             updatePreviewSize();
@@ -442,8 +446,6 @@
         });
       });
     }
-
-
 
 
 
