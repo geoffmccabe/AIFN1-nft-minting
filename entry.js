@@ -223,6 +223,7 @@
 
 
    
+
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -370,6 +371,58 @@
 
       traitImages.forEach((img, index) => setupDragAndDrop(img, index));
     });
+
+    function setupPreviewSizeListener() {
+      const gearEmoji = document.querySelector('.gear-emoji');
+      gearEmoji.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent event bubbling that might interfere with input
+        const dialog = document.createElement('div');
+        dialog.className = 'preview-size-dialog';
+        dialog.innerHTML = `
+          <label>PREVIEW SIZE:</label>
+          <div class="size-inputs">
+            <input type="number" id="preview-width" value="${previewSize}" min="100" max="1800">
+            <span>x</span>
+            <input type="number" id="preview-height" value="${previewSize}" min="100" max="1800" readonly>
+          </div>
+        `;
+        document.body.appendChild(dialog);
+
+        const widthInput = document.getElementById('preview-width');
+        const heightInput = document.getElementById('preview-height');
+
+        // Ensure the input is focused and editable
+        widthInput.focus();
+        widthInput.select(); // Select the current value for easy replacement
+
+        widthInput.addEventListener('input', (e) => {
+          e.stopPropagation(); // Prevent input event from bubbling
+          let newSize = parseInt(widthInput.value);
+          if (isNaN(newSize)) {
+            newSize = 600; // Default to 600 if invalid
+          }
+          newSize = Math.max(100, Math.min(1800, newSize));
+          widthInput.value = newSize;
+          heightInput.value = newSize;
+        });
+
+        // Prevent dialog from closing when clicking inside inputs
+        dialog.querySelector('.size-inputs').addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
+
+        dialog.addEventListener('click', (e) => {
+          if (e.target === dialog) {
+            const newSize = parseInt(widthInput.value);
+            previewSize = newSize;
+            scaleFactor = newSize / 600;
+            updatePreviewSize();
+            dialog.remove();
+          }
+        });
+      });
+    }
+
 
 
 
