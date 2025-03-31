@@ -791,6 +791,7 @@
   
   
 
+
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -931,7 +932,7 @@
             if (direction === 'left') left -= 1;
             if (direction === 'right') left += 1;
             left = Math.max(0, Math.min(left, artworkSize - (currentImage.offsetWidth / scaleFactor)));
-            top = Math.max(0, Math.min(newTop, artworkSize - (currentImage.offsetHeight / scaleFactor)));
+            top = Math.max(0, Math.min(top, artworkSize - (currentImage.offsetHeight / scaleFactor)));
             currentImage.style.left = `${left * scaleFactor}px`;
             currentImage.style.top = `${top * scaleFactor}px`;
             currentImage.classList.add('dragging');
@@ -1040,9 +1041,9 @@
 
     function updateCoordinates(img, coordsElement) {
       if (img && coordsElement) {
-        const left = (parseFloat(img.style.left) || 0) / scaleFactor / artworkSize; // Convert to normalized space
-        const top = (parseFloat(img.style.top) || 0) / scaleFactor / artworkSize; // Convert to normalized space
-        coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left * artworkSize) + 1}, ${Math.round(top * artworkSize) + 1})`;
+        const left = (parseFloat(img.style.left) || 0) / scaleFactor; // Convert to artworkSize space
+        const top = (parseFloat(img.style.top) || 0) / scaleFactor; // Convert to artworkSize space
+        coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
       }
     }
 
@@ -1076,39 +1077,20 @@
     }
 
     function updatePreviewSize() {
-      const preview = document.getElementById('preview');
-      const panelRect = previewPanel.element.getBoundingClientRect();
-      const availableWidth = panelRect.width; // Use getBoundingClientRect to account for padding/borders
-      const displaySize = availableWidth; // Fit the preview window to the available width
-      scaleFactor = displaySize / artworkSize; // Adjust scaleFactor to fit the available space
-      preview.style.width = `${displaySize}px`;
-      preview.style.height = `${displaySize}px`; // Ensure square aspect ratio
-      preview.style.backgroundSize = `${displaySize}px ${displaySize}px`;
-      preview.style.maxWidth = '100%'; // Prevent overflow
-
-      traitImages.forEach(img => {
-        if (img && img.src && img.style.visibility !== 'hidden') {
-          const left = (parseFloat(img.style.left) || 0) / scaleFactor;
-          const top = (parseFloat(img.style.top) || 0) / scaleFactor;
-          img.style.left = `${left * scaleFactor}px`;
-          img.style.top = `${top * scaleFactor}px`;
-          img.style.width = `${artworkSize * scaleFactor}px`;
-          img.style.height = `${artworkSize * scaleFactor}px`;
-          img.style.position = 'absolute'; // Ensure traits are positioned correctly
-          img.style.visibility = 'visible'; // Ensure traits are visible
-          console.log(`Updating trait ${img.id} to width: ${img.style.width}, height: ${img.style.height}, left: ${img.style.left}, top: ${img.style.top}`);
-        }
-      });
-
+      // First, calculate the preview samples panel size to ensure its width is stable
       const previewSamplesPanelElement = document.getElementById('preview-samples');
+      let samplesAvailableWidth = 0;
+      let sampleSquareSize = 0;
+      let gapSize = 0;
+      let previewSamplesScaleFactor = 0;
       if (previewSamplesPanelElement) {
         const samplesPanelRect = previewSamplesPanelElement.getBoundingClientRect();
-        const samplesAvailableWidth = samplesPanelRect.width;
+        samplesAvailableWidth = samplesPanelRect.width;
         const sampleSquarePercentage = 0.22; // 22% per square
         const gapPercentage = 0.03; // 3% per gap
-        const sampleSquareSize = samplesAvailableWidth * sampleSquarePercentage;
-        const gapSize = samplesAvailableWidth * gapPercentage;
-        const previewSamplesScaleFactor = sampleSquareSize / artworkSize; // Scale factor for traits in preview samples
+        sampleSquareSize = samplesAvailableWidth * sampleSquarePercentage;
+        gapSize = samplesAvailableWidth * gapPercentage;
+        previewSamplesScaleFactor = sampleSquareSize / artworkSize; // Scale factor for traits in preview samples
 
         const previewSamplesGrid = document.getElementById('preview-samples-grid');
         if (previewSamplesGrid) {
@@ -1137,6 +1119,34 @@
           });
         }
       }
+
+      // Now calculate the preview panel size
+      const preview = document.getElementById('preview');
+      const panelRect = previewPanel.element.getBoundingClientRect();
+      const availableWidth = panelRect.width; // Use getBoundingClientRect to account for padding/borders
+      const availableHeight = panelRect.height;
+      const displaySize = Math.min(availableWidth, availableHeight); // Use the smaller dimension to ensure square
+      scaleFactor = displaySize / artworkSize; // Adjust scaleFactor to fit the available space
+      preview.style.width = `${displaySize}px`;
+      preview.style.height = `${displaySize}px`; // Ensure square aspect ratio
+      preview.style.backgroundSize = `${displaySize}px ${displaySize}px`;
+      preview.style.backgroundPosition = 'center'; // Center the background image
+      preview.style.maxWidth = '100%'; // Prevent horizontal overflow
+      preview.style.maxHeight = '100%'; // Prevent vertical overflow
+
+      traitImages.forEach(img => {
+        if (img && img.src && img.style.visibility !== 'hidden') {
+          const left = (parseFloat(img.style.left) || 0) / scaleFactor;
+          const top = (parseFloat(img.style.top) || 0) / scaleFactor;
+          img.style.left = `${left * scaleFactor}px`;
+          img.style.top = `${top * scaleFactor}px`;
+          img.style.width = `${artworkSize * scaleFactor}px`;
+          img.style.height = `${artworkSize * scaleFactor}px`;
+          img.style.position = 'absolute'; // Ensure traits are positioned correctly
+          img.style.visibility = 'visible'; // Ensure traits are visible
+          console.log(`Updating trait ${img.id} to width: ${img.style.width}, height: ${img.style.height}, left: ${img.style.left}, top: ${img.style.top}`);
+        }
+      });
 
       const enlargedPreview = document.getElementById('enlarged-preview');
       if (enlargedPreview.style.display === 'block') {
@@ -1173,6 +1183,7 @@
         });
       }
     }
+
 
 
 
