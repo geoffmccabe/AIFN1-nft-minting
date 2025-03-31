@@ -942,41 +942,45 @@ function updatePreviewSize() {
   if (!preview) return;
 
   // Calculate available space
-  const panelWidth = preview.parentElement.clientWidth - 20; // Account for padding
+  const panelWidth = preview.parentElement.clientWidth - 20;
   const maxSize = Math.min(panelWidth, window.innerHeight * 0.8);
   
   // Set preview size
   preview.style.width = `${maxSize}px`;
   preview.style.height = `${maxSize}px`;
 
-  // Scale traits
+  // Safely scale traits
   traitImages.forEach(img => {
-    if (img?.src) {
-      const traitId = img.id.replace('preview-trait', '');
-      const trait = TraitManager.getTrait(traitId);
-      const variant = trait?.variants[trait.selected];
+    if (!img || !img.style || !img.src) return; // Null check
+    
+    const traitId = img.id.replace('preview-trait', '');
+    const trait = TraitManager.getTrait(traitId);
+    const variant = trait?.variants[trait.selected];
+    
+    if (variant) {
+      const pos = JSON.parse(
+        localStorage.getItem(`trait${traitId}-${variant.name}-position`) || 
+        '{"left":0.5,"top":0.5}'
+      );
       
-      if (variant) {
-        const pos = JSON.parse(
-          localStorage.getItem(`trait${traitId}-${variant.name}-position`) || 
-          '{"left":0.5,"top":0.5}'
-        );
-        
+      if (img.width && img.height) { // Check image dimensions exist
         img.style.left = `calc(${pos.left * 100}% - ${img.width/2}px)`;
         img.style.top = `calc(${pos.top * 100}% - ${img.height/2}px)`;
-        img.style.maxWidth = `${maxSize * 0.3}px`; // 30% of preview
-        img.style.maxHeight = `${maxSize * 0.3}px`;
       }
+      img.style.maxWidth = `${maxSize * 0.3}px`;
+      img.style.maxHeight = `${maxSize * 0.3}px`;
     }
   });
 
-  // Update preview samples
+  // Safely update preview samples
   const previewSamplesGrid = document.getElementById('preview-samples-grid');
   if (previewSamplesGrid) {
     const sampleContainers = previewSamplesGrid.querySelectorAll('.sample-container');
     sampleContainers.forEach(container => {
+      if (!container) return;
       const images = container.querySelectorAll('img');
       images.forEach(img => {
+        if (!img || !img.style) return;
         const left = (parseFloat(img.dataset.left) || 0.5) * container.offsetWidth;
         const top = (parseFloat(img.dataset.top) || 0.5) * container.offsetWidth;
         img.style.left = `${left}px`;
