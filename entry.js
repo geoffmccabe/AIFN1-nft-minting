@@ -224,7 +224,6 @@
 
    
 
-  
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -448,6 +447,7 @@
         });
       });
     }
+
 
 
    
@@ -711,7 +711,6 @@
 
   
   
-
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -1094,6 +1093,7 @@
       preview.style.maxWidth = '100%'; // Prevent horizontal overflow
       preview.style.maxHeight = '100%'; // Prevent vertical overflow
       preview.style.aspectRatio = '1 / 1'; // Enforce square aspect ratio
+      preview.style.boxSizing = 'border-box'; // Include padding/borders in dimensions
       preview.parentElement.style.overflow = 'hidden'; // Prevent parent stretching
 
       // Update all trait images
@@ -1166,6 +1166,7 @@
 
   
  
+  
     /* Section 6 - PREVIEW SAMPLES LOGIC */
 
 
@@ -1173,15 +1174,13 @@
 
 
     function getPreviewSamplesContent() {
-      const previewSamplesScaleFactor = scaleFactor * 0.25; // Preview samples are 1/4 the size of the main preview
-      let html = `<div id="preview-samples"><div id="preview-samples-header"><button id="update-previews">UPDATE</button><span class="sample-gear-emoji" style="float: right; margin-right: 10px;">⚙️</span></div><div id="preview-samples-grid">`;
+      let html = `<div id="preview-samples"><div id="preview-samples-header"><button id="update-previews">UPDATE</button></div><div id="preview-samples-grid">`;
       sampleData.forEach((sample, i) => {
         html += `<div class="sample-container">`;
         sample.forEach(item => {
           const trait = TraitManager.getTrait(item.traitId);
           const variant = trait.variants.find(v => v.id === item.variantId);
-          const sampleScale = (sampleSize / artworkSize);
-          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * sampleScale * previewSamplesScaleFactor}px; top: ${item.position.top * sampleScale * previewSamplesScaleFactor}px; width: ${artworkSize * previewSamplesScaleFactor}px; height: ${artworkSize * previewSamplesScaleFactor}px; transform-origin: top left;">`;
+          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: 0px; top: 0px; max-width: 100%; max-height: 100%; object-fit: contain;">`;
         });
         html += `</div>`;
       });
@@ -1207,40 +1206,50 @@
 
       const previewSamplesGrid = document.getElementById('preview-samples-grid');
       if (previewSamplesGrid) {
-        const previewSamplesScaleFactor = scaleFactor * 0.25; // Preview samples are 1/4 the size of the main preview
-        previewSamplesGrid.innerHTML = ''; // Clear existing content
-        sampleData.forEach((sample, i) => {
-          const container = document.createElement('div');
-          container.className = 'sample-container';
-          sample.forEach(item => {
-            const trait = TraitManager.getTrait(item.traitId);
-            const variant = trait.variants.find(v => v.id === item.variantId);
-            const sampleScale = (sampleSize / artworkSize);
-            const img = document.createElement('img');
-            img.src = variant.url;
-            img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
-            img.style.position = 'absolute';
-            img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
-            img.style.left = `${item.position.left * sampleScale * previewSamplesScaleFactor}px`;
-            img.style.top = `${item.position.top * sampleScale * previewSamplesScaleFactor}px`;
-            img.style.width = `${artworkSize * previewSamplesScaleFactor}px`;
-            img.style.height = `${artworkSize * previewSamplesScaleFactor}px`;
-            img.style.transformOrigin = 'top left';
-            container.appendChild(img);
+        const previewSamplesPanelElement = document.getElementById('preview-samples');
+        if (previewSamplesPanelElement) {
+          const samplesPanelRect = previewSamplesPanelElement.getBoundingClientRect();
+          const samplesAvailableWidth = samplesPanelRect.width;
+          const sampleSquarePercentage = 0.22; // 22% per square
+          const gapPercentage = 0.04; // 4% per gap (updated to total 100%)
+          const sampleSquareSize = samplesAvailableWidth * sampleSquarePercentage;
+          const gapSize = samplesAvailableWidth * gapPercentage;
+
+          previewSamplesGrid.innerHTML = ''; // Clear existing content
+          sampleData.forEach((sample, i) => {
+            const container = document.createElement('div');
+            container.className = 'sample-container';
+            sample.forEach(item => {
+              const trait = TraitManager.getTrait(item.traitId);
+              const variant = trait.variants.find(v => v.id === item.variantId);
+              const img = document.createElement('img');
+              img.src = variant.url;
+              img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
+              img.style.position = 'absolute';
+              img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
+              img.style.left = `${item.position.left * sampleSquareSize}px`;
+              img.style.top = `${item.position.top * sampleSquareSize}px`;
+              img.style.maxWidth = `${sampleSquareSize}px`;
+              img.style.maxHeight = `${sampleSquareSize}px`;
+              img.style.objectFit = 'contain';
+              img.style.transformOrigin = 'top left';
+              container.appendChild(img);
+            });
+            previewSamplesGrid.appendChild(container);
           });
-          previewSamplesGrid.appendChild(container);
-        });
 
-        previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSize * previewSamplesScaleFactor}px)`;
-        previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSize * previewSamplesScaleFactor}px)`;
-        previewSamplesGrid.style.gap = `${13 * previewSamplesScaleFactor}px`;
+          // Update styles to preserve sampleSquareSize
+          previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSquareSize}px)`;
+          previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSquareSize}px)`;
+          previewSamplesGrid.style.gap = `${gapSize}px`;
 
-        const sampleContainers = previewSamplesGrid.querySelectorAll('.sample-container');
-        sampleContainers.forEach(container => {
-          container.style.width = `${sampleSize * previewSamplesScaleFactor}px`;
-          container.style.height = `${sampleSize * previewSamplesScaleFactor}px`;
-          container.style.backgroundSize = `${sampleSize * previewSamplesScaleFactor}px ${sampleSize * previewSamplesScaleFactor}px`;
-        });
+          const sampleContainers = previewSamplesGrid.querySelectorAll('.sample-container');
+          sampleContainers.forEach(container => {
+            container.style.width = `${sampleSquareSize}px`;
+            container.style.height = `${sampleSquareSize}px`;
+            container.style.backgroundSize = `${sampleSquareSize}px ${sampleSquareSize}px`;
+          });
+        }
       }
 
       const updateButton = document.getElementById('update-previews');
@@ -1252,9 +1261,8 @@
           sampleData[i].forEach(sample => selectVariation(sample.traitId, sample.variantId));
         });
       });
-
-      setupSampleSizeListener(); // Reattach the listener after DOM update
     }
+
 
 
 
