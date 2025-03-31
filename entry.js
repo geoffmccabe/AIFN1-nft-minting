@@ -160,8 +160,11 @@ const TraitManager = {
 
 
 
-/* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
 
+
+
+
+/* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
 
 
 
@@ -179,6 +182,7 @@ let timerInterval = null;
 let lastUndoTime = 0;
 let autoPositioned = new Array(20).fill(false);
 let sampleData = Array(16).fill(null).map(() => []);
+let background = { url: '', metadata: '' }; // Initialize background object
 let preview, coordinates, directionEmojis, magnifyEmoji, enlargedPreview, generateButton, traitContainer, previewSamplesGrid, updatePreviewsButton;
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
@@ -207,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (preview && !preview.hasChildNodes()) {
     preview.innerHTML = '';
   }
-  console.log('Preview initialized with children: ' + preview.children.length);
 
   // Initialize TraitManager with 3 traits
   TraitManager.initialize();
@@ -321,7 +324,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-
 
 
                           
