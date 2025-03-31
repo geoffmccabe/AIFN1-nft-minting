@@ -224,9 +224,7 @@
 
    
 
-
-   
-    /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
+/* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
 
@@ -333,7 +331,7 @@
             currentImage.style.top = `${previousPosition.top * scaleFactor}px`;
             try {
               localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
-            } catch ( W) {
+            } catch (e) {
               console.error('Failed to save to localStorage:', e);
             }
             updateCoordinates(currentImage, document.getElementById('coordinates'));
@@ -623,7 +621,7 @@
 
     function setupTraitListeners(traitId) {
       const nameInput = document.getElementById(`trait${traitId}-name`);
-      const grid = document.getElementById(`trait${trait.id}-grid`);
+      const grid = document.getElementById(`trait${traitId}-grid`);
       const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
       const downArrow = document.querySelector(`.down-arrow[data-trait="${traitId}"]`);
       const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
@@ -783,7 +781,10 @@
     }
 
    
-  
+
+
+
+   
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -828,6 +829,7 @@
         previewImage.style.top = `${top * scaleFactor}px`;
         previewImage.style.width = `${600 * 0.25}px`;
         previewImage.style.height = `${600 * 0.25}px`;
+        console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
         let lastPosition = null;
@@ -844,6 +846,7 @@
           previewImage.style.top = `${lastPosition.top * scaleFactor}px`;
           previewImage.style.width = `${600 * 0.25}px`;
           previewImage.style.height = `${600 * 0.25}px`;
+          console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
@@ -855,6 +858,7 @@
           previewImage.style.top = '0px';
           previewImage.style.width = `${600 * 0.25}px`;
           previewImage.style.height = `${600 * 0.25}px`;
+          console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
           variantHistories[key] = [{ left: 0, top: 0 }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
@@ -1051,6 +1055,7 @@
           img.style.top = `${top * scaleFactor}px`;
           img.style.width = `${600 * 0.25}px`;
           img.style.height = `${600 * 0.25}px`;
+          console.log(`Updating trait ${img.id} to width: ${img.style.width}, height: ${img.style.height}`);
         }
       });
 
@@ -1107,10 +1112,10 @@
     }
 
 
-
    
    
    
+  
     /* Section 6 - PREVIEW SAMPLES LOGIC */
 
 
@@ -1125,7 +1130,7 @@
           const trait = TraitManager.getTrait(item.traitId);
           const variant = trait.variants.find(v => v.id === item.variantId);
           const sampleScale = (sampleSize / 600);
-          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * sampleScale}px; top: ${item.position.top * sampleScale}px; transform: scale(${0.23333 * sampleScaleFactor}); transform-origin: top left;">`;
+          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * sampleScale}px; top: ${item.position.top * sampleScale}px; width: ${600 * 0.25}px; height: ${600 * 0.25}px; transform: scale(${sampleScale}); transform-origin: top left;">`;
         });
         html += `</div>`;
       });
@@ -1166,7 +1171,9 @@
             img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
             img.style.left = `${item.position.left * sampleScale}px`;
             img.style.top = `${item.position.top * sampleScale}px`;
-            img.style.transform = `scale(${0.23333 * sampleScaleFactor})`;
+            img.style.width = `${600 * 0.25}px`;
+            img.style.height = `${600 * 0.25}px`;
+            img.style.transform = `scale(${sampleScale})`;
             img.style.transformOrigin = 'top left';
             container.appendChild(img);
           });
