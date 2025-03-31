@@ -941,30 +941,41 @@ function updatePreviewSize() {
   const preview = document.getElementById('preview');
   if (!preview) return;
 
-  // Calculate available space while maintaining aspect ratio
-  const panelRect = previewPanel.element.getBoundingClientRect();
-  const displaySize = Math.min(panelRect.width, panelRect.height, previewSize);
+  // Calculate available space
+  const panelWidth = preview.parentElement.clientWidth - 20; // Account for padding
+  const maxSize = Math.min(panelWidth, window.innerHeight * 0.8);
   
-  // Update preview container dimensions
-  preview.style.width = `${displaySize}px`;
-  preview.style.height = `${displaySize}px`;
+  // Set preview size
+  preview.style.width = `${maxSize}px`;
+  preview.style.height = `${maxSize}px`;
 
-  // Update all trait images
+  // Scale traits
   traitImages.forEach(img => {
-    if (img && img.src) {
+    if (img?.src) {
       const traitId = img.id.replace('preview-trait', '');
       const trait = TraitManager.getTrait(traitId);
-      if (!trait) return;
+      const variant = trait?.variants[trait.selected];
       
-      const variant = trait.variants[trait.selected];
-      if (!variant) return;
-      
-      const key = `${traitId}-${variant.name}`;
-      const position = variantHistories[key]?.[variantHistories[key].length - 1] || { left: 0.5, top: 0.5 };
-      
-      updateImagePosition(img, position);
+      if (variant) {
+        const pos = JSON.parse(
+          localStorage.getItem(`trait${traitId}-${variant.name}-position`) || 
+          '{"left":0.5,"top":0.5}'
+        );
+        
+        img.style.left = `calc(${pos.left * 100}% - ${img.width/2}px)`;
+        img.style.top = `calc(${pos.top * 100}% - ${img.height/2}px)`;
+        img.style.maxWidth = `${maxSize * 0.3}px`; // 30% of preview
+        img.style.maxHeight = `${maxSize * 0.3}px`;
+      }
     }
   });
+}
+
+// Add this to your window resize listener:
+window.addEventListener('resize', () => {
+  updatePreviewSize();
+  setTimeout(updatePreviewSize, 100); // Double-check after resize
+});
 
   // Update preview samples
   const previewSamplesGrid = document.getElementById('preview-samples-grid');
