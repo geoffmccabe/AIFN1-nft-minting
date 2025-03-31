@@ -159,7 +159,9 @@ const TraitManager = {
 
 
 
+
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
+
 
 
 
@@ -224,6 +226,51 @@ document.addEventListener('DOMContentLoaded', () => {
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
   generateButton.addEventListener('click', fetchBackground);
 
+  // Set up preview panel drag events
+  if (preview) {
+    preview.addEventListener('mousemove', (e) => {
+      if (!isDragging || !currentImage) return;
+      const rect = preview.getBoundingClientRect();
+      let newLeft = e.clientX - rect.left - offsetX;
+      let newTop = e.clientY - rect.top - offsetY;
+      newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
+      newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
+      currentImage.style.left = `${newLeft}px`;
+      currentImage.style.top = `${newTop}px`;
+      updateCoordinates(currentImage);
+    });
+
+    preview.addEventListener('mouseup', () => {
+      if (isDragging && currentImage) {
+        const traitIndex = traitImages.indexOf(currentImage);
+        if (traitIndex !== -1) {
+          const trait = TraitManager.getAllTraits()[traitIndex];
+          const variationName = trait.variants[trait.selected].name;
+          savePosition(currentImage, trait.id, variationName);
+        }
+        isDragging = false;
+        currentImage.style.cursor = 'grab';
+        currentImage.classList.remove('dragging');
+        updateZIndices();
+      }
+    });
+
+    preview.addEventListener('mouseleave', () => {
+      if (isDragging && currentImage) {
+        const traitIndex = traitImages.indexOf(currentImage);
+        if (traitIndex !== -1) {
+          const trait = TraitManager.getAllTraits()[traitIndex];
+          const variationName = trait.variants[trait.selected].name;
+          savePosition(currentImage, trait.id, variationName);
+        }
+        isDragging = false;
+        currentImage.style.cursor = 'grab';
+        currentImage.classList.remove('dragging');
+        updateZIndices();
+      }
+    });
+  }
+
   // Set up drag-and-drop for direction emojis
   directionEmojis.forEach(emoji => {
     const direction = emoji.getAttribute('data-direction');
@@ -274,6 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
 
 
                           
@@ -836,6 +884,7 @@ function updateMintButton() {
 
 
 
+
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
 
@@ -918,19 +967,45 @@ function setupDragAndDrop(img, traitIndex) {
     }
 
     function startDragging(e) {
-      if (img.src === '' || img !== currentImage) return;
+      if (!img.src) return;
+
+      // Get all elements under the click
+      const elements = document.elementsFromPoint(e.clientX, e.clientY);
+      const traitImgs = elements.filter(el => traitImages.some(ti => ti === el));
+
+      // Find the first visible (non-transparent) image
+      let selectedImage = null;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      for (const traitImg of traitImgs) {
+        canvas.width = traitImg.width;
+        canvas.height = traitImg.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(traitImg, 0, 0);
+        const rect = traitImg.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const pixel = ctx.getImageData(x, y, 1, 1).data;
+        if (pixel[3] > 0) { // Alpha > 0 means non-transparent
+          selectedImage = traitImg;
+          break;
+        }
+      }
+
+      if (!selectedImage) return; // No visible image found
+
+      currentImage = selectedImage;
       isDragging = true;
-      currentImage = img;
-      const rect = img.getBoundingClientRect();
+      const rect = currentImage.getBoundingClientRect();
       offsetX = e.clientX - rect.left;
       offsetY = e.clientY - rect.top;
-      img.style.cursor = 'grabbing';
-      img.classList.add('dragging');
-      updateCoordinates(img);
+      currentImage.style.cursor = 'grabbing';
+      currentImage.classList.add('dragging');
+      updateCoordinates(currentImage);
     }
 
     function stopDragging() {
-      if (isDragging && currentImage === img) {
+      if (isDragging && currentImage) {
         const traitIndex = traitImages.indexOf(currentImage);
         if (traitIndex === -1) {
           console.error('Current image not found in traitImages');
@@ -946,17 +1021,14 @@ function setupDragAndDrop(img, traitIndex) {
       }
     }
 
-    function selectImage() {
-      if (img.src !== '') {
-        currentImage = img;
-        updateCoordinates(img);
-      }
+    function selectImage(e) {
+      // No longer needed as startDragging handles selection
     }
 
     img.addEventListener('dragstart', preventDragStart);
     img.addEventListener('mousedown', startDragging);
     img.addEventListener('mouseup', stopDragging);
-    img.addEventListener('click', selectImage);
+    // Remove click listener since mousedown handles it
   }
 }
 
@@ -1000,6 +1072,7 @@ function savePosition(img, traitId, variationName) {
   updateSamplePositions(traitId, variationName, position);
   updateSubsequentTraits(traitId, variationName, position);
 }
+
 
 
 
