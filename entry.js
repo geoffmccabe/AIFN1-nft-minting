@@ -785,6 +785,7 @@
 
 
    
+ 
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -827,8 +828,8 @@
         const { left, top } = JSON.parse(savedPosition);
         previewImage.style.left = `${left * scaleFactor}px`;
         previewImage.style.top = `${top * scaleFactor}px`;
-        previewImage.style.width = `${600 * 0.25}px`;
-        previewImage.style.height = `${600 * 0.25}px`;
+        previewImage.style.width = `${artworkSize * scaleFactor}px`;
+        previewImage.style.height = `${artworkSize * scaleFactor}px`;
         console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
@@ -844,8 +845,8 @@
         if (lastPosition) {
           previewImage.style.left = `${lastPosition.left * scaleFactor}px`;
           previewImage.style.top = `${lastPosition.top * scaleFactor}px`;
-          previewImage.style.width = `${600 * 0.25}px`;
-          previewImage.style.height = `${600 * 0.25}px`;
+          previewImage.style.width = `${artworkSize * scaleFactor}px`;
+          previewImage.style.height = `${artworkSize * scaleFactor}px`;
           console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           try {
@@ -856,8 +857,8 @@
         } else {
           previewImage.style.left = '0px';
           previewImage.style.top = '0px';
-          previewImage.style.width = `${600 * 0.25}px`;
-          previewImage.style.height = `${600 * 0.25}px`;
+          previewImage.style.width = `${artworkSize * scaleFactor}px`;
+          previewImage.style.height = `${artworkSize * scaleFactor}px`;
           console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
           variantHistories[key] = [{ left: 0, top: 0 }];
           try {
@@ -885,8 +886,8 @@
           const rect = preview.getBoundingClientRect();
           let newLeft = (e.clientX - rect.left - offsetX) / scaleFactor;
           let newTop = (e.clientY - rect.top - offsetY) / scaleFactor;
-          newLeft = Math.max(0, Math.min(newLeft, 600 - (currentImage.offsetWidth / scaleFactor)));
-          newTop = Math.max(0, Math.min(newTop, 600 - (currentImage.offsetHeight / scaleFactor)));
+          newLeft = Math.max(0, Math.min(newLeft, artworkSize - (currentImage.offsetWidth / scaleFactor)));
+          newTop = Math.max(0, Math.min(newTop, artworkSize - (currentImage.offsetHeight / scaleFactor)));
           currentImage.style.left = `${newLeft * scaleFactor}px`;
           currentImage.style.top = `${newTop * scaleFactor}px`;
           updateCoordinates(currentImage, coordinates);
@@ -919,8 +920,8 @@
             if (direction === 'down') top += 1;
             if (direction === 'left') left -= 1;
             if (direction === 'right') left += 1;
-            left = Math.max(0, Math.min(left, 600 - (currentImage.offsetWidth / scaleFactor)));
-            top = Math.max(0, Math.min(top, 600 - (currentImage.offsetHeight / scaleFactor)));
+            left = Math.max(0, Math.min(left, artworkSize - (currentImage.offsetWidth / scaleFactor)));
+            top = Math.max(0, Math.min(top, artworkSize - (currentImage.offsetHeight / scaleFactor)));
             currentImage.style.left = `${left * scaleFactor}px`;
             currentImage.style.top = `${top * scaleFactor}px`;
             currentImage.classList.add('dragging');
@@ -961,16 +962,24 @@
         enlargedPreview.innerHTML = '';
         const maxWidth = window.innerWidth * 0.9;
         const maxHeight = window.innerHeight * 0.9;
-        let scale = 1;
-        if (maxWidth / maxHeight > 1) {
-          enlargedPreview.style.height = `${maxHeight}px`;
-          enlargedPreview.style.width = `${maxHeight}px`;
-          scale = maxHeight / (600 * scaleFactor);
-        } else {
-          enlargedPreview.style.width = `${maxWidth}px`;
-          enlargedPreview.style.height = `${maxWidth}px`;
-          scale = maxWidth / (600 * scaleFactor);
+        let magnifyScaleFactor = scaleFactor * 2; // Magnify is 2x the preview scale
+        let displayWidth = artworkSize * magnifyScaleFactor;
+        let displayHeight = artworkSize * magnifyScaleFactor;
+
+        // Cap the size based on available screen space
+        if (displayWidth > maxWidth) {
+          magnifyScaleFactor = maxWidth / artworkSize;
+          displayWidth = maxWidth;
+          displayHeight = artworkSize * magnifyScaleFactor;
         }
+        if (displayHeight > maxHeight) {
+          magnifyScaleFactor = maxHeight / artworkSize;
+          displayHeight = maxHeight;
+          displayWidth = artworkSize * magnifyScaleFactor;
+        }
+
+        enlargedPreview.style.width = `${displayWidth}px`;
+        enlargedPreview.style.height = `${displayHeight}px`;
 
         const sortedImages = traitImages
           .map((img, idx) => ({ img, position: TraitManager.getAllTraits()[idx].position }))
@@ -979,10 +988,10 @@
         sortedImages.forEach(({ img }) => {
           if (img && img.src && img.style.visibility !== 'hidden') {
             const clonedImg = img.cloneNode(true);
-            clonedImg.style.width = `${img.width * scale}px`;
-            clonedImg.style.height = `${img.height * scale}px`;
-            clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
-            clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
+            clonedImg.style.width = `${artworkSize * magnifyScaleFactor}px`;
+            clonedImg.style.height = `${artworkSize * magnifyScaleFactor}px`;
+            clonedImg.style.left = `${parseFloat(img.style.left) * (magnifyScaleFactor / scaleFactor)}px`;
+            clonedImg.style.top = `${parseFloat(img.style.top) * (magnifyScaleFactor / scaleFactor)}px`;
             clonedImg.style.zIndex = String(img.style.zIndex);
             clonedImg.style.visibility = 'visible';
             enlargedPreview.appendChild(clonedImg);
@@ -1043,9 +1052,11 @@
 
     function updatePreviewSize() {
       const preview = document.getElementById('preview');
-      preview.style.maxWidth = `${previewSize}px`;
-      preview.style.height = `${previewSize}px`;
-      preview.style.backgroundSize = `${previewSize}px ${previewSize}px`;
+      const availableWidth = previewPanel.element.offsetWidth;
+      scaleFactor = availableWidth / artworkSize;
+      preview.style.maxWidth = `${artworkSize * scaleFactor}px`;
+      preview.style.height = `${artworkSize * scaleFactor}px`;
+      preview.style.backgroundSize = `${artworkSize * scaleFactor}px ${artworkSize * scaleFactor}px`;
 
       traitImages.forEach(img => {
         if (img && img.src && img.style.visibility !== 'hidden') {
@@ -1053,31 +1064,33 @@
           const top = (parseFloat(img.style.top) || 0) / scaleFactor;
           img.style.left = `${left * scaleFactor}px`;
           img.style.top = `${top * scaleFactor}px`;
-          img.style.width = `${600 * 0.25}px`;
-          img.style.height = `${600 * 0.25}px`;
+          img.style.width = `${artworkSize * scaleFactor}px`;
+          img.style.height = `${artworkSize * scaleFactor}px`;
           console.log(`Updating trait ${img.id} to width: ${img.style.width}, height: ${img.style.height}`);
         }
       });
 
       const previewSamplesGrid = document.getElementById('preview-samples-grid');
       if (previewSamplesGrid) {
-        previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSize}px)`;
-        previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSize}px)`;
-        previewSamplesGrid.style.gap = `${13 * sampleScaleFactor}px`;
+        const previewSamplesScaleFactor = scaleFactor * 0.25; // Preview samples are 1/4 the size of the main preview
+        previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSize * previewSamplesScaleFactor}px)`;
+        previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSize * previewSamplesScaleFactor}px)`;
+        previewSamplesGrid.style.gap = `${13 * previewSamplesScaleFactor}px`;
 
         const sampleContainers = document.querySelectorAll('#preview-samples-grid .sample-container');
         sampleContainers.forEach(container => {
-          container.style.width = `${sampleSize}px`;
-          container.style.height = `${sampleSize}px`;
-          container.style.backgroundSize = `${sampleSize}px ${sampleSize}px`;
+          container.style.width = `${sampleSize * previewSamplesScaleFactor}px`;
+          container.style.height = `${sampleSize * previewSamplesScaleFactor}px`;
+          container.style.backgroundSize = `${sampleSize * previewSamplesScaleFactor}px ${sampleSize * previewSamplesScaleFactor}px`;
 
           const images = container.querySelectorAll('img');
           images.forEach(img => {
             const left = (parseFloat(img.style.left) || 0) / (140 / 600);
             const top = (parseFloat(img.style.top) || 0) / (140 / 600);
-            img.style.left = `${left * (sampleSize / 600)}px`;
-            img.style.top = `${top * (sampleSize / 600)}px`;
-            img.style.transform = `scale(${sampleSize / 600 * 0.23333})`;
+            img.style.left = `${left * (sampleSize / 600) * previewSamplesScaleFactor}px`;
+            img.style.top = `${top * (sampleSize / 600) * previewSamplesScaleFactor}px`;
+            img.style.width = `${artworkSize * previewSamplesScaleFactor}px`;
+            img.style.height = `${artworkSize * previewSamplesScaleFactor}px`;
           });
         });
       }
@@ -1086,36 +1099,43 @@
       if (enlargedPreview.style.display === 'block') {
         const maxWidth = window.innerWidth * 0.9;
         const maxHeight = window.innerHeight * 0.9;
-        let scale = 1;
-        if (maxWidth / maxHeight > 1) {
-          enlargedPreview.style.height = `${maxHeight}px`;
-          enlargedPreview.style.width = `${maxHeight}px`;
-          scale = maxHeight / (600 * scaleFactor);
-        } else {
-          enlargedPreview.style.width = `${maxWidth}px`;
-          enlargedPreview.style.height = `${maxWidth}px`;
-          scale = maxWidth / (600 * scaleFactor);
+        let magnifyScaleFactor = scaleFactor * 2; // Magnify is 2x the preview scale
+        let displayWidth = artworkSize * magnifyScaleFactor;
+        let displayHeight = artworkSize * magnifyScaleFactor;
+
+        if (displayWidth > maxWidth) {
+          magnifyScaleFactor = maxWidth / artworkSize;
+          displayWidth = maxWidth;
+          displayHeight = artworkSize * magnifyScaleFactor;
         }
+        if (displayHeight > maxHeight) {
+          magnifyScaleFactor = maxHeight / artworkSize;
+          displayHeight = maxHeight;
+          displayWidth = artworkSize * magnifyScaleFactor;
+        }
+
+        enlargedPreview.style.width = `${displayWidth}px`;
+        enlargedPreview.style.height = `${displayHeight}px`;
 
         const images = enlargedPreview.querySelectorAll('img');
         images.forEach(img => {
-          const originalWidth = parseFloat(img.style.width) / scale;
-          const originalHeight = parseFloat(img.style.height) / scale;
-          const originalLeft = parseFloat(img.style.left) / scale;
-          const originalTop = parseFloat(img.style.top) / scale;
-          img.style.width = `${originalWidth * scale}px`;
-          img.style.height = `${originalHeight * scale}px`;
-          img.style.left = `${originalLeft * scale}px`;
-          img.style.top = `${originalTop * scale}px`;
+          const originalWidth = parseFloat(img.style.width) / (magnifyScaleFactor / scaleFactor);
+          const originalHeight = parseFloat(img.style.height) / (magnifyScaleFactor / scaleFactor);
+          const originalLeft = parseFloat(img.style.left) / (magnifyScaleFactor / scaleFactor);
+          const originalTop = parseFloat(img.style.top) / (magnifyScaleFactor / scaleFactor);
+          img.style.width = `${originalWidth * magnifyScaleFactor}px`;
+          img.style.height = `${originalHeight * magnifyScaleFactor}px`;
+          img.style.left = `${originalLeft * magnifyScaleFactor}px`;
+          img.style.top = `${originalTop * magnifyScaleFactor}px`;
         });
       }
     }
-
 
    
    
    
   
+ 
     /* Section 6 - PREVIEW SAMPLES LOGIC */
 
 
@@ -1123,14 +1143,15 @@
 
 
     function getPreviewSamplesContent() {
+      const previewSamplesScaleFactor = scaleFactor * 0.25; // Preview samples are 1/4 the size of the main preview
       let html = `<div id="preview-samples"><div id="preview-samples-header"><button id="update-previews">UPDATE</button><span class="sample-gear-emoji" style="float: right; margin-right: 10px;">⚙️</span></div><div id="preview-samples-grid">`;
       sampleData.forEach((sample, i) => {
         html += `<div class="sample-container">`;
         sample.forEach(item => {
           const trait = TraitManager.getTrait(item.traitId);
           const variant = trait.variants.find(v => v.id === item.variantId);
-          const sampleScale = (sampleSize / 600);
-          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * sampleScale}px; top: ${item.position.top * sampleScale}px; width: ${600 * 0.25}px; height: ${600 * 0.25}px; transform: scale(${sampleScale}); transform-origin: top left;">`;
+          const sampleScale = (sampleSize / artworkSize);
+          html += `<img src="${variant.url}" alt="Sample ${i + 1} - Trait ${trait.position}" style="position: absolute; z-index: ${TraitManager.getAllTraits().length - trait.position + 1}; left: ${item.position.left * sampleScale * previewSamplesScaleFactor}px; top: ${item.position.top * sampleScale * previewSamplesScaleFactor}px; width: ${artworkSize * previewSamplesScaleFactor}px; height: ${artworkSize * previewSamplesScaleFactor}px; transform-origin: top left;">`;
         });
         html += `</div>`;
       });
@@ -1156,6 +1177,7 @@
 
       const previewSamplesGrid = document.getElementById('preview-samples-grid');
       if (previewSamplesGrid) {
+        const previewSamplesScaleFactor = scaleFactor * 0.25; // Preview samples are 1/4 the size of the main preview
         previewSamplesGrid.innerHTML = ''; // Clear existing content
         sampleData.forEach((sample, i) => {
           const container = document.createElement('div');
@@ -1163,33 +1185,31 @@
           sample.forEach(item => {
             const trait = TraitManager.getTrait(item.traitId);
             const variant = trait.variants.find(v => v.id === item.variantId);
-            const sampleScale = (sampleSize / 600);
+            const sampleScale = (sampleSize / artworkSize);
             const img = document.createElement('img');
             img.src = variant.url;
             img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
             img.style.position = 'absolute';
             img.style.zIndex = String(TraitManager.getAllTraits().length - trait.position + 1);
-            img.style.left = `${item.position.left * sampleScale}px`;
-            img.style.top = `${item.position.top * sampleScale}px`;
-            img.style.width = `${600 * 0.25}px`;
-            img.style.height = `${600 * 0.25}px`;
-            img.style.transform = `scale(${sampleScale})`;
+            img.style.left = `${item.position.left * sampleScale * previewSamplesScaleFactor}px`;
+            img.style.top = `${item.position.top * sampleScale * previewSamplesScaleFactor}px`;
+            img.style.width = `${artworkSize * previewSamplesScaleFactor}px`;
+            img.style.height = `${artworkSize * previewSamplesScaleFactor}px`;
             img.style.transformOrigin = 'top left';
             container.appendChild(img);
           });
           previewSamplesGrid.appendChild(container);
         });
 
-        // Update styles to preserve sampleSize and sampleScaleFactor
-        previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSize}px)`;
-        previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSize}px)`;
-        previewSamplesGrid.style.gap = `${13 * sampleScaleFactor}px`;
+        previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSize * previewSamplesScaleFactor}px)`;
+        previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSize * previewSamplesScaleFactor}px)`;
+        previewSamplesGrid.style.gap = `${13 * previewSamplesScaleFactor}px`;
 
         const sampleContainers = previewSamplesGrid.querySelectorAll('.sample-container');
         sampleContainers.forEach(container => {
-          container.style.width = `${sampleSize}px`;
-          container.style.height = `${sampleSize}px`;
-          container.style.backgroundSize = `${sampleSize}px ${sampleSize}px`;
+          container.style.width = `${sampleSize * previewSamplesScaleFactor}px`;
+          container.style.height = `${sampleSize * previewSamplesScaleFactor}px`;
+          container.style.backgroundSize = `${sampleSize * previewSamplesScaleFactor}px ${sampleSize * previewSamplesScaleFactor}px`;
         });
       }
 
