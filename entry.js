@@ -398,8 +398,8 @@ function setupPreviewSizeListener() {
       if (e.key === 'Enter') {
         let newSize = parseInt(widthInput.value);
         if (isNaN(newSize) newSize = 600;
-        if (newSize < 100) newSize = 100;
-        if (newSize > 1800) newSize = 1800;
+if (newSize < 100) { newSize = 100; }
+if (newSize > 1800) { newSize = 1800; }
         previewSize = newSize;
         updatePreviewSize();
         dialog.remove();
@@ -410,8 +410,8 @@ function setupPreviewSizeListener() {
       if (e.target === dialog) {
         let newSize = parseInt(widthInput.value);
         if (isNaN(newSize)) newSize = 600;
-        if (newSize < 100) newSize = 100;
-        if (newSize > 1800) newSize = 1800;
+if (newSize < 100) { newSize = 100; }
+if (newSize > 1800) { newSize = 1800; }
         previewSize = newSize;
         updatePreviewSize();
         dialog.remove();
