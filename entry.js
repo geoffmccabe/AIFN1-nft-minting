@@ -1,9 +1,11 @@
-/*---------------------------------------------------- Section 1 - TRAIT MANAGER FRAMEWORK ----------------------------------------------------*/
+
+/* Section 1 ----------------------------------------- TRAIT MANAGER FRAMEWORK ------------------------------------------------*/
 
 
 
-// Utility to generate unique IDs (simple incrementing counter for this example)
-let idCounter = 0;
+
+// Utility to generate unique IDs (simple incrementing counter starting at 1)
+let idCounter = 1;
 function generateId() {
   return `id-${idCounter++}`;
 }
@@ -152,6 +154,7 @@ const TraitManager = {
     return [...this.traits];
   }
 };
+
 
 
 
@@ -386,7 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
 
 
@@ -475,24 +477,42 @@ function addTrait(trait) {
     traitContainer.appendChild(traitSection);
   }
 
-  const newTraitImage = document.createElement('img');
-  newTraitImage.id = `preview-trait${trait.id}`;
-  newTraitImage.src = '';
-  newTraitImage.alt = ''; // Empty alt to avoid text display
-  newTraitImage.style.zIndex = trait.zIndex;
-  newTraitImage.style.visibility = 'hidden'; // Hidden until variant is selected
-  traitImages.push(newTraitImage);
+  // Create or update the preview image
+  let traitImage = traitImages.find(img => img.id === `preview-trait${trait.id}`);
+  if (!traitImage) {
+    traitImage = document.createElement('img');
+    traitImage.id = `preview-trait${trait.id}`;
+    traitImage.src = '';
+    traitImage.alt = '';
+    traitImage.style.zIndex = TraitManager.getAllTraits().length - trait.position + 1;
+    traitImage.style.visibility = 'hidden';
+    traitImages.push(traitImage);
+  }
 
-  // Add to preview and log
+  // Rebuild preview DOM in correct order
   if (preview) {
-    preview.appendChild(newTraitImage);
-    console.log(`Added trait image ${newTraitImage.id} to preview, visibility: ${newTraitImage.style.visibility}`);
+    preview.innerHTML = '';
+    const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
+    traitImages = sortedTraits.map(trait => {
+      let img = traitImages.find(i => i.id === `preview-trait${trait.id}`);
+      if (!img) {
+        img = document.createElement('img');
+        img.id = `preview-trait${trait.id}`;
+        img.src = '';
+        img.alt = '';
+        img.style.visibility = 'hidden';
+      }
+      img.style.zIndex = TraitManager.getAllTraits().length - trait.position + 1;
+      preview.appendChild(img);
+      return img;
+    });
+    console.log(`Added trait image ${traitImage.id} to preview, position: ${trait.position}, zIndex: ${traitImage.style.zIndex}`);
   }
 
   setupTraitListeners(trait.id);
   requestAnimationFrame(() => {
-    console.log(`Setting up drag-and-drop for new trait ${trait.id}, image:`, newTraitImage);
-    setupDragAndDrop(newTraitImage, traitImages.length - 1);
+    console.log(`Setting up drag-and-drop for trait ${trait.id}, image:`, traitImage);
+    setupDragAndDrop(traitImage, TraitManager.getAllTraits().findIndex(t => t.id === trait.id));
   });
   updateZIndices();
   updatePreviewSamples();
@@ -522,13 +542,9 @@ function removeTrait(traitId) {
     const traitSection = document.getElementById(`trait${traitId}`);
     if (traitSection) traitSection.remove();
 
-    // Remove the preview image
-    const traitImage = document.getElementById(`preview-trait${traitId}`);
-    if (traitImage) {
-      const traitIndex = traitImages.indexOf(traitImage);
-      if (traitIndex !== -1) traitImages.splice(traitIndex, 1);
-      traitImage.remove();
-    }
+    // Remove the preview image from traitImages and DOM
+    const traitImageIndex = traitImages.findIndex(img => img.id === `preview-trait${traitId}`);
+    if (traitImageIndex !== -1) traitImages.splice(traitImageIndex, 1);
 
     // Clear localStorage for the deleted trait
     Object.keys(localStorage).forEach(key => {
@@ -539,12 +555,13 @@ function removeTrait(traitId) {
 
     // Re-render all traits
     traitContainer.innerHTML = '';
+    if (preview) preview.innerHTML = '';
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
       addTrait(trait);
       refreshTraitGrid(trait.id);
       if (trait.variants.length > 0) {
-        selectVariation(trait.id, trait.variants[0].id);
+        selectVariation(trait.id, trait.variants[trait.selected].id);
       }
     });
 
@@ -811,16 +828,17 @@ function updateMintButton() {
 
 
 
+
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
 
 
 
 function updateZIndices() {
+  const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
   traitImages.forEach((img, index) => {
     if (img) {
-      const trait = TraitManager.getAllTraits()[index];
-      // Set zIndex so Trait 1 (position 1) has highest value, Trait 3 (position 3) has lowest
+      const trait = sortedTraits[index];
       img.style.zIndex = TraitManager.getAllTraits().length - trait.position + 1;
       console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${img.style.zIndex}`);
     }
@@ -838,10 +856,10 @@ function selectVariation(traitId, variationId) {
   }
   trait.selected = variationIndex;
 
-  const previewImage = document.getElementById(`preview-trait${traitId}`);
+  const previewImage = traitImages.find(img => img.id === `preview-trait${traitId}`);
   if (previewImage) {
     previewImage.src = trait.variants[variationIndex].url;
-    previewImage.style.visibility = 'visible'; // Show the selected image
+    previewImage.style.visibility = 'visible';
     console.log(`Selected variation ${variationId} for trait ${traitId}, src: ${previewImage.src}, visibility: ${previewImage.style.visibility}`);
     const key = `${traitId}-${trait.variants[variationIndex].name}`;
     const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
@@ -876,15 +894,23 @@ function selectVariation(traitId, variationId) {
     updateZIndices();
     updateCoordinates(previewImage);
   } else {
-    console.error(`Preview image for trait ${traitId} not found in DOM`);
+    console.error(`Preview image for trait ${traitId} not found in traitImages`);
   }
 }
 
 function setupDragAndDrop(img, traitIndex) {
   if (img) {
-    img.addEventListener('dragstart', (e) => e.preventDefault());
+    // Remove existing listeners to prevent duplicates
+    img.removeEventListener('dragstart', preventDragStart);
+    img.removeEventListener('mousedown', startDragging);
+    img.removeEventListener('mouseup', stopDragging);
+    img.removeEventListener('click', selectImage);
 
-    img.addEventListener('mousedown', (e) => {
+    function preventDragStart(e) {
+      e.preventDefault();
+    }
+
+    function startDragging(e) {
       if (img.src === '' || img !== currentImage) return;
       isDragging = true;
       currentImage = img;
@@ -894,11 +920,11 @@ function setupDragAndDrop(img, traitIndex) {
       img.style.cursor = 'grabbing';
       img.classList.add('dragging');
       updateCoordinates(img);
-    });
+    }
 
-    img.addEventListener('mouseup', () => {
+    function stopDragging() {
       if (isDragging && currentImage === img) {
-        const traitIndex = traitImages.indexOf(currentImage);
+        const traitIndex = TraitManager.getAllTraits().findIndex(t => `preview-trait${t.id}` === currentImage.id);
         const trait = TraitManager.getAllTraits()[traitIndex];
         const variationName = trait.variants[trait.selected].name;
         savePosition(currentImage, trait.id, variationName);
@@ -907,14 +933,19 @@ function setupDragAndDrop(img, traitIndex) {
         currentImage.classList.remove('dragging');
         updateZIndices();
       }
-    });
+    }
 
-    img.addEventListener('click', () => {
+    function selectImage() {
       if (img.src !== '') {
         currentImage = img;
         updateCoordinates(img);
       }
-    });
+    }
+
+    img.addEventListener('dragstart', preventDragStart);
+    img.addEventListener('mousedown', startDragging);
+    img.addEventListener('mouseup', stopDragging);
+    img.addEventListener('click', selectImage);
   }
 }
 
@@ -945,7 +976,7 @@ function savePosition(img, traitId, variationName) {
       localStorage.setItem(`trait${traitId}-${otherVariationName}-position`, JSON.stringify(position));
       localStorage.removeItem(`trait${traitId}-${otherVariationName}-manuallyMoved`);
       if (trait.selected === i) {
-        const previewImage = document.getElementById(`preview-trait${traitId}`);
+        const previewImage = traitImages.find(img => img.id === `preview-trait${traitId}`);
         if (previewImage && previewImage.src) {
           previewImage.style.left = `${position.left}px`;
           previewImage.style.top = `${position.top}px`;
@@ -958,7 +989,6 @@ function savePosition(img, traitId, variationName) {
   updateSamplePositions(traitId, variationName, position);
   updateSubsequentTraits(traitId, variationName, position);
 }
-
 
 
 
