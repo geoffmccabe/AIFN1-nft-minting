@@ -224,6 +224,7 @@
 
    
 
+  
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -246,8 +247,6 @@
     clickSound.volume = 0.25;
     let previewSize = 600;
     let scaleFactor = 1;
-    let sampleSize = 140; // Default size for preview samples
-    let sampleScaleFactor = 1; // Independent scale factor for preview samples
     const dpr = window.devicePixelRatio || 1; // Device pixel ratio for high-DPI screens
     let artworkSize = 1024; // Default artwork size (square, in pixels)
 
@@ -283,7 +282,6 @@
       `<div id="preview-samples">
          <div id="preview-samples-header">
            <button id="update-previews">UPDATE</button>
-           <span class="sample-gear-emoji" style="float: right; margin-right: 10px;">⚙️</span>
          </div>
          <div id="preview-samples-grid"></div>
        </div>`,
@@ -367,7 +365,6 @@
       setupPreviewListeners();
       setupUndoListener();
       setupPreviewSizeListener();
-      setupSampleSizeListener();
 
       TraitManager.getAllTraits().forEach(trait => {
         if (trait.variants.length > 0) {
@@ -450,82 +447,6 @@
           }
         });
       });
-    }
-
-    function setupSampleSizeListener() {
-      const attachListener = () => {
-        const sampleGearEmoji = document.querySelector('.sample-gear-emoji');
-        if (sampleGearEmoji) {
-          sampleGearEmoji.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const dialog = document.createElement('div');
-            dialog.className = 'preview-size-dialog';
-            dialog.innerHTML = `
-              <label>SAMPLE SIZE:</label>
-              <div class="size-inputs">
-                <input type="number" id="sample-width" value="${sampleSize}" min="50" max="300">
-                <span>x</span>
-                <span id="sample-height">${sampleSize}</span>
-              </div>
-            `;
-            document.body.appendChild(dialog);
-
-            const widthInput = document.getElementById('sample-width');
-            const heightText = document.getElementById('sample-height');
-
-            setTimeout(() => {
-              widthInput.focus();
-              widthInput.select();
-            }, 0);
-
-            widthInput.addEventListener('input', (e) => {
-              e.stopPropagation();
-              let newSize = widthInput.value;
-              if (newSize === '') {
-                heightText.textContent = '140';
-              } else {
-                heightText.textContent = newSize;
-              }
-            });
-
-            widthInput.addEventListener('keydown', (e) => {
-              if (e.key === 'Enter') {
-                let newSize = parseInt(widthInput.value);
-                if (isNaN(newSize) || newSize < 50) {
-                  newSize = 50;
-                } else if (newSize > 300) {
-                  newSize = 300;
-                }
-                sampleSize = newSize;
-                sampleScaleFactor = newSize / 140;
-                updatePreviewSize();
-                dialog.remove();
-              }
-            });
-
-            dialog.querySelector('.size-inputs').addEventListener('click', (e) => {
-              e.stopPropagation();
-            });
-
-            dialog.addEventListener('click', (e) => {
-              if (e.target === dialog) {
-                let newSize = parseInt(widthInput.value);
-                if (isNaN(newSize) || newSize < 50) {
-                  newSize = 50;
-                } else if (newSize > 300) {
-                  newSize = 300;
-                }
-                sampleSize = newSize;
-                sampleScaleFactor = newSize / 140;
-                updatePreviewSize();
-                dialog.remove();
-              }
-            });
-          });
-        }
-      };
-
-      attachListener(); // Initial attachment
     }
 
 
@@ -845,9 +766,9 @@
         const normalizedTop = top;
         previewImage.style.left = `${normalizedLeft * artworkSize * scaleFactor}px`;
         previewImage.style.top = `${normalizedTop * artworkSize * scaleFactor}px`;
-        previewImage.style.width = `${artworkSize * scaleFactor}px`;
-        previewImage.style.height = `${artworkSize * scaleFactor}px`;
-        console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
+        previewImage.style.maxWidth = `${artworkSize * scaleFactor}px`;
+        previewImage.style.maxHeight = `${artworkSize * scaleFactor}px`;
+        console.log(`Trait ${traitId} set to max-width: ${previewImage.style.maxWidth}, max-height: ${previewImage.style.maxHeight}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
         let lastPosition = null;
@@ -864,9 +785,9 @@
           const normalizedTop = lastPosition.top;
           previewImage.style.left = `${normalizedLeft * artworkSize * scaleFactor}px`;
           previewImage.style.top = `${normalizedTop * artworkSize * scaleFactor}px`;
-          previewImage.style.width = `${artworkSize * scaleFactor}px`;
-          previewImage.style.height = `${artworkSize * scaleFactor}px`;
-          console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
+          previewImage.style.maxWidth = `${artworkSize * scaleFactor}px`;
+          previewImage.style.maxHeight = `${artworkSize * scaleFactor}px`;
+          console.log(`Trait ${traitId} set to max-width: ${previewImage.style.maxWidth}, max-height: ${previewImage.style.maxHeight}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
@@ -876,9 +797,9 @@
         } else {
           previewImage.style.left = '0px';
           previewImage.style.top = '0px';
-          previewImage.style.width = `${artworkSize * scaleFactor}px`;
-          previewImage.style.height = `${artworkSize * scaleFactor}px`;
-          console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
+          previewImage.style.maxWidth = `${artworkSize * scaleFactor}px`;
+          previewImage.style.maxHeight = `${artworkSize * scaleFactor}px`;
+          console.log(`Trait ${traitId} set to max-width: ${previewImage.style.maxWidth}, max-height: ${previewImage.style.maxHeight}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
           variantHistories[key] = [{ left: 0, top: 0 }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
@@ -1007,8 +928,8 @@
         sortedImages.forEach(({ img }) => {
           if (img && img.src && img.style.visibility !== 'hidden') {
             const clonedImg = img.cloneNode(true);
-            clonedImg.style.width = `${artworkSize * magnifyScaleFactor}px`;
-            clonedImg.style.height = `${artworkSize * magnifyScaleFactor}px`;
+            clonedImg.style.maxWidth = `${artworkSize * magnifyScaleFactor}px`;
+            clonedImg.style.maxHeight = `${artworkSize * magnifyScaleFactor}px`;
             clonedImg.style.left = `${parseFloat(img.style.left) * (magnifyScaleFactor / scaleFactor)}px`;
             clonedImg.style.top = `${parseFloat(img.style.top) * (magnifyScaleFactor / scaleFactor)}px`;
             clonedImg.style.zIndex = String(img.style.zIndex);
@@ -1118,11 +1039,11 @@
               const top = (parseFloat(img.style.top) || 0) / scaleFactor;
               img.style.left = `${left * previewSamplesScaleFactor}px`;
               img.style.top = `${top * previewSamplesScaleFactor}px`;
-              img.style.width = `${artworkSize * previewSamplesScaleFactor}px`;
-              img.style.height = `${artworkSize * previewSamplesScaleFactor}px`;
+              img.style.maxWidth = `${artworkSize * previewSamplesScaleFactor}px`;
+              img.style.maxHeight = `${artworkSize * previewSamplesScaleFactor}px`;
               img.style.position = 'absolute';
               img.style.visibility = 'visible';
-              console.log(`Updating preview sample trait ${img.id} to width: ${img.style.width}, height: ${img.style.height}`);
+              console.log(`Updating preview sample trait ${img.id} to max-width: ${img.style.maxWidth}, max-height: ${img.style.maxHeight}`);
             });
           });
         }
@@ -1142,6 +1063,7 @@
       preview.style.maxWidth = '100%'; // Prevent horizontal overflow
       preview.style.maxHeight = '100%'; // Prevent vertical overflow
       preview.style.aspectRatio = '1 / 1'; // Enforce square aspect ratio
+      preview.parentElement.style.overflow = 'hidden'; // Prevent parent stretching
 
       traitImages.forEach(img => {
         if (img && img.src && img.style.visibility !== 'hidden') {
@@ -1149,11 +1071,11 @@
           const top = (parseFloat(img.style.top) || 0) / scaleFactor;
           img.style.left = `${left * scaleFactor}px`;
           img.style.top = `${top * scaleFactor}px`;
-          img.style.width = `${artworkSize * scaleFactor}px`;
-          img.style.height = `${artworkSize * scaleFactor}px`;
+          img.style.maxWidth = `${artworkSize * scaleFactor}px`;
+          img.style.maxHeight = `${artworkSize * scaleFactor}px`;
           img.style.position = 'absolute'; // Ensure traits are positioned correctly
           img.style.visibility = 'visible'; // Ensure traits are visible
-          console.log(`Updating trait ${img.id} to width: ${img.style.width}, height: ${img.style.height}, left: ${img.style.left}, top: ${img.style.top}`);
+          console.log(`Updating trait ${img.id} to max-width: ${img.style.maxWidth}, max-height: ${img.style.maxHeight}, left: ${img.style.left}, top: ${img.style.top}`);
         }
       });
 
@@ -1181,19 +1103,17 @@
 
         const images = enlargedPreview.querySelectorAll('img');
         images.forEach(img => {
-          const originalWidth = parseFloat(img.style.width) / (magnifyScaleFactor / scaleFactor);
-          const originalHeight = parseFloat(img.style.height) / (magnifyScaleFactor / scaleFactor);
+          const originalWidth = parseFloat(img.style.maxWidth) / (magnifyScaleFactor / scaleFactor);
+          const originalHeight = parseFloat(img.style.maxHeight) / (magnifyScaleFactor / scaleFactor);
           const originalLeft = parseFloat(img.style.left) / (magnifyScaleFactor / scaleFactor);
           const originalTop = parseFloat(img.style.top) / (magnifyScaleFactor / scaleFactor);
-          img.style.width = `${originalWidth * magnifyScaleFactor}px`;
-          img.style.height = `${originalHeight * magnifyScaleFactor}px`;
+          img.style.maxWidth = `${originalWidth * magnifyScaleFactor}px`;
+          img.style.maxHeight = `${originalHeight * magnifyScaleFactor}px`;
           img.style.left = `${originalLeft * magnifyScaleFactor}px`;
           img.style.top = `${originalTop * magnifyScaleFactor}px`;
         });
       }
     }
-
-
 
 
   
