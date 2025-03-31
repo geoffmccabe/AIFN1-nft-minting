@@ -380,7 +380,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+
+
 /* Section 4 - TRAIT MANAGEMENT FUNCTIONS (PART 1) */
+
 
 
 
@@ -440,11 +445,6 @@ function addTrait(trait) {
   fileInputLabel.htmlFor = `trait${trait.id}-files`;
   fileInputLabel.textContent = 'Choose Files';
 
-  const variantCountSpan = document.createElement('span');
-  variantCountSpan.id = `trait${trait.id}-variant-count`;
-  variantCountSpan.style.marginLeft = '10px';
-  variantCountSpan.textContent = '[0 variants chosen]';
-
   const grid = document.createElement('div');
   grid.id = `trait${trait.id}-grid`;
   grid.className = 'trait-grid';
@@ -453,7 +453,6 @@ function addTrait(trait) {
   traitSection.appendChild(nameInput);
   traitSection.appendChild(fileInput);
   traitSection.appendChild(fileInputLabel);
-  traitSection.appendChild(variantCountSpan);
   traitSection.appendChild(grid);
 
   // Insert the trait section at the correct position
@@ -567,14 +566,14 @@ function removeTrait(traitId) {
 
 
 
+
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
   const fileInput = document.getElementById(`trait${traitId}-files`);
   const fileInputLabel = document.querySelector(`label[for="trait${traitId}-files"]`);
-  const variantCountSpan = document.getElementById(`trait${traitId}-variant-count`);
   const grid = document.getElementById(`trait${traitId}-grid`);
 
-  if (fileInput && nameInput && grid && fileInputLabel && variantCountSpan) {
+  if (fileInput && nameInput && grid && fileInputLabel) {
     nameInput.addEventListener('input', () => {
       const trait = TraitManager.getTrait(traitId);
       trait.name = nameInput.value.trim();
@@ -642,7 +641,6 @@ function setupTraitListeners(traitId) {
         if (firstWrapper) firstWrapper.classList.add('selected');
         autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
         fileInputLabel.textContent = 'Choose New Files';
-        variantCountSpan.textContent = `[${TraitManager.getTrait(traitId).variants.length} variants chosen]`;
       }
 
       updateMintButton();
