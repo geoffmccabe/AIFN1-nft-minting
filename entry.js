@@ -788,10 +788,7 @@
 
    
 
-
-
-   
- 
+  
   
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
@@ -833,7 +830,7 @@
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
         const { left, top } = JSON.parse(savedPosition);
-        // Positions are now stored as normalized values (0 to 1)
+        // Positions are stored as normalized values (0 to 1)
         const normalizedLeft = left; // Already normalized when saved
         const normalizedTop = top;
         previewImage.style.left = `${normalizedLeft * artworkSize * scaleFactor}px`;
@@ -1095,7 +1092,9 @@
           img.style.top = `${top * scaleFactor}px`;
           img.style.width = `${artworkSize * scaleFactor}px`;
           img.style.height = `${artworkSize * scaleFactor}px`;
-          console.log(`Updating trait ${img.id} to width: ${img.style.width}, height: ${img.style.height}`);
+          img.style.position = 'absolute'; // Ensure traits are positioned correctly
+          img.style.visibility = 'visible'; // Ensure traits are visible
+          console.log(`Updating trait ${img.id} to width: ${img.style.width}, height: ${img.style.height}, left: ${img.style.left}, top: ${img.style.top}`);
         }
       });
 
@@ -1107,6 +1106,7 @@
         const gapPercentage = 0.03; // 3% per gap
         const sampleSquareSize = samplesAvailableWidth * sampleSquarePercentage;
         const gapSize = samplesAvailableWidth * gapPercentage;
+        const previewSamplesScaleFactor = sampleSquareSize / artworkSize; // Scale factor for traits in preview samples
 
         const previewSamplesGrid = document.getElementById('preview-samples-grid');
         if (previewSamplesGrid) {
@@ -1124,10 +1124,13 @@
             images.forEach(img => {
               const left = (parseFloat(img.style.left) || 0) / scaleFactor;
               const top = (parseFloat(img.style.top) || 0) / scaleFactor;
-              img.style.left = `${left * scaleFactor}px`;
-              img.style.top = `${top * scaleFactor}px`;
-              img.style.width = `${artworkSize * scaleFactor}px`;
-              img.style.height = `${artworkSize * scaleFactor}px`;
+              img.style.left = `${left * previewSamplesScaleFactor}px`;
+              img.style.top = `${top * previewSamplesScaleFactor}px`;
+              img.style.width = `${artworkSize * previewSamplesScaleFactor}px`;
+              img.style.height = `${artworkSize * previewSamplesScaleFactor}px`;
+              img.style.position = 'absolute';
+              img.style.visibility = 'visible';
+              console.log(`Updating preview sample trait ${img.id} to width: ${img.style.width}, height: ${img.style.height}`);
             });
           });
         }
@@ -1168,7 +1171,6 @@
         });
       }
     }
-
 
 
 
