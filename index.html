@@ -247,22 +247,27 @@
     z-index: 1000;
   }
   
-/* 1. PREVIEW CONTAINER (square) */
+/* PREVIEW CONTAINER */
 #preview {
   position: relative;
-  width: 100%;
-  padding-bottom: 100%; /* Perfect square */
+  width: calc(100% - 20px); /* Accounts for padding */
+  height: 0;
+  padding-bottom: min(100%, 80vh); /* Square but not taller than 80% of screen */
+  margin: 0 auto; /* Centers horizontally */
   background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp') center/contain no-repeat;
   overflow: hidden;
   border-radius: 15px;
+  border: 1px solid #ccc; /* Visual boundary */
 }
 
-/* 2. TRAIT IMAGES (scaling) */
+/* TRAIT IMAGES */
 #preview img {
   position: absolute;
-  max-width: 100%;
-  max-height: 100%;
+  max-width: 30%; /* Prevents overflow */
+  max-height: 30%;
   transform-origin: center;
+  image-rendering: crisp-edges;
+  outline: 1px solid transparent; /* Helps debugging */
 }
   
   #preview img {
@@ -482,7 +487,7 @@
 </style>
 
 <body>
-  <div id="version">Version 100</div>
+  <div id="version">Version 120</div>
   <div id="left-column"></div>
   <div id="right-column"></div>
 </body>
