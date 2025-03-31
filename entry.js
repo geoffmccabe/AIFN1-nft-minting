@@ -1251,9 +1251,6 @@ function updatePreviewSamples() {
 
 
 
-
-
-
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
 
 
@@ -1263,17 +1260,21 @@ async function fetchBackground() {
   try {
     clickSound.play().catch(error => console.error('Error playing click sound:', error));
     let seconds = 0;
+    const timerDisplay = document.getElementById('timer-display');
     generateButton.disabled = true;
-    generateButton.innerText = `Processing ${seconds}...`;
+    generateButton.innerText = `Processing...`;
+    timerDisplay.textContent = `Processing: ${seconds}s`;
     timerInterval = setInterval(() => {
       seconds++;
       console.log(`Timer update: ${seconds} seconds`);
-      generateButton.innerText = `Processing ${seconds}...`;
+      timerDisplay.textContent = `Processing: ${seconds}s`;
     }, 1000);
 
     const basePrompt = document.getElementById('base-prompt') ? document.getElementById('base-prompt').value.trim() : '';
     const userPrompt = document.getElementById('user-prompt') ? document.getElementById('user-prompt').value.trim() : '';
-    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}`;
+    const width = document.getElementById('width-input') ? parseInt(document.getElementById('width-input').value) : 600;
+    const height = document.getElementById('height-input') ? parseInt(document.getElementById('height-input').value) : 600;
+    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to fetch background: ${response.statusText}`);
     const data = await response.json();
@@ -1297,6 +1298,8 @@ async function fetchBackground() {
     clearInterval(timerInterval);
     generateButton.innerText = 'Generate Bkgd';
     generateButton.disabled = false;
+    const timerDisplay = document.getElementById('timer-display');
+    timerDisplay.textContent = `Processing: 0s`;
   }
 }
 
