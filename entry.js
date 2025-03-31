@@ -790,7 +790,6 @@
 
   
   
-
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -829,7 +828,12 @@
       previewImage.style.visibility = 'visible';
       const key = `${traitId}-${trait.variants[variationIndex].name}`;
       // Clear localStorage to start fresh with normalized positions
-      localStorage.removeItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
+      for (let i = 0; i < localStorage.length; i++) {
+        const storageKey = localStorage.key(i);
+        if (storageKey.startsWith(`trait${traitId}-`)) {
+          localStorage.removeItem(storageKey);
+        }
+      }
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
         const { left, top } = JSON.parse(savedPosition);
@@ -1088,10 +1092,10 @@
         const samplesPanelRect = previewSamplesPanelElement.getBoundingClientRect();
         samplesAvailableWidth = samplesPanelRect.width;
         const sampleSquarePercentage = 0.22; // 22% per square
-        const gapPercentage = 0.03; // 3% per gap
-        sampleSquareSize = samplesAvailableWidth * sampleSquarePercentage;
-        gapSize = samplesAvailableWidth * gapPercentage;
-        previewSamplesScaleFactor = sampleSquareSize / artworkSize; // Scale factor for traits in preview samples
+        const gapPercentage = 0.04; // 4% per gap (updated to total 100%)
+        const sampleSquareSize = samplesAvailableWidth * sampleSquarePercentage;
+        const gapSize = samplesAvailableWidth * gapPercentage;
+        const previewSamplesScaleFactor = sampleSquareSize / artworkSize; // Scale factor for traits in preview samples
 
         const previewSamplesGrid = document.getElementById('preview-samples-grid');
         if (previewSamplesGrid) {
@@ -1134,6 +1138,7 @@
       preview.style.backgroundPosition = 'center'; // Center the background image
       preview.style.maxWidth = '100%'; // Prevent horizontal overflow
       preview.style.maxHeight = '100%'; // Prevent vertical overflow
+      preview.style.aspectRatio = '1 / 1'; // Enforce square aspect ratio
 
       traitImages.forEach(img => {
         if (img && img.src && img.style.visibility !== 'hidden') {
@@ -1184,7 +1189,6 @@
         });
       }
     }
-
 
 
 
