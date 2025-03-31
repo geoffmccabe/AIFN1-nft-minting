@@ -790,6 +790,7 @@
 
   
   
+
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -837,7 +838,7 @@
         previewImage.style.top = `${normalizedTop * artworkSize * scaleFactor}px`;
         previewImage.style.width = `${artworkSize * scaleFactor}px`;
         previewImage.style.height = `${artworkSize * scaleFactor}px`;
-        console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
+        console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
         let lastPosition = null;
@@ -856,7 +857,7 @@
           previewImage.style.top = `${normalizedTop * artworkSize * scaleFactor}px`;
           previewImage.style.width = `${artworkSize * scaleFactor}px`;
           previewImage.style.height = `${artworkSize * scaleFactor}px`;
-          console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
+          console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
@@ -868,7 +869,7 @@
           previewImage.style.top = '0px';
           previewImage.style.width = `${artworkSize * scaleFactor}px`;
           previewImage.style.height = `${artworkSize * scaleFactor}px`;
-          console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
+          console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
           variantHistories[key] = [{ left: 0, top: 0 }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
@@ -930,7 +931,7 @@
             if (direction === 'left') left -= 1;
             if (direction === 'right') left += 1;
             left = Math.max(0, Math.min(left, artworkSize - (currentImage.offsetWidth / scaleFactor)));
-            top = Math.max(0, Math.min(top, artworkSize - (currentImage.offsetHeight / scaleFactor)));
+            top = Math.max(0, Math.min(newTop, artworkSize - (currentImage.offsetHeight / scaleFactor)));
             currentImage.style.left = `${left * scaleFactor}px`;
             currentImage.style.top = `${top * scaleFactor}px`;
             currentImage.classList.add('dragging');
@@ -1039,9 +1040,9 @@
 
     function updateCoordinates(img, coordsElement) {
       if (img && coordsElement) {
-        const left = (parseFloat(img.style.left) || 0) / scaleFactor;
-        const top = (parseFloat(img.style.top) || 0) / scaleFactor;
-        coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
+        const left = (parseFloat(img.style.left) || 0) / scaleFactor / artworkSize; // Convert to normalized space
+        const top = (parseFloat(img.style.top) || 0) / scaleFactor / artworkSize; // Convert to normalized space
+        coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left * artworkSize) + 1}, ${Math.round(top * artworkSize) + 1})`;
       }
     }
 
@@ -1078,11 +1079,12 @@
       const preview = document.getElementById('preview');
       const panelRect = previewPanel.element.getBoundingClientRect();
       const availableWidth = panelRect.width; // Use getBoundingClientRect to account for padding/borders
-      scaleFactor = availableWidth / artworkSize;
-      const displaySize = artworkSize * scaleFactor;
+      const displaySize = availableWidth; // Fit the preview window to the available width
+      scaleFactor = displaySize / artworkSize; // Adjust scaleFactor to fit the available space
       preview.style.width = `${displaySize}px`;
       preview.style.height = `${displaySize}px`; // Ensure square aspect ratio
       preview.style.backgroundSize = `${displaySize}px ${displaySize}px`;
+      preview.style.maxWidth = '100%'; // Prevent overflow
 
       traitImages.forEach(img => {
         if (img && img.src && img.style.visibility !== 'hidden') {
