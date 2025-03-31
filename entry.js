@@ -828,13 +828,15 @@
       };
       previewImage.style.visibility = 'visible';
       const key = `${traitId}-${trait.variants[variationIndex].name}`;
-      // Clear localStorage to start fresh with normalized positions
-      for (let i = 0; i < localStorage.length; i++) {
+      // Clear all localStorage data related to trait positions to start fresh
+      for (let i = localStorage.length - 1; i >= 0; i--) {
         const storageKey = localStorage.key(i);
-        if (storageKey.startsWith(`trait${traitId}-`)) {
+        if (storageKey && storageKey.startsWith('trait')) {
           localStorage.removeItem(storageKey);
         }
       }
+      // Clear variantHistories to ensure no old values are used
+      variantHistories = {};
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
         const { left, top } = JSON.parse(savedPosition);
@@ -1094,9 +1096,9 @@
         samplesAvailableWidth = samplesPanelRect.width;
         const sampleSquarePercentage = 0.22; // 22% per square
         const gapPercentage = 0.04; // 4% per gap (updated to total 100%)
-        const sampleSquareSize = samplesAvailableWidth * sampleSquarePercentage;
-        const gapSize = samplesAvailableWidth * gapPercentage;
-        const previewSamplesScaleFactor = sampleSquareSize / artworkSize; // Scale factor for traits in preview samples
+        sampleSquareSize = samplesAvailableWidth * sampleSquarePercentage;
+        gapSize = samplesAvailableWidth * gapPercentage;
+        previewSamplesScaleFactor = sampleSquareSize / artworkSize; // Scale factor for traits in preview samples
 
         const previewSamplesGrid = document.getElementById('preview-samples-grid');
         if (previewSamplesGrid) {
