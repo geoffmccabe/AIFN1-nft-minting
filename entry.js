@@ -224,7 +224,8 @@
 
    
 
-/* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
+
+    /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
 
@@ -779,10 +780,8 @@
       document.body.appendChild(confirmationDialog);
     }
 
-
-
-  
    
+  
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -825,8 +824,8 @@
         const { left, top } = JSON.parse(savedPosition);
         previewImage.style.left = `${left * scaleFactor}px`;
         previewImage.style.top = `${top * scaleFactor}px`;
-        previewImage.style.width = `${600 * scaleFactor}px`;
-        previewImage.style.height = `${600 * scaleFactor}px`;
+        previewImage.style.width = `${600}px`;
+        previewImage.style.height = `${600}px`;
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
         let lastPosition = null;
@@ -841,8 +840,8 @@
         if (lastPosition) {
           previewImage.style.left = `${lastPosition.left * scaleFactor}px`;
           previewImage.style.top = `${lastPosition.top * scaleFactor}px`;
-          previewImage.style.width = `${600 * scaleFactor}px`;
-          previewImage.style.height = `${600 * scaleFactor}px`;
+          previewImage.style.width = `${600}px`;
+          previewImage.style.height = `${600}px`;
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
@@ -852,8 +851,8 @@
         } else {
           previewImage.style.left = '0px';
           previewImage.style.top = '0px';
-          previewImage.style.width = `${600 * scaleFactor}px`;
-          previewImage.style.height = `${600 * scaleFactor}px`;
+          previewImage.style.width = `${600}px`;
+          previewImage.style.height = `${600}px`;
           variantHistories[key] = [{ left: 0, top: 0 }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
@@ -880,8 +879,8 @@
           const rect = preview.getBoundingClientRect();
           let newLeft = (e.clientX - rect.left - offsetX) / scaleFactor;
           let newTop = (e.clientY - rect.top - offsetY) / scaleFactor;
-          newLeft = Math.max(0, Math.min(newLeft, 600 - (currentImage.width / scaleFactor)));
-          newTop = Math.max(0, Math.min(newTop, 600 - (currentImage.height / scaleFactor)));
+          newLeft = Math.max(0, Math.min(newLeft, 600 - (currentImage.offsetWidth / scaleFactor)));
+          newTop = Math.max(0, Math.min(newTop, 600 - (currentImage.offsetHeight / scaleFactor)));
           currentImage.style.left = `${newLeft * scaleFactor}px`;
           currentImage.style.top = `${newTop * scaleFactor}px`;
           updateCoordinates(currentImage, coordinates);
@@ -914,8 +913,8 @@
             if (direction === 'down') top += 1;
             if (direction === 'left') left -= 1;
             if (direction === 'right') left += 1;
-            left = Math.max(0, Math.min(left, 600 - (currentImage.width / scaleFactor)));
-            top = Math.max(0, Math.min(top, 600 - (currentImage.height / scaleFactor)));
+            left = Math.max(0, Math.min(left, 600 - (currentImage.offsetWidth / scaleFactor)));
+            top = Math.max(0, Math.min(top, 600 - (currentImage.offsetHeight / scaleFactor)));
             currentImage.style.left = `${left * scaleFactor}px`;
             currentImage.style.top = `${top * scaleFactor}px`;
             currentImage.classList.add('dragging');
@@ -1048,8 +1047,8 @@
           const top = (parseFloat(img.style.top) || 0) / scaleFactor;
           img.style.left = `${left * scaleFactor}px`;
           img.style.top = `${top * scaleFactor}px`;
-          img.style.width = `${600 * scaleFactor}px`;
-          img.style.height = `${600 * scaleFactor}px`;
+          img.style.width = `${600}px`;
+          img.style.height = `${600}px`;
         }
       });
 
