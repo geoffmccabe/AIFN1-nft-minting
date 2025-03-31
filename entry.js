@@ -582,7 +582,11 @@ function removeTrait(traitId) {
 
 
 
-/*---------------------------------------------------- Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------------------*/
+
+
+
+
+/* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
 
 
 
@@ -682,8 +686,9 @@ function setupTraitListeners(traitId) {
       TraitManager.moveTrait(traitId, trait.position - 1);
     }
 
-    // Re-render all traits
+    // Re-render all traits and preview
     traitContainer.innerHTML = '';
+    if (preview) preview.innerHTML = '';
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
       addTrait(trait);
@@ -706,8 +711,9 @@ function setupTraitListeners(traitId) {
       TraitManager.moveTrait(traitId, trait.position + 1);
     }
 
-    // Re-render all traits
+    // Re-render all traits and preview
     traitContainer.innerHTML = '';
+    if (preview) preview.innerHTML = '';
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
       addTrait(trait);
@@ -729,6 +735,7 @@ function setupTraitListeners(traitId) {
 
       // Re-render all traits
       traitContainer.innerHTML = '';
+      if (preview) preview.innerHTML = '';
       traitImages = [];
       TraitManager.getAllTraits().forEach(trait => {
         addTrait(trait);
@@ -788,7 +795,7 @@ function refreshTraitGrid(traitId) {
   const selectedWrapper = grid.children[selectedIndex]?.querySelector('.variation-image-wrapper');
   if (selectedWrapper) selectedWrapper.classList.add('selected');
 
-  const previewImage = document.getElementById(`preview-trait${traitId}`);
+  const previewImage = traitImages.find(img => img.id === `preview-trait${traitId}`);
   if (previewImage && previewImage.src && trait.variants[trait.selected]) {
     const key = `${traitId}-${trait.variants[trait.selected].name}`;
     const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[trait.selected].name}-position`);
@@ -924,7 +931,11 @@ function setupDragAndDrop(img, traitIndex) {
 
     function stopDragging() {
       if (isDragging && currentImage === img) {
-        const traitIndex = TraitManager.getAllTraits().findIndex(t => `preview-trait${t.id}` === currentImage.id);
+        const traitIndex = traitImages.indexOf(currentImage);
+        if (traitIndex === -1) {
+          console.error('Current image not found in traitImages');
+          return;
+        }
         const trait = TraitManager.getAllTraits()[traitIndex];
         const variationName = trait.variants[trait.selected].name;
         savePosition(currentImage, trait.id, variationName);
