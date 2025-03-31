@@ -344,10 +344,15 @@
 
 
 
-<!------------------------------------------- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) ------------------------------------------->
 
 
-  
+
+
+/* Section 4 ----------------------------------------- STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) ------------------------------------------------*/
+
+
+
+
 <style>
   #background-section h2 {
     font-family: 'Rowdies', sans-serif;
@@ -442,6 +447,27 @@
   .confirmation-dialog .no-button {
     background: #ae645a;
   }
+  #background-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  #timer-display {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    color: #333;
+  }
+  #width-input, #height-input {
+    width: 80px;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    box-sizing: border-box;
+    height: 32px;
+  }
   @media (max-width: 900px) {
     body { flex-direction: column; }
     #left-panel, #right-panel { width: 100%; padding: 10px; }
@@ -456,7 +482,8 @@
 
 
 
-<!-- Section 5 - BODY OPENING AND LEFT PANEL -->
+
+<!------------------------------------------- Section 5 - BODY OPENING AND LEFT PANEL ------------------------------------------->
 
 
   
@@ -471,6 +498,10 @@
 
     
 
+
+
+
+
 /* Section 6 ----------------------------------------- BACKGROUND SECTION ------------------------------------------------*/
 
 
@@ -484,12 +515,18 @@
         <label for="user-prompt">User Prompt:</label>
         <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
       </div>
-      <button id="generate-background">Generate Bkgd</button>
+      <div id="background-controls">
+        <button id="generate-background">Generate Bkgd</button>
+        <span id="timer-display">Processing: 0s</span>
+        <input type="number" id="width-input" value="600" min="256" max="1024" step="1">
+        <input type="number" id="height-input" value="600" min="256" max="1024" step="1">
+      </div>
       <div id="background-details">
         <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="Background Generator">
         <p id="background-metadata">Loading...</p>
       </div>
     </div>
+
 
 
 
