@@ -791,7 +791,6 @@
   
   
 
-
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -829,6 +828,8 @@
       };
       previewImage.style.visibility = 'visible';
       const key = `${traitId}-${trait.variants[variationIndex].name}`;
+      // Clear localStorage to start fresh with normalized positions
+      localStorage.removeItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
         const { left, top } = JSON.parse(savedPosition);
