@@ -646,12 +646,19 @@ function setupTraitListeners(traitId) {
   const grid = document.getElementById(`trait${traitId}-grid`);
 
   if (fileInput && nameInput && grid && fileInputLabel) {
+    nameInput.dataset.userEntered = 'false'; // Track if user has typed
     nameInput.addEventListener('input', () => {
       const trait = TraitManager.getTrait(traitId);
-      trait.name = nameInput.value.trim();
-      // Update the headline
-      const title = nameInput.parentElement.querySelector('h2');
       const position = Array.from(traitContainer.children).indexOf(nameInput.parentElement) + 1;
+      const placeholderPattern = `Trait Name (e.g., ${position === 1 ? 'Eyes' : position === 2 ? 'Hair' : 'Accessories'})`;
+      if (nameInput.value.trim() && nameInput.value !== placeholderPattern) {
+        nameInput.dataset.userEntered = 'true';
+        trait.name = nameInput.value.trim();
+      } else {
+        nameInput.dataset.userEntered = 'false';
+        trait.name = ''; // Reset to empty if it's just the placeholder
+      }
+      const title = nameInput.parentElement.querySelector('h2');
       title.textContent = `TRAIT ${position}${trait.name ? ` - ${trait.name}` : ''}`;
     });
 
@@ -659,8 +666,12 @@ function setupTraitListeners(traitId) {
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
 
-      const traitName = nameInput.value.trim() || `Trait ${Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1}`;
-      TraitManager.getTrait(traitId).name = traitName;
+      const trait = TraitManager.getTrait(traitId);
+      const position = Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1;
+      const placeholderPattern = `Trait Name (e.g., ${position === 1 ? 'Eyes' : position === 2 ? 'Hair' : 'Accessories'})`;
+      trait.name = nameInput.dataset.userEntered === 'true' ? nameInput.value.trim() : '';
+      if (!trait.name) nameInput.value = placeholderPattern; // Reset input to placeholder if no user-entered name
+
       TraitManager.getTrait(traitId).variants = [];
 
       grid.innerHTML = '';
@@ -734,12 +745,15 @@ function setupTraitListeners(traitId) {
       TraitManager.moveTrait(traitId, trait.position - 1);
     }
 
-    // Re-render all traits and preview
+    // Re-render all traits and preview, preserving user-entered names
     traitContainer.innerHTML = '';
     if (preview) preview.innerHTML = '';
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
       addTrait(trait);
+      const input = document.getElementById(`trait${trait.id}-name`);
+      input.value = trait.name || input.placeholder; // Restore user-entered name or placeholder
+      input.dataset.userEntered = trait.name ? 'true' : 'false';
       refreshTraitGrid(trait.id);
       if (trait.variants.length > 0) {
         selectVariation(trait.id, trait.variants[trait.selected].id);
@@ -759,12 +773,15 @@ function setupTraitListeners(traitId) {
       TraitManager.moveTrait(traitId, trait.position + 1);
     }
 
-    // Re-render all traits and preview
+    // Re-render all traits and preview, preserving user-entered names
     traitContainer.innerHTML = '';
     if (preview) preview.innerHTML = '';
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
       addTrait(trait);
+      const input = document.getElementById(`trait${trait.id}-name`);
+      input.value = trait.name || input.placeholder; // Restore user-entered name or placeholder
+      input.dataset.userEntered = trait.name ? 'true' : 'false';
       refreshTraitGrid(trait.id);
       if (trait.variants.length > 0) {
         selectVariation(trait.id, trait.variants[trait.selected].id);
@@ -787,6 +804,9 @@ function setupTraitListeners(traitId) {
       traitImages = [];
       TraitManager.getAllTraits().forEach(trait => {
         addTrait(trait);
+        const input = document.getElementById(`trait${trait.id}-name`);
+        input.value = trait.name || input.placeholder; // Restore user-entered name or placeholder
+        input.dataset.userEntered = trait.name ? 'true' : 'false';
         refreshTraitGrid(trait.id);
         if (trait.variants.length > 0) {
           selectVariation(trait.id, trait.variants[trait.selected].id);
@@ -877,9 +897,6 @@ function updateMintButton() {
   const mintBtn = document.getElementById('mintButton');
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
-
-
-
 
 
 
