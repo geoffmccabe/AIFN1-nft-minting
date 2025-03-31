@@ -759,15 +759,17 @@
       // Clear variantHistories to ensure no old values are used
       variantHistories = {};
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
+      const preview = document.getElementById('preview');
+      const displaySize = preview ? parseFloat(preview.style.width) || 0 : 0;
       if (savedPosition) {
         const { left, top } = JSON.parse(savedPosition);
         // Positions are stored as normalized values (0 to 1)
         const normalizedLeft = left; // Already normalized when saved
         const normalizedTop = top;
-        previewImage.style.left = `${normalizedLeft * artworkSize * scaleFactor}px`;
-        previewImage.style.top = `${normalizedTop * artworkSize * scaleFactor}px`;
-        previewImage.style.maxWidth = `${artworkSize * scaleFactor}px`;
-        previewImage.style.maxHeight = `${artworkSize * scaleFactor}px`;
+        previewImage.style.left = `${normalizedLeft * displaySize}px`;
+        previewImage.style.top = `${normalizedTop * displaySize}px`;
+        previewImage.style.maxWidth = `${displaySize}px`;
+        previewImage.style.maxHeight = `${displaySize}px`;
         console.log(`Trait ${traitId} set to max-width: ${previewImage.style.maxWidth}, max-height: ${previewImage.style.maxHeight}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
@@ -783,10 +785,10 @@
         if (lastPosition) {
           const normalizedLeft = lastPosition.left;
           const normalizedTop = lastPosition.top;
-          previewImage.style.left = `${normalizedLeft * artworkSize * scaleFactor}px`;
-          previewImage.style.top = `${normalizedTop * artworkSize * scaleFactor}px`;
-          previewImage.style.maxWidth = `${artworkSize * scaleFactor}px`;
-          previewImage.style.maxHeight = `${artworkSize * scaleFactor}px`;
+          previewImage.style.left = `${normalizedLeft * displaySize}px`;
+          previewImage.style.top = `${normalizedTop * displaySize}px`;
+          previewImage.style.maxWidth = `${displaySize}px`;
+          previewImage.style.maxHeight = `${displaySize}px`;
           console.log(`Trait ${traitId} set to max-width: ${previewImage.style.maxWidth}, max-height: ${previewImage.style.maxHeight}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           try {
@@ -797,8 +799,8 @@
         } else {
           previewImage.style.left = '0px';
           previewImage.style.top = '0px';
-          previewImage.style.maxWidth = `${artworkSize * scaleFactor}px`;
-          previewImage.style.maxHeight = `${artworkSize * scaleFactor}px`;
+          previewImage.style.maxWidth = `${displaySize}px`;
+          previewImage.style.maxHeight = `${displaySize}px`;
           console.log(`Trait ${traitId} set to max-width: ${previewImage.style.maxWidth}, max-height: ${previewImage.style.maxHeight}, left: ${previewImage.style.left}, top: ${previewImage.style.top}`);
           variantHistories[key] = [{ left: 0, top: 0 }];
           try {
@@ -824,12 +826,13 @@
         preview.addEventListener('mousemove', (e) => {
           if (!isDragging || !currentImage) return;
           const rect = preview.getBoundingClientRect();
-          let newLeft = (e.clientX - rect.left - offsetX) / scaleFactor;
-          let newTop = (e.clientY - rect.top - offsetY) / scaleFactor;
+          const displaySize = parseFloat(preview.style.width);
+          let newLeft = (e.clientX - rect.left - offsetX) / displaySize * artworkSize;
+          let newTop = (e.clientY - rect.top - offsetY) / displaySize * artworkSize;
           newLeft = Math.max(0, Math.min(newLeft, artworkSize - (currentImage.offsetWidth / scaleFactor)));
           newTop = Math.max(0, Math.min(newTop, artworkSize - (currentImage.offsetHeight / scaleFactor)));
-          currentImage.style.left = `${newLeft * scaleFactor}px`;
-          currentImage.style.top = `${newTop * scaleFactor}px`;
+          currentImage.style.left = `${(newLeft / artworkSize) * displaySize}px`;
+          currentImage.style.top = `${(newTop / artworkSize) * displaySize}px`;
           updateCoordinates(currentImage, coordinates);
         });
 
@@ -854,16 +857,18 @@
         emoji.addEventListener('mousedown', () => {
           if (!currentImage || currentImage.src === '') return;
           moveInterval = setInterval(() => {
-            let left = (parseFloat(currentImage.style.left) || 0) / scaleFactor;
-            let top = (parseFloat(currentImage.style.top) || 0) / scaleFactor;
+            const preview = document.getElementById('preview');
+            const displaySize = parseFloat(preview.style.width);
+            let left = (parseFloat(currentImage.style.left) || 0) / displaySize * artworkSize;
+            let top = (parseFloat(currentImage.style.top) || 0) / displaySize * artworkSize;
             if (direction === 'up') top -= 1;
             if (direction === 'down') top += 1;
             if (direction === 'left') left -= 1;
             if (direction === 'right') left += 1;
             left = Math.max(0, Math.min(left, artworkSize - (currentImage.offsetWidth / scaleFactor)));
             top = Math.max(0, Math.min(top, artworkSize - (currentImage.offsetHeight / scaleFactor)));
-            currentImage.style.left = `${left * scaleFactor}px`;
-            currentImage.style.top = `${top * scaleFactor}px`;
+            currentImage.style.left = `${(left / artworkSize) * displaySize}px`;
+            currentImage.style.top = `${(top / artworkSize) * displaySize}px`;
             currentImage.classList.add('dragging');
             updateCoordinates(currentImage, coordinates);
           }, 50);
@@ -969,20 +974,33 @@
     }
 
     function updateCoordinates(img, coordsElement) {
-      if (img && coordsElement) {
-        const left = (parseFloat(img.style.left) || 0) / scaleFactor; // Convert to artworkSize space
-        const top = (parseFloat(img.style.top) || 0) / scaleFactor; // Convert to artworkSize space
-        coordsElement.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
-      }
+      if (!img || !coordsElement) return;
+
+      const preview = document.getElementById('preview');
+      const displaySize = parseFloat(preview.style.width);
+
+      // Convert from display pixels to artwork coordinates
+      const left = Math.round((parseFloat(img.style.left) / displaySize) * artworkSize);
+      const top = Math.round((parseFloat(img.style.top) / displaySize) * artworkSize);
+
+      coordsElement.innerHTML = `<strong>Coordinates:</strong> (${left + 1}, ${top + 1})`;
     }
 
     function savePosition(img, traitId, variationName) {
-      const key = `${traitId}-${variationName}`;
-      const left = (parseFloat(img.style.left) || 0) / scaleFactor / artworkSize; // Normalize to 0-1 range
-      const top = (parseFloat(img.style.top) || 0) / scaleFactor / artworkSize; // Normalize to 0-1 range
+      const preview = document.getElementById('preview');
+      const displaySize = parseFloat(preview.style.width);
+
+      // Calculate normalized position (0-1)
+      const left = (parseFloat(img.style.left) || 0) / displaySize;
+      const top = (parseFloat(img.style.top) || 0) / displaySize;
+
       const position = { left, top };
+      const key = `${traitId}-${variationName}`;
+
       if (!variantHistories[key]) variantHistories[key] = [];
       variantHistories[key].push(position);
+
+      // Save normalized position
       try {
         localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify(position));
       } catch (e) {
@@ -1035,12 +1053,20 @@
 
             const images = container.querySelectorAll('img');
             images.forEach(img => {
-              const left = (parseFloat(img.style.left) || 0) / scaleFactor;
-              const top = (parseFloat(img.style.top) || 0) / scaleFactor;
-              img.style.left = `${left * previewSamplesScaleFactor}px`;
-              img.style.top = `${top * previewSamplesScaleFactor}px`;
-              img.style.maxWidth = `${artworkSize * previewSamplesScaleFactor}px`;
-              img.style.maxHeight = `${artworkSize * previewSamplesScaleFactor}px`;
+              const traitId = img.id.replace('preview-trait', '');
+              const trait = TraitManager.getTrait(traitId);
+              const variant = trait?.variants[trait.selected];
+              const key = `${traitId}-${variant?.name}`;
+              
+              let position = { left: 0, top: 0 };
+              if (variantHistories[key]?.length) {
+                position = variantHistories[key][variantHistories[key].length - 1];
+              }
+
+              img.style.left = `${position.left * sampleSquareSize}px`;
+              img.style.top = `${position.top * sampleSquareSize}px`;
+              img.style.maxWidth = `${sampleSquareSize}px`;
+              img.style.maxHeight = `${sampleSquareSize}px`;
               img.style.position = 'absolute';
               img.style.visibility = 'visible';
               console.log(`Updating preview sample trait ${img.id} to max-width: ${img.style.maxWidth}, max-height: ${img.style.maxHeight}`);
@@ -1051,13 +1077,18 @@
 
       // Now calculate the preview panel size
       const preview = document.getElementById('preview');
+      if (!preview) return;
+
+      // Calculate available space
       const panelRect = previewPanel.element.getBoundingClientRect();
-      const availableWidth = panelRect.width; // Use getBoundingClientRect to account for padding/borders
-      const availableHeight = panelRect.height;
-      const displaySize = Math.min(availableWidth, availableHeight); // Use the smaller dimension to ensure square
-      scaleFactor = displaySize / artworkSize; // Adjust scaleFactor to fit the available space
+      const displaySize = Math.min(panelRect.width, panelRect.height);
+
+      // Update scale factor based on artwork size
+      scaleFactor = displaySize / artworkSize;
+
+      // Set preview container dimensions
       preview.style.width = `${displaySize}px`;
-      preview.style.height = `${displaySize}px`; // Ensure square aspect ratio
+      preview.style.height = `${displaySize}px`;
       preview.style.backgroundSize = `${displaySize}px ${displaySize}px`;
       preview.style.backgroundPosition = 'center'; // Center the background image
       preview.style.maxWidth = '100%'; // Prevent horizontal overflow
@@ -1065,16 +1096,27 @@
       preview.style.aspectRatio = '1 / 1'; // Enforce square aspect ratio
       preview.parentElement.style.overflow = 'hidden'; // Prevent parent stretching
 
+      // Update all trait images
       traitImages.forEach(img => {
         if (img && img.src && img.style.visibility !== 'hidden') {
-          const left = (parseFloat(img.style.left) || 0) / scaleFactor;
-          const top = (parseFloat(img.style.top) || 0) / scaleFactor;
-          img.style.left = `${left * scaleFactor}px`;
-          img.style.top = `${top * scaleFactor}px`;
-          img.style.maxWidth = `${artworkSize * scaleFactor}px`;
-          img.style.maxHeight = `${artworkSize * scaleFactor}px`;
-          img.style.position = 'absolute'; // Ensure traits are positioned correctly
-          img.style.visibility = 'visible'; // Ensure traits are visible
+          // Get normalized position from storage
+          const traitId = img.id.replace('preview-trait', '');
+          const trait = TraitManager.getTrait(traitId);
+          const variant = trait?.variants[trait.selected];
+          const key = `${traitId}-${variant?.name}`;
+
+          let position = { left: 0, top: 0 };
+          if (variantHistories[key]?.length) {
+            position = variantHistories[key][variantHistories[key].length - 1];
+          }
+
+          // Apply scaling correctly
+          img.style.maxWidth = `${displaySize}px`;
+          img.style.maxHeight = `${displaySize}px`;
+          img.style.left = `${position.left * displaySize}px`;
+          img.style.top = `${position.top * displaySize}px`;
+          img.style.position = 'absolute';
+          img.style.visibility = 'visible';
           console.log(`Updating trait ${img.id} to max-width: ${img.style.maxWidth}, max-height: ${img.style.maxHeight}, left: ${img.style.left}, top: ${img.style.top}`);
         }
       });
@@ -1103,14 +1145,20 @@
 
         const images = enlargedPreview.querySelectorAll('img');
         images.forEach(img => {
-          const originalWidth = parseFloat(img.style.maxWidth) / (magnifyScaleFactor / scaleFactor);
-          const originalHeight = parseFloat(img.style.maxHeight) / (magnifyScaleFactor / scaleFactor);
-          const originalLeft = parseFloat(img.style.left) / (magnifyScaleFactor / scaleFactor);
-          const originalTop = parseFloat(img.style.top) / (magnifyScaleFactor / scaleFactor);
-          img.style.maxWidth = `${originalWidth * magnifyScaleFactor}px`;
-          img.style.maxHeight = `${originalHeight * magnifyScaleFactor}px`;
-          img.style.left = `${originalLeft * magnifyScaleFactor}px`;
-          img.style.top = `${originalTop * magnifyScaleFactor}px`;
+          const traitId = img.id.replace('preview-trait', '');
+          const trait = TraitManager.getTrait(traitId);
+          const variant = trait?.variants[trait.selected];
+          const key = `${traitId}-${variant?.name}`;
+
+          let position = { left: 0, top: 0 };
+          if (variantHistories[key]?.length) {
+            position = variantHistories[key][variantHistories[key].length - 1];
+          }
+
+          img.style.maxWidth = `${displayWidth}px`;
+          img.style.maxHeight = `${displayHeight}px`;
+          img.style.left = `${position.left * displayWidth}px`;
+          img.style.top = `${position.top * displayHeight}px`;
         });
       }
     }
