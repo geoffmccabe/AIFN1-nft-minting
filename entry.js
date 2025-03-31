@@ -224,7 +224,7 @@
 
    
 
-/* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
+    /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
 
@@ -249,6 +249,7 @@
     let sampleSize = 140; // Default size for preview samples
     let sampleScaleFactor = 1; // Independent scale factor for preview samples
     const dpr = window.devicePixelRatio || 1; // Device pixel ratio for high-DPI screens
+    let artworkSize = 1024; // Default artwork size (square, in pixels)
 
     const panelManager = new PanelManager();
 
@@ -375,6 +376,10 @@
       });
 
       traitImages.forEach((img, index) => setupDragAndDrop(img, index));
+
+      // Ensure the preview window scales correctly on initial load and window resize
+      updatePreviewSize();
+      window.addEventListener('resize', updatePreviewSize);
     });
 
     function setupPreviewSizeListener() {
@@ -420,7 +425,7 @@
               newSize = 1800;
             }
             previewSize = newSize;
-            scaleFactor = newSize / 600;
+            scaleFactor = newSize / artworkSize;
             updatePreviewSize();
             dialog.remove();
           }
@@ -439,7 +444,7 @@
               newSize = 1800;
             }
             previewSize = newSize;
-            scaleFactor = newSize / 600;
+            scaleFactor = newSize / artworkSize;
             updatePreviewSize();
             dialog.remove();
           }
@@ -522,6 +527,7 @@
 
       attachListener(); // Initial attachment
     }
+
 
    
   
@@ -786,6 +792,7 @@
 
    
  
+    
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -826,8 +833,11 @@
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
         const { left, top } = JSON.parse(savedPosition);
-        previewImage.style.left = `${left * scaleFactor}px`;
-        previewImage.style.top = `${top * scaleFactor}px`;
+        // Normalize position from 600x600 to artworkSize coordinate space
+        const normalizedLeft = left * (artworkSize / 600);
+        const normalizedTop = top * (artworkSize / 600);
+        previewImage.style.left = `${normalizedLeft * scaleFactor}px`;
+        previewImage.style.top = `${normalizedTop * scaleFactor}px`;
         previewImage.style.width = `${artworkSize * scaleFactor}px`;
         previewImage.style.height = `${artworkSize * scaleFactor}px`;
         console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
@@ -843,8 +853,10 @@
           }
         }
         if (lastPosition) {
-          previewImage.style.left = `${lastPosition.left * scaleFactor}px`;
-          previewImage.style.top = `${lastPosition.top * scaleFactor}px`;
+          const normalizedLeft = lastPosition.left * (artworkSize / 600);
+          const normalizedTop = lastPosition.top * (artworkSize / 600);
+          previewImage.style.left = `${normalizedLeft * scaleFactor}px`;
+          previewImage.style.top = `${normalizedTop * scaleFactor}px`;
           previewImage.style.width = `${artworkSize * scaleFactor}px`;
           previewImage.style.height = `${artworkSize * scaleFactor}px`;
           console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
@@ -1054,9 +1066,10 @@
       const preview = document.getElementById('preview');
       const availableWidth = previewPanel.element.offsetWidth;
       scaleFactor = availableWidth / artworkSize;
-      preview.style.maxWidth = `${artworkSize * scaleFactor}px`;
-      preview.style.height = `${artworkSize * scaleFactor}px`;
-      preview.style.backgroundSize = `${artworkSize * scaleFactor}px ${artworkSize * scaleFactor}px`;
+      const displaySize = artworkSize * scaleFactor;
+      preview.style.width = `${displaySize}px`;
+      preview.style.height = `${displaySize}px`; // Ensure square aspect ratio
+      preview.style.backgroundSize = `${displaySize}px ${displaySize}px`;
 
       traitImages.forEach(img => {
         if (img && img.src && img.style.visibility !== 'hidden') {
@@ -1131,9 +1144,8 @@
       }
     }
 
-   
-   
-   
+
+
   
  
     /* Section 6 - PREVIEW SAMPLES LOGIC */
