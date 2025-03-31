@@ -382,9 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+/* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
 
-
-/* Section 4 - TRAIT MANAGEMENT FUNCTIONS (PART 1) */
 
 
 
@@ -477,14 +476,10 @@ function addTrait(trait) {
   newTraitImage.src = '';
   newTraitImage.alt = `Trait ${traitContainer.children.length}`; // Use DOM position
   newTraitImage.style.zIndex = trait.zIndex;
+  newTraitImage.style.visibility = 'hidden'; // Initially hidden
   traitImages.push(newTraitImage);
 
-  // Re-render all preview images in reverse order
-  if (preview) {
-    preview.innerHTML = '';
-    const reversedImages = traitImages.slice().reverse();
-    reversedImages.forEach(img => preview.appendChild(img));
-  }
+  // Don't append to preview here; let selectVariation handle it
 
   setupTraitListeners(trait.id);
   requestAnimationFrame(() => {
@@ -558,6 +553,7 @@ function removeTrait(traitId) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
+
 
 
 
@@ -805,7 +801,12 @@ function updateMintButton() {
 
 
 
+
+
+
+
 /* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
+
 
 
 
@@ -833,6 +834,10 @@ function selectVariation(traitId, variationId) {
   const previewImage = document.getElementById(`preview-trait${traitId}`);
   if (previewImage) {
     previewImage.src = trait.variants[variationIndex].url;
+    // Append to preview if not already in the DOM
+    if (!previewImage.parentElement && trait.variants[variationIndex].url) {
+      preview.appendChild(previewImage);
+    }
     previewImage.style.visibility = 'visible'; // Show the selected image
     const key = `${traitId}-${trait.variants[variationIndex].name}`;
     const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
