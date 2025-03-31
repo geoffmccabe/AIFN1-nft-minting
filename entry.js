@@ -156,7 +156,8 @@ const TraitManager = {
 
 
 
-/*---------------------------------------------------- Section 2 - GLOBAL SETUP AND INITIALIZATION ----------------------------------------------------*/
+/* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
+
 
 
 
@@ -197,10 +198,11 @@ document.addEventListener('DOMContentLoaded', () => {
   localStorage.clear();
   variantHistories = {};
 
-  // Clear any stray elements in the preview panel
-  if (preview) {
+  // Only clear preview if it’s not already populated
+  if (preview && !preview.hasChildNodes()) {
     preview.innerHTML = '';
   }
+  console.log('Preview initialized with children:', preview.children.length);
 
   // Initialize TraitManager with 3 traits
   TraitManager.initialize();
@@ -268,13 +270,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-});
+}
 
 
+                          
 
 /*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
 
 
+
+                          
 
 document.addEventListener('DOMContentLoaded', () => {
   // Set up magnifying glass
@@ -381,6 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
 
 
@@ -477,9 +483,10 @@ function addTrait(trait) {
   newTraitImage.style.visibility = 'hidden'; // Hidden until variant is selected
   traitImages.push(newTraitImage);
 
-  // Add to preview but keep hidden initially
+  // Add to preview and log
   if (preview) {
     preview.appendChild(newTraitImage);
+    console.log(`Added trait image ${newTraitImage.id} to preview, visibility: ${newTraitImage.style.visibility}`);
   }
 
   setupTraitListeners(trait.id);
@@ -537,7 +544,7 @@ function removeTrait(traitId) {
       addTrait(trait);
       refreshTraitGrid(trait.id);
       if (trait.variants.length > 0) {
-        selectVariation(trait.id, trait.variants[trait.selected].id);
+        selectVariation(trait.id, trait.variants[0].id);
       }
     });
 
@@ -554,7 +561,6 @@ function removeTrait(traitId) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
-
 
 
 
@@ -804,7 +810,6 @@ function updateMintButton() {
 
 
 
-
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
 
@@ -835,6 +840,7 @@ function selectVariation(traitId, variationId) {
   if (previewImage) {
     previewImage.src = trait.variants[variationIndex].url;
     previewImage.style.visibility = 'visible'; // Show the selected image
+    console.log(`Selected variation ${variationId} for trait ${traitId}, src: ${previewImage.src}, visibility: ${previewImage.style.visibility}`);
     const key = `${traitId}-${trait.variants[variationIndex].name}`;
     const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
     if (savedPosition) {
@@ -867,6 +873,8 @@ function selectVariation(traitId, variationId) {
     currentImage = previewImage;
     updateZIndices();
     updateCoordinates(previewImage);
+  } else {
+    console.error(`Preview image for trait ${traitId} not found in DOM`);
   }
 }
 
@@ -950,7 +958,10 @@ function savePosition(img, traitId, variationName) {
 }
 
 
+
+
 /*---------------------------------------------------- Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) ----------------------------------------------------*/
+
 
 
 
