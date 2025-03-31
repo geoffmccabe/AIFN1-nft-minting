@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (preview && !preview.hasChildNodes()) {
     preview.innerHTML = '';
   }
-  console.log('Preview initialized with children:', preview.children.length);
+  console.log('Preview initialized with children: ' + preview.children.length);
 
   // Initialize TraitManager with 3 traits
   TraitManager.initialize();
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-}
+});
 
 
                           
