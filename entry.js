@@ -792,7 +792,7 @@
 
    
  
-    
+  
     /* Section 5 - PREVIEW MANAGEMENT LOGIC */
 
 
@@ -833,11 +833,11 @@
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
         const { left, top } = JSON.parse(savedPosition);
-        // Normalize position from 600x600 to artworkSize coordinate space
-        const normalizedLeft = left * (artworkSize / 600);
-        const normalizedTop = top * (artworkSize / 600);
-        previewImage.style.left = `${normalizedLeft * scaleFactor}px`;
-        previewImage.style.top = `${normalizedTop * scaleFactor}px`;
+        // Positions are now stored as normalized values (0 to 1)
+        const normalizedLeft = left; // Already normalized when saved
+        const normalizedTop = top;
+        previewImage.style.left = `${normalizedLeft * artworkSize * scaleFactor}px`;
+        previewImage.style.top = `${normalizedTop * artworkSize * scaleFactor}px`;
         previewImage.style.width = `${artworkSize * scaleFactor}px`;
         previewImage.style.height = `${artworkSize * scaleFactor}px`;
         console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
@@ -853,10 +853,10 @@
           }
         }
         if (lastPosition) {
-          const normalizedLeft = lastPosition.left * (artworkSize / 600);
-          const normalizedTop = lastPosition.top * (artworkSize / 600);
-          previewImage.style.left = `${normalizedLeft * scaleFactor}px`;
-          previewImage.style.top = `${normalizedTop * scaleFactor}px`;
+          const normalizedLeft = lastPosition.left;
+          const normalizedTop = lastPosition.top;
+          previewImage.style.left = `${normalizedLeft * artworkSize * scaleFactor}px`;
+          previewImage.style.top = `${normalizedTop * artworkSize * scaleFactor}px`;
           previewImage.style.width = `${artworkSize * scaleFactor}px`;
           previewImage.style.height = `${artworkSize * scaleFactor}px`;
           console.log(`Trait ${traitId} set to width: ${previewImage.style.width}, height: ${previewImage.style.height}`);
@@ -1048,6 +1048,21 @@
       }
     }
 
+    function savePosition(img, traitId, variationName) {
+      const key = `${traitId}-${variationName}`;
+      const left = (parseFloat(img.style.left) || 0) / scaleFactor / artworkSize; // Normalize to 0-1 range
+      const top = (parseFloat(img.style.top) || 0) / scaleFactor / artworkSize; // Normalize to 0-1 range
+      const position = { left, top };
+      if (!variantHistories[key]) variantHistories[key] = [];
+      variantHistories[key].push(position);
+      try {
+        localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify(position));
+      } catch (e) {
+        console.error('Failed to save to localStorage:', e);
+      }
+      updateSamplePositions(traitId, variationName, position);
+    }
+
     function updateZIndices() {
       traitImages.forEach((img, index) => {
         if (img) {
@@ -1064,7 +1079,8 @@
 
     function updatePreviewSize() {
       const preview = document.getElementById('preview');
-      const availableWidth = previewPanel.element.offsetWidth;
+      const panelRect = previewPanel.element.getBoundingClientRect();
+      const availableWidth = panelRect.width; // Use getBoundingClientRect to account for padding/borders
       scaleFactor = availableWidth / artworkSize;
       const displaySize = artworkSize * scaleFactor;
       preview.style.width = `${displaySize}px`;
@@ -1083,29 +1099,38 @@
         }
       });
 
-      const previewSamplesGrid = document.getElementById('preview-samples-grid');
-      if (previewSamplesGrid) {
-        const previewSamplesScaleFactor = scaleFactor * 0.25; // Preview samples are 1/4 the size of the main preview
-        previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSize * previewSamplesScaleFactor}px)`;
-        previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSize * previewSamplesScaleFactor}px)`;
-        previewSamplesGrid.style.gap = `${13 * previewSamplesScaleFactor}px`;
+      const previewSamplesPanelElement = document.getElementById('preview-samples');
+      if (previewSamplesPanelElement) {
+        const samplesPanelRect = previewSamplesPanelElement.getBoundingClientRect();
+        const samplesAvailableWidth = samplesPanelRect.width;
+        const sampleSquarePercentage = 0.22; // 22% per square
+        const gapPercentage = 0.03; // 3% per gap
+        const sampleSquareSize = samplesAvailableWidth * sampleSquarePercentage;
+        const gapSize = samplesAvailableWidth * gapPercentage;
 
-        const sampleContainers = document.querySelectorAll('#preview-samples-grid .sample-container');
-        sampleContainers.forEach(container => {
-          container.style.width = `${sampleSize * previewSamplesScaleFactor}px`;
-          container.style.height = `${sampleSize * previewSamplesScaleFactor}px`;
-          container.style.backgroundSize = `${sampleSize * previewSamplesScaleFactor}px ${sampleSize * previewSamplesScaleFactor}px`;
+        const previewSamplesGrid = document.getElementById('preview-samples-grid');
+        if (previewSamplesGrid) {
+          previewSamplesGrid.style.gridTemplateColumns = `repeat(4, ${sampleSquareSize}px)`;
+          previewSamplesGrid.style.gridTemplateRows = `repeat(4, ${sampleSquareSize}px)`;
+          previewSamplesGrid.style.gap = `${gapSize}px`;
 
-          const images = container.querySelectorAll('img');
-          images.forEach(img => {
-            const left = (parseFloat(img.style.left) || 0) / (140 / 600);
-            const top = (parseFloat(img.style.top) || 0) / (140 / 600);
-            img.style.left = `${left * (sampleSize / 600) * previewSamplesScaleFactor}px`;
-            img.style.top = `${top * (sampleSize / 600) * previewSamplesScaleFactor}px`;
-            img.style.width = `${artworkSize * previewSamplesScaleFactor}px`;
-            img.style.height = `${artworkSize * previewSamplesScaleFactor}px`;
+          const sampleContainers = document.querySelectorAll('#preview-samples-grid .sample-container');
+          sampleContainers.forEach(container => {
+            container.style.width = `${sampleSquareSize}px`;
+            container.style.height = `${sampleSquareSize}px`;
+            container.style.backgroundSize = `${sampleSquareSize}px ${sampleSquareSize}px`;
+
+            const images = container.querySelectorAll('img');
+            images.forEach(img => {
+              const left = (parseFloat(img.style.left) || 0) / scaleFactor;
+              const top = (parseFloat(img.style.top) || 0) / scaleFactor;
+              img.style.left = `${left * scaleFactor}px`;
+              img.style.top = `${top * scaleFactor}px`;
+              img.style.width = `${artworkSize * scaleFactor}px`;
+              img.style.height = `${artworkSize * scaleFactor}px`;
+            });
           });
-        });
+        }
       }
 
       const enlargedPreview = document.getElementById('enlarged-preview');
@@ -1143,6 +1168,7 @@
         });
       }
     }
+
 
 
 
