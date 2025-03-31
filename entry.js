@@ -394,29 +394,29 @@ function setupPreviewSizeListener() {
       }
     });
 
-    widthInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        let newSize = parseInt(widthInput.value);
-        if (isNaN(newSize) newSize = 600;
-if (newSize < 100) { newSize = 100; }
-if (newSize > 1800) { newSize = 1800; }
-        previewSize = newSize;
-        updatePreviewSize();
-        dialog.remove();
-      }
-    });
+   widthInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    let newSize = parseInt(widthInput.value);  // Added semicolon here
+    if (isNaN(newSize)) newSize = 600;
+    if (newSize < 100) newSize = 100;
+    if (newSize > 1800) newSize = 1800;
+    previewSize = newSize;
+    updatePreviewSize();
+    dialog.remove();
+  }
+});
 
-    dialog.addEventListener('click', (e) => {
-      if (e.target === dialog) {
-        let newSize = parseInt(widthInput.value);
-        if (isNaN(newSize)) newSize = 600;
-if (newSize < 100) { newSize = 100; }
-if (newSize > 1800) { newSize = 1800; }
-        previewSize = newSize;
-        updatePreviewSize();
-        dialog.remove();
-      }
-    });
+dialog.addEventListener('click', (e) => {
+  if (e.target === dialog) {
+    let newSize = parseInt(widthInput.value);  // Added semicolon here
+    if (isNaN(newSize)) newSize = 600;
+    if (newSize < 100) newSize = 100;
+    if (newSize > 1800) newSize = 1800;
+    previewSize = newSize;
+    updatePreviewSize();
+    dialog.remove();
+  }
+});
   });
 }
 
