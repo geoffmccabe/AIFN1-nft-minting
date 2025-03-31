@@ -1013,7 +1013,7 @@ window.addEventListener('resize', () => {
       img.style.maxHeight = `${previewWidth * scale}px`;
     });
   }
-}
+
 
 /* Section 6 - PREVIEW SAMPLES LOGIC */
 
