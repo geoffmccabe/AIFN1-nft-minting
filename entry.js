@@ -1250,7 +1250,12 @@ function updatePreviewSamples() {
 
 
 
-/*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
+
+
+
+
+/* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
+
 
 
 
@@ -1266,8 +1271,9 @@ async function fetchBackground() {
       generateButton.innerText = `Processing ${seconds}...`;
     }, 1000);
 
+    const basePrompt = document.getElementById('base-prompt') ? document.getElementById('base-prompt').value.trim() : '';
     const userPrompt = document.getElementById('user-prompt') ? document.getElementById('user-prompt').value.trim() : '';
-    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background${userPrompt ? `?prompt=${encodeURIComponent(userPrompt)}` : ''}`;
+    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to fetch background: ${response.statusText}`);
     const data = await response.json();
