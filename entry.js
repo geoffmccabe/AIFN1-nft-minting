@@ -969,13 +969,6 @@ function updatePreviewSize() {
       }
     }
   });
-}
-
-// Add this to your window resize listener:
-window.addEventListener('resize', () => {
-  updatePreviewSize();
-  setTimeout(updatePreviewSize, 100); // Double-check after resize
-});
 
   // Update preview samples
   const previewSamplesGrid = document.getElementById('preview-samples-grid');
@@ -993,6 +986,13 @@ window.addEventListener('resize', () => {
       });
     });
   }
+}
+
+// Window resize listener
+window.addEventListener('resize', () => {
+  updatePreviewSize();
+  setTimeout(updatePreviewSize, 100); // Double-check after resize
+});
 
   // Update enlarged preview if visible
   const enlargedPreview = document.getElementById('enlarged-preview');
