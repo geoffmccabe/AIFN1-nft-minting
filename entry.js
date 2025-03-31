@@ -225,6 +225,7 @@
    
 
 
+   
     /* Section 3 - GLOBAL SETUP AND PANEL INITIALIZATION */
 
 
@@ -249,6 +250,7 @@
     let scaleFactor = 1;
     let sampleSize = 140; // Default size for preview samples
     let sampleScaleFactor = 1; // Independent scale factor for preview samples
+    const dpr = window.devicePixelRatio || 1; // Device pixel ratio for high-DPI screens
 
     const panelManager = new PanelManager();
 
@@ -331,7 +333,7 @@
             currentImage.style.top = `${previousPosition.top * scaleFactor}px`;
             try {
               localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
-            } catch (e) {
+            } catch ( W) {
               console.error('Failed to save to localStorage:', e);
             }
             updateCoordinates(currentImage, document.getElementById('coordinates'));
@@ -424,7 +426,7 @@
             updatePreviewSize();
             dialog.remove();
           }
-        }, { once: true });
+        });
 
         dialog.querySelector('.size-inputs').addEventListener('click', (e) => {
           e.stopPropagation();
@@ -443,7 +445,7 @@
             updatePreviewSize();
             dialog.remove();
           }
-        }, { once: true });
+        });
       });
     }
 
@@ -496,7 +498,7 @@
                 updatePreviewSize();
                 dialog.remove();
               }
-            }, { once: true });
+            });
 
             dialog.querySelector('.size-inputs').addEventListener('click', (e) => {
               e.stopPropagation();
@@ -515,7 +517,7 @@
                 updatePreviewSize();
                 dialog.remove();
               }
-            }, { once: true });
+            });
           });
         }
       };
@@ -621,7 +623,7 @@
 
     function setupTraitListeners(traitId) {
       const nameInput = document.getElementById(`trait${traitId}-name`);
-      const grid = document.getElementById(`trait${traitId}-grid`);
+      const grid = document.getElementById(`trait${trait.id}-grid`);
       const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
       const downArrow = document.querySelector(`.down-arrow[data-trait="${traitId}"]`);
       const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
@@ -824,8 +826,8 @@
         const { left, top } = JSON.parse(savedPosition);
         previewImage.style.left = `${left * scaleFactor}px`;
         previewImage.style.top = `${top * scaleFactor}px`;
-        previewImage.style.width = `${600}px`;
-        previewImage.style.height = `${600}px`;
+        previewImage.style.width = `${600 * 0.25}px`;
+        previewImage.style.height = `${600 * 0.25}px`;
         if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
         let lastPosition = null;
@@ -840,8 +842,8 @@
         if (lastPosition) {
           previewImage.style.left = `${lastPosition.left * scaleFactor}px`;
           previewImage.style.top = `${lastPosition.top * scaleFactor}px`;
-          previewImage.style.width = `${600}px`;
-          previewImage.style.height = `${600}px`;
+          previewImage.style.width = `${600 * 0.25}px`;
+          previewImage.style.height = `${600 * 0.25}px`;
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
@@ -851,8 +853,8 @@
         } else {
           previewImage.style.left = '0px';
           previewImage.style.top = '0px';
-          previewImage.style.width = `${600}px`;
-          previewImage.style.height = `${600}px`;
+          previewImage.style.width = `${600 * 0.25}px`;
+          previewImage.style.height = `${600 * 0.25}px`;
           variantHistories[key] = [{ left: 0, top: 0 }];
           try {
             localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
@@ -1047,8 +1049,8 @@
           const top = (parseFloat(img.style.top) || 0) / scaleFactor;
           img.style.left = `${left * scaleFactor}px`;
           img.style.top = `${top * scaleFactor}px`;
-          img.style.width = `${600}px`;
-          img.style.height = `${600}px`;
+          img.style.width = `${600 * 0.25}px`;
+          img.style.height = `${600 * 0.25}px`;
         }
       });
 
@@ -1106,6 +1108,7 @@
 
 
 
+   
    
    
     /* Section 6 - PREVIEW SAMPLES LOGIC */
