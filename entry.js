@@ -810,6 +810,7 @@ function updateMintButton() {
 
 
 
+
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
 
@@ -819,8 +820,9 @@ function updateZIndices() {
   traitImages.forEach((img, index) => {
     if (img) {
       const trait = TraitManager.getAllTraits()[index];
-      img.style.zIndex = trait.zIndex;
-      console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${trait.zIndex}`);
+      // Set zIndex so Trait 1 (position 1) has highest value, Trait 3 (position 3) has lowest
+      img.style.zIndex = TraitManager.getAllTraits().length - trait.position + 1;
+      console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${img.style.zIndex}`);
     }
   });
   // Force a reflow to ensure zIndex changes are applied
@@ -956,6 +958,7 @@ function savePosition(img, traitId, variationName) {
   updateSamplePositions(traitId, variationName, position);
   updateSubsequentTraits(traitId, variationName, position);
 }
+
 
 
 
