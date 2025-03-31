@@ -1,4 +1,4 @@
-/* Section 1 - TRAIT MANAGER FRAMEWORK */
+/*---------------------------------------------------- Section 1 - TRAIT MANAGER FRAMEWORK ----------------------------------------------------*/
 
 
 
@@ -156,7 +156,7 @@ const TraitManager = {
 
 
 
-/* Section 2 - GLOBAL SETUP AND INITIALIZATION */
+/*---------------------------------------------------- Section 2 - GLOBAL SETUP AND INITIALIZATION ----------------------------------------------------*/
 
 
 
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-/* Section 3 - GLOBAL EVENT LISTENERS */
+/*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
 
 
 
@@ -381,9 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
-
 
 
 
@@ -474,12 +472,15 @@ function addTrait(trait) {
   const newTraitImage = document.createElement('img');
   newTraitImage.id = `preview-trait${trait.id}`;
   newTraitImage.src = '';
-  newTraitImage.alt = `Trait ${traitContainer.children.length}`; // Use DOM position
+  newTraitImage.alt = ''; // Empty alt to avoid text display
   newTraitImage.style.zIndex = trait.zIndex;
-  newTraitImage.style.visibility = 'hidden'; // Initially hidden
+  newTraitImage.style.visibility = 'hidden'; // Hidden until variant is selected
   traitImages.push(newTraitImage);
 
-  // Don't append to preview here; let selectVariation handle it
+  // Add to preview but keep hidden initially
+  if (preview) {
+    preview.appendChild(newTraitImage);
+  }
 
   setupTraitListeners(trait.id);
   requestAnimationFrame(() => {
@@ -558,7 +559,7 @@ function removeTrait(traitId) {
 
 
 
-/* Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) */
+/*---------------------------------------------------- Section 5 - TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------------------*/
 
 
 
@@ -804,8 +805,7 @@ function updateMintButton() {
 
 
 
-
-/* Section 6 - PREVIEW AND POSITION MANAGEMENT (PART 1) */
+/* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
 
 
@@ -834,10 +834,6 @@ function selectVariation(traitId, variationId) {
   const previewImage = document.getElementById(`preview-trait${traitId}`);
   if (previewImage) {
     previewImage.src = trait.variants[variationIndex].url;
-    // Append to preview if not already in the DOM
-    if (!previewImage.parentElement && trait.variants[variationIndex].url) {
-      preview.appendChild(previewImage);
-    }
     previewImage.style.visibility = 'visible'; // Show the selected image
     const key = `${traitId}-${trait.variants[variationIndex].name}`;
     const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
@@ -954,9 +950,7 @@ function savePosition(img, traitId, variationName) {
 }
 
 
-
-
-/* Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) */
+/*---------------------------------------------------- Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) ----------------------------------------------------*/
 
 
 
@@ -1111,7 +1105,7 @@ function updatePreviewSamples() {
 
 
 
-/* Section 8 - BACKGROUND GENERATION AND MINTING */
+/*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
 
 
 
