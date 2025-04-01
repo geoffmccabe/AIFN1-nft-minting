@@ -1278,6 +1278,7 @@ function updatePreviewSamples() {
 
 
 
+
 async function fetchBackground() {
   try {
     console.log('Starting fetchBackground');
@@ -1297,19 +1298,19 @@ async function fetchBackground() {
     const width = document.getElementById('width-input') ? parseInt(document.getElementById('width-input').value) : 600;
     const height = document.getElementById('height-input') ? parseInt(document.getElementById('height-input').value) : 600;
     const cacheBust = Date.now();
-    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&cacheBust=${cacheBust}&_=${Math.random()}`; // Add random param to prevent caching
+    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&cacheBust=${cacheBust}&_=${Math.random()}`; // Updated endpoint
     console.log('Fetching background from:', url);
     const response = await fetch(url);
     console.log('Response status:', response.status);
     const data = await response.json();
     console.log('Response data:', data);
-    background.url = data.imageUrl;
-    background.metadata = data.metadata;
+    background.url = data.imageUrl || '';
+    background.metadata = data.metadata || data.message;
 
     const backgroundImage = document.getElementById('background-image');
     const backgroundMetadata = document.getElementById('background-metadata');
 
-    if (backgroundImage) backgroundImage.src = background.url;
+    if (backgroundImage && background.url) backgroundImage.src = background.url;
     if (backgroundMetadata) backgroundMetadata.innerText = background.metadata;
   } catch (error) {
     console.error('Error fetching background:', error);
