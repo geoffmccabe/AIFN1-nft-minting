@@ -1253,6 +1253,10 @@ function updatePreviewSamples() {
 
 
 
+
+
+
+
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
 
 
@@ -1260,6 +1264,7 @@ function updatePreviewSamples() {
 
 async function fetchBackground() {
   try {
+    console.log('Starting fetchBackground');
     clickSound.play().catch(error => console.error('Error playing click sound:', error));
     let seconds = 0;
     const timerDisplay = document.getElementById('timer-display');
@@ -1268,7 +1273,6 @@ async function fetchBackground() {
     timerDisplay.textContent = `Processing: ${seconds}s`;
     timerInterval = setInterval(() => {
       seconds++;
-      console.log(`Timer update: ${seconds} seconds`);
       timerDisplay.textContent = `Processing: ${seconds}s`;
     }, 1000);
 
@@ -1276,10 +1280,14 @@ async function fetchBackground() {
     const userPrompt = document.getElementById('user-prompt') ? document.getElementById('user-prompt').value.trim() : '';
     const width = document.getElementById('width-input') ? parseInt(document.getElementById('width-input').value) : 600;
     const height = document.getElementById('height-input') ? parseInt(document.getElementById('height-input').value) : 600;
-    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}`;
+    const cacheBust = Date.now(); // Add timestamp to bypass caching
+    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&cacheBust=${cacheBust}`;
+    console.log('Fetching background from:', url);
     const response = await fetch(url);
+    console.log('Response status:', response.status);
     if (!response.ok) throw new Error(`Failed to fetch background: ${response.statusText}`);
     const data = await response.json();
+    console.log('Response data:', data);
     background.url = data.imageUrl;
     background.metadata = data.metadata;
 
