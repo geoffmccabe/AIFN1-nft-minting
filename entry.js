@@ -1271,13 +1271,7 @@ function updatePreviewSamples() {
 
 
 
-
-
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
-
-
-
-
 
 async function fetchBackground() {
   try {
@@ -1298,7 +1292,7 @@ async function fetchBackground() {
     const width = document.getElementById('width-input') ? parseInt(document.getElementById('width-input').value) : 600;
     const height = document.getElementById('height-input') ? parseInt(document.getElementById('height-input').value) : 600;
     const cacheBust = Date.now();
-    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&cacheBust=${cacheBust}&_=${Math.random()}`; // Updated endpoint
+    const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&cacheBust=${cacheBust}&_=${Math.random()}`; // Updated to new domain
     console.log('Fetching background from:', url);
     const response = await fetch(url);
     console.log('Response status:', response.status);
@@ -1356,7 +1350,7 @@ window.mintNFT = async function() {
       formData.append('images', blob, `${trait.name}-${selectedVariation.name}.png`);
     }
 
-    const uploadResponse = await fetch('https://aifn-1-api-q1ni.vercel.app/api/upload-to-arweave', {
+    const uploadResponse = await fetch('https://aifn-1-api-new3.vercel.app/api/upload-to-arweave', {
       method: 'POST',
       body: formData
     });
@@ -1391,4 +1385,3 @@ window.mintNFT = async function() {
     status.innerText = `Error: ${error.message}`;
   }
 };
-
