@@ -164,6 +164,10 @@ const TraitManager = {
 
 
 
+
+
+
+
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
 
 
@@ -182,17 +186,13 @@ let timerInterval = null;
 let lastUndoTime = 0;
 let autoPositioned = new Array(20).fill(false);
 let sampleData = Array(16).fill(null).map(() => []);
-let background = { url: '', metadata: '' }; // Initialize background object
+let background = { url: '', metadata: '' };
 let preview, coordinates, directionEmojis, magnifyEmoji, enlargedPreview, generateButton, traitContainer, previewSamplesGrid, updatePreviewsButton;
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
 
 document.addEventListener('DOMContentLoaded', () => {
-  provider = new ethers.providers.Web3Provider(window.ethereum);
-  contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
-  signer = provider.getSigner();
-  contractWithSigner = contract.connect(signer);
-
+  // Initialize DOM elements
   preview = document.getElementById('preview');
   coordinates = document.getElementById('coordinates');
   directionEmojis = document.querySelectorAll('.direction-emoji');
@@ -202,6 +202,18 @@ document.addEventListener('DOMContentLoaded', () => {
   traitContainer = document.getElementById('trait-container');
   previewSamplesGrid = document.getElementById('preview-samples-grid');
   updatePreviewsButton = document.getElementById('update-previews');
+
+  // Check if ethers is available
+  if (typeof ethers === 'undefined') {
+    console.error('ethers.js failed to load. Ethereum functionality will be disabled.');
+    return; // Stop further initialization of Ethereum-related functionality
+  }
+
+  // Initialize Ethereum provider and contract
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
+  signer = provider.getSigner();
+  contractWithSigner = contract.connect(signer);
 
   // Clear localStorage to start fresh with the new framework
   localStorage.clear();
@@ -226,8 +238,12 @@ document.addEventListener('DOMContentLoaded', () => {
   updatePreviewSamples();
 
   // Event listeners for global controls
-  updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
-  generateButton.addEventListener('click', fetchBackground);
+  if (updatePreviewsButton) {
+    updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
+  }
+  if (generateButton) {
+    generateButton.addEventListener('click', fetchBackground);
+  }
 
   // Set up preview panel drag events
   if (preview) {
@@ -275,55 +291,58 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Set up drag-and-drop for direction emojis
-  directionEmojis.forEach(emoji => {
-    const direction = emoji.getAttribute('data-direction');
-    emoji.addEventListener('mousedown', () => {
-      if (!currentImage || currentImage.src === '') return;
-      moveInterval = setInterval(() => {
-        let left = parseFloat(currentImage.style.left) || 0;
-        let top = parseFloat(currentImage.style.top) || 0;
-        if (direction === 'up') top -= 1;
-        if (direction === 'down') top += 1;
-        if (direction === 'left') left -= 1;
-        if (direction === 'right') left += 1;
-        left = Math.max(0, Math.min(left, 600 - currentImage.width));
-        top = Math.max(0, Math.min(top, 600 - currentImage.height));
-        currentImage.style.left = `${left}px`;
-        currentImage.style.top = `${top}px`;
-        currentImage.classList.add('dragging');
-        updateCoordinates(currentImage);
-      }, 50);
-    });
+  if (directionEmojis) {
+    directionEmojis.forEach(emoji => {
+      const direction = emoji.getAttribute('data-direction');
+      emoji.addEventListener('mousedown', () => {
+        if (!currentImage || currentImage.src === '') return;
+        moveInterval = setInterval(() => {
+          let left = parseFloat(currentImage.style.left) || 0;
+          let top = parseFloat(currentImage.style.top) || 0;
+          if (direction === 'up') top -= 1;
+          if (direction === 'down') top += 1;
+          if (direction === 'left') left -= 1;
+          if (direction === 'right') left += 1;
+          left = Math.max(0, Math.min(left, 600 - currentImage.width));
+          top = Math.max(0, Math.min(top, 600 - currentImage.height));
+          currentImage.style.left = `${left}px`;
+          currentImage.style.top = `${top}px`;
+          currentImage.classList.add('dragging');
+          updateCoordinates(currentImage);
+        }, 50);
+      });
 
-    emoji.addEventListener('mouseup', () => {
-      if (moveInterval) {
-        clearInterval(moveInterval);
-        moveInterval = null;
-        if (currentImage) {
-          const traitIndex = traitImages.indexOf(currentImage);
-          const trait = TraitManager.getAllTraits()[traitIndex];
-          const variationName = trait.variants[trait.selected].name;
-          savePosition(currentImage, trait.id, variationName);
-          currentImage.classList.remove('dragging');
+      emoji.addEventListener('mouseup', () => {
+        if (moveInterval) {
+          clearInterval(moveInterval);
+          moveInterval = null;
+          if (currentImage) {
+            const traitIndex = traitImages.indexOf(currentImage);
+            const trait = TraitManager.getAllTraits()[traitIndex];
+            const variationName = trait.variants[trait.selected].name;
+            savePosition(currentImage, trait.id, variationName);
+            currentImage.classList.remove('dragging');
+          }
         }
-      }
-    });
+      });
 
-    emoji.addEventListener('mouseleave', () => {
-      if (moveInterval) {
-        clearInterval(moveInterval);
-        moveInterval = null;
-        if (currentImage) {
-          const traitIndex = traitImages.indexOf(currentImage);
-          const trait = TraitManager.getAllTraits()[traitIndex];
-          const variationName = trait.variants[trait.selected].name;
-          savePosition(currentImage, trait.id, variationName);
-          currentImage.classList.remove('dragging');
+      emoji.addEventListener('mouseleave', () => {
+        if (moveInterval) {
+          clearInterval(moveInterval);
+          moveInterval = null;
+          if (currentImage) {
+            const traitIndex = traitImages.indexOf(currentImage);
+            const trait = TraitManager.getAllTraits()[traitIndex];
+            const variationName = trait.variants[trait.selected].name;
+            savePosition(currentImage, trait.id, variationName);
+            currentImage.classList.remove('dragging');
+          }
         }
-      }
+      });
     });
-  });
+  }
 });
+
 
 
                           
