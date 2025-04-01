@@ -1,8 +1,4 @@
-
 /* Section 1 ----------------------------------------- TRAIT MANAGER FRAMEWORK ------------------------------------------------*/
-
-
-
 
 // Utility to generate unique IDs (simple incrementing counter starting at 1)
 let idCounter = 1;
@@ -155,23 +151,7 @@ const TraitManager = {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
-
-
-
 
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
@@ -186,13 +166,17 @@ let timerInterval = null;
 let lastUndoTime = 0;
 let autoPositioned = new Array(20).fill(false);
 let sampleData = Array(16).fill(null).map(() => []);
-let background = { url: '', metadata: '' };
 let preview, coordinates, directionEmojis, magnifyEmoji, enlargedPreview, generateButton, traitContainer, previewSamplesGrid, updatePreviewsButton;
+let timerDisplay, widthInput, heightInput;
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize DOM elements
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
+  signer = provider.getSigner();
+  contractWithSigner = contract.connect(signer);
+
   preview = document.getElementById('preview');
   coordinates = document.getElementById('coordinates');
   directionEmojis = document.querySelectorAll('.direction-emoji');
@@ -202,18 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
   traitContainer = document.getElementById('trait-container');
   previewSamplesGrid = document.getElementById('preview-samples-grid');
   updatePreviewsButton = document.getElementById('update-previews');
-
-  // Check if ethers is available
-  if (typeof ethers === 'undefined') {
-    console.error('ethers.js failed to load. Ethereum functionality will be disabled.');
-    return; // Stop further initialization of Ethereum-related functionality
-  }
-
-  // Initialize Ethereum provider and contract
-  provider = new ethers.providers.Web3Provider(window.ethereum);
-  contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
-  signer = provider.getSigner();
-  contractWithSigner = contract.connect(signer);
+  timerDisplay = document.getElementById('timer-display');
+  widthInput = document.getElementById('width-input');
+  heightInput = document.getElementById('height-input');
 
   // Clear localStorage to start fresh with the new framework
   localStorage.clear();
@@ -223,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (preview && !preview.hasChildNodes()) {
     preview.innerHTML = '';
   }
+  console.log('Preview initialized with children: ' + preview.children.length);
 
   // Initialize TraitManager with 3 traits
   TraitManager.initialize();
@@ -238,12 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updatePreviewSamples();
 
   // Event listeners for global controls
-  if (updatePreviewsButton) {
-    updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
-  }
-  if (generateButton) {
-    generateButton.addEventListener('click', fetchBackground);
-  }
+  updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
+  generateButton.addEventListener('click', fetchBackground);
 
   // Set up preview panel drag events
   if (preview) {
@@ -291,67 +263,57 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Set up drag-and-drop for direction emojis
-  if (directionEmojis) {
-    directionEmojis.forEach(emoji => {
-      const direction = emoji.getAttribute('data-direction');
-      emoji.addEventListener('mousedown', () => {
-        if (!currentImage || currentImage.src === '') return;
-        moveInterval = setInterval(() => {
-          let left = parseFloat(currentImage.style.left) || 0;
-          let top = parseFloat(currentImage.style.top) || 0;
-          if (direction === 'up') top -= 1;
-          if (direction === 'down') top += 1;
-          if (direction === 'left') left -= 1;
-          if (direction === 'right') left += 1;
-          left = Math.max(0, Math.min(left, 600 - currentImage.width));
-          top = Math.max(0, Math.min(top, 600 - currentImage.height));
-          currentImage.style.left = `${left}px`;
-          currentImage.style.top = `${top}px`;
-          currentImage.classList.add('dragging');
-          updateCoordinates(currentImage);
-        }, 50);
-      });
-
-      emoji.addEventListener('mouseup', () => {
-        if (moveInterval) {
-          clearInterval(moveInterval);
-          moveInterval = null;
-          if (currentImage) {
-            const traitIndex = traitImages.indexOf(currentImage);
-            const trait = TraitManager.getAllTraits()[traitIndex];
-            const variationName = trait.variants[trait.selected].name;
-            savePosition(currentImage, trait.id, variationName);
-            currentImage.classList.remove('dragging');
-          }
-        }
-      });
-
-      emoji.addEventListener('mouseleave', () => {
-        if (moveInterval) {
-          clearInterval(moveInterval);
-          moveInterval = null;
-          if (currentImage) {
-            const traitIndex = traitImages.indexOf(currentImage);
-            const trait = TraitManager.getAllTraits()[traitIndex];
-            const variationName = trait.variants[trait.selected].name;
-            savePosition(currentImage, trait.id, variationName);
-            currentImage.classList.remove('dragging');
-          }
-        }
-      });
+  directionEmojis.forEach(emoji => {
+    const direction = emoji.getAttribute('data-direction');
+    emoji.addEventListener('mousedown', () => {
+      if (!currentImage || currentImage.src === '') return;
+      moveInterval = setInterval(() => {
+        let left = parseFloat(currentImage.style.left) || 0;
+        let top = parseFloat(currentImage.style.top) || 0;
+        if (direction === 'up') top -= 1;
+        if (direction === 'down') top += 1;
+        if (direction === 'left') left -= 1;
+        if (direction === 'right') left += 1;
+        left = Math.max(0, Math.min(left, 600 - currentImage.width));
+        top = Math.max(0, Math.min(top, 600 - currentImage.height));
+        currentImage.style.left = `${left}px`;
+        currentImage.style.top = `${top}px`;
+        currentImage.classList.add('dragging');
+        updateCoordinates(currentImage);
+      }, 50);
     });
-  }
+
+    emoji.addEventListener('mouseup', () => {
+      if (moveInterval) {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (currentImage) {
+          const traitIndex = traitImages.indexOf(currentImage);
+          const trait = TraitManager.getAllTraits()[traitIndex];
+          const variationName = trait.variants[trait.selected].name;
+          savePosition(currentImage, trait.id, variationName);
+          currentImage.classList.remove('dragging');
+        }
+      }
+    });
+
+    emoji.addEventListener('mouseleave', () => {
+      if (moveInterval) {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (currentImage) {
+          const traitIndex = traitImages.indexOf(currentImage);
+          const trait = TraitManager.getAllTraits()[traitIndex];
+          const variationName = trait.variants[trait.selected].name;
+          savePosition(currentImage, trait.id, variationName);
+          currentImage.classList.remove('dragging');
+        }
+      }
+    });
+  });
 });
 
-
-
-                          
-
 /*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
-
-
-
-                          
 
 document.addEventListener('DOMContentLoaded', () => {
   // Set up magnifying glass
@@ -455,13 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-
-
-
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
-
-
-
 
 function addTrait(trait) {
   const traitSection = document.createElement('div');
@@ -648,17 +604,7 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
-
-
-
-
-
-
-
 /* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
-
-
-
 
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
@@ -919,14 +865,7 @@ function updateMintButton() {
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
-
-
-
-
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
-
-
-
 
 function updateZIndices() {
   const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
@@ -1111,13 +1050,7 @@ function savePosition(img, traitId, variationName) {
   updateSubsequentTraits(traitId, variationName, position);
 }
 
-
-
-
 /*---------------------------------------------------- Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) ----------------------------------------------------*/
-
-
-
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
@@ -1268,43 +1201,36 @@ function updatePreviewSamples() {
   }
 }
 
-
-
-
-/* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
+/*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
 
 async function fetchBackground() {
   try {
-    console.log('Starting fetchBackground');
     clickSound.play().catch(error => console.error('Error playing click sound:', error));
     let seconds = 0;
-    const timerDisplay = document.getElementById('timer-display');
     generateButton.disabled = true;
-    generateButton.innerText = `Processing...`;
-    timerDisplay.textContent = `Processing: ${seconds}s`;
+    generateButton.innerText = `Processing ${seconds}...`;
     timerInterval = setInterval(() => {
       seconds++;
-      timerDisplay.textContent = `Processing: ${seconds}s`;
+      console.log(`Timer update: ${seconds} seconds`);
+      timerDisplay.innerText = `Processing: ${seconds}s`;
+      generateButton.innerText = `Processing ${seconds}...`;
     }, 1000);
 
-    const basePrompt = document.getElementById('base-prompt') ? document.getElementById('base-prompt').value.trim() : '1girl, shiyang';
-    const userPrompt = document.getElementById('user-prompt') ? document.getElementById('user-prompt').value.trim() : 'with a cyberpunk city background';
-    const width = document.getElementById('width-input') ? parseInt(document.getElementById('width-input').value) : 600;
-    const height = document.getElementById('height-input') ? parseInt(document.getElementById('height-input').value) : 600;
-    const cacheBust = Date.now();
-    const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&cacheBust=${cacheBust}&_=${Math.random()}`; // Updated to new domain
-    console.log('Fetching background from:', url);
+    const basePrompt = document.getElementById('base-prompt').value.trim();
+    const userPrompt = document.getElementById('user-prompt').value.trim();
+    const width = widthInput.value;
+    const height = heightInput.value;
+    const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}`;
     const response = await fetch(url);
-    console.log('Response status:', response.status);
+    if (!response.ok) throw new Error(`Failed to fetch background: ${response.statusText}`);
     const data = await response.json();
-    console.log('Response data:', data);
-    background.url = data.imageUrl || '';
-    background.metadata = data.metadata || data.message;
+    background.url = data.imageUrl;
+    background.metadata = data.metadata;
 
     const backgroundImage = document.getElementById('background-image');
     const backgroundMetadata = document.getElementById('background-metadata');
 
-    if (backgroundImage && background.url) backgroundImage.src = background.url;
+    if (backgroundImage) backgroundImage.src = background.url;
     if (backgroundMetadata) backgroundMetadata.innerText = background.metadata;
   } catch (error) {
     console.error('Error fetching background:', error);
@@ -1317,9 +1243,8 @@ async function fetchBackground() {
   } finally {
     clearInterval(timerInterval);
     generateButton.innerText = 'Generate Bkgd';
+    timerDisplay.innerText = 'Processing: 0s';
     generateButton.disabled = false;
-    const timerDisplay = document.getElementById('timer-display');
-    timerDisplay.textContent = `Processing: 0s`;
   }
 }
 
@@ -1350,7 +1275,7 @@ window.mintNFT = async function() {
       formData.append('images', blob, `${trait.name}-${selectedVariation.name}.png`);
     }
 
-    const uploadResponse = await fetch('https://aifn-1-api-new3.vercel.app/api/upload-to-arweave', {
+    const uploadResponse = await fetch('https://aifn-1-api-q1ni.vercel.app/api/upload-to-arweave', {
       method: 'POST',
       body: formData
     });
