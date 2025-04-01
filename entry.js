@@ -1252,6 +1252,8 @@ function updatePreviewSamples() {
 
 
 
+
+
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
 
 
@@ -1271,12 +1273,12 @@ async function fetchBackground() {
       timerDisplay.textContent = `Processing: ${seconds}s`;
     }, 1000);
 
-    const basePrompt = document.getElementById('base-prompt') ? document.getElementById('base-prompt').value.trim() : '1girl, shiyang'; // Simplified for testing
+    const basePrompt = document.getElementById('base-prompt') ? document.getElementById('base-prompt').value.trim() : '1girl, shiyang';
     const userPrompt = document.getElementById('user-prompt') ? document.getElementById('user-prompt').value.trim() : 'with a cyberpunk city background';
     const width = document.getElementById('width-input') ? parseInt(document.getElementById('width-input').value) : 600;
     const height = document.getElementById('height-input') ? parseInt(document.getElementById('height-input').value) : 600;
     const cacheBust = Date.now();
-    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&cacheBust=${cacheBust}`;
+    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&cacheBust=${cacheBust}&_=${Math.random()}`; // Add random param to prevent caching
     console.log('Fetching background from:', url);
     const response = await fetch(url);
     console.log('Response status:', response.status);
@@ -1369,3 +1371,4 @@ window.mintNFT = async function() {
     status.innerText = `Error: ${error.message}`;
   }
 };
+
