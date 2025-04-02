@@ -20,9 +20,6 @@
   
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
-
-
-  
 <style>
   body {
     font-family: 'Poppins', sans-serif;
@@ -34,6 +31,7 @@
     padding: 20px;
     margin: 0;
     display: flex;
+    flex-wrap: wrap;
     position: relative;
     min-height: 100vh;
   }
@@ -213,8 +211,7 @@
   }
 </style>
 
-
-
+  
   
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
 
@@ -571,9 +568,38 @@
   <div id="trait-container">
     <!-- Trait sections will be added dynamically -->
   </div>
+</div>
 
-  <!-- Section 6 - BACKGROUND SECTION -->
+<!-- Section 6 - RIGHT PANEL (PREVIEW AND PREVIEW SAMPLES) -->
 
+<div id="right-panel">
+  <h2>Preview</h2>
+  <div id="preview">
+    <!-- Preview images will be added dynamically -->
+  </div>
+  <div id="controls">
+    <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
+    <span>   </span>
+    <span class="direction-emoji" data-direction="up">⬆️</span>
+    <span class="direction-emoji" data-direction="down">⬇️</span>
+    <span class="direction-emoji" data-direction="left">⬅️</span>
+    <span class="direction-emoji" data-direction="right">➡️</span>
+    <span class="magnify-emoji">🔍</span>
+  </div>
+  <div id="preview-samples">
+    <div id="preview-samples-header">
+      <h2>PREVIEW SAMPLES</h2>
+      <button id="update-previews">UPDATE</button>
+    </div>
+    <div id="preview-samples-grid">
+      <!-- 4x4 grid of preview samples will be added dynamically -->
+    </div>
+  </div>
+</div>
+
+<!-- Section 7 - FULL-WIDTH SECTION (GEN SAMPLES AND CHOSEN) -->
+
+<div id="full-width-section" style="width: 100%; display: flex; align-items: flex-start; gap: 20px; margin-top: 20px;">
   <div id="background-section">
     <h2>GENERATED AI BKGD</h2>
     <div id="prompt-section">
@@ -610,43 +636,8 @@
       </div>
     </div>
   </div>
-
-  <!-- Section 7 - MINT SECTION -->
-
-  <div id="mint-section">
-    <button id="mintButton" disabled onclick="mintNFT()">Mint NFT</button>
-    <div id="mintFeeDisplay">Mint Fee: Loading...</div>
-    <div id="status"></div>
-  </div>
-</div>
-
-<!-- Section 8 - RIGHT PANEL -->
-
-<div id="right-panel">
-  <h2>Preview</h2>
-  <div id="preview">
-    <!-- Preview images will be added dynamically -->
-  </div>
-  <div id="controls">
-    <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
-    <span>   </span>
-    <span class="direction-emoji" data-direction="up">⬆️</span>
-    <span class="direction-emoji" data-direction="down">⬇️</span>
-    <span class="direction-emoji" data-direction="left">⬅️</span>
-    <span class="direction-emoji" data-direction="right">➡️</span>
-    <span class="magnify-emoji">🔍</span>
-  </div>
-  <div id="preview-samples">
-    <div id="preview-samples-header">
-      <h2>PREVIEW SAMPLES</h2>
-      <button id="update-previews">UPDATE</button>
-    </div>
-    <div id="preview-samples-grid">
-      <!-- 4x4 grid of preview samples will be added dynamically -->
-    </div>
-  </div>
   <div id="chosen-section">
-    <h2>CHOSEN</h2>
+    <h2 style="text-align: left;">CHOSEN</h2>
     <div id="chosen-controls">
       <label for="chosen-count">Number of Slots:</label>
       <input type="number" id="chosen-count" value="30" min="1" max="100" style="width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
@@ -656,6 +647,14 @@
       <!-- Chosen images will be added dynamically -->
     </div>
   </div>
+</div>
+
+<!-- Section 8 - MINT SECTION -->
+
+<div id="mint-section" style="width: 100%;">
+  <button id="mintButton" disabled onclick="mintNFT()">Mint NFT</button>
+  <div id="mintFeeDisplay">Mint Fee: Loading...</div>
+  <div id="status"></div>
 </div>
 
 <div id="enlarged-preview">
