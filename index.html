@@ -461,17 +461,15 @@
   }
 </style>
 
-<!-- Section 5 - BODY OPENING AND LEFT PANEL -->
+<!-- Section 5 - PREVIEW SAMPLES SECTION -->
 
-<body>
-  <div id="version">Version 91</div>
-  <div id="left-panel">
-    <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" width="600">
-    <div id="trait-container">
-      <!-- Trait groups will be added dynamically -->
-    </div>
+<div id="preview-samples-section">
+  <h2>Gen Samples</h2>
+  <div id="preview-samples-grid" style="display: grid; grid-template-columns: repeat(4, 140px); gap: 10px; width: 600px; margin-bottom: 20px;"></div>
+  <button id="update-previews">Update Previews</button>
+</div>
 
-<!-- Section 6 - GEN BACKGROUND SECTION -->
+<!-- Section 6 - BACKGROUND SECTION -->
 
 <div id="background-section">
   <h2>AI Background</h2>
@@ -483,15 +481,17 @@
   </div>
   <div id="background-controls" style="display: flex; align-items: center; justify-content: space-between; width: 600px; margin-bottom: 10px;">
     <div style="display: flex; align-items: center; gap: 10px;">
-      <button id="generate-background" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">Generate Bkgd</button>
-      <button id="zoom-4x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">4x</button>
-      <button id="zoom-16x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">16x</button>
-      <span id="timer-display" style="padding: 8px 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; height: 36px; line-height: 20px; display: inline-flex; align-items: center;">Processing: 0s</span>
+      <button id="generate-background" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px; width: 120px;">Generate Bkgd</button>
+      <button id="gen-4x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">4x</button>
+      <button id="gen-16x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">16x</button>
+      <span id="timer-display" style="padding: 0 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; height: 36px; line-height: 36px; display: inline-flex; align-items: center; box-sizing: border-box;">Processing: 0s</span>
     </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="padding: 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px;">
+    <div style="display: flex; align-items: center; gap: 10px; position: relative;">
+      <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      <span style="position: absolute; right: 90px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
       <span style="font-size: 14px;">x</span>
-      <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="padding: 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px;">
+      <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
     </div>
   </div>
   <div id="background-details">
