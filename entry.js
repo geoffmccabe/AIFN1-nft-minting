@@ -1318,8 +1318,15 @@ function addToChosenGrid(imageUrl, targetContainer = null) {
     }
     const img = document.createElement('img');
     img.src = imageUrl;
+    img.draggable = true;
+    img.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', imageUrl);
+      e.dataTransfer.setData('source', 'chosen-grid');
+    });
     container.appendChild(img);
-    chosenImages.push(imageUrl);
+    if (!chosenImages.includes(imageUrl)) {
+      chosenImages.push(imageUrl);
+    }
   }
 }
 
@@ -1355,50 +1362,73 @@ async function fetchMultipleBackgrounds(count) {
     grid.style.height = `${totalSize}px`;
     backgroundDetails.appendChild(grid);
 
+    // Create placeholders for each cell
+    const placeholders = [];
+    for (let i = 0; i < count; i++) {
+      const container = document.createElement('div');
+      container.className = 'gen-image-container';
+      container.dataset.index = i;
+      container.style.width = `${cellSize}px`;
+      container.style.height = `${cellSize}px`;
+
+      const img = document.createElement('img');
+      img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+      img.draggable = true;
+      img.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', img.src);
+        e.dataTransfer.setData('source', 'gen-grid');
+      });
+      container.appendChild(img);
+
+      grid.appendChild(container);
+      placeholders.push(container);
+    }
+
     const basePrompt = document.getElementById('base-prompt').value.trim();
     const userPrompt = document.getElementById('user-prompt').value.trim();
     const width = document.getElementById('width-input').value;
     const height = document.getElementById('height-input').value;
 
-    // Array to store generated image URLs
-    const imageUrls = [];
+    // Enhance the prompt to ensure Shi Yang's characteristics
+    const enhancedPrompt = `${basePrompt}, shiyang, 1girl, asian girl, black hair, red clothes, black dragon tattoo on right shoulder, dynamic pose`;
 
-    // Generate images one by one with a random seed
-    for (let i = 0; i < count; i++) {
+    // Array to store generated image URLs
+    const imageUrls = new Array(count).fill(null);
+
+    // Generate images in parallel with random seeds
+    const promises = Array.from({ length: count }, async (_, i) => {
       try {
-        // Generate a random seed for each image
         const randomSeed = Math.floor(Math.random() * 1000000);
-        const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&seed=${randomSeed}`;
+        const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(enhancedPrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&seed=${randomSeed}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
         const data = await response.json();
-        imageUrls.push(data.imageUrl);
+        imageUrls[i] = data.imageUrl;
+
+        // Update the grid as each image arrives
+        const container = placeholders[i];
+        const img = container.querySelector('img');
+        img.src = imageUrls[i];
+        img.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', imageUrls[i]);
+          e.dataTransfer.setData('source', 'gen-grid');
+        });
       } catch (error) {
         console.error(`Error fetching background ${i + 1}:`, error);
-        imageUrls.push('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+        imageUrls[i] = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
       }
-    }
+    });
+
+    // Wait for all images to be fetched
+    await Promise.all(promises);
 
     // Update the current grid state
     currentGridState = { count, imageUrls, deleted: new Array(count).fill(false) };
 
-    // Display the images in the grid
+    // Add click events to the images
     imageUrls.forEach((imageUrl, index) => {
-      const container = document.createElement('div');
-      container.className = 'gen-image-container';
-      container.dataset.index = index;
-      container.style.width = `${cellSize}px`;
-      container.style.height = `${cellSize}px`;
-
-      const img = document.createElement('img');
-      img.src = imageUrl;
-      img.draggable = true;
-      img.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', imageUrl);
-      });
-      container.appendChild(img);
-
-      grid.appendChild(container);
+      const container = placeholders[index];
+      const img = container.querySelector('img');
 
       // Add click event to enlarge the image
       container.addEventListener('click', () => {
