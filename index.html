@@ -355,7 +355,7 @@
   #background-section h2 {
     font-family: 'Rowdies', sans-serif;
     font-weight: 400;
-    text-align: center;
+    text-align: left;
     margin: 0 0 10px;
   }
   #prompt-section {
@@ -389,16 +389,12 @@
   }
   #gen-grid {
     display: grid;
-    grid-template-columns: repeat(2, 295px);
-    grid-template-rows: repeat(2, 295px);
     gap: 10px;
     width: 600px;
     height: 600px;
   }
   .gen-image-container {
     position: relative;
-    width: 295px;
-    height: 295px;
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
     background-size: 600px 600px;
     background-position: center;
@@ -532,6 +528,7 @@
 
 
   
+  
  <!-- Section 5 - LEFT PANEL (TRAITS) -->
 
 
@@ -549,7 +546,7 @@
 <!-- Section 6 - BACKGROUND SECTION -->
 
 <div id="background-section">
-  <h2>AI Background</h2>
+  <h2>GENERATED AI BKGD</h2>
   <div id="prompt-section">
     <label for="base-prompt">Basic Prompt:</label>
     <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
@@ -565,7 +562,7 @@
     </div>
     <div style="display: flex; align-items: center; gap: 10px; position: relative;">
       <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-      <span style="position: absolute; right: 90px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
+      <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
       <span style="font-size: 14px;">x</span>
       <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
       <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
@@ -584,7 +581,6 @@
     </div>
   </div>
 </div>
-
   
   
   <!-- Section 7 - MINT SECTION -->
