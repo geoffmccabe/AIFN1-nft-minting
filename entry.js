@@ -227,16 +227,46 @@ document.addEventListener('DOMContentLoaded', () => {
   updateChosenGridButton.addEventListener('click', () => {
     updateChosenGrid(parseInt(chosenCountInput.value));
   });
+  chosenCountInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      updateChosenGrid(parseInt(chosenCountInput.value));
+    }
+  });
 
   // Set up drag-and-drop from Gen Windows to Chosen grid
   const chosenGrid = document.getElementById('chosen-grid');
   chosenGrid.addEventListener('dragover', (e) => {
     e.preventDefault();
+    const target = e.target.closest('.chosen-image-container');
+    if (target) {
+      target.style.border = '2px dashed #4CAF50';
+    }
+  });
+  chosenGrid.addEventListener('dragleave', (e) => {
+    const target = e.target.closest('.chosen-image-container');
+    if (target) {
+      target.style.border = '1px solid black';
+    }
   });
   chosenGrid.addEventListener('drop', (e) => {
     e.preventDefault();
     const imageUrl = e.dataTransfer.getData('text/plain');
-    addToChosenGrid(imageUrl);
+    const target = e.target.closest('.chosen-image-container');
+    if (target) {
+      target.style.border = '1px solid black';
+      const existingImg = target.querySelector('img');
+      if (existingImg) {
+        const index = chosenImages.indexOf(existingImg.src);
+        if (index !== -1) {
+          chosenImages.splice(index, 1);
+        }
+        existingImg.remove();
+      }
+      const img = document.createElement('img');
+      img.src = imageUrl;
+      target.appendChild(img);
+      chosenImages.push(imageUrl);
+    }
   });
 
   // Set up preview panel drag events
@@ -334,7 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-
 
 /*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
 
@@ -1253,18 +1282,18 @@ function updatePreviewSamples() {
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
   chosenGrid.innerHTML = '';
-  // Use flexbox with percentage widths and gaps as specified
+  // Use flexbox with pixel-based gaps
   chosenGrid.style.display = 'flex';
   chosenGrid.style.flexWrap = 'wrap';
-  chosenGrid.style.gap = '2.5%'; // Horizontal and vertical gap
+  chosenGrid.style.gap = '15px'; // Horizontal and vertical gap (2.5% of 600px ≈ 15px)
   chosenGrid.style.width = '600px';
 
   // Add empty slots
   for (let i = 0; i < count; i++) {
     const container = document.createElement('div');
     container.className = 'chosen-image-container';
-    container.style.width = '18%';
-    container.style.height = '108px'; // 18% of 600px = 108px to make it square
+    container.style.width = '108px'; // 18% of 600px = 108px
+    container.style.height = '108px'; // Make it square
     chosenGrid.appendChild(container);
   }
 
@@ -1272,13 +1301,24 @@ function updateChosenGrid(count) {
   chosenImages.forEach(imageUrl => addToChosenGrid(imageUrl));
 }
 
-function addToChosenGrid(imageUrl) {
+function addToChosenGrid(imageUrl, targetContainer = null) {
   const chosenGrid = document.getElementById('chosen-grid');
-  const emptySlot = chosenGrid.querySelector('.chosen-image-container:not(:has(img))');
-  if (emptySlot) {
+  let container = targetContainer;
+  if (!container) {
+    container = chosenGrid.querySelector('.chosen-image-container:not(:has(img))');
+  }
+  if (container) {
+    const existingImg = container.querySelector('img');
+    if (existingImg) {
+      const index = chosenImages.indexOf(existingImg.src);
+      if (index !== -1) {
+        chosenImages.splice(index, 1);
+      }
+      existingImg.remove();
+    }
     const img = document.createElement('img');
     img.src = imageUrl;
-    emptySlot.appendChild(img);
+    container.appendChild(img);
     chosenImages.push(imageUrl);
   }
 }
