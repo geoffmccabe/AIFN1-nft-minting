@@ -399,6 +399,7 @@
     background-size: 600px 600px;
     background-position: center;
     border: 1px solid black;
+    border-radius: 5px;
     box-sizing: border-box;
     cursor: pointer;
   }
@@ -434,6 +435,38 @@
   }
   .gen-control-emoji:hover {
     opacity: 0.8;
+  }
+  #chosen-section h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    text-align: center;
+    margin: 0 0 10px;
+  }
+  #chosen-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    justify-content: center;
+  }
+  #chosen-grid {
+    display: grid;
+    gap: 10px;
+    width: 600px;
+  }
+  .chosen-image-container {
+    position: relative;
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: 600px 600px;
+    background-position: center;
+    border: 1px solid black;
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+  .chosen-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
   button {
     padding: 10px 20px;
@@ -523,9 +556,12 @@
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
       width: 100%; 
     }
+    #chosen-grid { 
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+      width: 100%; 
+    }
   }
 </style>
-
   
   
  <!-- Section 5 - LEFT PANEL (TRAITS) -->
@@ -597,10 +633,7 @@
 
   
 
-<!-- Section 8 - RIGHT PANEL -->
-
-
-  
+!-- Section 8 - RIGHT PANEL -->
 
 <div id="right-panel">
   <h2>Preview</h2>
@@ -623,6 +656,17 @@
     </div>
     <div id="preview-samples-grid">
       <!-- 4x4 grid of preview samples will be added dynamically -->
+    </div>
+  </div>
+  <div id="chosen-section">
+    <h2>CHOSEN</h2>
+    <div id="chosen-controls">
+      <label for="chosen-count">Number of Slots:</label>
+      <input type="number" id="chosen-count" value="30" min="1" max="100" style="width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+      <button id="update-chosen-grid">Update Grid</button>
+    </div>
+    <div id="chosen-grid">
+      <!-- Chosen images will be added dynamically -->
     </div>
   </div>
 </div>
