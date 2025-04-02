@@ -1244,6 +1244,80 @@ async function fetchBackground() {
   }
 }
 
+async function fetchMultipleBackgrounds(count) {
+  const backgroundDetails = document.getElementById('background-details');
+  backgroundDetails.innerHTML = ''; // Clear existing content
+
+  // Create a 2x2 grid for 4 images
+  const grid = document.createElement('div');
+  grid.id = 'gen-grid';
+  backgroundDetails.appendChild(grid);
+
+  const basePrompt = document.getElementById('base-prompt').value.trim();
+  const userPrompt = document.getElementById('user-prompt').value.trim();
+  const prompt = basePrompt + (userPrompt ? ', ' + userPrompt : '');
+
+  // Array to store generated image URLs
+  const imageUrls = [];
+
+  // Generate images one by one
+  for (let i = 0; i < count; i++) {
+    try {
+      const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?prompt=${encodeURIComponent(prompt)}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
+      const data = await response.json();
+      imageUrls.push(data.imageUrl);
+    } catch (error) {
+      console.error(`Error fetching background ${i + 1}:`, error);
+      imageUrls.push('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    }
+  }
+
+  // Display the 4 images in the grid
+  imageUrls.forEach((imageUrl, index) => {
+    const container = document.createElement('div');
+    container.className = 'gen-image-container';
+    container.dataset.index = index;
+
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    container.appendChild(img);
+
+    grid.appendChild(container);
+
+    // Add click event to enlarge the image
+    container.addEventListener('click', () => {
+      // Remove selected class from all containers
+      document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
+      // Add selected class to the clicked container
+      container.classList.add('selected');
+
+      // Enlarge the image
+      backgroundDetails.innerHTML = '';
+      const fullImg = document.createElement('img');
+      fullImg.className = 'gen-image-full';
+      fullImg.src = imageUrl;
+      backgroundDetails.appendChild(fullImg);
+
+      // Add click event to remove the enlarged image and revert to grid
+      fullImg.addEventListener('click', () => {
+        backgroundDetails.innerHTML = '';
+        backgroundDetails.appendChild(grid);
+      });
+    });
+  });
+
+  // Update metadata
+  const backgroundMetadata = document.getElementById('background-metadata');
+  if (backgroundMetadata) backgroundMetadata.innerText = `Generated ${count} images with prompt: ${prompt}`;
+}
+
+// Add event listener for the 4x button
+document.getElementById('gen-4x').addEventListener('click', () => {
+  fetchMultipleBackgrounds(4);
+});
+
 function fetchMintFee() {
   const mintFeeDisplay = document.getElementById('mintFeeDisplay');
   if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
