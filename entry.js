@@ -215,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event listeners for global controls
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
   generateButton.addEventListener('click', fetchBackground);
+  document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
 
   // Set up preview panel drag events
   if (preview) {
@@ -312,7 +313,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+
+
 /*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
+
+
+
 
 document.addEventListener('DOMContentLoaded', () => {
   // Set up magnifying glass
@@ -603,7 +609,13 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
+
+
+
 /* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
+
+
+
 
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
@@ -864,7 +876,13 @@ function updateMintButton() {
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
+
+
+
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
+
+
+
 
 function updateZIndices() {
   const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
@@ -1049,7 +1067,13 @@ function savePosition(img, traitId, variationName) {
   updateSubsequentTraits(traitId, variationName, position);
 }
 
+
+
+
 /*---------------------------------------------------- Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) ----------------------------------------------------*/
+
+
+
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
@@ -1200,6 +1224,9 @@ function updatePreviewSamples() {
   }
 }
 
+
+
+
 /*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
 
 async function fetchBackground() {
@@ -1312,11 +1339,6 @@ async function fetchMultipleBackgrounds(count) {
   const backgroundMetadata = document.getElementById('background-metadata');
   if (backgroundMetadata) backgroundMetadata.innerText = `Generated ${count} images with prompt: ${prompt}`;
 }
-
-// Add event listener for the 4x button
-document.getElementById('gen-4x').addEventListener('click', () => {
-  fetchMultipleBackgrounds(4);
-});
 
 function fetchMintFee() {
   const mintFeeDisplay = document.getElementById('mintFeeDisplay');
