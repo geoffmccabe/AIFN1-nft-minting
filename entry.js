@@ -198,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (preview && !preview.hasChildNodes()) {
     preview.innerHTML = '';
   }
-  console.log('Preview initialized with children: ' + preview.children.length);
 
   // Initialize TraitManager with 3 traits
   TraitManager.initialize();
@@ -1211,18 +1210,15 @@ async function fetchBackground() {
     generateButton.innerText = `Processing ${seconds}...`;
     timerInterval = setInterval(() => {
       seconds++;
-      console.log(`Timer update: ${seconds} seconds`);
       timerDisplay.innerText = `Processing: ${seconds}s`;
       generateButton.innerText = `Processing ${seconds}...`;
     }, 1000);
 
     const basePrompt = document.getElementById('base-prompt').value.trim();
     const userPrompt = document.getElementById('user-prompt').value.trim();
-    const width = widthInput.value;
-    const height = heightInput.value;
-    const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}`;
+    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?prompt=${encodeURIComponent(basePrompt + (userPrompt ? ', ' + userPrompt : ''))}`;
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch background: ${response.statusText}`);
+    if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
     const data = await response.json();
     background.url = data.imageUrl;
     background.metadata = data.metadata;
@@ -1234,7 +1230,7 @@ async function fetchBackground() {
     if (backgroundMetadata) backgroundMetadata.innerText = background.metadata;
   } catch (error) {
     console.error('Error fetching background:', error);
-    const placeholder = 'https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp';
+    const placeholder = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
     const backgroundImage = document.getElementById('background-image');
     const backgroundMetadata = document.getElementById('background-metadata');
 
