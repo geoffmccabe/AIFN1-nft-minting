@@ -1324,9 +1324,7 @@ function addToChosenGrid(imageUrl, targetContainer = null) {
       e.dataTransfer.setData('source', 'chosen-grid');
     });
     container.appendChild(img);
-    if (!chosenImages.includes(imageUrl)) {
-      chosenImages.push(imageUrl);
-    }
+    chosenImages.push(imageUrl);
   }
 }
 
@@ -1335,11 +1333,9 @@ async function fetchMultipleBackgrounds(count) {
     clickSound.play().catch(error => console.error('Error playing click sound:', error));
     let seconds = 0;
     generateButton.disabled = true;
-    generateButton.innerText = `Processing ${seconds}...`;
     timerInterval = setInterval(() => {
       seconds++;
       timerDisplay.innerText = `Processing: ${seconds}s`;
-      generateButton.innerText = `Processing ${seconds}...`;
     }, 1000);
 
     const backgroundDetails = document.getElementById('background-details');
@@ -1362,8 +1358,16 @@ async function fetchMultipleBackgrounds(count) {
     grid.style.height = `${totalSize}px`;
     backgroundDetails.appendChild(grid);
 
-    // Create placeholders for each cell
-    const placeholders = [];
+    const basePrompt = document.getElementById('base-prompt').value.trim();
+    const userPrompt = document.getElementById('user-prompt').value.trim();
+    const width = document.getElementById('width-input').value;
+    const height = document.getElementById('height-input').value;
+
+    // Array to store generated image URLs
+    const imageUrls = new Array(count).fill(null);
+    currentGridState = { count, imageUrls, deleted: new Array(count).fill(false) };
+
+    // Create placeholders in the grid
     for (let i = 0; i < count; i++) {
       const container = document.createElement('div');
       container.className = 'gen-image-container';
@@ -1372,65 +1376,54 @@ async function fetchMultipleBackgrounds(count) {
       container.style.height = `${cellSize}px`;
 
       const img = document.createElement('img');
-      img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+      img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp'; // Placeholder
       img.draggable = true;
       img.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', img.src);
         e.dataTransfer.setData('source', 'gen-grid');
       });
       container.appendChild(img);
-
       grid.appendChild(container);
-      placeholders.push(container);
     }
 
-    const basePrompt = document.getElementById('base-prompt').value.trim();
-    const userPrompt = document.getElementById('user-prompt').value.trim();
-    const width = document.getElementById('width-input').value;
-    const height = document.getElementById('height-input').value;
-
-    // Enhance the prompt to ensure Shi Yang's characteristics
-    const enhancedPrompt = `${basePrompt}, shiyang, 1girl, asian girl, black hair, red clothes, black dragon tattoo on right shoulder, dynamic pose`;
-
-    // Array to store generated image URLs
-    const imageUrls = new Array(count).fill(null);
-
     // Generate images in parallel with random seeds
-    const promises = Array.from({ length: count }, async (_, i) => {
-      try {
-        const randomSeed = Math.floor(Math.random() * 1000000);
-        const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(enhancedPrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&seed=${randomSeed}`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
-        const data = await response.json();
-        imageUrls[i] = data.imageUrl;
+    const promises = [];
+    for (let i = 0; i < count; i++) {
+      const randomSeed = Math.floor(Math.random() * 1000000);
+      const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&seed=${randomSeed}`;
+      promises.push(
+        fetch(url)
+          .then(response => {
+            if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
+            return response.json();
+          })
+          .then(data => {
+            imageUrls[i] = data.imageUrl;
+            const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
+            const img = container.querySelector('img');
+            img.src = data.imageUrl;
+          })
+          .catch(error => {
+            console.error(`Error fetching background ${i + 1}:`, error);
+            imageUrls[i] = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+            const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
+            const img = container.querySelector('img');
+            img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+          })
+      );
+    }
 
-        // Update the grid as each image arrives
-        const container = placeholders[i];
-        const img = container.querySelector('img');
-        img.src = imageUrls[i];
-        img.addEventListener('dragstart', (e) => {
-          e.dataTransfer.setData('text/plain', imageUrls[i]);
-          e.dataTransfer.setData('source', 'gen-grid');
-        });
-      } catch (error) {
-        console.error(`Error fetching background ${i + 1}:`, error);
-        imageUrls[i] = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
-      }
-    });
-
-    // Wait for all images to be fetched
+    // Wait for all images to load
     await Promise.all(promises);
 
     // Update the current grid state
-    currentGridState = { count, imageUrls, deleted: new Array(count).fill(false) };
+    currentGridState.imageUrls = imageUrls;
 
     // Add click events to the images
     imageUrls.forEach((imageUrl, index) => {
-      const container = placeholders[index];
+      const container = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
       const img = container.querySelector('img');
 
-      // Add click event to enlarge the image
       container.addEventListener('click', () => {
         // Check if the image is deleted (showing placeholder)
         if (currentGridState.deleted[index]) {
