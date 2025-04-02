@@ -15,8 +15,14 @@
   <script src="entry.js"></script>
 </head>
 
+
+
+  
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
+
+
+  
 <style>
   body {
     font-family: 'Poppins', sans-serif;
@@ -207,8 +213,14 @@
   }
 </style>
 
+
+
+  
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
 
+
+
+  
 <style>
   #right-panel {
     width: 600px;
@@ -334,8 +346,14 @@
   }
 </style>
 
+
+
+  
 <!-- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -->
 
+
+
+  
 <style>
   #background-section h2 {
     font-family: 'Rowdies', sans-serif;
@@ -367,10 +385,62 @@
   #background-image {
     width: 600px;
     height: 600px;
-    background: url('https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp');
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
     background-size: 600px 600px;
     border-radius: 10px;
     border: 1px solid black;
+  }
+  #gen-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 300px);
+    grid-template-rows: repeat(2, 300px);
+    gap: 0;
+    width: 600px;
+    height: 600px;
+  }
+  .gen-image-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: 600px 600px;
+    background-position: center;
+    border: 1px solid black;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+  .gen-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .gen-image-container.selected {
+    border: 5px solid #f4c149;
+  }
+  .gen-image-full {
+    width: 600px;
+    height: 600px;
+    border-radius: 10px;
+    border: 1px solid black;
+    cursor: pointer;
+  }
+  #gen-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-left: 10px;
+  }
+  .gen-control-emoji {
+    font-size: 32px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    color: #666;
+  }
+  .gen-control-emoji:hover {
+    opacity: 0.8;
   }
   button {
     padding: 10px 20px;
@@ -463,10 +533,13 @@
   }
 </style>
 
-<body>
-  <div id="version">Version 1.0</div>
+
+
   
  <!-- Section 5 - LEFT PANEL (TRAITS) -->
+
+
+  
 
 <div id="left-panel">
   <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/AIFN_Logo_600px.webp" alt="AIFN Logo">
@@ -474,7 +547,10 @@
     <!-- Trait sections will be added dynamically -->
   </div>
 
-  <!-- Section 6 - BACKGROUND SECTION -->
+
+
+  
+<!-- Section 6 - BACKGROUND SECTION -->
 
 <div id="background-section">
   <h2>AI Background</h2>
@@ -489,7 +565,7 @@
       <button id="generate-background" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px; width: 144px;">Generate Bkgd</button>
       <button id="gen-4x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">4x</button>
       <button id="gen-16x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">16x</button>
-      <span id="timer-display" style="padding: 0 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; height: 36px; line-height: 36px; display: inline-flex; align-items: center; box-sizing: border-box; width: 144px; text-align: center;">Processing: 0s</span>
+      <span id="timer-display" style="padding: 0 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; height: 36px; line-height: 36px; display: inline-flex; align-items: center; box-sizing: border-box; width: 173px; text-align: center;">Processing: 0s</span>
     </div>
     <div style="display: flex; align-items: center; gap: 10px; position: relative;">
       <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
@@ -499,12 +575,26 @@
       <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
     </div>
   </div>
-  <div id="background-details" style="width: 600px;">
-    <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background" style="width: 600px; height: 600px; border-radius: 10px; border: 1px solid black;">
-    <p id="background-metadata">Loading...</p>
+  <div style="display: flex; align-items: flex-start;">
+    <div id="background-details" style="width: 600px;">
+      <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background" style="width: 600px; height: 600px; border-radius: 10px; border: 1px solid black;">
+      <p id="background-metadata">Loading...</p>
+    </div>
+    <div id="gen-controls">
+      <button class="gen-control-emoji" data-action="left">⬅️</button>
+      <button class="gen-control-emoji" data-action="right">➡️</button>
+      <button class="gen-control-emoji" data-action="delete">❌</button>
+      <button class="gen-control-emoji" data-action="keep">✅</button>
+    </div>
   </div>
 </div>
+
+  
+  
   <!-- Section 7 - MINT SECTION -->
+
+
+  
 
   <div id="mint-section">
     <button id="mintButton" disabled onclick="mintNFT()">Mint NFT</button>
@@ -513,7 +603,13 @@
   </div>
 </div>
 
+
+  
+
 <!-- Section 8 - RIGHT PANEL -->
+
+
+  
 
 <div id="right-panel">
   <h2>Preview</h2>
