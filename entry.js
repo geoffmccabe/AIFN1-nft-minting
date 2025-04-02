@@ -1255,24 +1255,34 @@ async function fetchMultipleBackgrounds(count) {
     // Create the grid
     const grid = document.createElement('div');
     grid.id = 'gen-grid';
+    grid.style.display = 'grid';
     grid.style.gridTemplateColumns = `repeat(${gridSize}, ${cellSize}px)`;
     grid.style.gridTemplateRows = `repeat(${gridSize}, ${cellSize}px)`;
+    grid.style.gap = `${gap}px`;
+    grid.style.width = `${totalSize}px`;
+    grid.style.height = `${totalSize}px`;
     backgroundDetails.appendChild(grid);
 
     const basePrompt = document.getElementById('base-prompt').value.trim();
     const userPrompt = document.getElementById('user-prompt').value.trim();
-    const prompt = basePrompt + (userPrompt ? ', ' + userPrompt : '');
+    const width = document.getElementById('width-input').value;
+    const height = document.getElementById('height-input').value;
 
     // Array to store generated image URLs
     const imageUrls = [];
 
     // Generate images one by one
     for (let i = 0; i < count; i++) {
-      const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?prompt=${encodeURIComponent(prompt)}`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
-      const data = await response.json();
-      imageUrls.push(data.imageUrl);
+      try {
+        const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
+        const data = await response.json();
+        imageUrls.push(data.imageUrl);
+      } catch (error) {
+        console.error(`Error fetching background ${i + 1}:`, error);
+        imageUrls.push('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+      }
     }
 
     // Update the current grid state
@@ -1316,7 +1326,7 @@ async function fetchMultipleBackgrounds(count) {
 
     // Update metadata
     const backgroundMetadata = document.getElementById('background-metadata');
-    if (backgroundMetadata) backgroundMetadata.innerText = `Generated ${count} images with prompt: ${prompt}`;
+    if (backgroundMetadata) backgroundMetadata.innerText = `Generated ${count} images with prompt: ${basePrompt}${userPrompt ? ', ' + userPrompt : ''}`;
   } catch (error) {
     console.error('Error fetching backgrounds:', error);
     const placeholder = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
