@@ -20,9 +20,6 @@
   
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
-
-
-  
 <style>
   body {
     font-family: 'Poppins', sans-serif;
@@ -61,6 +58,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    background-color: #f0f0f0; /* Fallback background color */
   }
   #logo {
     width: 100%;
@@ -221,7 +219,6 @@
     z-index: 1000;
   }
 </style>
-
   
   
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
@@ -584,7 +581,7 @@
 
 <div id="left-panel">
   <div id="logo-container">
-    <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/AIFN_Logo_600px.webp" alt="AIFN Logo" onerror="this.src='https://via.placeholder.com/600x200?text=AIFN+Logo'">
+    <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/AIFN_Logo_600px.webp" alt="AIFN Logo" onerror="this.src='https://picsum.photos/600/200?text=AIFN+Logo'">
   </div>
   <div id="trait-container">
     <!-- Trait sections will be added dynamically -->
@@ -592,14 +589,14 @@
 </div>
 
 
-
   
+
 <!-- Section 6 - RIGHT PANEL (PREVIEW AND PREVIEW SAMPLES) -->
 
 
-
   
-<div id="right-panel" style="flex: 2; width: 600px; padding-left: 10px; max-width: 600px;">
+
+<div id="right-panel" style="flex: 2; width: 600px; padding-left: 10px; max-width: 600px; margin-left: auto;">
   <h2>Preview</h2>
   <div id="preview" style="height: 600px;">
     <!-- Preview images will be added dynamically -->
@@ -624,7 +621,13 @@
   </div>
 </div>
 
+
+
+  
 <!-- Section 7 - FULL-WIDTH SECTION (GEN SAMPLES AND CHOSEN) -->
+
+
+  
 
 <div id="full-width-section" style="width: 100%; display: flex; align-items: flex-start; gap: 20px; margin-top: 20px;">
   <div id="background-section">
