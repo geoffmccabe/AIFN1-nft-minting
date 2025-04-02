@@ -1363,10 +1363,12 @@ async function fetchMultipleBackgrounds(count) {
     // Array to store generated image URLs
     const imageUrls = [];
 
-    // Generate images one by one
+    // Generate images one by one with a random seed
     for (let i = 0; i < count; i++) {
       try {
-        const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}`;
+        // Generate a random seed for each image
+        const randomSeed = Math.floor(Math.random() * 1000000);
+        const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&seed=${randomSeed}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
         const data = await response.json();
