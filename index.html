@@ -471,27 +471,34 @@
       <!-- Trait groups will be added dynamically -->
     </div>
 
-<!-- Section 6 - BACKGROUND SECTION -->
+<!-- Section 6 - GEN BACKGROUND SECTION -->
 
-    <div id="background-section">
-      <h2>AI Background</h2>
-      <div id="prompt-section">
-        <label for="base-prompt">Basic Prompt:</label>
-        <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
-        <label for="user-prompt">User Prompt:</label>
-        <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
-      </div>
-      <div id="background-controls">
-        <button id="generate-background">Generate Bkgd</button>
-        <span id="timer-display">Processing: 0s</span>
-        <input type="number" id="width-input" value="600" min="256" max="1024" step="1">
-        <input type="number" id="height-input" value="600" min="256" max="1024" step="1">
-      </div>
-      <div id="background-details">
-        <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
-        <p id="background-metadata">Loading...</p>
-      </div>
+<div id="background-section">
+  <h2>AI Background</h2>
+  <div id="prompt-section">
+    <label for="base-prompt">Basic Prompt:</label>
+    <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
+    <label for="user-prompt">User Prompt:</label>
+    <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
+  </div>
+  <div id="background-controls" style="display: flex; align-items: center; justify-content: space-between; width: 600px; margin-bottom: 10px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button id="generate-background" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">Generate Bkgd</button>
+      <button id="zoom-4x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">4x</button>
+      <button id="zoom-16x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">16x</button>
+      <span id="timer-display" style="padding: 8px 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; height: 36px; line-height: 20px; display: inline-flex; align-items: center;">Processing: 0s</span>
     </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="padding: 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px;">
+      <span style="font-size: 14px;">x</span>
+      <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="padding: 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
+  </div>
+  <div id="background-details">
+    <img id="background-image" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background" style="max-width: 100%;">
+    <p id="background-metadata">Loading...</p>
+  </div>
+</div>
 
 <!-- Section 7 - MINT SECTION -->
 
