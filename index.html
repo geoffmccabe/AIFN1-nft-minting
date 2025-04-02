@@ -45,16 +45,17 @@
   }
   #left-panel {
     flex: 1;
-    padding-right: 20px;
+    padding-right: 10px;
     padding-top: 30px;
     min-width: 300px;
+    max-width: 600px;
     box-sizing: border-box;
   }
   #logo {
     display: block;
     margin: 0 auto 20px;
     width: 600px;
-    max-width: 600px;
+    max-width: 100%;
     height: auto;
   }
   @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
@@ -62,7 +63,7 @@
   }
   .trait-section {
     margin-bottom: 20px;
-    width: 600px;
+    width: 100%;
   }
   .trait-header {
     display: flex;
@@ -210,7 +211,6 @@
     z-index: 1000;
   }
 </style>
-
   
   
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
@@ -572,9 +572,9 @@
 
 <!-- Section 6 - RIGHT PANEL (PREVIEW AND PREVIEW SAMPLES) -->
 
-<div id="right-panel">
+<div id="right-panel" style="width: 600px; padding-left: 10px; max-width: 600px;">
   <h2>Preview</h2>
-  <div id="preview">
+  <div id="preview" style="height: 600px;">
     <!-- Preview images will be added dynamically -->
   </div>
   <div id="controls">
@@ -591,7 +591,7 @@
       <h2>PREVIEW SAMPLES</h2>
       <button id="update-previews">UPDATE</button>
     </div>
-    <div id="preview-samples-grid">
+    <div id="preview-samples-grid" style="height: 600px;">
       <!-- 4x4 grid of preview samples will be added dynamically -->
     </div>
   </div>
@@ -604,7 +604,7 @@
     <h2>GENERATED AI BKGD</h2>
     <div id="prompt-section">
       <label for="base-prompt">Basic Prompt:</label>
-      <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
+      <textarea id="base-prompt">1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
       <label for="user-prompt">User Prompt:</label>
       <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
     </div>
@@ -643,7 +643,7 @@
       <input type="number" id="chosen-count" value="30" min="1" max="100" style="width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
       <button id="update-chosen-grid">Update Grid</button>
     </div>
-    <div id="chosen-grid" style="display: flex; flex-wrap: wrap; gap: 2.5%; width: 600px;">
+    <div id="chosen-grid" style="display: flex; flex-wrap: wrap; gap: 15px; width: 600px;">
       <!-- Chosen images will be added dynamically -->
     </div>
   </div>
