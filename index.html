@@ -20,6 +20,9 @@
   
 <!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
 
+
+
+  
 <style>
   body {
     font-family: 'Poppins', sans-serif;
@@ -44,7 +47,7 @@
     z-index: 10;
   }
   #left-panel {
-    flex: 1;
+    flex: 3; /* 60% of the space */
     padding-right: 10px;
     padding-top: 30px;
     min-width: 300px;
@@ -219,7 +222,6 @@
   }
 </style>
 
-
   
   
 <!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
@@ -357,6 +359,9 @@
   
 <!-- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -->
 
+
+
+  
 <style>
   #background-section h2 {
     font-family: 'Rowdies', sans-serif;
@@ -569,21 +574,32 @@
   }
 </style>
   
+
+
   
 <!-- Section 5 - LEFT PANEL (TRAITS) -->
 
+
+  
+
 <div id="left-panel">
   <div id="logo-container">
-    <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/AIFN_Logo_600px.webp" alt="AIFN Logo" onerror="this.src='https://via.placeholder.com/600x200?text=AIFN+Logo'">
+    <img id="logo" src="https://github.com/geoffmccabe/AIFN1-nft-minting/raw/main/images/AIFN_Logo_600px.webp" alt="AIFN Logo" onerror="this.src='https://via.placeholder.com/600x200?text=AIFN+Logo'">
   </div>
   <div id="trait-container">
     <!-- Trait sections will be added dynamically -->
   </div>
 </div>
 
+
+
+  
 <!-- Section 6 - RIGHT PANEL (PREVIEW AND PREVIEW SAMPLES) -->
 
-<div id="right-panel" style="width: 600px; padding-left: 10px; max-width: 600px;">
+
+
+  
+<div id="right-panel" style="flex: 2; width: 600px; padding-left: 10px; max-width: 600px;">
   <h2>Preview</h2>
   <div id="preview" style="height: 600px;">
     <!-- Preview images will be added dynamically -->
@@ -648,7 +664,7 @@
     </div>
   </div>
   <div id="chosen-section">
-    <h2 style="text-align: left;">CHOSEN</h2>
+    <h2 style="text-align: left;">CHOSEN IMAGES</h2>
     <div id="chosen-controls">
       <label for="chosen-count">Number of Slots:</label>
       <input type="number" id="chosen-count" value="30" min="1" max="100" style="width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
@@ -660,7 +676,12 @@
   </div>
 </div>
 
+
+  
 <!-- Section 8 - MINT SECTION -->
+
+
+  
 
 <div id="mint-section" style="width: 100%;">
   <button id="mintButton" disabled onclick="mintNFT()">Mint NFT</button>
