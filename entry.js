@@ -168,7 +168,8 @@ let autoPositioned = new Array(20).fill(false);
 let sampleData = Array(16).fill(null).map(() => []);
 let preview, coordinates, directionEmojis, magnifyEmoji, enlargedPreview, generateButton, traitContainer, previewSamplesGrid, updatePreviewsButton;
 let timerDisplay, widthInput, heightInput;
-let currentGridState = { count: 1, imageUrls: [] }; // Track the current grid state
+let currentGridState = { count: 1, imageUrls: [], deleted: [] }; // Track the current grid state and deleted images
+let chosenImages = []; // Track chosen images
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
 
@@ -218,6 +219,25 @@ document.addEventListener('DOMContentLoaded', () => {
   generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1)); // Single image
   document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
   document.getElementById('gen-16x').addEventListener('click', () => fetchMultipleBackgrounds(16));
+
+  // Set up Chosen grid
+  const chosenCountInput = document.getElementById('chosen-count');
+  const updateChosenGridButton = document.getElementById('update-chosen-grid');
+  updateChosenGrid(parseInt(chosenCountInput.value));
+  updateChosenGridButton.addEventListener('click', () => {
+    updateChosenGrid(parseInt(chosenCountInput.value));
+  });
+
+  // Set up drag-and-drop from Gen Windows to Chosen grid
+  const chosenGrid = document.getElementById('chosen-grid');
+  chosenGrid.addEventListener('dragover', (e) => {
+    e.preventDefault();
+  });
+  chosenGrid.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const imageUrl = e.dataTransfer.getData('text/plain');
+    addToChosenGrid(imageUrl);
+  });
 
   // Set up preview panel drag events
   if (preview) {
@@ -314,7 +334,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-
 
 
 /*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
@@ -1231,6 +1250,36 @@ function updatePreviewSamples() {
 
 /*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
 
+function updateChosenGrid(count) {
+  const chosenGrid = document.getElementById('chosen-grid');
+  chosenGrid.innerHTML = '';
+  chosenGrid.style.gridTemplateColumns = `repeat(6, 1fr)`; // 6 columns for 30 slots
+  chosenGrid.style.gridTemplateRows = `repeat(${Math.ceil(count / 6)}, 100px)`; // Adjust rows based on count
+
+  // Add empty slots
+  for (let i = 0; i < count; i++) {
+    const container = document.createElement('div');
+    container.className = 'chosen-image-container';
+    container.style.width = '100px';
+    container.style.height = '100px';
+    chosenGrid.appendChild(container);
+  }
+
+  // Repopulate with chosen images
+  chosenImages.forEach(imageUrl => addToChosenGrid(imageUrl));
+}
+
+function addToChosenGrid(imageUrl) {
+  const chosenGrid = document.getElementById('chosen-grid');
+  const emptySlot = chosenGrid.querySelector('.chosen-image-container:not(:has(img))');
+  if (emptySlot) {
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    emptySlot.appendChild(img);
+    chosenImages.push(imageUrl);
+  }
+}
+
 async function fetchMultipleBackgrounds(count) {
   try {
     clickSound.play().catch(error => console.error('Error playing click sound:', error));
@@ -1286,7 +1335,7 @@ async function fetchMultipleBackgrounds(count) {
     }
 
     // Update the current grid state
-    currentGridState = { count, imageUrls };
+    currentGridState = { count, imageUrls, deleted: new Array(count).fill(false) };
 
     // Display the images in the grid
     imageUrls.forEach((imageUrl, index) => {
@@ -1298,12 +1347,24 @@ async function fetchMultipleBackgrounds(count) {
 
       const img = document.createElement('img');
       img.src = imageUrl;
+      img.draggable = true;
+      img.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', imageUrl);
+      });
       container.appendChild(img);
 
       grid.appendChild(container);
 
       // Add click event to enlarge the image
       container.addEventListener('click', () => {
+        // Check if the image is deleted (showing placeholder)
+        if (currentGridState.deleted[index]) {
+          // Undelete the image
+          currentGridState.deleted[index] = false;
+          img.src = currentGridState.imageUrls[index];
+          return;
+        }
+
         // Remove selected class from all containers
         document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
         // Add selected class to the clicked container
@@ -1314,13 +1375,77 @@ async function fetchMultipleBackgrounds(count) {
         const fullImg = document.createElement('img');
         fullImg.className = 'gen-image-full';
         fullImg.src = imageUrl;
+        fullImg.dataset.index = index;
         backgroundDetails.appendChild(fullImg);
+
+        // Update the Preview background
+        preview.style.background = `url(${imageUrl})`;
+        preview.style.backgroundSize = 'cover';
 
         // Add click event to remove the enlarged image and revert to grid
         fullImg.addEventListener('click', () => {
           backgroundDetails.innerHTML = '';
           backgroundDetails.appendChild(grid);
+          // Reset the Preview background
+          preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+          preview.style.backgroundSize = 'cover';
         });
+
+        // Set up Left/Right arrow cycling
+        const leftArrow = document.querySelector('.gen-control-emoji[data-action="left"]');
+        const rightArrow = document.querySelector('.gen-control-emoji[data-action="right"]');
+        const deleteEmoji = document.querySelector('.gen-control-emoji[data-action="delete"]');
+        const keepEmoji = document.querySelector('.gen-control-emoji[data-action="keep"]');
+
+        leftArrow.onclick = () => {
+          let newIndex = parseInt(fullImg.dataset.index) - 1;
+          if (newIndex < 0) newIndex = currentGridState.imageUrls.length - 1;
+          while (currentGridState.deleted[newIndex]) {
+            newIndex--;
+            if (newIndex < 0) newIndex = currentGridState.imageUrls.length - 1;
+          }
+          fullImg.src = currentGridState.imageUrls[newIndex];
+          fullImg.dataset.index = newIndex;
+          preview.style.background = `url(${currentGridState.imageUrls[newIndex]})`;
+          preview.style.backgroundSize = 'cover';
+          document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
+          document.querySelector(`.gen-image-container[data-index="${newIndex}"]`).classList.add('selected');
+        };
+
+        rightArrow.onclick = () => {
+          let newIndex = parseInt(fullImg.dataset.index) + 1;
+          if (newIndex >= currentGridState.imageUrls.length) newIndex = 0;
+          while (currentGridState.deleted[newIndex]) {
+            newIndex++;
+            if (newIndex >= currentGridState.imageUrls.length) newIndex = 0;
+          }
+          fullImg.src = currentGridState.imageUrls[newIndex];
+          fullImg.dataset.index = newIndex;
+          preview.style.background = `url(${currentGridState.imageUrls[newIndex]})`;
+          preview.style.backgroundSize = 'cover';
+          document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
+          document.querySelector(`.gen-image-container[data-index="${newIndex}"]`).classList.add('selected');
+        };
+
+        deleteEmoji.onclick = () => {
+          const index = parseInt(fullImg.dataset.index);
+          currentGridState.deleted[index] = true;
+          backgroundDetails.innerHTML = '';
+          backgroundDetails.appendChild(grid);
+          const containerToUpdate = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
+          const imgToUpdate = containerToUpdate.querySelector('img');
+          imgToUpdate.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+          preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+          preview.style.backgroundSize = 'cover';
+        };
+
+        keepEmoji.onclick = () => {
+          addToChosenGrid(fullImg.src);
+          backgroundDetails.innerHTML = '';
+          backgroundDetails.appendChild(grid);
+          preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+          preview.style.backgroundSize = 'cover';
+        };
       });
     });
 
