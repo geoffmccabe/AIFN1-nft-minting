@@ -564,64 +564,54 @@
 </style>
   
   
- <!-- Section 5 - LEFT PANEL (TRAITS) -->
-
-
-  
+<!-- Section 5 - LEFT PANEL (TRAITS) -->
 
 <div id="left-panel">
-  <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/AIFN_Logo_600px.webp" alt="AIFN Logo">
+  <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/AIFN_Logo_600px.webp" alt="AIFN Logo" onerror="this.src='https://via.placeholder.com/600x200?text=AIFN+Logo'">
   <div id="trait-container">
     <!-- Trait sections will be added dynamically -->
   </div>
 
+  <!-- Section 6 - BACKGROUND SECTION -->
 
-
-  
-<!-- Section 6 - BACKGROUND SECTION -->
-
-<div id="background-section">
-  <h2>GENERATED AI BKGD</h2>
-  <div id="prompt-section">
-    <label for="base-prompt">Basic Prompt:</label>
-    <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
-    <label for="user-prompt">User Prompt:</label>
-    <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
-  </div>
-  <div id="background-controls" style="display: flex; align-items: center; justify-content: space-between; width: 600px; margin-bottom: 10px;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <button id="generate-background" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px; width: 144px;">Generate Bkgd</button>
-      <button id="gen-4x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">4x</button>
-      <button id="gen-16x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">16x</button>
-      <span id="timer-display" style="padding: 0 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; height: 36px; line-height: 36px; display: inline-flex; align-items: center; box-sizing: border-box; width: 173px; text-align: center;">Processing: 0s</span>
+  <div id="background-section">
+    <h2>GENERATED AI BKGD</h2>
+    <div id="prompt-section">
+      <label for="base-prompt">Basic Prompt:</label>
+      <textarea id="base-prompt" readonly>1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
+      <label for="user-prompt">User Prompt:</label>
+      <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')"></textarea>
     </div>
-    <div style="display: flex; align-items: center; gap: 10px; position: relative;">
-      <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-      <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
-      <span style="font-size: 14px;">x</span>
-      <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-      <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
+    <div id="background-controls" style="display: flex; align-items: center; justify-content: space-between; width: 600px; margin-bottom: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button id="generate-background" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px; width: 144px;">Generate Bkgd</button>
+        <button id="gen-4x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">4x</button>
+        <button id="gen-16x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">16x</button>
+        <span id="timer-display" style="padding: 0 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; height: 36px; line-height: 36px; display: inline-flex; align-items: center; box-sizing: border-box; width: 173px; text-align: center;">Processing: 0s</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; position: relative;">
+        <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
+        <span style="font-size: 14px;">x</span>
+        <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
+      </div>
     </div>
-  </div>
-  <div style="display: flex; align-items: flex-start;">
-    <div id="background-details" style="width: 600px;">
-      <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background" style="width: 600px; height: 600px; border-radius: 10px; border: 1px solid black;">
-      <p id="background-metadata">Loading...</p>
-    </div>
-    <div id="gen-controls">
-      <span class="gen-control-emoji" data-action="left">⬅️</span>
-      <span class="gen-control-emoji" data-action="right">➡️</span>
-      <span class="gen-control-emoji" data-action="delete">❌</span>
-      <span class="gen-control-emoji" data-action="keep">✅</span>
+    <div style="display: flex; align-items: flex-start;">
+      <div id="background-details" style="width: 600px;">
+        <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background" style="width: 600px; height: 600px; border-radius: 10px; border: 1px solid black;">
+        <p id="background-metadata">Loading...</p>
+      </div>
+      <div id="gen-controls">
+        <span class="gen-control-emoji" data-action="left">⬅️</span>
+        <span class="gen-control-emoji" data-action="right">➡️</span>
+        <span class="gen-control-emoji" data-action="delete">❌</span>
+        <span class="gen-control-emoji" data-action="keep">✅</span>
+      </div>
     </div>
   </div>
-</div>
-  
-  
+
   <!-- Section 7 - MINT SECTION -->
-
-
-  
 
   <div id="mint-section">
     <button id="mintButton" disabled onclick="mintNFT()">Mint NFT</button>
@@ -630,10 +620,7 @@
   </div>
 </div>
 
-
-  
-
-!-- Section 8 - RIGHT PANEL -->
+<!-- Section 8 - RIGHT PANEL -->
 
 <div id="right-panel">
   <h2>Preview</h2>
@@ -665,7 +652,7 @@
       <input type="number" id="chosen-count" value="30" min="1" max="100" style="width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
       <button id="update-chosen-grid">Update Grid</button>
     </div>
-    <div id="chosen-grid">
+    <div id="chosen-grid" style="display: flex; flex-wrap: wrap; gap: 2.5%; width: 600px;">
       <!-- Chosen images will be added dynamically -->
     </div>
   </div>
