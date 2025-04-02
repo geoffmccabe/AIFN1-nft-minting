@@ -1250,17 +1250,22 @@ function updatePreviewSamples() {
 
 /*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
 
+/*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
+
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
   chosenGrid.innerHTML = '';
-  chosenGrid.style.gridTemplateColumns = `repeat(6, 1fr)`; // 6 columns for 30 slots
-  chosenGrid.style.gridTemplateRows = `repeat(${Math.ceil(count / 6)}, 100px)`; // Adjust rows based on count
+  // Use flexbox with percentage widths and gaps as specified
+  chosenGrid.style.display = 'flex';
+  chosenGrid.style.flexWrap = 'wrap';
+  chosenGrid.style.gap = '2.5%';
+  chosenGrid.style.width = '600px';
 
   // Add empty slots
   for (let i = 0; i < count; i++) {
     const container = document.createElement('div');
     container.className = 'chosen-image-container';
-    container.style.width = '100px';
+    container.style.width = '18%';
     container.style.height = '100px';
     chosenGrid.appendChild(container);
   }
