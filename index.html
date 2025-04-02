@@ -351,9 +351,6 @@
   
 <!-- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -->
 
-
-
-  
 <style>
   #background-section h2 {
     font-family: 'Rowdies', sans-serif;
@@ -392,16 +389,16 @@
   }
   #gen-grid {
     display: grid;
-    grid-template-columns: repeat(2, 300px);
-    grid-template-rows: repeat(2, 300px);
-    gap: 0;
+    grid-template-columns: repeat(2, 295px);
+    grid-template-rows: repeat(2, 295px);
+    gap: 10px;
     width: 600px;
     height: 600px;
   }
   .gen-image-container {
     position: relative;
-    width: 300px;
-    height: 300px;
+    width: 295px;
+    height: 295px;
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
     background-size: 600px 600px;
     background-position: center;
@@ -534,7 +531,6 @@
 </style>
 
 
-
   
  <!-- Section 5 - LEFT PANEL (TRAITS) -->
 
@@ -569,7 +565,7 @@
     </div>
     <div style="display: flex; align-items: center; gap: 10px; position: relative;">
       <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-      <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
+      <span style="position: absolute; right: 90px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
       <span style="font-size: 14px;">x</span>
       <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
       <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
@@ -581,10 +577,10 @@
       <p id="background-metadata">Loading...</p>
     </div>
     <div id="gen-controls">
-      <button class="gen-control-emoji" data-action="left">⬅️</button>
-      <button class="gen-control-emoji" data-action="right">➡️</button>
-      <button class="gen-control-emoji" data-action="delete">❌</button>
-      <button class="gen-control-emoji" data-action="keep">✅</button>
+      <span class="gen-control-emoji" data-action="left">⬅️</span>
+      <span class="gen-control-emoji" data-action="right">➡️</span>
+      <span class="gen-control-emoji" data-action="delete">❌</span>
+      <span class="gen-control-emoji" data-action="keep">✅</span>
     </div>
   </div>
 </div>
