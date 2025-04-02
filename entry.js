@@ -168,6 +168,7 @@ let autoPositioned = new Array(20).fill(false);
 let sampleData = Array(16).fill(null).map(() => []);
 let preview, coordinates, directionEmojis, magnifyEmoji, enlargedPreview, generateButton, traitContainer, previewSamplesGrid, updatePreviewsButton;
 let timerDisplay, widthInput, heightInput;
+let currentGridState = { count: 1, imageUrls: [] }; // Track the current grid state
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
 
@@ -214,8 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners for global controls
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
-  generateButton.addEventListener('click', fetchBackground);
+  generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1)); // Single image
   document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
+  document.getElementById('gen-16x').addEventListener('click', () => fetchMultipleBackgrounds(16));
 
   // Set up preview panel drag events
   if (preview) {
@@ -1229,7 +1231,7 @@ function updatePreviewSamples() {
 
 /*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
 
-async function fetchBackground() {
+async function fetchMultipleBackgrounds(count) {
   try {
     clickSound.play().catch(error => console.error('Error playing click sound:', error));
     let seconds = 0;
@@ -1241,103 +1243,101 @@ async function fetchBackground() {
       generateButton.innerText = `Processing ${seconds}...`;
     }, 1000);
 
+    const backgroundDetails = document.getElementById('background-details');
+    backgroundDetails.innerHTML = ''; // Clear existing content
+
+    // Calculate grid dimensions
+    const gridSize = Math.sqrt(count); // e.g., 2 for 4x, 4 for 16x
+    const gap = 10; // 10px gap between cells
+    const totalSize = 600; // Total width/height of the Gen Window
+    const cellSize = (totalSize - (gridSize - 1) * gap) / gridSize; // e.g., 295px for 2x2 grid
+
+    // Create the grid
+    const grid = document.createElement('div');
+    grid.id = 'gen-grid';
+    grid.style.gridTemplateColumns = `repeat(${gridSize}, ${cellSize}px)`;
+    grid.style.gridTemplateRows = `repeat(${gridSize}, ${cellSize}px)`;
+    backgroundDetails.appendChild(grid);
+
     const basePrompt = document.getElementById('base-prompt').value.trim();
     const userPrompt = document.getElementById('user-prompt').value.trim();
-    const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?prompt=${encodeURIComponent(basePrompt + (userPrompt ? ', ' + userPrompt : ''))}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
-    const data = await response.json();
-    background.url = data.imageUrl;
-    background.metadata = data.metadata;
+    const prompt = basePrompt + (userPrompt ? ', ' + userPrompt : '');
 
-    const backgroundImage = document.getElementById('background-image');
+    // Array to store generated image URLs
+    const imageUrls = [];
+
+    // Generate images one by one
+    for (let i = 0; i < count; i++) {
+      const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?prompt=${encodeURIComponent(prompt)}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
+      const data = await response.json();
+      imageUrls.push(data.imageUrl);
+    }
+
+    // Update the current grid state
+    currentGridState = { count, imageUrls };
+
+    // Display the images in the grid
+    imageUrls.forEach((imageUrl, index) => {
+      const container = document.createElement('div');
+      container.className = 'gen-image-container';
+      container.dataset.index = index;
+      container.style.width = `${cellSize}px`;
+      container.style.height = `${cellSize}px`;
+
+      const img = document.createElement('img');
+      img.src = imageUrl;
+      container.appendChild(img);
+
+      grid.appendChild(container);
+
+      // Add click event to enlarge the image
+      container.addEventListener('click', () => {
+        // Remove selected class from all containers
+        document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
+        // Add selected class to the clicked container
+        container.classList.add('selected');
+
+        // Enlarge the image
+        backgroundDetails.innerHTML = '';
+        const fullImg = document.createElement('img');
+        fullImg.className = 'gen-image-full';
+        fullImg.src = imageUrl;
+        backgroundDetails.appendChild(fullImg);
+
+        // Add click event to remove the enlarged image and revert to grid
+        fullImg.addEventListener('click', () => {
+          backgroundDetails.innerHTML = '';
+          backgroundDetails.appendChild(grid);
+        });
+      });
+    });
+
+    // Update metadata
     const backgroundMetadata = document.getElementById('background-metadata');
-
-    if (backgroundImage) backgroundImage.src = background.url;
-    if (backgroundMetadata) backgroundMetadata.innerText = background.metadata;
+    if (backgroundMetadata) backgroundMetadata.innerText = `Generated ${count} images with prompt: ${prompt}`;
   } catch (error) {
-    console.error('Error fetching background:', error);
+    console.error('Error fetching backgrounds:', error);
     const placeholder = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
-    const backgroundImage = document.getElementById('background-image');
+    const backgroundDetails = document.getElementById('background-details');
+    backgroundDetails.innerHTML = '';
+    const backgroundImage = document.createElement('img');
+    backgroundImage.id = 'background-image';
+    backgroundImage.src = placeholder;
+    backgroundImage.style.width = '600px';
+    backgroundImage.style.height = '600px';
+    backgroundImage.style.borderRadius = '10px';
+    backgroundImage.style.border = '1px solid black';
+    backgroundDetails.appendChild(backgroundImage);
     const backgroundMetadata = document.getElementById('background-metadata');
-
-    if (backgroundImage) backgroundImage.src = placeholder;
-    if (backgroundMetadata) backgroundMetadata.innerText = 'Failed to load background: ' + error.message;
+    if (backgroundMetadata) backgroundMetadata.innerText = 'Failed to load backgrounds: ' + error.message;
   } finally {
     clearInterval(timerInterval);
     generateButton.innerText = 'Generate Bkgd';
     timerDisplay.innerText = 'Processing: 0s';
     generateButton.disabled = false;
   }
-}
-
-async function fetchMultipleBackgrounds(count) {
-  const backgroundDetails = document.getElementById('background-details');
-  backgroundDetails.innerHTML = ''; // Clear existing content
-
-  // Create a 2x2 grid for 4 images
-  const grid = document.createElement('div');
-  grid.id = 'gen-grid';
-  backgroundDetails.appendChild(grid);
-
-  const basePrompt = document.getElementById('base-prompt').value.trim();
-  const userPrompt = document.getElementById('user-prompt').value.trim();
-  const prompt = basePrompt + (userPrompt ? ', ' + userPrompt : '');
-
-  // Array to store generated image URLs
-  const imageUrls = [];
-
-  // Generate images one by one
-  for (let i = 0; i < count; i++) {
-    try {
-      const url = `https://aifn-1-api-q1ni.vercel.app/api/generate-background?prompt=${encodeURIComponent(prompt)}`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
-      const data = await response.json();
-      imageUrls.push(data.imageUrl);
-    } catch (error) {
-      console.error(`Error fetching background ${i + 1}:`, error);
-      imageUrls.push('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
-    }
-  }
-
-  // Display the 4 images in the grid
-  imageUrls.forEach((imageUrl, index) => {
-    const container = document.createElement('div');
-    container.className = 'gen-image-container';
-    container.dataset.index = index;
-
-    const img = document.createElement('img');
-    img.src = imageUrl;
-    container.appendChild(img);
-
-    grid.appendChild(container);
-
-    // Add click event to enlarge the image
-    container.addEventListener('click', () => {
-      // Remove selected class from all containers
-      document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
-      // Add selected class to the clicked container
-      container.classList.add('selected');
-
-      // Enlarge the image
-      backgroundDetails.innerHTML = '';
-      const fullImg = document.createElement('img');
-      fullImg.className = 'gen-image-full';
-      fullImg.src = imageUrl;
-      backgroundDetails.appendChild(fullImg);
-
-      // Add click event to remove the enlarged image and revert to grid
-      fullImg.addEventListener('click', () => {
-        backgroundDetails.innerHTML = '';
-        backgroundDetails.appendChild(grid);
-      });
-    });
-  });
-
-  // Update metadata
-  const backgroundMetadata = document.getElementById('background-metadata');
-  if (backgroundMetadata) backgroundMetadata.innerText = `Generated ${count} images with prompt: ${prompt}`;
 }
 
 function fetchMintFee() {
