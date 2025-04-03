@@ -1386,160 +1386,159 @@ async function fetchMultipleBackgrounds(count) {
       grid.appendChild(container);
     }
 
-    // Generate images in parallel with random seeds
-    const promises = [];
+    // Generate images sequentially
     for (let i = 0; i < count; i++) {
-      const randomSeed = Math.floor(Math.random() * 1000000);
-      const url = `https://aifn-1-api-new3.vercel.app/api/generate-background-v2?basePrompt=${encodeURIComponent(basePrompt)}&userPrompt=${encodeURIComponent(userPrompt)}&width=${width}&height=${height}&seed=${randomSeed}`;
-      promises.push(
-        fetch(url)
-          .then(response => {
-            if (!response.ok) throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
-            return response.json();
-          })
-          .then(data => {
-            imageUrls[i] = data.imageUrl;
-            const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
-            const img = container.querySelector('img');
-            img.src = data.imageUrl;
-          })
-          .catch(error => {
-            console.error(`Error fetching background ${i + 1}:`, error);
-            imageUrls[i] = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
-            const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
-            const img = container.querySelector('img');
-            img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
-          })
-      );
-    }
+      // Generate a random 7-digit number to append to the prompt
+      const randomNumber = Math.floor(1000000 + Math.random() * 9000000);
+      const modifiedPrompt = `${basePrompt}${userPrompt ? ', ' + userPrompt : ''}, ${randomNumber}`;
 
-    // Wait for all images to load
-    await Promise.all(promises);
+      const url = `https://aifn-1-api-new3.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(modifiedPrompt)}&userPrompt=&width=${width}&height=${height}`;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30-second timeout
+
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        imageUrls[i] = data.imageUrl;
+        const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
+        const img = container.querySelector('img');
+        img.src = data.imageUrl;
+      } catch (error) {
+        console.error(`Error fetching background ${i + 1}:`, error);
+        imageUrls[i] = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+        const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
+        const img = container.querySelector('img');
+        img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+      }
+    }
 
     // Update the current grid state
     currentGridState.imageUrls = imageUrls;
-
-    // Add click events to the images
-    imageUrls.forEach((imageUrl, index) => {
-      const container = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
-      const img = container.querySelector('img');
-
-      container.addEventListener('click', () => {
-        // Check if the image is deleted (showing placeholder)
-        if (currentGridState.deleted[index]) {
-          // Undelete the image
-          currentGridState.deleted[index] = false;
-          img.src = currentGridState.imageUrls[index];
-          return;
-        }
-
-        // Remove selected class from all containers
-        document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
-        // Add selected class to the clicked container
-        container.classList.add('selected');
-
-        // Enlarge the image
-        backgroundDetails.innerHTML = '';
-        const fullImg = document.createElement('img');
-        fullImg.className = 'gen-image-full';
-        fullImg.src = imageUrl;
-        fullImg.dataset.index = index;
-        backgroundDetails.appendChild(fullImg);
-
-        // Update the Preview background
-        preview.style.background = `url(${imageUrl})`;
-        preview.style.backgroundSize = 'cover';
-
-        // Add click event to remove the enlarged image and revert to grid
-        fullImg.addEventListener('click', () => {
-          backgroundDetails.innerHTML = '';
-          backgroundDetails.appendChild(grid);
-          // Reset the Preview background
-          preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
-          preview.style.backgroundSize = 'cover';
-        });
-
-        // Set up Left/Right arrow cycling
-        const leftArrow = document.querySelector('.gen-control-emoji[data-action="left"]');
-        const rightArrow = document.querySelector('.gen-control-emoji[data-action="right"]');
-        const deleteEmoji = document.querySelector('.gen-control-emoji[data-action="delete"]');
-        const keepEmoji = document.querySelector('.gen-control-emoji[data-action="keep"]');
-
-        leftArrow.onclick = () => {
-          let newIndex = parseInt(fullImg.dataset.index) - 1;
-          if (newIndex < 0) newIndex = currentGridState.imageUrls.length - 1;
-          while (currentGridState.deleted[newIndex]) {
-            newIndex--;
-            if (newIndex < 0) newIndex = currentGridState.imageUrls.length - 1;
-          }
-          fullImg.src = currentGridState.imageUrls[newIndex];
-          fullImg.dataset.index = newIndex;
-          preview.style.background = `url(${currentGridState.imageUrls[newIndex]})`;
-          preview.style.backgroundSize = 'cover';
-          document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
-          document.querySelector(`.gen-image-container[data-index="${newIndex}"]`).classList.add('selected');
-        };
-
-        rightArrow.onclick = () => {
-          let newIndex = parseInt(fullImg.dataset.index) + 1;
-          if (newIndex >= currentGridState.imageUrls.length) newIndex = 0;
-          while (currentGridState.deleted[newIndex]) {
-            newIndex++;
-            if (newIndex >= currentGridState.imageUrls.length) newIndex = 0;
-          }
-          fullImg.src = currentGridState.imageUrls[newIndex];
-          fullImg.dataset.index = newIndex;
-          preview.style.background = `url(${currentGridState.imageUrls[newIndex]})`;
-          preview.style.backgroundSize = 'cover';
-          document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
-          document.querySelector(`.gen-image-container[data-index="${newIndex}"]`).classList.add('selected');
-        };
-
-        deleteEmoji.onclick = () => {
-          const index = parseInt(fullImg.dataset.index);
-          currentGridState.deleted[index] = true;
-          backgroundDetails.innerHTML = '';
-          backgroundDetails.appendChild(grid);
-          const containerToUpdate = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
-          const imgToUpdate = containerToUpdate.querySelector('img');
-          imgToUpdate.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
-          preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
-          preview.style.backgroundSize = 'cover';
-        };
-
-        keepEmoji.onclick = () => {
-          addToChosenGrid(fullImg.src);
-          backgroundDetails.innerHTML = '';
-          backgroundDetails.appendChild(grid);
-          preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
-          preview.style.backgroundSize = 'cover';
-        };
-      });
-    });
-
-    // Update metadata
-    const backgroundMetadata = document.getElementById('background-metadata');
-    if (backgroundMetadata) backgroundMetadata.innerText = `Generated ${count} images with prompt: ${basePrompt}${userPrompt ? ', ' + userPrompt : ''}`;
   } catch (error) {
     console.error('Error fetching backgrounds:', error);
-    const placeholder = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
-    const backgroundDetails = document.getElementById('background-details');
-    backgroundDetails.innerHTML = '';
-    const backgroundImage = document.createElement('img');
-    backgroundImage.id = 'background-image';
-    backgroundImage.src = placeholder;
-    backgroundImage.style.width = '600px';
-    backgroundImage.style.height = '600px';
-    backgroundImage.style.borderRadius = '10px';
-    backgroundImage.style.border = '1px solid black';
-    backgroundDetails.appendChild(backgroundImage);
     const backgroundMetadata = document.getElementById('background-metadata');
-    if (backgroundMetadata) backgroundMetadata.innerText = 'Failed to load backgrounds: ' + error.message;
+    if (backgroundMetadata) {
+      backgroundMetadata.innerText = 'Failed to generate images: API error. Please try again later.';
+    }
   } finally {
     clearInterval(timerInterval);
     generateButton.innerText = 'Generate Bkgd';
     timerDisplay.innerText = 'Processing: 0s';
     generateButton.disabled = false;
+  }
+
+  // Update the grid with click events after generation
+  const grid = document.getElementById('gen-grid');
+  currentGridState.imageUrls.forEach((imageUrl, index) => {
+    if (!imageUrl) return; // Skip if the image failed to generate
+    const container = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
+    const img = container.querySelector('img');
+
+    container.addEventListener('click', () => {
+      // Check if the image is deleted (showing placeholder)
+      if (currentGridState.deleted[index]) {
+        // Undelete the image
+        currentGridState.deleted[index] = false;
+        img.src = currentGridState.imageUrls[index];
+        return;
+      }
+
+      // Remove selected class from all containers
+      document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
+      // Add selected class to the clicked container
+      container.classList.add('selected');
+
+      // Enlarge the image
+      const backgroundDetails = document.getElementById('background-details');
+      backgroundDetails.innerHTML = '';
+      const fullImg = document.createElement('img');
+      fullImg.className = 'gen-image-full';
+      fullImg.src = imageUrl;
+      fullImg.dataset.index = index;
+      backgroundDetails.appendChild(fullImg);
+
+      // Update the Preview background
+      preview.style.background = `url(${imageUrl})`;
+      preview.style.backgroundSize = 'cover';
+
+      // Add click event to remove the enlarged image and revert to grid
+      fullImg.addEventListener('click', () => {
+        backgroundDetails.innerHTML = '';
+        backgroundDetails.appendChild(grid);
+        // Reset the Preview background
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        preview.style.backgroundSize = 'cover';
+      });
+
+      // Set up Left/Right arrow cycling
+      const leftArrow = document.querySelector('.gen-control-emoji[data-action="left"]');
+      const rightArrow = document.querySelector('.gen-control-emoji[data-action="right"]');
+      const deleteEmoji = document.querySelector('.gen-control-emoji[data-action="delete"]');
+      const keepEmoji = document.querySelector('.gen-control-emoji[data-action="keep"]');
+
+      leftArrow.onclick = () => {
+        let newIndex = parseInt(fullImg.dataset.index) - 1;
+        if (newIndex < 0) newIndex = currentGridState.imageUrls.length - 1;
+        while (currentGridState.deleted[newIndex] || !currentGridState.imageUrls[newIndex]) {
+          newIndex--;
+          if (newIndex < 0) newIndex = currentGridState.imageUrls.length - 1;
+        }
+        fullImg.src = currentGridState.imageUrls[newIndex];
+        fullImg.dataset.index = newIndex;
+        preview.style.background = `url(${currentGridState.imageUrls[newIndex]})`;
+        preview.style.backgroundSize = 'cover';
+        document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
+        document.querySelector(`.gen-image-container[data-index="${newIndex}"]`).classList.add('selected');
+      };
+
+      rightArrow.onclick = () => {
+        let newIndex = parseInt(fullImg.dataset.index) + 1;
+        if (newIndex >= currentGridState.imageUrls.length) newIndex = 0;
+        while (currentGridState.deleted[newIndex] || !currentGridState.imageUrls[newIndex]) {
+          newIndex++;
+          if (newIndex >= currentGridState.imageUrls.length) newIndex = 0;
+        }
+        fullImg.src = currentGridState.imageUrls[newIndex];
+        fullImg.dataset.index = newIndex;
+        preview.style.background = `url(${currentGridState.imageUrls[newIndex]})`;
+        preview.style.backgroundSize = 'cover';
+        document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
+        document.querySelector(`.gen-image-container[data-index="${newIndex}"]`).classList.add('selected');
+      };
+
+      deleteEmoji.onclick = () => {
+        const index = parseInt(fullImg.dataset.index);
+        currentGridState.deleted[index] = true;
+        backgroundDetails.innerHTML = '';
+        backgroundDetails.appendChild(grid);
+        const containerToUpdate = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
+        const imgToUpdate = containerToUpdate.querySelector('img');
+        imgToUpdate.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        preview.style.backgroundSize = 'cover';
+      };
+
+      keepEmoji.onclick = () => {
+        addToChosenGrid(fullImg.src);
+        backgroundDetails.innerHTML = '';
+        backgroundDetails.appendChild(grid);
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        preview.style.backgroundSize = 'cover';
+      };
+    });
+  });
+
+  // Update metadata
+  const backgroundMetadata = document.getElementById('background-metadata');
+  if (backgroundMetadata) {
+    backgroundMetadata.innerText = `Generated ${count} images with prompt: ${basePrompt}${userPrompt ? ', ' + userPrompt : ''}`;
   }
 }
 
