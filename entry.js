@@ -1282,38 +1282,28 @@ function updatePreviewSamples() {
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
   chosenGrid.innerHTML = '';
-  // Use flexbox with pixel-based gaps
   chosenGrid.style.display = 'flex';
   chosenGrid.style.flexWrap = 'wrap';
-  chosenGrid.style.gap = '15px'; // Horizontal and vertical gap (2.5% of 600px ≈ 15px)
+  chosenGrid.style.gap = '15px';
   chosenGrid.style.width = '600px';
-
-  // Add empty slots
   for (let i = 0; i < count; i++) {
     const container = document.createElement('div');
     container.className = 'chosen-image-container';
-    container.style.width = '108px'; // 18% of 600px = 108px
-    container.style.height = '108px'; // Make it square
+    container.style.width = '108px';
+    container.style.height = '108px';
     chosenGrid.appendChild(container);
   }
-
-  // Repopulate with chosen images
   chosenImages.forEach(imageUrl => addToChosenGrid(imageUrl));
 }
 
 function addToChosenGrid(imageUrl, targetContainer = null) {
   const chosenGrid = document.getElementById('chosen-grid');
-  let container = targetContainer;
-  if (!container) {
-    container = chosenGrid.querySelector('.chosen-image-container:not(:has(img))');
-  }
+  let container = targetContainer || chosenGrid.querySelector('.chosen-image-container:not(:has(img))');
   if (container) {
     const existingImg = container.querySelector('img');
     if (existingImg) {
       const index = chosenImages.indexOf(existingImg.src);
-      if (index !== -1) {
-        chosenImages.splice(index, 1);
-      }
+      if (index !== -1) chosenImages.splice(index, 1);
       existingImg.remove();
     }
     const img = document.createElement('img');
@@ -1330,7 +1320,7 @@ function addToChosenGrid(imageUrl, targetContainer = null) {
 
 async function fetchMultipleBackgrounds(count) {
   try {
-    clickSound.play().catch(error => console.error('Error playing click sound:', error));
+    clickSound.play().catch(error => console.error(error));
     let seconds = 0;
     generateButton.disabled = true;
     timerInterval = setInterval(() => {
@@ -1339,15 +1329,13 @@ async function fetchMultipleBackgrounds(count) {
     }, 1000);
 
     const backgroundDetails = document.getElementById('background-details');
-    backgroundDetails.innerHTML = ''; // Clear existing content
+    backgroundDetails.innerHTML = '';
 
-    // Calculate grid dimensions
-    const gridSize = Math.sqrt(count); // e.g., 2 for 4x, 4 for 16x
-    const gap = 10; // 10px gap between cells
-    const totalSize = 600; // Total width/height of the Gen Window
-    const cellSize = (totalSize - (gridSize - 1) * gap) / gridSize; // e.g., 295px for 2x2 grid
+    const gridSize = Math.sqrt(count);
+    const gap = 10;
+    const totalSize = 600;
+    const cellSize = (totalSize - (gridSize - 1) * gap) / gridSize;
 
-    // Create the grid
     const grid = document.createElement('div');
     grid.id = 'gen-grid';
     grid.style.display = 'grid';
@@ -1363,11 +1351,9 @@ async function fetchMultipleBackgrounds(count) {
     const width = document.getElementById('width-input').value;
     const height = document.getElementById('height-input').value;
 
-    // Array to store generated image URLs
     const imageUrls = new Array(count).fill(null);
     currentGridState = { count, imageUrls, deleted: new Array(count).fill(false) };
 
-    // Create placeholders in the grid
     for (let i = 0; i < count; i++) {
       const container = document.createElement('div');
       container.className = 'gen-image-container';
@@ -1376,7 +1362,7 @@ async function fetchMultipleBackgrounds(count) {
       container.style.height = `${cellSize}px`;
 
       const img = document.createElement('img');
-      img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp'; // Placeholder
+      img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
       img.draggable = true;
       img.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', img.src);
@@ -1386,25 +1372,19 @@ async function fetchMultipleBackgrounds(count) {
       grid.appendChild(container);
     }
 
-    // Generate images sequentially
     for (let i = 0; i < count; i++) {
-      // Generate a random 7-digit number to append to the prompt
       const randomNumber = Math.floor(1000000 + Math.random() * 9000000);
       const modifiedPrompt = `${basePrompt}${userPrompt ? ', ' + userPrompt : ''}, ${randomNumber}`;
-
       const url = `https://aifn-1-api-new3.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(modifiedPrompt)}&userPrompt=&width=${width}&height=${height}`;
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30-second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       try {
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch background: ${response.status} ${response.statusText}`);
-        }
-
+        if (!response.ok) throw new Error(`Failed: ${response.status} ${response.statusText}`);
         const data = await response.json();
         imageUrls[i] = data.imageUrl;
         const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
@@ -1419,14 +1399,11 @@ async function fetchMultipleBackgrounds(count) {
       }
     }
 
-    // Update the current grid state
     currentGridState.imageUrls = imageUrls;
   } catch (error) {
-    console.error('Error fetching backgrounds:', error);
+    console.error('Error:', error);
     const backgroundMetadata = document.getElementById('background-metadata');
-    if (backgroundMetadata) {
-      backgroundMetadata.innerText = 'Failed to generate images: API error. Please try again later.';
-    }
+    if (backgroundMetadata) backgroundMetadata.innerText = `Failed: ${error.message}`;
   } finally {
     clearInterval(timerInterval);
     generateButton.innerText = 'Generate Bkgd';
@@ -1434,28 +1411,22 @@ async function fetchMultipleBackgrounds(count) {
     generateButton.disabled = false;
   }
 
-  // Update the grid with click events after generation
   const grid = document.getElementById('gen-grid');
   currentGridState.imageUrls.forEach((imageUrl, index) => {
-    if (!imageUrl) return; // Skip if the image failed to generate
+    if (!imageUrl) return;
     const container = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
     const img = container.querySelector('img');
 
     container.addEventListener('click', () => {
-      // Check if the image is deleted (showing placeholder)
       if (currentGridState.deleted[index]) {
-        // Undelete the image
         currentGridState.deleted[index] = false;
         img.src = currentGridState.imageUrls[index];
         return;
       }
 
-      // Remove selected class from all containers
       document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
-      // Add selected class to the clicked container
       container.classList.add('selected');
 
-      // Enlarge the image
       const backgroundDetails = document.getElementById('background-details');
       backgroundDetails.innerHTML = '';
       const fullImg = document.createElement('img');
@@ -1464,20 +1435,16 @@ async function fetchMultipleBackgrounds(count) {
       fullImg.dataset.index = index;
       backgroundDetails.appendChild(fullImg);
 
-      // Update the Preview background
       preview.style.background = `url(${imageUrl})`;
       preview.style.backgroundSize = 'cover';
 
-      // Add click event to remove the enlarged image and revert to grid
       fullImg.addEventListener('click', () => {
         backgroundDetails.innerHTML = '';
         backgroundDetails.appendChild(grid);
-        // Reset the Preview background
         preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
         preview.style.backgroundSize = 'cover';
       });
 
-      // Set up Left/Right arrow cycling
       const leftArrow = document.querySelector('.gen-control-emoji[data-action="left"]');
       const rightArrow = document.querySelector('.gen-control-emoji[data-action="right"]');
       const deleteEmoji = document.querySelector('.gen-control-emoji[data-action="delete"]');
@@ -1535,7 +1502,6 @@ async function fetchMultipleBackgrounds(count) {
     });
   });
 
-  // Update metadata
   const backgroundMetadata = document.getElementById('background-metadata');
   if (backgroundMetadata) {
     backgroundMetadata.innerText = `Generated ${count} images with prompt: ${basePrompt}${userPrompt ? ', ' + userPrompt : ''}`;
