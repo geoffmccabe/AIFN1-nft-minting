@@ -1276,7 +1276,6 @@ function updatePreviewSamples() {
 
 
 
-
 /*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
 
 function updateChosenGrid(count) {
