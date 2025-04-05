@@ -1276,7 +1276,7 @@ function updatePreviewSamples() {
 
 
 
-/* Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
+/*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
 
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
@@ -1399,55 +1399,6 @@ async function fetchMultipleBackgrounds(count) {
     }
 
     currentGridState.imageUrls = imageUrls;
-
-    // Add drag-and-drop within gen-grid
-    grid.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      const target = e.target.closest('.gen-image-container');
-      if (target) {
-        target.style.border = '2px dashed #4CAF50';
-      }
-    });
-    grid.addEventListener('dragleave', (e) => {
-      const target = e.target.closest('.gen-image-container');
-      if (target) {
-        target.style.border = '1px solid black';
-      }
-    });
-    grid.addEventListener('drop', (e) => {
-      e.preventDefault();
-      const imageUrl = e.dataTransfer.getData('text/plain');
-      const source = e.dataTransfer.getData('source');
-      const target = e.target.closest('.gen-image-container');
-      if (!target) return;
-
-      target.style.border = '1px solid black';
-
-      if (source === 'gen-grid') {
-        const draggedImg = grid.querySelector(`img[src="${imageUrl}"]`);
-        const draggedContainer = draggedImg?.parentElement;
-        const targetImg = target.querySelector('img');
-
-        if (draggedContainer && draggedContainer !== target) {
-          const draggedIndex = parseInt(draggedContainer.dataset.index);
-          const targetIndex = parseInt(target.dataset.index);
-          const [movedImage] = currentGridState.imageUrls.splice(draggedIndex, 1);
-
-          if (targetImg) {
-            const targetImageUrl = targetImg.src;
-            const targetArrayIndex = currentGridState.imageUrls.indexOf(targetImageUrl);
-            currentGridState.imageUrls.splice(targetArrayIndex, 1, movedImage);
-            currentGridState.imageUrls.splice(draggedIndex, 0, targetImageUrl);
-            draggedImg.src = targetImageUrl;
-            targetImg.src = imageUrl;
-          } else {
-            currentGridState.imageUrls.splice(targetIndex, 0, movedImage);
-            target.appendChild(draggedImg);
-          }
-        }
-      }
-    });
-
   } catch (error) {
     console.error('Error:', error);
     const backgroundMetadata = document.getElementById('background-metadata');
