@@ -151,7 +151,15 @@ const TraitManager = {
   }
 };
 
+
+
+
+
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
+
+
+
+
 
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
@@ -233,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Set up drag-and-drop from Gen Windows to Chosen grid
+  // Set up drag-and-drop for Chosen grid
   const chosenGrid = document.getElementById('chosen-grid');
   chosenGrid.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -251,9 +259,35 @@ document.addEventListener('DOMContentLoaded', () => {
   chosenGrid.addEventListener('drop', (e) => {
     e.preventDefault();
     const imageUrl = e.dataTransfer.getData('text/plain');
+    const source = e.dataTransfer.getData('source');
     const target = e.target.closest('.chosen-image-container');
-    if (target) {
-      target.style.border = '1px solid black';
+    if (!target) return;
+
+    target.style.border = '1px solid black';
+
+    if (source === 'chosen-grid') { // Dragging within the Chosen grid
+      const draggedImg = chosenGrid.querySelector(`img[src="${imageUrl}"]`);
+      const draggedContainer = draggedImg?.parentElement;
+      const targetImg = target.querySelector('img');
+
+      if (draggedContainer && draggedContainer !== target) {
+        const draggedIndex = Array.from(chosenGrid.children).indexOf(draggedContainer);
+        const targetIndex = Array.from(chosenGrid.children).indexOf(target);
+        const [movedImage] = chosenImages.splice(draggedIndex, 1);
+
+        if (targetImg) { // Swap with existing image
+          const targetImageUrl = targetImg.src;
+          const targetArrayIndex = chosenImages.indexOf(targetImageUrl);
+          chosenImages.splice(targetArrayIndex, 1, movedImage);
+          chosenImages.splice(draggedIndex, 0, targetImageUrl);
+          draggedImg.src = targetImageUrl;
+          targetImg.src = imageUrl;
+        } else { // Move to empty slot
+          chosenImages.splice(targetIndex, 0, movedImage);
+          target.appendChild(draggedImg);
+        }
+      }
+    } else { // Dragging from outside (e.g., gen-grid)
       const existingImg = target.querySelector('img');
       if (existingImg) {
         const index = chosenImages.indexOf(existingImg.src);
@@ -264,9 +298,23 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const img = document.createElement('img');
       img.src = imageUrl;
+      img.draggable = true;
+      img.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', imageUrl);
+        e.dataTransfer.setData('source', 'chosen-grid');
+      });
       target.appendChild(img);
       chosenImages.push(imageUrl);
     }
+  });
+
+  // Make existing images draggable
+  chosenGrid.querySelectorAll('.chosen-image-container img').forEach(img => {
+    img.draggable = true;
+    img.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', img.src);
+      e.dataTransfer.setData('source', 'chosen-grid');
+    });
   });
 
   // Set up preview panel drag events
@@ -364,6 +412,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+
+
 
 /*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
 
