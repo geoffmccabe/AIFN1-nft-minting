@@ -157,10 +157,6 @@ const TraitManager = {
 
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
 
-
-
-
-
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
 let traitImages = [];
@@ -261,33 +257,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const imageUrl = e.dataTransfer.getData('text/plain');
     const source = e.dataTransfer.getData('source');
     const target = e.target.closest('.chosen-image-container');
-    if (!target) return;
+    if (!target || !imageUrl) return;
 
     target.style.border = '1px solid black';
 
-    if (source === 'chosen-grid') { // Dragging within the Chosen grid
-      const draggedImg = chosenGrid.querySelector(`img[src="${imageUrl}"]`);
-      const draggedContainer = draggedImg?.parentElement;
-      const targetImg = target.querySelector('img');
-
+    if (source === 'chosen-grid') { // Reordering within Chosen grid
+      const draggedContainer = Array.from(chosenGrid.children).find(container => 
+        container.querySelector('img')?.src === imageUrl
+      );
       if (draggedContainer && draggedContainer !== target) {
-        const draggedIndex = Array.from(chosenGrid.children).indexOf(draggedContainer);
-        const targetIndex = Array.from(chosenGrid.children).indexOf(target);
-        const [movedImage] = chosenImages.splice(draggedIndex, 1);
+        const draggedImg = draggedContainer.querySelector('img');
+        const targetImg = target.querySelector('img');
+        const draggedIndex = chosenImages.indexOf(imageUrl);
+
+        if (draggedIndex !== -1) {
+          chosenImages.splice(draggedIndex, 1); // Remove from old position
+        }
 
         if (targetImg) { // Swap with existing image
-          const targetImageUrl = targetImg.src;
-          const targetArrayIndex = chosenImages.indexOf(targetImageUrl);
-          chosenImages.splice(targetArrayIndex, 1, movedImage);
-          chosenImages.splice(draggedIndex, 0, targetImageUrl);
-          draggedImg.src = targetImageUrl;
-          targetImg.src = imageUrl;
+          const targetIndex = chosenImages.indexOf(targetImg.src);
+          if (targetIndex !== -1) {
+            chosenImages.splice(targetIndex, 1, imageUrl); // Replace target
+            draggedImg.src = targetImg.src; // Swap image sources
+            chosenImages.splice(draggedIndex, 0, targetImg.src); // Insert old target image
+          }
         } else { // Move to empty slot
-          chosenImages.splice(targetIndex, 0, movedImage);
-          target.appendChild(draggedImg);
+          const targetIndex = Array.from(chosenGrid.children).indexOf(target);
+          chosenImages.splice(targetIndex, 0, imageUrl); // Insert at new position
+          target.appendChild(draggedImg); // Move the image DOM element
         }
       }
-    } else { // Dragging from outside (e.g., gen-grid)
+    } else { // Adding from outside (e.g., gen-grid)
       const existingImg = target.querySelector('img');
       if (existingImg) {
         const index = chosenImages.indexOf(existingImg.src);
@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
       img.src = imageUrl;
       img.draggable = true;
       img.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', imageUrl);
+        e.dataTransfer.setData('text/plain', img.src);
         e.dataTransfer.setData('source', 'chosen-grid');
       });
       target.appendChild(img);
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Make existing images draggable
+  // Ensure all images in Chosen grid are draggable on load
   chosenGrid.querySelectorAll('.chosen-image-container img').forEach(img => {
     img.draggable = true;
     img.addEventListener('dragstart', (e) => {
@@ -412,7 +412,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-
 
 
 
