@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
   // Set up magnifying glass
   magnifyEmoji.addEventListener('click', () => {
-    enlargedPreview.innerHTML = '';
+    enlargedPreview.style.display = 'block';
     const maxWidth = window.innerWidth * 0.9;
     const maxHeight = window.innerHeight * 0.9;
     let scale = 1;
@@ -437,20 +437,24 @@ document.addEventListener('DOMContentLoaded', () => {
       scale = maxWidth / 600;
     }
 
-    traitImages.forEach(img => {
-      if (img && img.src && img.style.visibility !== 'hidden') {
-        const clonedImg = img.cloneNode(true);
-        clonedImg.style.width = `${img.width * scale}px`;
-        clonedImg.style.height = `${img.height * scale}px`;
-        clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
-        clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
-        clonedImg.style.zIndex = img.style.zIndex;
-        clonedImg.style.visibility = 'visible';
-        enlargedPreview.appendChild(clonedImg);
-      }
-    });
+    const updateEnlargedPreview = () => {
+      const enlargedImages = enlargedPreview.querySelectorAll('img');
+      enlargedImages.forEach(img => img.remove());
+      traitImages.forEach(img => {
+        if (img && img.src && img.style.visibility !== 'hidden') {
+          const clonedImg = img.cloneNode(true);
+          clonedImg.style.width = `${img.width * scale}px`;
+          clonedImg.style.height = `${img.height * scale}px`;
+          clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
+          clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
+          clonedImg.style.zIndex = img.style.zIndex;
+          clonedImg.style.visibility = 'visible';
+          enlargedPreview.insertBefore(clonedImg, enlargedPreview.querySelector('#enlarged-preview-controls'));
+        }
+      });
+    };
 
-    enlargedPreview.style.display = 'block';
+    updateEnlargedPreview();
 
     let randomizeInterval = null;
     const playEmoji = document.getElementById('play-emoji');
@@ -464,40 +468,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (randomTrait.variants.length === 0) return;
         const randomVariant = randomTrait.variants[Math.floor(Math.random() * randomTrait.variants.length)];
         selectVariation(randomTrait.id, randomVariant.id);
-
-        // Update enlarged preview
-        enlargedPreview.innerHTML = '';
-        traitImages.forEach(img => {
-          if (img && img.src && img.style.visibility !== 'hidden') {
-            const clonedImg = img.cloneNode(true);
-            clonedImg.style.width = `${img.width * scale}px`;
-            clonedImg.style.height = `${img.height * scale}px`;
-            clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
-            clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
-            clonedImg.style.zIndex = img.style.zIndex;
-            clonedImg.style.visibility = 'visible';
-            enlargedPreview.appendChild(clonedImg);
-          }
-        });
-        enlargedPreview.appendChild(pauseEmoji); // Re-add pause emoji
-        enlargedPreview.appendChild(playEmoji);  // Re-add play emoji
+        updateEnlargedPreview();
       }, 1000); // 1 second interval
-    }, { once: false });
+    });
 
     pauseEmoji.addEventListener('click', () => {
       if (randomizeInterval) {
         clearInterval(randomizeInterval);
         randomizeInterval = null;
       }
-    }, { once: false });
+    });
 
-    enlargedPreview.addEventListener('click', () => {
+    enlargedPreview.addEventListener('click', (e) => {
+      if (e.target === playEmoji || e.target === pauseEmoji) return; // Ignore clicks on emojis
       if (randomizeInterval) {
         clearInterval(randomizeInterval);
         randomizeInterval = null;
       }
       enlargedPreview.style.display = 'none';
-    }, { once: true });
+    });
   });
 
   // Set up undo functionality
