@@ -157,6 +157,9 @@ const TraitManager = {
 
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
 
+
+
+
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
 let traitImages = [];
@@ -417,9 +420,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
 
-
-
-
 document.addEventListener('DOMContentLoaded', () => {
   // Set up magnifying glass
   magnifyEmoji.addEventListener('click', () => {
@@ -438,20 +438,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     traitImages.forEach(img => {
-      if (img && img.src && img.style.visibility !== 'hidden') { // Check for src and visibility
+      if (img && img.src && img.style.visibility !== 'hidden') {
         const clonedImg = img.cloneNode(true);
         clonedImg.style.width = `${img.width * scale}px`;
         clonedImg.style.height = `${img.height * scale}px`;
         clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
         clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
         clonedImg.style.zIndex = img.style.zIndex;
-        clonedImg.style.visibility = 'visible'; // Ensure cloned image is visible
+        clonedImg.style.visibility = 'visible';
         enlargedPreview.appendChild(clonedImg);
       }
     });
 
     enlargedPreview.style.display = 'block';
-    enlargedPreview.addEventListener('click', () => enlargedPreview.style.display = 'none', { once: true });
+
+    let randomizeInterval = null;
+    const playEmoji = document.getElementById('play-emoji');
+    const pauseEmoji = document.getElementById('pause-emoji');
+
+    playEmoji.addEventListener('click', () => {
+      if (randomizeInterval) return; // Already running
+      randomizeInterval = setInterval(() => {
+        const traits = TraitManager.getAllTraits();
+        const randomTrait = traits[Math.floor(Math.random() * traits.length)];
+        if (randomTrait.variants.length === 0) return;
+        const randomVariant = randomTrait.variants[Math.floor(Math.random() * randomTrait.variants.length)];
+        selectVariation(randomTrait.id, randomVariant.id);
+
+        // Update enlarged preview
+        enlargedPreview.innerHTML = '';
+        traitImages.forEach(img => {
+          if (img && img.src && img.style.visibility !== 'hidden') {
+            const clonedImg = img.cloneNode(true);
+            clonedImg.style.width = `${img.width * scale}px`;
+            clonedImg.style.height = `${img.height * scale}px`;
+            clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
+            clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
+            clonedImg.style.zIndex = img.style.zIndex;
+            clonedImg.style.visibility = 'visible';
+            enlargedPreview.appendChild(clonedImg);
+          }
+        });
+        enlargedPreview.appendChild(pauseEmoji); // Re-add pause emoji
+        enlargedPreview.appendChild(playEmoji);  // Re-add play emoji
+      }, 1000); // 1 second interval
+    }, { once: false });
+
+    pauseEmoji.addEventListener('click', () => {
+      if (randomizeInterval) {
+        clearInterval(randomizeInterval);
+        randomizeInterval = null;
+      }
+    }, { once: false });
+
+    enlargedPreview.addEventListener('click', () => {
+      if (randomizeInterval) {
+        clearInterval(randomizeInterval);
+        randomizeInterval = null;
+      }
+      enlargedPreview.style.display = 'none';
+    }, { once: true });
   });
 
   // Set up undo functionality
@@ -522,7 +568,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+
+
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
+
+
+
+
 
 function addTrait(trait) {
   const traitSection = document.createElement('div');
