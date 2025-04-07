@@ -163,7 +163,13 @@ const TraitManager = {
   }
 };
 
+
+
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
+/* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
+
+
+
 
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
@@ -185,9 +191,19 @@ let chosenImages = []; // Track chosen images
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
 
+
+
+
+/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 
+
+
+
 document.addEventListener('DOMContentLoaded', async () => {
+  let randomizeInterval = null;
+  let currentSpeed = 1000; // Start at 1000ms
+
   provider = new ethers.providers.Web3Provider(window.ethereum);
   contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
   signer = provider.getSigner();
@@ -206,11 +222,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   widthInput = document.getElementById('width-input');
   heightInput = document.getElementById('height-input');
 
-  // Clear localStorage to start fresh with the new framework
+  // Ensure DOM elements are available
+  if (!traitContainer || !previewSamplesGrid) {
+    console.error('Critical DOM elements missing:', { traitContainer, previewSamplesGrid });
+    return;
+  }
+
+  // Clear localStorage to start fresh
   localStorage.clear();
   variantHistories = {};
 
-  // Only clear preview if it’s not already populated
   if (preview && !preview.hasChildNodes()) {
     preview.innerHTML = '';
   }
@@ -218,7 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize TraitManager with 3 traits
   TraitManager.initialize();
 
-  // Render initial traits and select their variants
+  // Render initial traits immediately
   TraitManager.getAllTraits().forEach(trait => {
     addTrait(trait);
     refreshTraitGrid(trait.id);
@@ -226,106 +247,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       selectVariation(trait.id, trait.variants[0].id);
     }
   });
+
+  // Update preview samples after traits are rendered
   updatePreviewSamples();
-
-  // Event listeners for global controls
-  updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
-  generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1)); // Single image
-  document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
-  document.getElementById('gen-16x').addEventListener('click', () => fetchMultipleBackgrounds(16));
-
-  // Set up Chosen grid
-  const chosenCountInput = document.getElementById('chosen-count');
-  const updateChosenGridButton = document.getElementById('update-chosen-grid');
-  updateChosenGrid(parseInt(chosenCountInput.value));
-  updateChosenGridButton.addEventListener('click', () => {
-    updateChosenGrid(parseInt(chosenCountInput.value));
-  });
-  chosenCountInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      updateChosenGrid(parseInt(chosenCountInput.value));
-    }
-  });
-
-  // Set up drag-and-drop for Chosen grid
-  const chosenGrid = document.getElementById('chosen-grid');
-  chosenGrid.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    const target = e.target.closest('.chosen-image-container');
-    if (target) {
-      target.style.border = '2px dashed #4CAF50';
-    }
-  });
-  chosenGrid.addEventListener('dragleave', (e) => {
-    const target = e.target.closest('.chosen-image-container');
-    if (target) {
-      target.style.border = '1px solid black';
-    }
-  });
-  chosenGrid.addEventListener('drop', (e) => {
-    e.preventDefault();
-    const imageUrl = e.dataTransfer.getData('text/plain');
-    const source = e.dataTransfer.getData('source');
-    const target = e.target.closest('.chosen-image-container');
-    if (!target || !imageUrl) return;
-
-    target.style.border = '1px solid black';
-
-    if (source === 'chosen-grid') { // Reordering within Chosen grid
-      const draggedContainer = Array.from(chosenGrid.children).find(container => 
-        container.querySelector('img')?.src === imageUrl
-      );
-      if (draggedContainer && draggedContainer !== target) {
-        const draggedImg = draggedContainer.querySelector('img');
-        const targetImg = target.querySelector('img');
-        const draggedIndex = chosenImages.indexOf(imageUrl);
-
-        if (draggedIndex !== -1) {
-          chosenImages.splice(draggedIndex, 1); // Remove from old position
-        }
-
-        if (targetImg) { // Swap with existing image
-          const targetIndex = chosenImages.indexOf(targetImg.src);
-          if (targetIndex !== -1) {
-            chosenImages.splice(targetIndex, 1, imageUrl); // Replace target
-            draggedImg.src = targetImg.src; // Swap image sources
-            chosenImages.splice(draggedIndex, 0, targetImg.src); // Insert old target image
-          }
-        } else { // Move to empty slot
-          const targetIndex = Array.from(chosenGrid.children).indexOf(target);
-          chosenImages.splice(targetIndex, 0, imageUrl); // Insert at new position
-          target.appendChild(draggedImg); // Move the image DOM element
-        }
-      }
-    } else { // Adding from outside (e.g., gen-grid)
-      const existingImg = target.querySelector('img');
-      if (existingImg) {
-        const index = chosenImages.indexOf(existingImg.src);
-        if (index !== -1) {
-          chosenImages.splice(index, 1);
-        }
-        existingImg.remove();
-      }
-      const img = document.createElement('img');
-      img.src = imageUrl;
-      img.draggable = true;
-      img.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', img.src);
-        e.dataTransfer.setData('source', 'chosen-grid');
-      });
-      target.appendChild(img);
-      chosenImages.push(imageUrl);
-    }
-  });
-
-  // Ensure all images in Chosen grid are draggable on load
-  chosenGrid.querySelectorAll('.chosen-image-container img').forEach(img => {
-    img.draggable = true;
-    img.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', img.src);
-      e.dataTransfer.setData('source', 'chosen-grid');
-    });
-  });
 
   // IndexedDB Setup
   const openDB = () => new Promise((resolve, reject) => {
@@ -353,12 +277,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
         canvas.getContext('2d').drawImage(img, 0, 0);
-        URL.revokeObjectURL(objectUrl); // Clean up memory
+        URL.revokeObjectURL(objectUrl);
         canvas.toBlob(blob => resolve(blob), 'image/webp', 0.20);
       };
       img.onerror = () => {
-        URL.revokeObjectURL(objectUrl); // Clean up on error
-        resolve(file); // Fallback to original
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
       };
       img.src = objectUrl;
     });
@@ -412,8 +336,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           document.getElementById('project-name').value = project.name || '';
           document.getElementById('project-size').value = project.size || '600x600';
           document.getElementById('project-description').value = project.description || '';
-          document.getElementById('width-input').value = '600'; // Enforce 600px
-          document.getElementById('height-input').value = '600'; // Enforce 600px
+          document.getElementById('width-input').value = '600';
+          document.getElementById('height-input').value = '600';
 
           TraitManager.traits = [];
           const sortedTraits = project.traits.sort((a, b) => a.position - b.position);
@@ -446,11 +370,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Load project after initialization
-  await loadProject();
+  // Load project after initial rendering
+  try {
+    await loadProject();
+  } catch (error) {
+    console.error('Failed to load project:', error);
+    // Ensure initial traits render even if load fails
+    TraitManager.getAllTraits().forEach(trait => {
+      addTrait(trait);
+      refreshTraitGrid(trait.id);
+      if (trait.variants.length > 0) {
+        selectVariation(trait.id, trait.variants[0].id);
+      }
+    });
+    updatePreviewSamples();
+  }
+
+  // Event listeners for global controls
+  updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
+  generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1));
+  document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
+  document.getElementById('gen-16x').addEventListener('click', () => fetchMultipleBackgrounds(16));
 
   // Scroll Controls
-  const traitContainer = document.getElementById('trait-container');
   const scrollTrait = (direction) => {
     const traits = [...traitContainer.querySelectorAll('.trait-section')];
     if (traits.length === 0) return;
@@ -473,8 +415,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const customSizeGroup = document.getElementById('custom-size-group');
   projectSizeSelect.onchange = () => {
     customSizeGroup.style.display = projectSizeSelect.value === 'custom' ? 'block' : 'none';
-    document.getElementById('width-input').value = '600'; // Enforce 600px
-    document.getElementById('height-input').value = '600'; // Enforce 600px
+    document.getElementById('width-input').value = '600';
+    document.getElementById('height-input').value = '600';
     saveProject();
   };
   document.getElementById('custom-width').onchange = () => saveProject();
@@ -488,7 +430,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     infoTooltip.addEventListener('click', (e) => {
       e.preventDefault();
       const tooltipText = infoTooltip.getAttribute('title');
-      alert(tooltipText); // Fallback to alert if CSS tooltip fails
+      alert(tooltipText); // Fallback if CSS tooltip fails
     });
   }
 
@@ -517,7 +459,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (img && img.src && img.style.visibility !== 'hidden') {
           const clonedImg = img.cloneNode(true);
           clonedImg.style.width = `${img.width * scale}px`;
-          clonedImg.style.height = `${img.height * scale}px`;
+ cappingHeight = `${img.height * scale}px`;
           clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
           clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
           clonedImg.style.zIndex = img.style.zIndex;
@@ -690,9 +632,107 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // Set up Chosen grid
+  const chosenCountInput = document.getElementById('chosen-count');
+  const updateChosenGridButton = document.getElementById('update-chosen-grid');
+  updateChosenGrid(parseInt(chosenCountInput.value));
+  updateChosenGridButton.addEventListener('click', () => {
+    updateChosenGrid(parseInt(chosenCountInput.value));
+  });
+  chosenCountInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      updateChosenGrid(parseInt(chosenCountInput.value));
+    }
+  });
+
+  // Set up drag-and-drop for Chosen grid
+  const chosenGrid = document.getElementById('chosen-grid');
+  chosenGrid.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const target = e.target.closest('.chosen-image-container');
+    if (target) {
+      target.style.border = '2px dashed #4CAF50';
+    }
+  });
+  chosenGrid.addEventListener('dragleave', (e) => {
+    const target = e.target.closest('.chosen-image-container');
+    if (target) {
+      target.style.border = '1px solid black';
+    }
+  });
+  chosenGrid.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const imageUrl = e.dataTransfer.getData('text/plain');
+    const source = e.dataTransfer.getData('source');
+    const target = e.target.closest('.chosen-image-container');
+    if (!target || !imageUrl) return;
+
+    target.style.border = '1px solid black';
+
+    if (source === 'chosen-grid') {
+      const draggedContainer = Array.from(chosenGrid.children).find(container => 
+        container.querySelector('img')?.src === imageUrl
+      );
+      if (draggedContainer && draggedContainer !== target) {
+        const draggedImg = draggedContainer.querySelector('img');
+        const targetImg = target.querySelector('img');
+        const draggedIndex = chosenImages.indexOf(imageUrl);
+
+        if (draggedIndex !== -1) {
+          chosenImages.splice(draggedIndex, 1);
+        }
+
+        if (targetImg) {
+          const targetIndex = chosenImages.indexOf(targetImg.src);
+          if (targetIndex !== -1) {
+            chosenImages.splice(targetIndex, 1, imageUrl);
+            draggedImg.src = targetImg.src;
+            chosenImages.splice(draggedIndex, 0, targetImg.src);
+          }
+        } else {
+          const targetIndex = Array.from(chosenGrid.children).indexOf(target);
+          chosenImages.splice(targetIndex, 0, imageUrl);
+          target.appendChild(draggedImg);
+        }
+      }
+    } else {
+      const existingImg = target.querySelector('img');
+      if (existingImg) {
+        const index = chosenImages.indexOf(existingImg.src);
+        if (index !== -1) {
+          chosenImages.splice(index, 1);
+        }
+        existingImg.remove();
+      }
+      const img = document.createElement('img');
+      img.src = imageUrl;
+      img.draggable = true;
+      img.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', img.src);
+        e.dataTransfer.setData('source', 'chosen-grid');
+      });
+      target.appendChild(img);
+      chosenImages.push(imageUrl);
+    }
+  });
+
+  // Ensure all images in Chosen grid are draggable on load
+  chosenGrid.querySelectorAll('.chosen-image-container img').forEach(img => {
+    img.draggable = true;
+    img.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', img.src);
+      e.dataTransfer.setData('source', 'chosen-grid');
+    });
+  });
 });
 
+
+
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
+/* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
+
+
 
 function addTrait(trait) {
   const traitSection = document.createElement('div');
@@ -1140,7 +1180,13 @@ function updateMintButton() {
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
+
+
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
+/* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
+
+
+
 
 function updateZIndices() {
   const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
