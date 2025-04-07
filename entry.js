@@ -199,6 +199,7 @@ clickSound.volume = 0.25;
 
 
 
+
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000; // Start at 1000ms
@@ -296,15 +297,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       const projectStore = tx.objectStore('projects');
       const imageStore = tx.objectStore('images');
 
-      const webpImages = {};
+      const traitsToSave = TraitManager.getAllTraits().map(trait => ({
+        id: trait.id,
+        position: trait.position,
+        name: trait.name,
+        selected: trait.selected,
+        variants: trait.variants.map(variant => ({
+          id: variant.id,
+          name: variant.name,
+          chance: variant.chance,
+          createdAt: variant.createdAt
+        }))
+      }));
+
       Promise.all(TraitManager.getAllTraits().map(trait =>
         Promise.all(trait.variants.map(async variant => {
           if (variant.url) {
             const response = await fetch(variant.url);
             const blob = await response.blob();
-            const webpBlob = await compressToWebp(blob);
-            webpImages[`${trait.id}_${variant.id}`] = webpBlob;
-            await imageStore.put({ id: `${trait.id}_${variant.id}`, data: webpBlob });
+            const arrayBuffer = await blob.arrayBuffer();
+            await imageStore.put({ id: `${trait.id}_${variant.id}`, data: arrayBuffer });
+            console.log(`Saved image for ${trait.id}_${variant.id}`);
           }
         }))
       )).then(async () => {
@@ -313,7 +326,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           name: document.getElementById('project-name').value,
           size: document.getElementById('project-size').value,
           description: document.getElementById('project-description').value,
-          traits: TraitManager.getAllTraits()
+          traits: traitsToSave
+        });
+        console.log('Saved project:', {
+          name: document.getElementById('project-name').value,
+          traits: traitsToSave
         });
       });
     });
@@ -342,26 +359,29 @@ document.addEventListener('DOMContentLoaded', async () => {
           traitContainer.innerHTML = ''; // Clear before loading
           const sortedTraits = project.traits.sort((a, b) => a.position - b.position).slice(0, 3);
           console.log('Loading traits:', sortedTraits);
+
+          const imageStore = tx.objectStore('images');
           for (const trait of sortedTraits) {
             const newTrait = TraitManager.addTrait(trait.position);
             newTrait.name = trait.name;
             newTrait.selected = trait.selected;
-            newTrait.variants.length = 0;
-            trait.variants.forEach(v => newTrait.variants.push({ ...v }));
-          }
-
-          const imageStore = tx.objectStore('images');
-          for (const trait of TraitManager.getAllTraits()) {
+            newTrait.variants = [];
             for (const variant of trait.variants) {
               const imageData = await imageStore.get(`${trait.id}_${variant.id}`);
-              if (imageData?.data) {
-                variant.url = URL.createObjectURL(new Blob([imageData.data], { type: 'image/webp' }));
-              }
+              const variantData = {
+                id: variant.id,
+                name: variant.name,
+                chance: variant.chance,
+                createdAt: variant.createdAt,
+                url: imageData?.data ? URL.createObjectURL(new Blob([imageData.data], { type: 'image/webp' })) : null
+              };
+              newTrait.variants.push(variantData);
+              console.log(`Loaded variant ${variant.id} for trait ${trait.id}:`, variantData.url ? 'Image present' : 'No image');
             }
-            addTrait(trait);
-            refreshTraitGrid(trait.id);
-            if (trait.variants.length > 0) {
-              selectVariation(trait.id, trait.variants[trait.selected].id);
+            addTrait(newTrait);
+            refreshTraitGrid(newTrait.id);
+            if (newTrait.variants.length > 0) {
+              selectVariation(newTrait.id, newTrait.variants[newTrait.selected].id);
             }
           }
           updatePreviewSamples();
@@ -428,7 +448,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Save/Load Buttons
   document.getElementById('save-project').addEventListener('click', () => {
-    saveProject().then(() => alert('Project saved successfully!'));
+    saveProject().then(() => alert('Project saved successfully!')).catch(err => console.error('Save failed:', err));
   });
   document.getElementById('load-project').addEventListener('click', () => {
     loadProject().then(() => {
@@ -465,21 +485,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     const controls = document.getElementById('enlarged-preview-controls');
     controls.style.display = 'flex';
 
-    const magnifiedState = traitImages.map(img => ({ ...img, src: img.src, style: { ...img.style } })); // Clone initial state
+    const magnifiedState = TraitManager.getAllTraits().map(trait => ({
+      id: trait.id,
+      variants: [...trait.variants],
+      selected: trait.selected,
+      position: trait.position,
+      zIndex: trait.zIndex
+    })); // Use trait data, not DOM clones
+
     const updateEnlargedPreview = () => {
       enlargedPreview.innerHTML = '';
-      magnifiedState.forEach(img => {
-        if (img && img.src && img.style.visibility !== 'hidden') {
-          const clonedImg = document.createElement('img');
-          clonedImg.src = img.src;
-          clonedImg.style.width = `${parseFloat(img.style.width || '600') * scale}px`;
-          clonedImg.style.height = `${parseFloat(img.style.height || '600') * scale}px`;
-          clonedImg.style.left = `${parseFloat(img.style.left || '0') * scale}px`;
-          clonedImg.style.top = `${parseFloat(img.style.top || '0') * scale}px`;
-          clonedImg.style.zIndex = img.style.zIndex;
-          clonedImg.style.visibility = 'visible';
-          clonedImg.style.position = 'absolute';
-          enlargedPreview.appendChild(clonedImg);
+      magnifiedState.forEach(trait => {
+        const variant = trait.variants[trait.selected];
+        if (variant && variant.url) {
+          const img = document.createElement('img');
+          img.src = variant.url;
+          const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
+          img.style.width = `${parseFloat(baseImg.style.width || '600') * scale}px`;
+          img.style.height = `${parseFloat(baseImg.style.height || '600') * scale}px`;
+          img.style.left = `${parseFloat(baseImg.style.left || '0') * scale}px`;
+          img.style.top = `${parseFloat(baseImg.style.top || '0') * scale}px`;
+          img.style.zIndex = trait.zIndex;
+          img.style.position = 'absolute';
+          img.style.visibility = 'visible';
+          enlargedPreview.appendChild(img);
         }
       });
     };
@@ -490,6 +519,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     playEmoji.onclick = (e) => {
       e.stopPropagation();
+      console.log('Play clicked');
       if (randomizeInterval) {
         clearInterval(randomizeInterval);
         if (currentSpeed === 1000) currentSpeed = 100;
@@ -498,15 +528,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentSpeed = 1000;
       }
       randomizeInterval = setInterval(() => {
-        const traits = TraitManager.getAllTraits();
-        const randomTrait = traits[Math.floor(Math.random() * traits.length)];
-        if (randomTrait.variants.length === 0) return;
-        const randomVariant = randomTrait.variants[Math.floor(Math.random() * randomTrait.variants.length)];
-        const magnifiedImg = magnifiedState.find(img => img.id === `preview-trait${randomTrait.id}`);
-        if (magnifiedImg) {
-          magnifiedImg.src = randomVariant.url;
-          updateEnlargedPreview();
-        }
+        magnifiedState.forEach(trait => {
+          if (trait.variants.length > 0) {
+            trait.selected = Math.floor(Math.random() * trait.variants.length);
+            console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
+          }
+        });
+        updateEnlargedPreview();
       }, currentSpeed);
     };
 
@@ -529,12 +557,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       localStorage.setItem(`${projectName}_saveCount`, saveCount);
       const saveKey = `${projectName}_${saveCount}`;
-      const currentState = magnifiedState.map(img => ({
-        id: img.id,
-        src: img.src,
-        left: img.style.left,
-        top: img.style.top,
-        zIndex: img.style.zIndex
+      const currentState = magnifiedState.map(trait => ({
+        id: trait.id,
+        selected: trait.selected,
+        variants: trait.variants.map(v => ({ id: v.id, name: v.name, url: v.url }))
       }));
       localStorage.setItem(saveKey, JSON.stringify(currentState));
       console.log(`Saved as ${saveKey}`);
