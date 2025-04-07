@@ -18,7 +18,7 @@
 
 
   
-<!-- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -->
+<!-------------------------------------- Section 2 - STYLE/CSS - LEFT AND TOP (LAYOUT AND TRAITS) -------------------------------------->
 
 <style>
   body {
@@ -221,7 +221,7 @@
 </style>
   
   
-<!-- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -->
+<!-------------------------------------------------------- Section 3 - STYLE/CSS - RIGHT SIDE (PREVIEWS) -------------------------------------------------------->
 
 
 
@@ -374,10 +374,115 @@
   #update-previews:hover {
     background: #bbb;
   }
+
+/* Panel Styling */
+.project-panel, .traits-panel {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(5px);
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.panel-content {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  max-height: max(70vh, 2400px); /* Bigger of 70vh or 2400px */
+  overflow-y: auto;
+}
+
+.panel-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-family: 'Poppins', sans-serif;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.form-group select:disabled {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.traits-panel-container {
+  position: relative;
+}
+
+.scroll-control {
+  position: absolute;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.up-scroll {
+  top: 50px; /* Adjusted for header */
+}
+
+.down-scroll {
+  bottom: 15px;
+}
+
+@media (max-width: 768px) {
+  .scroll-control {
+    right: 5px;
+  }
+  .traits-panel-container {
+    padding-right: 50px;
+  }
+}
+
 </style>
 
   
-<!-- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -->
+<!-------------------------------------- Section 4 - STYLE/CSS - BOTTOM (AI BACKGROUND AND MINT) -------------------------------------->
 
 
 
@@ -597,23 +702,57 @@
 
 
   
-<!-- Section 5 - LEFT PANEL (TRAITS) -->
+<!------------------------------------------------------ Section 5 - LEFT PANEL (TRAITS) -------------------------------------------------------->
 
 
   
 
+<!-- Section 5 - LEFT PANEL - TRAITS -->
 <div id="left-panel">
-  <div id="logo-container">
-    <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/refs/heads/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Logo" onerror="this.src='https://picsum.photos/600/200?text=Perceptrons+Logo'">
+  <div class="project-panel">
+    <h2>PROJECT PANEL</h2>
+    <div class="panel-content">
+      <div class="form-group">
+        <label for="project-name">Project Name:</label>
+        <input type="text" id="project-name" placeholder="My Awesome Project">
+      </div>
+      <div class="form-group">
+        <label for="project-size">Project Size <span title="Only 600×600px is supported currently" style="cursor: help;">ℹ️</span>:</label>
+        <select id="project-size">
+          <option value="600x600" selected>600×600px (Default)</option>
+          <option value="800x800" disabled>800×800px</option>
+          <option value="1024x1024" disabled>1024×1024px</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="form-group" id="custom-size-group" style="display: none;">
+        <label>Custom Size:</label>
+        <input type="number" id="custom-width" placeholder="Width" min="100" max="2400">
+        <span>×</span>
+        <input type="number" id="custom-height" placeholder="Height" min="100" max="2400">
+        <span>px</span>
+      </div>
+      <div class="form-group">
+        <label for="project-description">Project Description:</label>
+        <textarea id="project-description" placeholder="Describe your project..."></textarea>
+      </div>
+    </div>
   </div>
-  <div id="trait-container">
-    <!-- Trait sections will be added dynamically -->
+  <div class="traits-panel-container">
+    <div class="traits-panel">
+      <h2>TRAITS</h2>
+      <div class="panel-content" id="trait-container">
+        <!-- Dynamically populated by entry.js -->
+      </div>
+    </div>
+    <div class="scroll-control up-scroll">⬆️</div>
+    <div class="scroll-control down-scroll">⬇️</div>
   </div>
 </div>
 
   
 
-<!-- Section 6 - RIGHT PANEL (PREVIEW AND PREVIEW SAMPLES) -->
+<!-------------------------------------- Section 6 - RIGHT PANEL (PREVIEW AND PREVIEW SAMPLES) -------------------------------------------------------->
 
   
 
@@ -644,7 +783,7 @@
 
   
   
-<!-- Section 7 - FULL-WIDTH SECTION (GEN SAMPLES AND CHOSEN) -->
+<!------------------------------------------- Section 7 - FULL-WIDTH SECTION (GEN SAMPLES AND CHOSEN) -------------------------------------->
 
 
   
@@ -701,7 +840,7 @@
 
 
   
-<!-- Section 8 - MINT SECTION -->
+<!-------------------------------------------------------- Section 8 - MINT SECTION -------------------------------------------------------->
 
 
 <div id="enlarged-preview">
