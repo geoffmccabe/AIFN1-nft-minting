@@ -467,13 +467,11 @@ document.addEventListener('DOMContentLoaded', () => {
     playEmoji.onclick = (e) => {
       e.stopPropagation();
       if (randomizeInterval) {
-        // Speed up if already running
+        clearInterval(randomizeInterval); // Prevent race condition
         if (currentSpeed === 1000) currentSpeed = 100;
         else if (currentSpeed === 100) currentSpeed = 10;
-        clearInterval(randomizeInterval);
       } else {
-        // Reset to 1000ms if starting from paused
-        currentSpeed = 1000;
+        currentSpeed = 1000; // Start fresh at 1000ms
       }
       randomizeInterval = setInterval(() => {
         const traits = TraitManager.getAllTraits();
