@@ -201,6 +201,8 @@ clickSound.volume = 0.25;
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 
+
+
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000; // Start at 1000ms
@@ -264,22 +266,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function saveProject() {
     const db = await openDB();
     const tx = db.transaction(['projects', 'images'], 'readwrite');
-    
-    // Clear existing images first
     const imageStore = tx.objectStore('images');
-    const clearRequest = imageStore.clear();
+    const projectStore = tx.objectStore('projects');
+
+    // Clear existing images
     await new Promise((resolve, reject) => {
-      clearRequest.onsuccess = () => {
-        console.log('Cleared existing images');
-        resolve();
-      };
+      const clearRequest = imageStore.clear();
+      clearRequest.onsuccess = () => resolve();
       clearRequest.onerror = () => reject(clearRequest.error);
     });
 
-    // Ensure traits are sorted before saving
-    TraitManager.sortTraits();
-
-    // Save traits data
+    // Prepare traits data
     const traitsToSave = TraitManager.getAllTraits().map(trait => ({
       id: trait.id,
       position: trait.position,
@@ -294,8 +291,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       }))
     }));
 
-    // Save project data
-    const projectStore = tx.objectStore('projects');
+    // Save images
+    for (const trait of TraitManager.getAllTraits()) {
+      for (const variant of trait.variants) {
+        if (variant.url) {
+          try {
+            const response = await fetch(variant.url);
+            if (!response.ok) throw new Error(`Fetch failed for ${variant.url}`);
+            const blob = await response.blob();
+            const arrayBuffer = await blob.arrayBuffer();
+            await new Promise((resolve, reject) => {
+              const request = imageStore.put({ id: `${trait.id}_${variant.id}`, data: arrayBuffer });
+              request.onsuccess = () => resolve();
+              request.onerror = () => reject(request.error);
+            });
+          } catch (error) {
+            console.error(`Error saving image ${trait.id}_${variant.id}:`, error);
+          }
+        }
+      }
+    }
+
+    // Save project metadata
     const projectData = {
       id: 'current',
       name: document.getElementById('project-name').value || 'Unnamed',
@@ -303,40 +320,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       description: document.getElementById('project-description').value,
       traits: traitsToSave
     };
-    
     await new Promise((resolve, reject) => {
       const request = projectStore.put(projectData);
-      request.onsuccess = () => {
-        console.log('Saved project metadata');
-        resolve();
-      };
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
-
-    // Save images
-    for (const trait of TraitManager.getAllTraits()) {
-      for (const variant of trait.variants) {
-        if (variant.url) {
-          try {
-            console.log(`Saving variant ${trait.id}_${variant.id} with URL: ${variant.url}`);
-            const response = await fetch(variant.url);
-            if (!response.ok) throw new Error(`Fetch failed for ${variant.url}: ${response.status}`);
-            const blob = await response.blob();
-            const arrayBuffer = await blob.arrayBuffer();
-            await new Promise((resolve, reject) => {
-              const request = imageStore.put({ id: `${trait.id}_${variant.id}`, data: arrayBuffer });
-              request.onsuccess = () => {
-                console.log(`Saved image for ${trait.id}_${variant.id}, size: ${arrayBuffer.byteLength} bytes`);
-                resolve();
-              };
-              request.onerror = () => reject(request.error);
-            });
-          } catch (error) {
-            console.error('Error saving image:', error);
-          }
-        }
-      }
-    }
 
     console.log('Saved project:', projectData);
     alert('Project saved successfully!');
@@ -346,9 +334,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadProject() {
     const db = await openDB();
     const tx = db.transaction(['projects', 'images'], 'readonly');
-    const project = await new Promise((resolve) => {
-      tx.objectStore('projects').get('current').onsuccess = e => resolve(e.target.result);
-    });
+    const projectStore = tx.objectStore('projects');
+    const imageStore = tx.objectStore('images');
+    const project = await new Promise(resolve => projectStore.get('current').onsuccess = e => resolve(e.target.result));
 
     if (!project) {
       alert('No saved project found');
@@ -361,13 +349,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     preview.innerHTML = '';
     traitImages = [];
 
-    // Load project data
+    // Load project metadata
     document.getElementById('project-name').value = project.name;
     document.getElementById('project-size').value = project.size || '600x600';
     document.getElementById('project-description').value = project.description || '';
 
-    // Load traits
-    const imageStore = tx.objectStore('images');
+    // Load traits and variants
     for (const savedTrait of project.traits) {
       const newTrait = TraitManager.addTrait(savedTrait.position);
       Object.assign(newTrait, {
@@ -377,17 +364,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         variants: []
       });
 
-      // Load variants
       for (const savedVariant of savedTrait.variants) {
-        const imageData = await new Promise((resolve) => {
-          imageStore.get(`${savedTrait.id}_${savedVariant.id}`).onsuccess = e => resolve(e.target.result);
-        });
-
+        const imageData = await new Promise(resolve => imageStore.get(`${savedTrait.id}_${savedVariant.id}`).onsuccess = e => resolve(e.target.result));
         const variantData = {
           ...savedVariant,
           url: imageData?.data ? URL.createObjectURL(new Blob([imageData.data], { type: 'image/webp' })) : ''
         };
-        
         newTrait.variants.push(variantData);
         console.log(`Loaded variant ${variantData.id} for trait ${savedTrait.id}:`, variantData.url ? 'Image present' : 'No image');
       }
@@ -399,10 +381,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Ensure traits are sorted and zIndex applied after load
     TraitManager.sortTraits();
     updatePreviewSamples();
-    console.log('Loaded project:', project);
     alert(`Project "${project.name}" loaded successfully!`);
   }
 
@@ -491,14 +471,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const controls = document.getElementById('enlarged-preview-controls');
     controls.style.display = 'flex';
 
-    // Use TraitManager’s sorted order directly
+    // Reverse sort for correct layering (Trait 1 on top)
     const magnifiedState = TraitManager.getAllTraits().map(trait => ({
       id: trait.id,
       variants: [...trait.variants],
       selected: trait.selected,
       position: trait.position,
       zIndex: trait.zIndex
-    }));
+    })).sort((a, b) => b.position - a.position);
 
     const updateEnlargedPreview = () => {
       enlargedPreview.innerHTML = '';
@@ -512,7 +492,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           img.style.height = `${parseFloat(baseImg.style.height || '600') * scale}px`;
           img.style.left = `${parseFloat(baseImg.style.left || '0') * scale}px`;
           img.style.top = `${parseFloat(baseImg.style.top || '0') * scale}px`;
-          img.style.zIndex = trait.zIndex; // Use TraitManager’s zIndex
+          img.style.zIndex = trait.zIndex;
           img.style.position = 'absolute';
           img.style.visibility = 'visible';
           enlargedPreview.appendChild(img);
@@ -616,7 +596,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           const variationName = trait.variants[trait.selected].name;
           savePosition(currentImage, trait.id, variationName);
           currentImage.classList.remove('dragging');
-          TraitManager.sortTraits(); // Reapply order after drag
+          TraitManager.sortTraits();
         }
       }
     });
@@ -631,7 +611,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           const variationName = trait.variants[trait.selected].name;
           savePosition(currentImage, trait.id, variationName);
           currentImage.classList.remove('dragging');
-          TraitManager.sortTraits(); // Reapply order after drag
+          TraitManager.sortTraits();
         }
       }
     });
