@@ -199,9 +199,6 @@ clickSound.volume = 0.25;
 
 
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-
-
 
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
@@ -240,7 +237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize TraitManager with 3 empty traits
   TraitManager.initialize();
   traitContainer.innerHTML = '';
-  TraitManager.getAllTraits().slice(0, 3).forEach(trait => {
+  TraitManager.getAllTraits().forEach(trait => {
     addTrait(trait);
     refreshTraitGrid(trait.id);
   });
@@ -343,11 +340,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // Clear existing traits
+    // Reset everything
     TraitManager.traits = [];
-    traitContainer.innerHTML = '';
-    preview.innerHTML = '';
     traitImages = [];
+    traitContainer.innerHTML = '';
+    if (preview) preview.innerHTML = '';
 
     // Load project metadata
     document.getElementById('project-name').value = project.name;
@@ -356,33 +353,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Load traits and variants
     for (const savedTrait of project.traits) {
-      const newTrait = TraitManager.addTrait(savedTrait.position);
-      Object.assign(newTrait, {
+      const newTrait = {
+        id: savedTrait.id,
+        position: savedTrait.position,
         name: savedTrait.name,
         selected: savedTrait.selected,
         zIndex: savedTrait.zIndex,
-        variants: []
-      });
+        variants: [],
+        createdAt: savedTrait.createdAt || Date.now()
+      };
+      TraitManager.traits.push(newTrait);
 
       for (const savedVariant of savedTrait.variants) {
         const imageData = await new Promise(resolve => imageStore.get(`${savedTrait.id}_${savedVariant.id}`).onsuccess = e => resolve(e.target.result));
-        const variantData = {
-          ...savedVariant,
-          url: imageData?.data ? URL.createObjectURL(new Blob([imageData.data], { type: 'image/webp' })) : ''
-        };
-        newTrait.variants.push(variantData);
-        console.log(`Loaded variant ${variantData.id} for trait ${savedTrait.id}:`, variantData.url ? 'Image present' : 'No image');
-      }
-
-      addTrait(newTrait);
-      refreshTraitGrid(newTrait.id);
-      if (newTrait.variants.length > 0) {
-        selectVariation(newTrait.id, newTrait.variants[newTrait.selected].id);
+        if (imageData?.data) {
+          const variantData = {
+            id: savedVariant.id,
+            name: savedVariant.name,
+            url: URL.createObjectURL(new Blob([imageData.data], { type: 'image/webp' })),
+            chance: savedVariant.chance,
+            createdAt: savedVariant.createdAt
+          };
+          newTrait.variants.push(variantData);
+          console.log(`Loaded variant ${variantData.id} for trait ${savedTrait.id}: Image present`);
+        } else {
+          console.warn(`Missing image data for variant ${savedVariant.id} in trait ${savedTrait.id}`);
+        }
       }
     }
 
+    // Render all traits
     TraitManager.sortTraits();
+    TraitManager.getAllTraits().forEach(trait => {
+      addTrait(trait);
+      refreshTraitGrid(trait.id);
+      if (trait.variants.length > 0) {
+        selectVariation(trait.id, trait.variants[trait.selected]?.id);
+      }
+    });
     updatePreviewSamples();
+
+    console.log('Loaded project:', project);
     alert(`Project "${project.name}" loaded successfully!`);
   }
 
@@ -536,7 +547,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     enlargedPreview.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      const projectName = document.getElementById('project-name').value || 'Untitled';
+      const projectName = document.getElementById('project-name').value || 'Unnamed';
       let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
       if (saveCount > 100) {
         console.warn('Save limit reached');
@@ -783,7 +794,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const logo = document.getElementById('logo');
   if (logo) console.log('Logo URL:', logo.src);
 });
-
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
