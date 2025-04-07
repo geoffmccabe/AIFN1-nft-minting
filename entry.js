@@ -11,12 +11,16 @@ const TraitManager = {
   traits: [],
 
   // Initialize with 3 empty traits
-  initialize() {
-    this.traits = [];
-    for (let i = 0; i < 3; i++) {
-      this.addTrait(i + 1);
-    }
-  },
+initialize() {
+  this.traits = [];
+  for (let i = 0; i < 3; i++) { // Start with 3 traits
+    this.addTrait(i + 1);
+  }
+  const traitsPanel = document.querySelector('.traits-panel .panel-content');
+  if (traitsPanel) {
+    traitsPanel.style.maxHeight = '400px'; // Initial height
+  }
+}
 
   // Add a new trait at the specified position
   addTrait(position) {
@@ -501,9 +505,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const tx = db.transaction(['projects', 'images'], 'readonly');
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
+      
       const projectStore = tx.objectStore('projects');
-      const imageStore = tx.objectStore('images');
-
       projectStore.get('current').onsuccess = async (e) => {
         const project = e.target.result;
         if (project) {
@@ -514,30 +517,29 @@ document.addEventListener('DOMContentLoaded', async () => {
           document.getElementById('height-input').value = '600'; // Enforce 600px
 
           TraitManager.traits = [];
-          project.traits.forEach(trait => {
+          const sortedTraits = project.traits.sort((a, b) => a.position - b.position);
+          for (const trait of sortedTraits) {
             const newTrait = TraitManager.addTrait(trait.position);
             newTrait.name = trait.name;
             newTrait.selected = trait.selected;
-            newTrait.variants.length = 0; // Preserve array reference
+            newTrait.variants.length = 0;
             trait.variants.forEach(v => newTrait.variants.push({ ...v }));
-          });
+          }
 
-          await Promise.all(TraitManager.getAllTraits().map(trait =>
-            Promise.all(trait.variants.map(async variant => {
+          const imageStore = tx.objectStore('images');
+          for (const trait of TraitManager.getAllTraits()) {
+            for (const variant of trait.variants) {
               const imageData = await imageStore.get(`${trait.id}_${variant.id}`);
-              if (imageData && imageData.data) {
+              if (imageData?.data) {
                 variant.url = URL.createObjectURL(new Blob([imageData.data], { type: 'image/webp' }));
               }
-            }))
-          ));
-
-          TraitManager.getAllTraits().forEach(trait => {
+            }
             addTrait(trait);
             refreshTraitGrid(trait.id);
             if (trait.variants.length > 0) {
               selectVariation(trait.id, trait.variants[trait.selected].id);
             }
-          });
+          }
           updatePreviewSamples();
         }
       };
@@ -546,14 +548,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Setup after initialization
   TraitManager.initialize();
-  TraitManager.getAllTraits().forEach(trait => {
-    addTrait(trait);
-    refreshTraitGrid(trait.id);
-    if (trait.variants.length > 0) {
-      selectVariation(trait.id, trait.variants[0].id);
-    }
-  });
-  updatePreviewSamples();
   await loadProject(); // Load after UI setup
 
   // Scroll Controls
@@ -588,6 +582,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('custom-height').onchange = () => saveProject();
   document.getElementById('project-name').oninput = () => saveProject();
   document.getElementById('project-description').oninput = () => saveProject();
+
+  // Dynamic Panel Height Adjustment in addTrait
+  TraitManager.addTrait = function(position) {
+    const trait = {
+      id: `id-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: '',
+      position: position || this.traits.length + 1,
+      selected: 0,
+      variants: []
+    };
+    this.traits.push(trait);
+    if (this.traits.length > 3) {
+      const traitsPanel = document.querySelector('.traits-panel .panel-content');
+      traitsPanel.style.maxHeight = 'max(70vh, 2400px)';
+    }
+    return trait;
+  };
 
   // Set up magnifying glass
   magnifyEmoji.addEventListener('click', () => {
@@ -738,6 +749,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
+
+
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
