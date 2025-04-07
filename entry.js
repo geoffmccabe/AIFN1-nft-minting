@@ -422,6 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
   let randomizeInterval = null;
+  let currentSpeed = 1000; // Start at 1000ms
 
   // Set up magnifying glass
   magnifyEmoji.addEventListener('click', () => {
@@ -440,12 +441,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const controls = document.getElementById('enlarged-preview-controls');
-    const playEmoji = document.getElementById('play-emoji');
-    const pauseEmoji = document.getElementById('pause-emoji');
+    controls.style.display = 'flex'; // Show controls when preview opens
 
     const updateEnlargedPreview = () => {
-      const existingImages = enlargedPreview.querySelectorAll('img');
-      existingImages.forEach(img => img.remove());
+      enlargedPreview.innerHTML = '';
       traitImages.forEach(img => {
         if (img && img.src && img.style.visibility !== 'hidden') {
           const clonedImg = img.cloneNode(true);
@@ -455,16 +454,27 @@ document.addEventListener('DOMContentLoaded', () => {
           clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
           clonedImg.style.zIndex = img.style.zIndex;
           clonedImg.style.visibility = 'visible';
-          enlargedPreview.insertBefore(clonedImg, controls);
+          enlargedPreview.appendChild(clonedImg);
         }
       });
     };
 
     updateEnlargedPreview();
 
+    const playEmoji = document.getElementById('play-emoji');
+    const pauseEmoji = document.getElementById('pause-emoji');
+
     playEmoji.onclick = (e) => {
       e.stopPropagation();
-      if (randomizeInterval) return;
+      if (randomizeInterval) {
+        // Speed up if already running
+        if (currentSpeed === 1000) currentSpeed = 100;
+        else if (currentSpeed === 100) currentSpeed = 10;
+        clearInterval(randomizeInterval);
+      } else {
+        // Reset to 1000ms if starting from paused
+        currentSpeed = 1000;
+      }
       randomizeInterval = setInterval(() => {
         const traits = TraitManager.getAllTraits();
         const randomTrait = traits[Math.floor(Math.random() * traits.length)];
@@ -472,7 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const randomVariant = randomTrait.variants[Math.floor(Math.random() * randomTrait.variants.length)];
         selectVariation(randomTrait.id, randomVariant.id);
         updateEnlargedPreview();
-      }, 1000);
+      }, currentSpeed);
     };
 
     pauseEmoji.onclick = (e) => {
@@ -480,6 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (randomizeInterval) {
         clearInterval(randomizeInterval);
         randomizeInterval = null;
+        currentSpeed = 1000; // Reset speed for next play
       }
     };
 
@@ -488,8 +499,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (randomizeInterval) {
         clearInterval(randomizeInterval);
         randomizeInterval = null;
+        currentSpeed = 1000; // Reset speed on close
       }
       enlargedPreview.style.display = 'none';
+      controls.style.display = 'none'; // Hide controls when preview closes
     };
   });
 
@@ -560,7 +573,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-
 
 
 
