@@ -1,165 +1,45 @@
-/* Section 1 ----------------------------------------- TRAIT MANAGER FRAMEWORK ------------------------------------------------*/
+/* Section 1 ----------------------------------------- TRAIT MANAGER OBJECT ------------------------------------------------*/
 
-// Utility to generate unique IDs (simple incrementing counter starting at 1)
-let idCounter = 1;
-function generateId() {
-  return `id-${idCounter++}`;
-}
-
-// TraitManager class to manage traits and variants
 const TraitManager = {
   traits: [],
+  lastTraitId: 0,
 
-  // Initialize with 3 empty traits
   initialize() {
     this.traits = [];
     for (let i = 0; i < 3; i++) { // Start with 3 traits
       this.addTrait(i + 1);
     }
+    this.sortTraits(); // Ensure initial order
     const traitsPanel = document.querySelector('.traits-panel .panel-content');
     if (traitsPanel) {
-      traitsPanel.style.maxHeight = '400px'; // Initial height
+      traitsPanel.style.maxHeight = '600px'; // Match Section 3 CSS
     }
   },
 
-  // Add a new trait at the specified position
   addTrait(position) {
-    const newTrait = {
-      id: generateId(),
-      position: position,
-      name: '',
-      variants: [],
+    const traitId = `id-${++TraitManager.lastTraitId}`;
+    const trait = {
+      id: traitId,
+      position: position || TraitManager.traits.length + 1,
+      zIndex: TraitManager.traits.length + 1,
+      name: `Trait ${traitId}`,
       selected: 0,
-      zIndex: this.traits.length + 1 - position, // Higher position = lower zIndex
-      createdAt: Date.now()
+      variants: []
     };
-
-    // Shift existing traits with position >= new position
-    this.traits.forEach(trait => {
-      if (trait.position >= position) {
-        trait.position++;
-        trait.zIndex = this.traits.length + 1 - trait.position;
-      }
-    });
-
-    // Add the new trait
-    this.traits.push(newTrait);
-    this.traits.sort((a, b) => a.position - b.position);
-    
-    // Dynamic panel height adjustment
-    if (this.traits.length > 3) {
-      const traitsPanel = document.querySelector('.traits-panel .panel-content');
-      if (traitsPanel) {
-        traitsPanel.style.maxHeight = 'max(70vh, 2400px)';
-      }
-    }
-    return newTrait;
+    TraitManager.traits.push(trait);
+    this.sortTraits(); // Reapply order after adding
+    return trait;
   },
 
-  // Remove a trait by ID
-  removeTrait(traitId) {
-    const traitIndex = this.traits.findIndex(trait => trait.id === traitId);
-    if (traitIndex === -1) return;
-
-    const removedTrait = this.traits[traitIndex];
-    const removedPosition = removedTrait.position;
-
-    // Remove the trait
-    this.traits.splice(traitIndex, 1);
-
-    // Shift positions of remaining traits
-    this.traits.forEach(trait => {
-      if (trait.position > removedPosition) {
-        trait.position--;
-        trait.zIndex = this.traits.length + 1 - trait.position;
-      }
-    });
-  },
-
-  // Move a trait to a new position
-  moveTrait(traitId, newPosition) {
-    const trait = this.traits.find(t => t.id === traitId);
-    if (!trait) return;
-
-    const oldPosition = trait.position;
-
-    // Adjust positions of other traits
-    if (newPosition < oldPosition) {
-      this.traits.forEach(t => {
-        if (t.position >= newPosition && t.position < oldPosition) {
-          t.position++;
-        }
-      });
-    } else if (newPosition > oldPosition) {
-      this.traits.forEach(t => {
-        if (t.position > oldPosition && t.position <= newPosition) {
-          t.position--;
-        }
-      });
-    }
-
-    // Update the trait's position
-    trait.position = newPosition;
-
-    // Sort traits by position and update zIndex
-    this.traits.sort((a, b) => a.position - b.position);
-    this.traits.forEach((t, idx) => {
-      t.zIndex = this.traits.length - idx;
-    });
-  },
-
-  // Add a variant to a trait
-  addVariant(traitId, variantData) {
-    const trait = this.traits.find(t => t.id === traitId);
-    if (!trait) return;
-
-    const newVariant = {
-      id: generateId(),
-      name: variantData.name,
-      url: variantData.url,
-      chance: variantData.chance || 0.5, // Default chance if not provided
-      createdAt: Date.now()
-    };
-
-    trait.variants.push(newVariant);
-    return newVariant;
-  },
-
-  // Remove a variant from a trait
-  removeVariant(traitId, variantId) {
-    const trait = this.traits.find(t => t.id === traitId);
-    if (!trait) return;
-
-    const variantIndex = trait.variants.findIndex(v => v.id === variantId);
-    if (variantIndex === -1) return;
-
-    trait.variants.splice(variantIndex, 1);
-
-    // Adjust selected index if necessary
-    if (trait.selected >= trait.variants.length) {
-      trait.selected = Math.max(0, trait.variants.length - 1);
-    }
-  },
-
-  // Update the chance of a variant
-  updateVariantChance(traitId, variantId, chance) {
-    const trait = this.traits.find(t => t.id === traitId);
-    if (!trait) return;
-
-    const variant = trait.variants.find(v => v.id === variantId);
-    if (!variant) return;
-
-    variant.chance = chance;
-  },
-
-  // Get a trait by ID
-  getTrait(traitId) {
-    return this.traits.find(t => t.id === traitId);
-  },
-
-  // Get all traits
   getAllTraits() {
-    return [...this.traits];
+    return this.traits;
+  },
+
+  sortTraits() {
+    this.traits.sort((a, b) => a.position - b.position); // Sort by position ascending
+    this.traits.forEach((trait, idx) => {
+      trait.zIndex = this.traits.length - idx; // Trait 1 highest, Trait 3 lowest
+    });
   }
 };
 
@@ -194,6 +74,7 @@ clickSound.volume = 0.25;
 
 
 
+/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -271,11 +152,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       clearRequest.onerror = () => reject(clearRequest.error);
     });
 
-    // Sort traits and set zIndex before saving
-    TraitManager.traits.sort((a, b) => a.position - b.position);
-    TraitManager.traits.forEach((t, idx) => {
-      t.zIndex = TraitManager.traits.length - idx; // Higher position = lower zIndex
-    });
+    // Ensure traits are sorted before saving
+    TraitManager.sortTraits();
 
     // Save traits data
     const traitsToSave = TraitManager.getAllTraits().map(trait => ({
@@ -316,6 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       for (const variant of trait.variants) {
         if (variant.url) {
           try {
+            console.log(`Saving variant ${trait.id}_${variant.id} with URL: ${variant.url}`);
             const response = await fetch(variant.url);
             if (!response.ok) throw new Error(`Fetch failed for ${variant.url}: ${response.status}`);
             const blob = await response.blob();
@@ -396,17 +275,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Ensure all traits are rendered with correct zIndex
-    TraitManager.traits.sort((a, b) => a.position - b.position);
-    TraitManager.traits.forEach((t, idx) => {
-      t.zIndex = TraitManager.traits.length - idx; // Reapply zIndex
-      const traitElement = document.querySelector(`#trait-${t.id}`);
-      if (traitElement) {
-        const img = traitImages.find(i => i.id === `preview-trait${t.id}`);
-        if (img) img.style.zIndex = t.zIndex;
-      }
-    });
-
+    // Ensure traits are sorted and zIndex applied after load
+    TraitManager.sortTraits();
     updatePreviewSamples();
     console.log('Loaded project:', project);
     alert(`Project "${project.name}" loaded successfully!`);
@@ -497,15 +367,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const controls = document.getElementById('enlarged-preview-controls');
     controls.style.display = 'flex';
 
-    const magnifiedState = TraitManager.getAllTraits()
-      .map(trait => ({
-        id: trait.id,
-        variants: [...trait.variants],
-        selected: trait.selected,
-        position: trait.position,
-        zIndex: trait.zIndex
-      }))
-      .sort((a, b) => a.position - b.position); // Sort by position ascending
+    // Use TraitManager’s sorted order directly
+    const magnifiedState = TraitManager.getAllTraits().map(trait => ({
+      id: trait.id,
+      variants: [...trait.variants],
+      selected: trait.selected,
+      position: trait.position,
+      zIndex: trait.zIndex
+    }));
 
     const updateEnlargedPreview = () => {
       enlargedPreview.innerHTML = '';
@@ -519,7 +388,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           img.style.height = `${parseFloat(baseImg.style.height || '600') * scale}px`;
           img.style.left = `${parseFloat(baseImg.style.left || '0') * scale}px`;
           img.style.top = `${parseFloat(baseImg.style.top || '0') * scale}px`;
-          img.style.zIndex = trait.zIndex; // Use saved zIndex
+          img.style.zIndex = trait.zIndex; // Use TraitManager’s zIndex
           img.style.position = 'absolute';
           img.style.visibility = 'visible';
           enlargedPreview.appendChild(img);
@@ -623,11 +492,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           const variationName = trait.variants[trait.selected].name;
           savePosition(currentImage, trait.id, variationName);
           currentImage.classList.remove('dragging');
-          // Reapply zIndex after position change
-          TraitManager.traits.sort((a, b) => a.position - b.position);
-          TraitManager.traits.forEach((t, idx) => {
-            t.zIndex = TraitManager.traits.length - idx;
-          });
+          TraitManager.sortTraits(); // Reapply order after drag
         }
       }
     });
@@ -642,11 +507,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           const variationName = trait.variants[trait.selected].name;
           savePosition(currentImage, trait.id, variationName);
           currentImage.classList.remove('dragging');
-          // Reapply zIndex after position change
-          TraitManager.traits.sort((a, b) => a.position - b.position);
-          TraitManager.traits.forEach((t, idx) => {
-            t.zIndex = TraitManager.traits.length - idx;
-          });
+          TraitManager.sortTraits(); // Reapply order after drag
         }
       }
     });
