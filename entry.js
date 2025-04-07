@@ -199,9 +199,6 @@ clickSound.volume = 0.25;
 
 
 
-
-/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000; // Start at 1000ms
@@ -250,6 +247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   console.log('Initial traits:', TraitManager.getAllTraits().length, '#trait-container children:', traitContainer.children.length);
   updatePreviewSamples();
+  traitContainer.focus(); // Ensure scroll focus
 
   // IndexedDB Setup
   const openDB = () => new Promise((resolve, reject) => {
@@ -333,7 +331,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       projectStore.get('current').onsuccess = async (e) => {
         const project = e.target.result;
         if (project) {
-          document.getElementById('project-name').value = project.name || '';
+          const projectName = project.name || 'Unnamed';
+          document.getElementById('project-name').value = projectName;
           document.getElementById('project-size').value = project.size || '600x600';
           document.getElementById('project-description').value = project.description || '';
           document.getElementById('width-input').value = '600';
@@ -341,7 +340,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
           TraitManager.traits = [];
           traitContainer.innerHTML = ''; // Clear before loading
-          const sortedTraits = project.traits.sort((a, b) => a.position - b.position).slice(0, 3); // Limit to 3 initially
+          const sortedTraits = project.traits.sort((a, b) => a.position - b.position).slice(0, 3);
+          console.log('Loading traits:', sortedTraits);
           for (const trait of sortedTraits) {
             const newTrait = TraitManager.addTrait(trait.position);
             newTrait.name = trait.name;
@@ -365,6 +365,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
           }
           updatePreviewSamples();
+          alert(`Project "${projectName}" loaded successfully!`);
+        } else {
+          console.log('No saved project found');
         }
       };
     });
@@ -430,8 +433,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('load-project').addEventListener('click', () => {
     loadProject().then(() => {
       updatePreviewSamples();
-      alert('Project loaded successfully!');
-    });
+    }).catch(err => console.error('Load failed:', err));
   });
 
   // Info Tooltip Activation
