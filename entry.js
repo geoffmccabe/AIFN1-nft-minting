@@ -11,16 +11,16 @@ const TraitManager = {
   traits: [],
 
   // Initialize with 3 empty traits
-initialize() {
-  this.traits = [];
-  for (let i = 0; i < 3; i++) { // Start with 3 traits
-    this.addTrait(i + 1);
-  }
-  const traitsPanel = document.querySelector('.traits-panel .panel-content');
-  if (traitsPanel) {
-    traitsPanel.style.maxHeight = '400px'; // Initial height
-  }
-}
+  initialize() {
+    this.traits = [];
+    for (let i = 0; i < 3; i++) { // Start with 3 traits
+      this.addTrait(i + 1);
+    }
+    const traitsPanel = document.querySelector('.traits-panel .panel-content');
+    if (traitsPanel) {
+      traitsPanel.style.maxHeight = '400px'; // Initial height
+    }
+  },
 
   // Add a new trait at the specified position
   addTrait(position) {
@@ -45,6 +45,14 @@ initialize() {
     // Add the new trait
     this.traits.push(newTrait);
     this.traits.sort((a, b) => a.position - b.position);
+    
+    // Dynamic panel height adjustment
+    if (this.traits.length > 3) {
+      const traitsPanel = document.querySelector('.traits-panel .panel-content');
+      if (traitsPanel) {
+        traitsPanel.style.maxHeight = 'max(70vh, 2400px)';
+      }
+    }
     return newTrait;
   },
 
@@ -155,14 +163,7 @@ initialize() {
   }
 };
 
-
-
-
-
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
-
-
-
 
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
@@ -184,7 +185,9 @@ let chosenImages = []; // Track chosen images
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
 
-document.addEventListener('DOMContentLoaded', () => {
+/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
+
+document.addEventListener('DOMContentLoaded', async () => {
   provider = new ethers.providers.Web3Provider(window.ethereum);
   contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
   signer = provider.getSigner();
@@ -324,110 +327,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Set up preview panel drag events
-  if (preview) {
-    preview.addEventListener('mousemove', (e) => {
-      if (!isDragging || !currentImage) return;
-      const rect = preview.getBoundingClientRect();
-      let newLeft = e.clientX - rect.left - offsetX;
-      let newTop = e.clientY - rect.top - offsetY;
-      newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
-      newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
-      currentImage.style.left = `${newLeft}px`;
-      currentImage.style.top = `${newTop}px`;
-      updateCoordinates(currentImage);
-    });
-
-    preview.addEventListener('mouseup', () => {
-      if (isDragging && currentImage) {
-        const traitIndex = traitImages.indexOf(currentImage);
-        if (traitIndex !== -1) {
-          const trait = TraitManager.getAllTraits()[traitIndex];
-          const variationName = trait.variants[trait.selected].name;
-          savePosition(currentImage, trait.id, variationName);
-        }
-        isDragging = false;
-        currentImage.style.cursor = 'grab';
-        currentImage.classList.remove('dragging');
-        updateZIndices();
-      }
-    });
-
-    preview.addEventListener('mouseleave', () => {
-      if (isDragging && currentImage) {
-        const traitIndex = traitImages.indexOf(currentImage);
-        if (traitIndex !== -1) {
-          const trait = TraitManager.getAllTraits()[traitIndex];
-          const variationName = trait.variants[trait.selected].name;
-          savePosition(currentImage, trait.id, variationName);
-        }
-        isDragging = false;
-        currentImage.style.cursor = 'grab';
-        currentImage.classList.remove('dragging');
-        updateZIndices();
-      }
-    });
-  }
-
-  // Set up drag-and-drop for direction emojis
-  directionEmojis.forEach(emoji => {
-    const direction = emoji.getAttribute('data-direction');
-    emoji.addEventListener('mousedown', () => {
-      if (!currentImage || currentImage.src === '') return;
-      moveInterval = setInterval(() => {
-        let left = parseFloat(currentImage.style.left) || 0;
-        let top = parseFloat(currentImage.style.top) || 0;
-        if (direction === 'up') top -= 1;
-        if (direction === 'down') top += 1;
-        if (direction === 'left') left -= 1;
-        if (direction === 'right') left += 1;
-        left = Math.max(0, Math.min(left, 600 - currentImage.width));
-        top = Math.max(0, Math.min(top, 600 - currentImage.height));
-        currentImage.style.left = `${left}px`;
-        currentImage.style.top = `${top}px`;
-        currentImage.classList.add('dragging');
-        updateCoordinates(currentImage);
-      }, 50);
-    });
-
-    emoji.addEventListener('mouseup', () => {
-      if (moveInterval) {
-        clearInterval(moveInterval);
-        moveInterval = null;
-        if (currentImage) {
-          const traitIndex = traitImages.indexOf(currentImage);
-          const trait = TraitManager.getAllTraits()[traitIndex];
-          const variationName = trait.variants[trait.selected].name;
-          savePosition(currentImage, trait.id, variationName);
-          currentImage.classList.remove('dragging');
-        }
-      }
-    });
-
-    emoji.addEventListener('mouseleave', () => {
-      if (moveInterval) {
-        clearInterval(moveInterval);
-        moveInterval = null;
-        if (currentImage) {
-          const traitIndex = traitImages.indexOf(currentImage);
-          const trait = TraitManager.getAllTraits()[traitIndex];
-          const variationName = trait.variants[trait.selected].name;
-          savePosition(currentImage, trait.id, variationName);
-          currentImage.classList.remove('dragging');
-        }
-      }
-    });
-  });
-});
-
-
-
-/*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
-
-document.addEventListener('DOMContentLoaded', async () => {
-  let randomizeInterval = null;
-  let currentSpeed = 1000; // Start at 1000ms
-
   // IndexedDB Setup
   const openDB = () => new Promise((resolve, reject) => {
     const request = indexedDB.open('NFTProjectDB', 1);
@@ -518,7 +417,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
           TraitManager.traits = [];
           const sortedTraits = project.traits.sort((a, b) => a.position - b.position);
-          for (const trait of sortedTraits) {
+          const initialTraits = sortedTraits.slice(0, 3); // Limit to 3 initially
+          for (const trait of initialTraits) {
             const newTrait = TraitManager.addTrait(trait.position);
             newTrait.name = trait.name;
             newTrait.selected = trait.selected;
@@ -546,9 +446,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Setup after initialization
-  TraitManager.initialize();
-  await loadProject(); // Load after UI setup
+  // Load project after initialization
+  await loadProject();
 
   // Scroll Controls
   const traitContainer = document.getElementById('trait-container');
@@ -583,22 +482,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('project-name').oninput = () => saveProject();
   document.getElementById('project-description').oninput = () => saveProject();
 
-  // Dynamic Panel Height Adjustment in addTrait
-  TraitManager.addTrait = function(position) {
-    const trait = {
-      id: `id-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: '',
-      position: position || this.traits.length + 1,
-      selected: 0,
-      variants: []
-    };
-    this.traits.push(trait);
-    if (this.traits.length > 3) {
-      const traitsPanel = document.querySelector('.traits-panel .panel-content');
-      traitsPanel.style.maxHeight = 'max(70vh, 2400px)';
-    }
-    return trait;
-  };
+  // Info Tooltip Activation
+  const infoTooltip = document.querySelector('.info-tooltip');
+  if (infoTooltip) {
+    infoTooltip.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tooltipText = infoTooltip.getAttribute('title');
+      alert(tooltipText); // Fallback to alert if CSS tooltip fails
+    });
+  }
 
   // Set up magnifying glass
   magnifyEmoji.addEventListener('click', () => {
@@ -680,6 +572,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
   });
 
+  // Set up drag-and-drop for direction emojis
+  directionEmojis.forEach(emoji => {
+    const direction = emoji.getAttribute('data-direction');
+    emoji.addEventListener('mousedown', () => {
+      if (!currentImage || currentImage.src === '') return;
+      moveInterval = setInterval(() => {
+        let left = parseFloat(currentImage.style.left) || 0;
+        let top = parseFloat(currentImage.style.top) || 0;
+        if (direction === 'up') top -= 1;
+        if (direction === 'down') top += 1;
+        if (direction === 'left') left -= 1;
+        if (direction === 'right') left += 1;
+        left = Math.max(0, Math.min(left, 600 - currentImage.width));
+        top = Math.max(0, Math.min(top, 600 - currentImage.height));
+        currentImage.style.left = `${left}px`;
+        currentImage.style.top = `${top}px`;
+        currentImage.classList.add('dragging');
+        updateCoordinates(currentImage);
+      }, 50);
+    });
+
+    emoji.addEventListener('mouseup', () => {
+      if (moveInterval) {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (currentImage) {
+          const traitIndex = traitImages.indexOf(currentImage);
+          const trait = TraitManager.getAllTraits()[traitIndex];
+          const variationName = trait.variants[trait.selected].name;
+          savePosition(currentImage, trait.id, variationName);
+          currentImage.classList.remove('dragging');
+        }
+      }
+    });
+
+    emoji.addEventListener('mouseleave', () => {
+      if (moveInterval) {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (currentImage) {
+          const traitIndex = traitImages.indexOf(currentImage);
+          const trait = TraitManager.getAllTraits()[traitIndex];
+          const variationName = trait.variants[trait.selected].name;
+          savePosition(currentImage, trait.id, variationName);
+          currentImage.classList.remove('dragging');
+        }
+      }
+    });
+  });
+
   // Set up undo functionality
   document.addEventListener('keydown', (e) => {
     const now = Date.now();
@@ -750,14 +692,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-
-
-
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
-
-
-
-
 
 function addTrait(trait) {
   const traitSection = document.createElement('div');
@@ -944,13 +879,7 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
-
-
-
 /* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
-
-
-
 
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
@@ -1211,13 +1140,7 @@ function updateMintButton() {
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
-
-
-
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
-
-
-
 
 function updateZIndices() {
   const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
@@ -1402,13 +1325,7 @@ function savePosition(img, traitId, variationName) {
   updateSubsequentTraits(traitId, variationName, position);
 }
 
-
-
-
-/*---------------------------------------------------- Section 7 - PREVIEW AND POSITION MANAGEMENT (PART 2) ----------------------------------------------------*/
-
-
-
+/* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
@@ -1559,9 +1476,7 @@ function updatePreviewSamples() {
   }
 }
 
-
-
-/*---------------------------------------------------- Section 8 - BACKGROUND GENERATION AND MINTING ----------------------------------------------------*/
+/* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
 
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
@@ -1594,7 +1509,7 @@ function addToChosenGrid(imageUrl, targetContainer = null) {
     img.src = imageUrl;
     img.draggable = true;
     img.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', imageUrl);
+      e.dataTransfer.setData('text/plain', img.src);
       e.dataTransfer.setData('source', 'chosen-grid');
     });
     container.appendChild(img);
@@ -1854,3 +1769,4 @@ window.mintNFT = async function() {
     status.innerText = `Error: ${error.message}`;
   }
 };
+  
