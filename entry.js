@@ -264,8 +264,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const imageStore = tx.objectStore('images');
     const clearRequest = imageStore.clear();
     await new Promise((resolve, reject) => {
-      clearRequest.onsuccess = () => resolve();
+      clearRequest.onsuccess = () => {
+        console.log('Cleared existing images');
+        resolve();
+      };
       clearRequest.onerror = () => reject(clearRequest.error);
+    });
+
+    // Sort traits and set zIndex before saving
+    TraitManager.traits.sort((a, b) => a.position - b.position);
+    TraitManager.traits.forEach((t, idx) => {
+      t.zIndex = TraitManager.traits.length - idx; // Higher position = lower zIndex
     });
 
     // Save traits data
@@ -295,7 +304,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     await new Promise((resolve, reject) => {
       const request = projectStore.put(projectData);
-      request.onsuccess = () => resolve();
+      request.onsuccess = () => {
+        console.log('Saved project metadata');
+        resolve();
+      };
       request.onerror = () => reject(request.error);
     });
 
@@ -370,7 +382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const variantData = {
           ...savedVariant,
-          url: imageData?.data ? URL.createObjectURL(new Blob([imageData.data])) : ''
+          url: imageData?.data ? URL.createObjectURL(new Blob([imageData.data], { type: 'image/webp' })) : ''
         };
         
         newTrait.variants.push(variantData);
@@ -378,10 +390,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       addTrait(newTrait);
+      refreshTraitGrid(newTrait.id);
       if (newTrait.variants.length > 0) {
         selectVariation(newTrait.id, newTrait.variants[newTrait.selected].id);
       }
     }
+
+    // Ensure all traits are rendered with correct zIndex
+    TraitManager.traits.sort((a, b) => a.position - b.position);
+    TraitManager.traits.forEach((t, idx) => {
+      t.zIndex = TraitManager.traits.length - idx; // Reapply zIndex
+      const traitElement = document.querySelector(`#trait-${t.id}`);
+      if (traitElement) {
+        const img = traitImages.find(i => i.id === `preview-trait${t.id}`);
+        if (img) img.style.zIndex = t.zIndex;
+      }
+    });
 
     updatePreviewSamples();
     console.log('Loaded project:', project);
@@ -481,7 +505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         position: trait.position,
         zIndex: trait.zIndex
       }))
-      .sort((a, b) => b.zIndex - a.zIndex); // Sort by zIndex descending
+      .sort((a, b) => a.position - b.position); // Sort by position ascending
 
     const updateEnlargedPreview = () => {
       enlargedPreview.innerHTML = '';
@@ -495,7 +519,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           img.style.height = `${parseFloat(baseImg.style.height || '600') * scale}px`;
           img.style.left = `${parseFloat(baseImg.style.left || '0') * scale}px`;
           img.style.top = `${parseFloat(baseImg.style.top || '0') * scale}px`;
-          img.style.zIndex = trait.zIndex;
+          img.style.zIndex = trait.zIndex; // Use saved zIndex
           img.style.position = 'absolute';
           img.style.visibility = 'visible';
           enlargedPreview.appendChild(img);
@@ -599,6 +623,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           const variationName = trait.variants[trait.selected].name;
           savePosition(currentImage, trait.id, variationName);
           currentImage.classList.remove('dragging');
+          // Reapply zIndex after position change
+          TraitManager.traits.sort((a, b) => a.position - b.position);
+          TraitManager.traits.forEach((t, idx) => {
+            t.zIndex = TraitManager.traits.length - idx;
+          });
         }
       }
     });
@@ -613,6 +642,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           const variationName = trait.variants[trait.selected].name;
           savePosition(currentImage, trait.id, variationName);
           currentImage.classList.remove('dragging');
+          // Reapply zIndex after position change
+          TraitManager.traits.sort((a, b) => a.position - b.position);
+          TraitManager.traits.forEach((t, idx) => {
+            t.zIndex = TraitManager.traits.length - idx;
+          });
         }
       }
     });
