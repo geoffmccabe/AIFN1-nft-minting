@@ -200,8 +200,6 @@ clickSound.volume = 0.25;
 
 
 
-/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000; // Start at 1000ms
@@ -230,8 +228,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Only clear localStorage if needed (e.g., reset button), not on every load
-  // localStorage.clear(); // Removed to preserve variant history if used elsewhere
   variantHistories = {};
 
   if (preview && !preview.hasChildNodes()) {
@@ -273,8 +269,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(['projects', 'images'], 'readwrite');
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      tx.oncomplete = () => {
+        console.log('Save transaction completed');
+        resolve();
+      };
+      tx.onerror = () => {
+        console.error('Save transaction error:', tx.error);
+        reject(tx.error);
+      };
       const projectStore = tx.objectStore('projects');
       const imageStore = tx.objectStore('images');
 
@@ -297,29 +299,29 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (variant.url) {
             try {
               const response = await fetch(variant.url);
-              if (!response.ok) throw new Error(`Fetch failed for ${variant.url}`);
+              if (!response.ok) throw new Error(`Fetch failed for ${variant.url}: ${response.status}`);
               const blob = await response.blob();
               const arrayBuffer = await blob.arrayBuffer();
               await imageStore.put({ id: `${trait.id}_${variant.id}`, data: arrayBuffer });
-              console.log(`Saved image for ${trait.id}_${variant.id}`);
+              console.log(`Saved image for ${trait.id}_${variant.id}, size: ${arrayBuffer.byteLength} bytes`);
             } catch (error) {
               console.error(`Error saving image for ${trait.id}_${variant.id}:`, error);
             }
+          } else {
+            console.warn(`No URL for variant ${trait.id}_${variant.id}`);
           }
         }))
       )).then(async () => {
-        await projectStore.put({
-          id: 'current',
+        const projectData = {
+          id: 'current', // Single project for now; multiple projects can be added later
           name: document.getElementById('project-name').value || 'Unnamed',
           size: document.getElementById('project-size').value,
           description: document.getElementById('project-description').value,
           traits: traitsToSave
-        });
-        console.log('Saved project:', {
-          name: document.getElementById('project-name').value,
-          traits: traitsToSave
-        });
-        // Re-render traits to prevent data loss
+        };
+        await projectStore.put(projectData);
+        console.log('Saved project:', projectData);
+        // Re-render traits to ensure UI persists
         traitContainer.innerHTML = '';
         TraitManager.getAllTraits().forEach(trait => {
           addTrait(trait);
@@ -330,7 +332,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         updatePreviewSamples();
       }).catch(err => {
-        console.error('Save transaction failed:', err);
+        console.error('Save failed during promise resolution:', err);
         reject(err);
       });
     });
@@ -341,8 +343,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(['projects', 'images'], 'readonly');
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      tx.oncomplete = () => {
+        console.log('Load transaction completed');
+        resolve();
+      };
+      tx.onerror = () => {
+        console.error('Load transaction error:', tx.error);
+        reject(tx.error);
+      };
       
       const projectStore = tx.objectStore('projects');
       projectStore.get('current').onsuccess = async (e) => {
@@ -387,9 +395,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
           updatePreviewSamples();
           console.log('Load complete, traits rendered:', TraitManager.getAllTraits());
-          alert(`Project "${projectName}" loaded successfully!`);
+          alert(`Project "${projectName}" loaded successfully! (Currently supports one project; multiple projects TBD)`);
         } else {
           console.log('No saved project found');
+          alert('No project found to load');
         }
       };
     });
@@ -493,7 +502,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       selected: trait.selected,
       position: trait.position,
       zIndex: trait.zIndex
-    }));
+    })).sort((a, b) => a.position - b.position); // Sort by position
 
     const updateEnlargedPreview = () => {
       enlargedPreview.innerHTML = '';
@@ -530,12 +539,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentSpeed = 1000;
       }
       randomizeInterval = setInterval(() => {
-        const trait = magnifiedState[Math.floor(Math.random() * magnifiedState.length)];
+        const traitIndex = Math.floor(Math.random() * magnifiedState.length);
+        const trait = magnifiedState[traitIndex];
         if (trait.variants.length > 0) {
           trait.selected = Math.floor(Math.random() * trait.variants.length);
           console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
+          updateEnlargedPreview();
         }
-        updateEnlargedPreview();
       }, currentSpeed);
     };
 
