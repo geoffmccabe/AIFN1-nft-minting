@@ -66,13 +66,13 @@
     justify-content: center;
     align-items: center;
     background-color: transparent;
-    z-index: 1; /* Ensure it’s above other elements */
+    z-index: 1;
   }
   #logo {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    display: block; /* Ensure it renders */
+    display: block;
   }
   @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
     #logo { width: 300px; height: 100px; }
@@ -81,6 +81,7 @@
   .trait-section {
     margin-bottom: 20px;
     width: 100%;
+    min-height: 150px; /* Ensure scrollable height */
   }
   .trait-header {
     display: flex;
@@ -227,6 +228,277 @@
   }
 </style>
 
+
+  
+<!-------------------------------- Section 3 -------------------------------->
+<!-------------------------------- Section 3 -------------------------------->
+
+
+
+
+<style>
+  #right-panel {
+    flex: 2;
+    width: 600px;
+    padding-left: 10px;
+    max-width: 600px;
+    margin-left: auto;
+  }
+  #right-panel h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    text-align: center;
+    margin: 0 0 10px;
+  }
+  #preview {
+    position: relative;
+    width: 600px;
+    height: 600px;
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: cover;
+    margin-bottom: 10px;
+    overflow: hidden;
+    border: 2px solid #666;
+    border-radius: 10px;
+    max-width: 100%;
+  }
+  #preview img {
+    position: absolute;
+    max-width: 600px;
+    max-height: 600px;
+    object-fit: contain;
+  }
+  #preview img.dragging {
+    box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
+  }
+  #controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+  }
+  #coordinates {
+    font-size: 14px;
+  }
+  #coordinates strong {
+    font-weight: bold;
+  }
+  .direction-emoji, .magnify-emoji {
+    font-size: 16px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    color: #666;
+  }
+  .direction-emoji:hover, .magnify-emoji:hover {
+    opacity: 0.8;
+  }
+  #enlarged-preview {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: cover;
+    border: 1px solid black;
+    z-index: 1000;
+    overflow: hidden;
+  }
+  #enlarged-preview img {
+    position: absolute;
+    object-fit: contain;
+  }
+  #enlarged-preview-controls {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 10001;
+  }
+  .play-emoji, .pause-emoji {
+    font-size: 32px;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+  .play-emoji:hover, .pause-emoji:hover {
+    background: rgba(0, 0, 0, 0.9);
+  }
+  #preview-samples {
+    margin-top: 20px;
+  }
+  #preview-samples-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  #preview-samples h2 {
+    font-family: 'Rowdies', sans-serif;
+    font-weight: 400;
+    text-align: left;
+    margin: 0;
+  }
+  #preview-samples-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 140px);
+    grid-template-rows: repeat(4, 140px);
+    gap: 13px;
+    width: 600px;
+  }
+  #preview-samples-grid .sample-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    background-size: 140px 140px;
+    border: 1px solid black;
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  #preview-samples-grid img {
+    position: absolute;
+    transform: scale(0.23333);
+    transform-origin: top left;
+  }
+  #update-previews {
+    padding: 5px 10px;
+    background: #ccc;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #update-previews:hover {
+    background: #bbb;
+  }
+  /* Panel Styling */
+  .project-panel, .traits-panel {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(5px);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  .panel-content {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden; /* Remove horizontal scrollbar */
+    width: 100%;
+    max-width: 570px; /* Prevent overflow */
+    -webkit-overflow-scrolling: touch; /* Enhance scrolling */
+  }
+  .panel-content::-webkit-scrollbar {
+    width: 8px;
+  }
+  .panel-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+  }
+  .panel-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+  .panel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-family: 'Poppins', sans-serif;
+  }
+  .form-group input[type="text"],
+  .form-group input[type="number"],
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: 'Poppins', sans-serif;
+  }
+  .form-group select:disabled {
+    background: #f0f0f0;
+    color: #666;
+  }
+  .form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+  .info-tooltip {
+    cursor: pointer;
+    position: relative;
+    margin-left: 5px;
+  }
+  .info-tooltip:hover::after {
+    content: attr(title);
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+  }
+  .traits-panel-container {
+    position: relative;
+  }
+  .scroll-control {
+    position: absolute;
+    right: 10px;
+    width: 34px; /* Reduced from 40px by 15% */
+    height: 34px; /* Reduced from 40px by 15% */
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    font-size: 28px; /* Adjusted for smaller box */
+  }
+  .up-scroll {
+    top: 55px; /* Adjusted to avoid overlap */
+  }
+  .down-scroll {
+    bottom: 20px; /* Adjusted to avoid overlap */
+  }
+  @media (max-width: 768px) {
+    .scroll-control {
+      right: 5px;
+    }
+    .traits-panel-container {
+      padding-right: 50px;
+    }
+  }
+</style>
 
 
 
@@ -726,10 +998,11 @@
 
 
 
+  
 
 <div id="left-panel">
   <div id="logo-container">
-    <img id="logo" src="/AIFN1-nft-minting/images/logo.webp" alt="Project Logo">
+    <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
   </div>
   <div class="project-panel">
     <h2>PROJECT PANEL</h2>
@@ -758,6 +1031,10 @@
         <label for="project-description">Project Description:</label>
         <textarea id="project-description" placeholder="Describe your project..."></textarea>
       </div>
+      <div class="form-group" style="display: flex; justify-content: space-between;">
+        <button id="save-project" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">SAVE PROJECT</button>
+        <button id="load-project" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">LOAD PROJECT</button>
+      </div>
     </div>
   </div>
   <div class="traits-panel-container">
@@ -772,8 +1049,7 @@
   </div>
 </div>
 
-
-
+  
 
 
 <!-------------------------------- Section 6 -------------------------------->
