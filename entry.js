@@ -200,6 +200,8 @@ clickSound.volume = 0.25;
 
 
 
+/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
+
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000; // Start at 1000ms
@@ -238,17 +240,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize TraitManager with 3 traits
   TraitManager.initialize();
-
-  // Render initial traits immediately
-  TraitManager.getAllTraits().forEach(trait => {
+  traitContainer.innerHTML = ''; // Clear any existing traits
+  TraitManager.getAllTraits().slice(0, 3).forEach(trait => { // Ensure only 3 traits
     addTrait(trait);
     refreshTraitGrid(trait.id);
     if (trait.variants.length > 0) {
       selectVariation(trait.id, trait.variants[0].id);
     }
   });
-
-  // Update preview samples after traits are rendered
+  console.log('Initial traits:', TraitManager.getAllTraits().length, '#trait-container children:', traitContainer.children.length);
   updatePreviewSamples();
 
   // IndexedDB Setup
@@ -340,9 +340,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           document.getElementById('height-input').value = '600';
 
           TraitManager.traits = [];
-          const sortedTraits = project.traits.sort((a, b) => a.position - b.position);
-          const initialTraits = sortedTraits.slice(0, 3); // Limit to 3 initially
-          for (const trait of initialTraits) {
+          traitContainer.innerHTML = ''; // Clear before loading
+          const sortedTraits = project.traits.sort((a, b) => a.position - b.position).slice(0, 3); // Limit to 3 initially
+          for (const trait of sortedTraits) {
             const newTrait = TraitManager.addTrait(trait.position);
             newTrait.name = trait.name;
             newTrait.selected = trait.selected;
@@ -370,13 +370,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Load project after initial rendering
+  // Load project with error handling
   try {
     await loadProject();
   } catch (error) {
     console.error('Failed to load project:', error);
-    // Ensure initial traits render even if load fails
-    TraitManager.getAllTraits().forEach(trait => {
+    TraitManager.getAllTraits().slice(0, 3).forEach(trait => {
       addTrait(trait);
       refreshTraitGrid(trait.id);
       if (trait.variants.length > 0) {
@@ -424,17 +423,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('project-name').oninput = () => saveProject();
   document.getElementById('project-description').oninput = () => saveProject();
 
+  // Save/Load Buttons
+  document.getElementById('save-project').addEventListener('click', () => {
+    saveProject().then(() => alert('Project saved successfully!'));
+  });
+  document.getElementById('load-project').addEventListener('click', () => {
+    loadProject().then(() => {
+      updatePreviewSamples();
+      alert('Project loaded successfully!');
+    });
+  });
+
   // Info Tooltip Activation
   const infoTooltip = document.querySelector('.info-tooltip');
   if (infoTooltip) {
     infoTooltip.addEventListener('click', (e) => {
       e.preventDefault();
       const tooltipText = infoTooltip.getAttribute('title');
-      alert(tooltipText); // Fallback if CSS tooltip fails
+      alert(tooltipText);
     });
   }
 
-  // Set up magnifying glass
+  // Set up magnifying glass with isolated preview
   magnifyEmoji.addEventListener('click', () => {
     enlargedPreview.style.display = 'block';
     const maxWidth = window.innerWidth * 0.9;
@@ -453,22 +463,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     const controls = document.getElementById('enlarged-preview-controls');
     controls.style.display = 'flex';
 
+    const magnifiedState = traitImages.map(img => ({ ...img, src: img.src, style: { ...img.style } })); // Clone initial state
     const updateEnlargedPreview = () => {
       enlargedPreview.innerHTML = '';
-      traitImages.forEach(img => {
+      magnifiedState.forEach(img => {
         if (img && img.src && img.style.visibility !== 'hidden') {
-          const clonedImg = img.cloneNode(true);
-          clonedImg.style.width = `${img.width * scale}px`;
- cappingHeight = `${img.height * scale}px`;
-          clonedImg.style.left = `${parseFloat(img.style.left) * scale}px`;
-          clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
+          const clonedImg = document.createElement('img');
+          clonedImg.src = img.src;
+          clonedImg.style.width = `${parseFloat(img.style.width || '600') * scale}px`;
+          clonedImg.style.height = `${parseFloat(img.style.height || '600') * scale}px`;
+          clonedImg.style.left = `${parseFloat(img.style.left || '0') * scale}px`;
+          clonedImg.style.top = `${parseFloat(img.style.top || '0') * scale}px`;
           clonedImg.style.zIndex = img.style.zIndex;
           clonedImg.style.visibility = 'visible';
+          clonedImg.style.position = 'absolute';
           enlargedPreview.appendChild(clonedImg);
         }
       });
     };
-
     updateEnlargedPreview();
 
     const playEmoji = document.getElementById('play-emoji');
@@ -488,8 +500,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const randomTrait = traits[Math.floor(Math.random() * traits.length)];
         if (randomTrait.variants.length === 0) return;
         const randomVariant = randomTrait.variants[Math.floor(Math.random() * randomTrait.variants.length)];
-        selectVariation(randomTrait.id, randomVariant.id);
-        updateEnlargedPreview();
+        const magnifiedImg = magnifiedState.find(img => img.id === `preview-trait${randomTrait.id}`);
+        if (magnifiedImg) {
+          magnifiedImg.src = randomVariant.url;
+          updateEnlargedPreview();
+        }
       }, currentSpeed);
     };
 
@@ -501,6 +516,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentSpeed = 1000;
       }
     };
+
+    enlargedPreview.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const projectName = document.getElementById('project-name').value || 'Untitled';
+      let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
+      if (saveCount > 100) {
+        console.warn('Save limit reached');
+        return;
+      }
+      localStorage.setItem(`${projectName}_saveCount`, saveCount);
+      const saveKey = `${projectName}_${saveCount}`;
+      const currentState = magnifiedState.map(img => ({
+        id: img.id,
+        src: img.src,
+        left: img.style.left,
+        top: img.style.top,
+        zIndex: img.style.zIndex
+      }));
+      localStorage.setItem(saveKey, JSON.stringify(currentState));
+      console.log(`Saved as ${saveKey}`);
+    });
 
     enlargedPreview.onclick = (e) => {
       if (e.target === playEmoji || e.target === pauseEmoji) return;
@@ -614,7 +650,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
         updateZIndices();
-        saveProject(); // Save after position change
+        saveProject();
       }
     });
 
@@ -628,7 +664,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
         updateZIndices();
-        saveProject(); // Save after position change
+        saveProject();
       }
     });
   }
@@ -725,6 +761,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.dataTransfer.setData('source', 'chosen-grid');
     });
   });
+
+  // Log logo URL for debugging
+  const logo = document.getElementById('logo');
+  if (logo) console.log('Logo URL:', logo.src);
 });
 
 
