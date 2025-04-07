@@ -421,6 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
 /*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
 
 document.addEventListener('DOMContentLoaded', () => {
+  let randomizeInterval = null;
+
   // Set up magnifying glass
   magnifyEmoji.addEventListener('click', () => {
     enlargedPreview.style.display = 'block';
@@ -437,9 +439,13 @@ document.addEventListener('DOMContentLoaded', () => {
       scale = maxWidth / 600;
     }
 
+    const controls = document.getElementById('enlarged-preview-controls');
+    const playEmoji = document.getElementById('play-emoji');
+    const pauseEmoji = document.getElementById('pause-emoji');
+
     const updateEnlargedPreview = () => {
-      const enlargedImages = enlargedPreview.querySelectorAll('img');
-      enlargedImages.forEach(img => img.remove());
+      const existingImages = enlargedPreview.querySelectorAll('img');
+      existingImages.forEach(img => img.remove());
       traitImages.forEach(img => {
         if (img && img.src && img.style.visibility !== 'hidden') {
           const clonedImg = img.cloneNode(true);
@@ -449,19 +455,16 @@ document.addEventListener('DOMContentLoaded', () => {
           clonedImg.style.top = `${parseFloat(img.style.top) * scale}px`;
           clonedImg.style.zIndex = img.style.zIndex;
           clonedImg.style.visibility = 'visible';
-          enlargedPreview.insertBefore(clonedImg, enlargedPreview.querySelector('#enlarged-preview-controls'));
+          enlargedPreview.insertBefore(clonedImg, controls);
         }
       });
     };
 
     updateEnlargedPreview();
 
-    let randomizeInterval = null;
-    const playEmoji = document.getElementById('play-emoji');
-    const pauseEmoji = document.getElementById('pause-emoji');
-
-    playEmoji.addEventListener('click', () => {
-      if (randomizeInterval) return; // Already running
+    playEmoji.onclick = (e) => {
+      e.stopPropagation();
+      if (randomizeInterval) return;
       randomizeInterval = setInterval(() => {
         const traits = TraitManager.getAllTraits();
         const randomTrait = traits[Math.floor(Math.random() * traits.length)];
@@ -469,24 +472,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const randomVariant = randomTrait.variants[Math.floor(Math.random() * randomTrait.variants.length)];
         selectVariation(randomTrait.id, randomVariant.id);
         updateEnlargedPreview();
-      }, 1000); // 1 second interval
-    });
+      }, 1000);
+    };
 
-    pauseEmoji.addEventListener('click', () => {
+    pauseEmoji.onclick = (e) => {
+      e.stopPropagation();
       if (randomizeInterval) {
         clearInterval(randomizeInterval);
         randomizeInterval = null;
       }
-    });
+    };
 
-    enlargedPreview.addEventListener('click', (e) => {
-      if (e.target === playEmoji || e.target === pauseEmoji) return; // Ignore clicks on emojis
+    enlargedPreview.onclick = (e) => {
+      if (e.target === playEmoji || e.target === pauseEmoji) return;
       if (randomizeInterval) {
         clearInterval(randomizeInterval);
         randomizeInterval = null;
       }
       enlargedPreview.style.display = 'none';
-    });
+    };
   });
 
   // Set up undo functionality
