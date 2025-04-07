@@ -420,9 +420,174 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*---------------------------------------------------- Section 3 - GLOBAL EVENT LISTENERS ----------------------------------------------------*/
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000; // Start at 1000ms
+
+  // IndexedDB Setup
+  const openDB = () => new Promise((resolve, reject) => {
+    const request = indexedDB.open('NFTProjectDB', 1);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('projects')) {
+        db.createObjectStore('projects', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('images')) {
+        db.createObjectStore('images', { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  // WEBP Compression with Cleanup
+  async function compressToWebp(file) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        URL.revokeObjectURL(objectUrl); // Clean up memory
+        canvas.toBlob(blob => resolve(blob), 'image/webp', 0.20);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl); // Clean up on error
+        resolve(file); // Fallback to original
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  // Save Project
+  async function saveProject() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(['projects', 'images'], 'readwrite');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      const projectStore = tx.objectStore('projects');
+      const imageStore = tx.objectStore('images');
+
+      const webpImages = {};
+      Promise.all(TraitManager.getAllTraits().map(trait =>
+        Promise.all(trait.variants.map(async variant => {
+          if (variant.url) {
+            const response = await fetch(variant.url);
+            const blob = await response.blob();
+            const webpBlob = await compressToWebp(blob);
+            webpImages[`${trait.id}_${variant.id}`] = webpBlob;
+            await imageStore.put({ id: `${trait.id}_${variant.id}`, data: webpBlob });
+          }
+        }))
+      )).then(async () => {
+        await projectStore.put({
+          id: 'current',
+          name: document.getElementById('project-name').value,
+          size: document.getElementById('project-size').value,
+          description: document.getElementById('project-description').value,
+          traits: TraitManager.getAllTraits()
+        });
+      });
+    });
+  }
+
+  // Load Project
+  async function loadProject() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(['projects', 'images'], 'readonly');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      const projectStore = tx.objectStore('projects');
+      const imageStore = tx.objectStore('images');
+
+      projectStore.get('current').onsuccess = async (e) => {
+        const project = e.target.result;
+        if (project) {
+          document.getElementById('project-name').value = project.name || '';
+          document.getElementById('project-size').value = project.size || '600x600';
+          document.getElementById('project-description').value = project.description || '';
+          document.getElementById('width-input').value = '600'; // Enforce 600px
+          document.getElementById('height-input').value = '600'; // Enforce 600px
+
+          TraitManager.traits = [];
+          project.traits.forEach(trait => {
+            const newTrait = TraitManager.addTrait(trait.position);
+            newTrait.name = trait.name;
+            newTrait.selected = trait.selected;
+            newTrait.variants.length = 0; // Preserve array reference
+            trait.variants.forEach(v => newTrait.variants.push({ ...v }));
+          });
+
+          await Promise.all(TraitManager.getAllTraits().map(trait =>
+            Promise.all(trait.variants.map(async variant => {
+              const imageData = await imageStore.get(`${trait.id}_${variant.id}`);
+              if (imageData && imageData.data) {
+                variant.url = URL.createObjectURL(new Blob([imageData.data], { type: 'image/webp' }));
+              }
+            }))
+          ));
+
+          TraitManager.getAllTraits().forEach(trait => {
+            addTrait(trait);
+            refreshTraitGrid(trait.id);
+            if (trait.variants.length > 0) {
+              selectVariation(trait.id, trait.variants[trait.selected].id);
+            }
+          });
+          updatePreviewSamples();
+        }
+      };
+    });
+  }
+
+  // Setup after initialization
+  TraitManager.initialize();
+  TraitManager.getAllTraits().forEach(trait => {
+    addTrait(trait);
+    refreshTraitGrid(trait.id);
+    if (trait.variants.length > 0) {
+      selectVariation(trait.id, trait.variants[0].id);
+    }
+  });
+  updatePreviewSamples();
+  await loadProject(); // Load after UI setup
+
+  // Scroll Controls
+  const traitContainer = document.getElementById('trait-container');
+  const scrollTrait = (direction) => {
+    const traits = [...traitContainer.querySelectorAll('.trait-section')];
+    if (traits.length === 0) return;
+    const visibleTraits = traits.filter(t =>
+      t.offsetTop + t.offsetHeight > traitContainer.scrollTop &&
+      t.offsetTop < traitContainer.scrollTop + traitContainer.clientHeight
+    );
+    const target = direction === 'up'
+      ? visibleTraits[0]?.previousElementSibling ?? traits[0]
+      : visibleTraits[visibleTraits.length - 1]?.nextElementSibling ?? traits[traits.length - 1];
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
+  document.querySelector('.up-scroll').onclick = () => scrollTrait('up');
+  document.querySelector('.down-scroll').onclick = () => scrollTrait('down');
+
+  // Project Size Handling
+  const projectSizeSelect = document.getElementById('project-size');
+  const customSizeGroup = document.getElementById('custom-size-group');
+  projectSizeSelect.onchange = () => {
+    customSizeGroup.style.display = projectSizeSelect.value === 'custom' ? 'block' : 'none';
+    document.getElementById('width-input').value = '600'; // Enforce 600px
+    document.getElementById('height-input').value = '600'; // Enforce 600px
+    saveProject();
+  };
+  document.getElementById('custom-width').onchange = () => saveProject();
+  document.getElementById('custom-height').onchange = () => saveProject();
+  document.getElementById('project-name').oninput = () => saveProject();
+  document.getElementById('project-description').oninput = () => saveProject();
 
   // Set up magnifying glass
   magnifyEmoji.addEventListener('click', () => {
@@ -441,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const controls = document.getElementById('enlarged-preview-controls');
-    controls.style.display = 'flex'; // Show controls when preview opens
+    controls.style.display = 'flex';
 
     const updateEnlargedPreview = () => {
       enlargedPreview.innerHTML = '';
@@ -467,11 +632,11 @@ document.addEventListener('DOMContentLoaded', () => {
     playEmoji.onclick = (e) => {
       e.stopPropagation();
       if (randomizeInterval) {
-        clearInterval(randomizeInterval); // Prevent race condition
+        clearInterval(randomizeInterval);
         if (currentSpeed === 1000) currentSpeed = 100;
         else if (currentSpeed === 100) currentSpeed = 10;
       } else {
-        currentSpeed = 1000; // Start fresh at 1000ms
+        currentSpeed = 1000;
       }
       randomizeInterval = setInterval(() => {
         const traits = TraitManager.getAllTraits();
@@ -488,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (randomizeInterval) {
         clearInterval(randomizeInterval);
         randomizeInterval = null;
-        currentSpeed = 1000; // Reset speed for next play
+        currentSpeed = 1000;
       }
     };
 
@@ -497,10 +662,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (randomizeInterval) {
         clearInterval(randomizeInterval);
         randomizeInterval = null;
-        currentSpeed = 1000; // Reset speed on close
+        currentSpeed = 1000;
       }
       enlargedPreview.style.display = 'none';
-      controls.style.display = 'none'; // Hide controls when preview closes
+      controls.style.display = 'none';
     };
   });
 
@@ -554,6 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
         updateZIndices();
+        saveProject(); // Save after position change
       }
     });
 
@@ -567,11 +733,11 @@ document.addEventListener('DOMContentLoaded', () => {
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
         updateZIndices();
+        saveProject(); // Save after position change
       }
     });
   }
 });
-
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
