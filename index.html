@@ -406,6 +406,13 @@
     max-width: 540px;
     -webkit-overflow-scrolling: touch;
   }
+  .traits-panel .panel-content {
+    max-height: 600px !important; /* Increased for 3 traits */
+    min-height: 400px;
+  }
+  #trait-container:focus {
+    outline: none; /* Remove blue border */
+  }
   .panel-content::-webkit-scrollbar {
     width: 8px;
   }
@@ -500,7 +507,6 @@
     }
   }
 </style>
-
   
 
 
@@ -780,7 +786,6 @@
     <div class="scroll-control down-scroll">⬇️</div>
   </div>
 </div>
-
 
   
 <!-------------------------------- Section 6 -------------------------------->
