@@ -1,45 +1,172 @@
-/* Section 1 ----------------------------------------- TRAIT MANAGER OBJECT ------------------------------------------------*/
+/* Section 1 ----------------------------------------- TRAIT MANAGER FRAMEWORK ------------------------------------------------*/
+/* Section 1 ----------------------------------------- TRAIT MANAGER FRAMEWORK ------------------------------------------------*/
 
+// Utility to generate unique IDs (simple incrementing counter starting at 1)
+let idCounter = 1;
+function generateId() {
+  return `id-${idCounter++}`;
+}
+
+// TraitManager class to manage traits and variants
 const TraitManager = {
   traits: [],
-  lastTraitId: 0,
 
+  // Initialize with 3 empty traits
   initialize() {
     this.traits = [];
     for (let i = 0; i < 3; i++) { // Start with 3 traits
       this.addTrait(i + 1);
     }
-    this.sortTraits(); // Ensure initial order
+    this.sortTraits(); // NEW: Ensures proper initial ordering
     const traitsPanel = document.querySelector('.traits-panel .panel-content');
     if (traitsPanel) {
-      traitsPanel.style.maxHeight = '600px'; // Match Section 3 CSS
+      traitsPanel.style.maxHeight = '400px'; // Initial height
     }
   },
 
+  // Add a new trait at the specified position
   addTrait(position) {
-    const traitId = `id-${++TraitManager.lastTraitId}`;
-    const trait = {
-      id: traitId,
-      position: position || TraitManager.traits.length + 1,
-      zIndex: TraitManager.traits.length + 1,
-      name: `Trait ${traitId}`,
+    const newTrait = {
+      id: generateId(),
+      position: position,
+      name: '',
+      variants: [],
       selected: 0,
-      variants: []
+      zIndex: this.traits.length + 1 - position, // Higher position = lower zIndex
+      createdAt: Date.now()
     };
-    TraitManager.traits.push(trait);
-    this.sortTraits(); // Reapply order after adding
-    return trait;
-  },
 
-  getAllTraits() {
-    return this.traits;
-  },
-
-  sortTraits() {
-    this.traits.sort((a, b) => a.position - b.position); // Sort by position ascending
-    this.traits.forEach((trait, idx) => {
-      trait.zIndex = this.traits.length - idx; // Trait 1 highest, Trait 3 lowest
+    // Shift existing traits with position >= new position
+    this.traits.forEach(trait => {
+      if (trait.position >= position) {
+        trait.position++;
+        trait.zIndex = this.traits.length + 1 - trait.position;
+      }
     });
+
+    // Add the new trait
+    this.traits.push(newTrait);
+    this.sortTraits(); // NEW: Maintain proper ordering
+    
+    // Dynamic panel height adjustment
+    if (this.traits.length > 3) {
+      const traitsPanel = document.querySelector('.traits-panel .panel-content');
+      if (traitsPanel) {
+        traitsPanel.style.maxHeight = 'max(70vh, 2400px)';
+      }
+    }
+    return newTrait;
+  },
+
+  // NEW: Sort traits by position and update zIndex
+  sortTraits() {
+    this.traits.sort((a, b) => a.position - b.position);
+    this.traits.forEach((trait, idx) => {
+      trait.zIndex = this.traits.length - idx;
+    });
+  },
+
+  // Remove a trait by ID
+  removeTrait(traitId) {
+    const traitIndex = this.traits.findIndex(trait => trait.id === traitId);
+    if (traitIndex === -1) return;
+
+    const removedTrait = this.traits[traitIndex];
+    const removedPosition = removedTrait.position;
+
+    // Remove the trait
+    this.traits.splice(traitIndex, 1);
+
+    // Shift positions of remaining traits
+    this.traits.forEach(trait => {
+      if (trait.position > removedPosition) {
+        trait.position--;
+        trait.zIndex = this.traits.length + 1 - trait.position;
+      }
+    });
+  },
+
+  // Move a trait to a new position
+  moveTrait(traitId, newPosition) {
+    const trait = this.traits.find(t => t.id === traitId);
+    if (!trait) return;
+
+    const oldPosition = trait.position;
+
+    // Adjust positions of other traits
+    if (newPosition < oldPosition) {
+      this.traits.forEach(t => {
+        if (t.position >= newPosition && t.position < oldPosition) {
+          t.position++;
+        }
+      });
+    } else if (newPosition > oldPosition) {
+      this.traits.forEach(t => {
+        if (t.position > oldPosition && t.position <= newPosition) {
+          t.position--;
+        }
+      });
+    }
+
+    // Update the trait's position
+    trait.position = newPosition;
+
+    // Sort traits by position and update zIndex
+    this.sortTraits(); // UPDATED: Use new sort method
+  },
+
+  // Add a variant to a trait
+  addVariant(traitId, variantData) {
+    const trait = this.traits.find(t => t.id === traitId);
+    if (!trait) return;
+
+    const newVariant = {
+      id: generateId(),
+      name: variantData.name,
+      url: variantData.url,
+      chance: variantData.chance || 0.5, // Default chance if not provided
+      createdAt: Date.now()
+    };
+
+    trait.variants.push(newVariant);
+    return newVariant;
+  },
+
+  // Remove a variant from a trait
+  removeVariant(traitId, variantId) {
+    const trait = this.traits.find(t => t.id === traitId);
+    if (!trait) return;
+
+    const variantIndex = trait.variants.findIndex(v => v.id === variantId);
+    if (variantIndex === -1) return;
+
+    trait.variants.splice(variantIndex, 1);
+
+    // Adjust selected index if necessary
+    if (trait.selected >= trait.variants.length) {
+      trait.selected = Math.max(0, trait.variants.length - 1);
+    }
+  },
+
+  // Update the chance of a variant
+  updateVariantChance(traitId, variantId, chance) {
+    const trait = this.traits.find(t => t.id === traitId);
+    if (!trait) return;
+
+    const variant = trait.variants.find(v => v.id === variantId);
+    if (!variant) return;
+
+    variant.chance = chance;
+  },
+
+  // Get a trait by ID
+  getTrait(traitId) {
+    return this.traits.find(t => t.id === traitId);
+  },
+
+  // Get all traits
+  getAllTraits() {
+    return [...this.traits];
   }
 };
 
@@ -47,9 +174,6 @@ const TraitManager = {
 
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
-
-
-
 
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
