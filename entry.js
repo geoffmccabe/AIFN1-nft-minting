@@ -200,6 +200,8 @@ clickSound.volume = 0.25;
 
 
 
+/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
+
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000; // Start at 1000ms
@@ -228,8 +230,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Clear localStorage to start fresh
-  localStorage.clear();
+  // Only clear localStorage if needed (e.g., reset button), not on every load
+  // localStorage.clear(); // Removed to preserve variant history if used elsewhere
   variantHistories = {};
 
   if (preview && !preview.hasChildNodes()) {
@@ -266,27 +268,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     request.onerror = () => reject(request.error);
   });
 
-  // WEBP Compression with Cleanup
-  async function compressToWebp(file) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        canvas.getContext('2d').drawImage(img, 0, 0);
-        URL.revokeObjectURL(objectUrl);
-        canvas.toBlob(blob => resolve(blob), 'image/webp', 0.20);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        resolve(file);
-      };
-      img.src = objectUrl;
-    });
-  }
-
   // Save Project
   async function saveProject() {
     const db = await openDB();
@@ -302,6 +283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         position: trait.position,
         name: trait.name,
         selected: trait.selected,
+        zIndex: trait.zIndex,
         variants: trait.variants.map(variant => ({
           id: variant.id,
           name: variant.name,
@@ -313,17 +295,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       Promise.all(TraitManager.getAllTraits().map(trait =>
         Promise.all(trait.variants.map(async variant => {
           if (variant.url) {
-            const response = await fetch(variant.url);
-            const blob = await response.blob();
-            const arrayBuffer = await blob.arrayBuffer();
-            await imageStore.put({ id: `${trait.id}_${variant.id}`, data: arrayBuffer });
-            console.log(`Saved image for ${trait.id}_${variant.id}`);
+            try {
+              const response = await fetch(variant.url);
+              if (!response.ok) throw new Error(`Fetch failed for ${variant.url}`);
+              const blob = await response.blob();
+              const arrayBuffer = await blob.arrayBuffer();
+              await imageStore.put({ id: `${trait.id}_${variant.id}`, data: arrayBuffer });
+              console.log(`Saved image for ${trait.id}_${variant.id}`);
+            } catch (error) {
+              console.error(`Error saving image for ${trait.id}_${variant.id}:`, error);
+            }
           }
         }))
       )).then(async () => {
         await projectStore.put({
           id: 'current',
-          name: document.getElementById('project-name').value,
+          name: document.getElementById('project-name').value || 'Unnamed',
           size: document.getElementById('project-size').value,
           description: document.getElementById('project-description').value,
           traits: traitsToSave
@@ -332,6 +319,19 @@ document.addEventListener('DOMContentLoaded', async () => {
           name: document.getElementById('project-name').value,
           traits: traitsToSave
         });
+        // Re-render traits to prevent data loss
+        traitContainer.innerHTML = '';
+        TraitManager.getAllTraits().forEach(trait => {
+          addTrait(trait);
+          refreshTraitGrid(trait.id);
+          if (trait.variants.length > 0) {
+            selectVariation(trait.id, trait.variants[trait.selected].id);
+          }
+        });
+        updatePreviewSamples();
+      }).catch(err => {
+        console.error('Save transaction failed:', err);
+        reject(err);
       });
     });
   }
@@ -365,6 +365,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const newTrait = TraitManager.addTrait(trait.position);
             newTrait.name = trait.name;
             newTrait.selected = trait.selected;
+            newTrait.zIndex = trait.zIndex;
             newTrait.variants = [];
             for (const variant of trait.variants) {
               const imageData = await imageStore.get(`${trait.id}_${variant.id}`);
@@ -385,6 +386,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
           }
           updatePreviewSamples();
+          console.log('Load complete, traits rendered:', TraitManager.getAllTraits());
           alert(`Project "${projectName}" loaded successfully!`);
         } else {
           console.log('No saved project found');
@@ -397,7 +399,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     await loadProject();
   } catch (error) {
-    console.error('Failed to load project:', error);
+    console.error('Failed to load project on startup:', error);
     TraitManager.getAllTraits().slice(0, 3).forEach(trait => {
       addTrait(trait);
       refreshTraitGrid(trait.id);
@@ -491,7 +493,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       selected: trait.selected,
       position: trait.position,
       zIndex: trait.zIndex
-    })); // Use trait data, not DOM clones
+    }));
 
     const updateEnlargedPreview = () => {
       enlargedPreview.innerHTML = '';
@@ -528,12 +530,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentSpeed = 1000;
       }
       randomizeInterval = setInterval(() => {
-        magnifiedState.forEach(trait => {
-          if (trait.variants.length > 0) {
-            trait.selected = Math.floor(Math.random() * trait.variants.length);
-            console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
-          }
-        });
+        const trait = magnifiedState[Math.floor(Math.random() * magnifiedState.length)];
+        if (trait.variants.length > 0) {
+          trait.selected = Math.floor(Math.random() * trait.variants.length);
+          console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
+        }
         updateEnlargedPreview();
       }, currentSpeed);
     };
