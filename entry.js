@@ -175,6 +175,9 @@ const TraitManager = {
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
 
+
+
+
 // Declare variables globally
 let provider, contract, signer, contractWithSigner;
 let traitImages = [];
@@ -200,6 +203,9 @@ clickSound.volume = 0.25;
 
 /* Section 3A ----------------------------------------- INITIALIZATION AND SETUP ------------------------------------------------*/
 
+
+
+
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000;
@@ -222,8 +228,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   widthInput = document.getElementById('width-input');
   heightInput = document.getElementById('height-input');
 
-  if (!traitContainer || !previewSamplesGrid) {
-    console.error('Critical DOM elements missing:', { traitContainer, previewSamplesGrid });
+  if (!traitContainer || !previewSamplesGrid || !generateButton || !timerDisplay) {
+    console.error('Critical DOM elements missing:', { traitContainer, previewSamplesGrid, generateButton, timerDisplay });
     return;
   }
 
@@ -241,7 +247,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   updatePreviewSamples();
 
+  
+
 /* Section 3B ----------------------------------------- PROJECT MANAGEMENT FUNCTIONS ------------------------------------------------*/
+
+  
 
   const openDB = () => new Promise((resolve, reject) => {
     const request = indexedDB.open('NFTProjectDB', 1);
@@ -435,7 +445,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+
+  
 /* Section 3C ----------------------------------------- UI EVENT LISTENERS ------------------------------------------------*/
+
+
+  
 
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
   generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1));
