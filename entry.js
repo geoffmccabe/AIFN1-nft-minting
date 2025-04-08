@@ -199,10 +199,11 @@ clickSound.volume = 0.25;
 
 
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
+/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
-  let currentSpeed = 1000; // Start at 1000ms
+  let currentSpeed = 1000;
 
   provider = new ethers.providers.Web3Provider(window.ethereum);
   contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
@@ -222,7 +223,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   widthInput = document.getElementById('width-input');
   heightInput = document.getElementById('height-input');
 
-  // Ensure DOM elements are available
   if (!traitContainer || !previewSamplesGrid) {
     console.error('Critical DOM elements missing:', { traitContainer, previewSamplesGrid });
     return;
@@ -234,7 +234,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     preview.innerHTML = '';
   }
 
-  // Initialize TraitManager with 3 empty traits
   TraitManager.initialize();
   traitContainer.innerHTML = '';
   TraitManager.getAllTraits().forEach(trait => {
@@ -243,7 +242,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   updatePreviewSamples();
 
-  // IndexedDB Setup
   const openDB = () => new Promise((resolve, reject) => {
     const request = indexedDB.open('NFTProjectDB', 1);
     request.onupgradeneeded = (e) => {
@@ -259,7 +257,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     request.onerror = () => reject(request.error);
   });
 
-  // Save Project
   async function saveProject() {
     try {
       console.log('Starting saveProject...');
@@ -268,7 +265,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const imageStore = tx.objectStore('images');
       const projectStore = tx.objectStore('projects');
 
-      // Clear existing images
       await new Promise((resolve, reject) => {
         const clearRequest = imageStore.clear();
         clearRequest.onsuccess = () => resolve();
@@ -276,7 +272,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       console.log('Cleared existing images');
 
-      // Prepare traits data
       const traitsToSave = TraitManager.getAllTraits().map(trait => ({
         id: trait.id,
         position: trait.position,
@@ -291,10 +286,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }))
       }));
 
-      // Save images using pre-stored variant.data
       for (const trait of TraitManager.getAllTraits()) {
         for (const variant of trait.variants) {
-          if (variant.data) { // Use stored ArrayBuffer
+          if (variant.data) {
             try {
               const key = `${trait.id}_${variant.id}`;
               console.log(`Storing image with key: ${key}, size: ${variant.data.byteLength} bytes`);
@@ -305,7 +299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               });
             } catch (error) {
               console.error(`Error saving image ${trait.id}_${variant.id}:`, error);
-              throw error; // Bubble up to catch block
+              throw error;
             }
           } else {
             console.warn(`No data for variant ${trait.id}_${variant.id} - skipping image save`);
@@ -313,9 +307,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
 
-      // Save project metadata
+      const slot = document.getElementById('project-slot').value;
       const projectData = {
-        id: 'current',
+        id: slot,
         name: document.getElementById('project-name').value || 'Unnamed',
         size: document.getElementById('project-size').value,
         description: document.getElementById('project-description').value,
@@ -329,87 +323,122 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       console.log('Saved project:', projectData);
-      alert('Project saved successfully!');
+      alert(`Project saved to ${slot} successfully!`);
     } catch (err) {
       console.error('SaveProject caught error:', err);
       alert('Failed to save project');
     }
   }
 
-  // Load Project
   async function loadProject() {
-    const db = await openDB();
-    const tx = db.transaction(['projects', 'images'], 'readonly');
-    const projectStore = tx.objectStore('projects');
-    const imageStore = tx.objectStore('images');
-    const project = await new Promise(resolve => projectStore.get('current').onsuccess = e => resolve(e.target.result));
+    try {
+      const db = await openDB();
+      const tx = db.transaction(['projects', 'images'], 'readonly');
+      const projectStore = tx.objectStore('projects');
+      const imageStore = tx.objectStore('images');
+      const slot = document.getElementById('project-slot').value;
+      const project = await new Promise(resolve => projectStore.get(slot).onsuccess = e => resolve(e.target.result));
 
-    if (!project) {
-      alert('No saved project found');
-      return;
-    }
+      if (!project) {
+        alert(`No saved project found in ${slot}`);
+        return;
+      }
 
-    TraitManager.traits = [];
-    traitImages = [];
-    traitContainer.innerHTML = '';
-    if (preview) preview.innerHTML = '';
+      TraitManager.traits = [];
+      traitImages = [];
+      traitContainer.innerHTML = '';
+      if (preview) preview.innerHTML = '';
 
-    document.getElementById('project-name').value = project.name;
-    document.getElementById('project-size').value = project.size || '600x600';
-    document.getElementById('project-description').value = project.description || '';
+      document.getElementById('project-name').value = project.name;
+      document.getElementById('project-size').value = project.size || '600x600';
+      document.getElementById('project-description').value = project.description || '';
 
-    for (const savedTrait of project.traits) {
-      const newTrait = {
-        id: savedTrait.id,
-        position: savedTrait.position,
-        name: savedTrait.name,
-        selected: savedTrait.selected,
-        zIndex: savedTrait.zIndex,
-        variants: [],
-        createdAt: savedTrait.createdAt || Date.now()
-      };
-      TraitManager.traits.push(newTrait);
+      for (const savedTrait of project.traits) {
+        const newTrait = {
+          id: savedTrait.id,
+          position: savedTrait.position,
+          name: savedTrait.name,
+          selected: savedTrait.selected,
+          zIndex: savedTrait.zIndex,
+          variants: [],
+          createdAt: savedTrait.createdAt || Date.now()
+        };
+        TraitManager.traits.push(newTrait);
 
-      for (const savedVariant of savedTrait.variants) {
-        const imageData = await new Promise(resolve => imageStore.get(`${savedTrait.id}_${savedVariant.id}`).onsuccess = e => resolve(e.target.result));
-        if (imageData?.data) {
-          const variantData = {
-            id: savedVariant.id,
-            name: savedVariant.name,
-            url: URL.createObjectURL(new Blob([imageData.data], { type: 'image/webp' })),
-            data: imageData.data, // Preserve ArrayBuffer for future saves
-            chance: savedVariant.chance,
-            createdAt: savedVariant.createdAt
-          };
-          newTrait.variants.push(variantData);
-          console.log(`Loaded variant ${variantData.id} for trait ${savedTrait.id}: Image present`);
-        } else {
-          console.warn(`Missing image data for variant ${savedVariant.id} in trait ${savedTrait.id}`);
+        for (const savedVariant of savedTrait.variants) {
+          const imageData = await new Promise(resolve => imageStore.get(`${savedTrait.id}_${savedVariant.id}`).onsuccess = e => resolve(e.target.result));
+          if (imageData?.data) {
+            const variantData = {
+              id: savedVariant.id,
+              name: savedVariant.name,
+              url: URL.createObjectURL(new Blob([imageData.data], { type: 'image/webp' })),
+              data: imageData.data,
+              chance: savedVariant.chance,
+              createdAt: savedVariant.createdAt
+            };
+            newTrait.variants.push(variantData);
+            console.log(`Loaded variant ${variantData.id} for trait ${savedTrait.id}: Image present`);
+          } else {
+            console.warn(`Missing image data for variant ${savedVariant.id} in trait ${savedTrait.id}`);
+          }
         }
       }
+
+      TraitManager.sortTraits();
+      TraitManager.getAllTraits().forEach(trait => {
+        addTrait(trait);
+        refreshTraitGrid(trait.id);
+        if (trait.variants.length > 0) {
+          selectVariation(trait.id, trait.variants[trait.selected]?.id);
+        }
+      });
+      updatePreviewSamples();
+
+      console.log('Loaded project:', project);
+      alert(`Project "${project.name}" loaded from ${slot} successfully!`);
+    } catch (err) {
+      console.error('Load failed:', err);
+      alert('Failed to load project');
     }
-
-    TraitManager.sortTraits();
-    TraitManager.getAllTraits().forEach(trait => {
-      addTrait(trait);
-      refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) {
-        selectVariation(trait.id, trait.variants[trait.selected]?.id);
-      }
-    });
-    updatePreviewSamples();
-
-    console.log('Loaded project:', project);
-    alert(`Project "${project.name}" loaded successfully!`);
   }
 
-  // Event listeners for global controls
+  async function deleteProject() {
+    try {
+      const slot = document.getElementById('project-slot').value;
+      const db = await openDB();
+      const tx = db.transaction(['projects', 'images'], 'readwrite');
+      const projectStore = tx.objectStore('projects');
+      const imageStore = tx.objectStore('images');
+
+      const project = await new Promise(resolve => projectStore.get(slot).onsuccess = e => resolve(e.target.result));
+      if (!project) {
+        alert(`No project found in ${slot}`);
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to delete project "${project.name}" from ${slot}?`)) return;
+
+      for (const trait of project.traits) {
+        for (const variant of trait.variants) {
+          const imageId = `${trait.id}_${variant.id}`;
+          await new Promise(resolve => imageStore.delete(imageId).onsuccess = () => resolve());
+        }
+      }
+
+      await new Promise(resolve => projectStore.delete(slot).onsuccess = () => resolve());
+
+      alert(`Deleted project "${project.name}" from ${slot}`);
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Failed to delete project');
+    }
+  }
+
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
   generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1));
   document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
   document.getElementById('gen-16x').addEventListener('click', () => fetchMultipleBackgrounds(16));
 
-  // Scroll Controls
   const scrollTrait = (direction) => {
     const traits = [...traitContainer.querySelectorAll('.trait-section')];
     if (traits.length === 0) return;
@@ -427,21 +456,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelector('.up-scroll').onclick = () => scrollTrait('up');
   document.querySelector('.down-scroll').onclick = () => scrollTrait('down');
 
-  // Project Size Handling
   const projectSizeSelect = document.getElementById('project-size');
   const customSizeGroup = document.getElementById('custom-size-group');
   projectSizeSelect.onchange = () => {
     customSizeGroup.style.display = projectSizeSelect.value === 'custom' ? 'block' : 'none';
     document.getElementById('width-input').value = '600';
     document.getElementById('height-input').value = '600';
-    saveProject();
   };
-  document.getElementById('custom-width').onchange = () => saveProject();
-  document.getElementById('custom-height').onchange = () => saveProject();
-  document.getElementById('project-name').oninput = () => saveProject();
-  document.getElementById('project-description').oninput = () => saveProject();
 
-  // Save/Load Buttons
   document.getElementById('save-project').addEventListener('click', async () => {
     try {
       await saveProject();
@@ -458,8 +480,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       alert('Failed to load project');
     }
   });
+  document.getElementById('delete-project').addEventListener('click', async () => {
+    try {
+      await deleteProject();
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Failed to delete project');
+    }
+  });
 
-  // Info Tooltip Activation
   const infoTooltip = document.querySelector('.info-tooltip');
   if (infoTooltip) {
     infoTooltip.addEventListener('click', (e) => {
@@ -469,7 +498,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Set up magnifying glass with isolated preview
   magnifyEmoji.addEventListener('click', () => {
     enlargedPreview.style.display = 'block';
     const maxWidth = window.innerWidth * 0.9;
@@ -581,7 +609,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
   });
 
-  // Set up drag-and-drop for direction emojis
   directionEmojis.forEach(emoji => {
     const direction = emoji.getAttribute('data-direction');
     emoji.addEventListener('mousedown', () => {
@@ -633,7 +660,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Set up undo functionality
   document.addEventListener('keydown', (e) => {
     const now = Date.now();
     if (now - lastUndoTime < 300) return;
@@ -659,7 +685,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Set up preview panel drag events
   if (preview) {
     preview.addEventListener('mousemove', (e) => {
       if (!isDragging || !currentImage) return;
@@ -683,7 +708,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
         updateZIndices();
-        saveProject();
       }
     });
 
@@ -697,12 +721,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
         updateZIndices();
-        saveProject();
       }
     });
   }
 
-  // Set up Chosen grid
   const chosenCountInput = document.getElementById('chosen-count');
   const updateChosenGridButton = document.getElementById('update-chosen-grid');
   updateChosenGrid(parseInt(chosenCountInput.value));
@@ -715,7 +737,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Set up drag-and-drop for Chosen grid
   const chosenGrid = document.getElementById('chosen-grid');
   chosenGrid.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -786,7 +807,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Ensure all images in Chosen grid are draggable on load
   chosenGrid.querySelectorAll('.chosen-image-container img').forEach(img => {
     img.draggable = true;
     img.addEventListener('dragstart', (e) => {
@@ -795,7 +815,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Log logo URL for debugging
   const logo = document.getElementById('logo');
   if (logo) console.log('Logo URL:', logo.src);
 });
@@ -992,6 +1011,11 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
+
+
+
+
+/* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
 /* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
 
 function setupTraitListeners(traitId) {
@@ -1001,17 +1025,18 @@ function setupTraitListeners(traitId) {
   const grid = document.getElementById(`trait${traitId}-grid`);
 
   if (fileInput && nameInput && grid && fileInputLabel) {
-    nameInput.dataset.userEntered = 'false'; // Track if user has typed
+    nameInput.dataset.userEntered = 'false';
     nameInput.addEventListener('input', () => {
       const trait = TraitManager.getTrait(traitId);
       const position = Array.from(traitContainer.children).indexOf(nameInput.parentElement) + 1;
       const placeholderPattern = `Trait Name (e.g., ${position === 1 ? 'Eyes' : position === 2 ? 'Hair' : 'Accessories'})`;
-      if (nameInput.value.trim() && nameInput.value !== placeholderPattern) {
+      const trimmedValue = nameInput.value.trim();
+      if (trimmedValue && trimmedValue !== placeholderPattern) {
         nameInput.dataset.userEntered = 'true';
-        trait.name = nameInput.value.trim();
+        trait.name = trimmedValue;
       } else {
         nameInput.dataset.userEntered = 'false';
-        trait.name = ''; // Reset to empty if it's just the placeholder
+        trait.name = '';
       }
       const title = nameInput.parentElement.querySelector('h2');
       title.textContent = `TRAIT ${position}${trait.name ? ` - ${trait.name}` : ''}`;
@@ -1024,18 +1049,20 @@ function setupTraitListeners(traitId) {
       const trait = TraitManager.getTrait(traitId);
       const position = Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1;
       const placeholderPattern = `Trait Name (e.g., ${position === 1 ? 'Eyes' : position === 2 ? 'Hair' : 'Accessories'})`;
-      trait.name = nameInput.dataset.userEntered === 'true' ? nameInput.value.trim() : '';
-      if (!trait.name) nameInput.value = placeholderPattern; // Reset input to placeholder if no user-entered name
+      if (nameInput.dataset.userEntered !== 'true') {
+        trait.name = '';
+        nameInput.value = placeholderPattern;
+      }
 
-      trait.variants = []; // Clear existing variants
+      trait.variants = [];
       grid.innerHTML = '';
 
       for (const file of files) {
         const variationName = file.name.split('.').slice(0, -1).join('.');
         const url = URL.createObjectURL(file);
-        const data = await file.arrayBuffer(); // Store raw file data
+        const data = await file.arrayBuffer();
         const variant = TraitManager.addVariant(traitId, { name: variationName, url });
-        variant.data = data; // Add ArrayBuffer to variant
+        variant.data = data;
 
         const container = document.createElement('div');
         container.className = 'variation-container';
