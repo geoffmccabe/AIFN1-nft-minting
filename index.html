@@ -21,7 +21,7 @@
 
 
 
-<! Section 2 ----------------------------------------- MAIN LAYOUT AND TOP-LEVEL STYLES ------------------------------------------------>
+/* Section 2 ----------------------------------------- MAIN LAYOUT AND TOP-LEVEL STYLES ------------------------------------------------*/
 
 <style>
   body {
@@ -36,9 +36,10 @@
 
   #container {
     display: flex;
+    flex-wrap: nowrap;
     justify-content: space-between;
     align-items: flex-start;
-    flex-wrap: nowrap;
+    width: 100%;
     max-width: 2400px;
     margin: 0 auto;
     padding: 20px;
@@ -47,7 +48,7 @@
 
   #left-panel {
     flex: 6;
-    max-width: 60%;
+    flex-basis: 60%;
     padding-right: 10px;
     padding-top: 30px;
     box-sizing: border-box;
@@ -55,9 +56,11 @@
 
   #right-panel {
     flex: 4;
-    max-width: 40%;
+    flex-basis: 40%;
+    max-width: 600px;
     padding-left: 10px;
     box-sizing: border-box;
+    margin-left: auto;
   }
 
   #logo-container {
@@ -68,9 +71,8 @@
   }
 
   #logo {
-    width: 100%;
-    height: auto;
     max-width: 600px;
+    height: auto;
   }
 
   .project-panel, .traits-panel, #preview-section, #generator-section, #grid-section {
@@ -674,10 +676,8 @@
 
 
 
+/* Section 7 ----------------------------------------- GENERATED AI BACKGROUNDS AND NFT GENERATOR ------------------------------------------------*/
 
-<!-------------------------------- Section 7 -------------------------------->
-
-</div> <!-- Close #container -->
 <div id="full-width-section">
   <div id="generator-section">
     <h2>GENERATOR</h2>
@@ -694,6 +694,8 @@
       </div>
       <div id="background-controls">
         <button id="generate-background">Generate Bkgd</button>
+        <button id="gen-4x" style="display: none;">Generate 4x</button>
+        <button id="gen-16x" style="display: none;">Generate 16x</button>
         <span id="timer-display">Processing: 0s</span>
       </div>
       <div style="display: flex; align-items: flex-start;">
@@ -727,7 +729,10 @@
     </div>
   </div>
 </div>
+</div> <!-- Close #container -->
 
+
+  
 
 <!-------------------------------- Section 8 -------------------------------->
 <!-------------------------------- Section 8 -------------------------------->
