@@ -198,8 +198,7 @@ clickSound.volume = 0.25;
 
 
 
-/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
+/* Section 3A ----------------------------------------- INITIALIZATION AND SETUP ------------------------------------------------*/
 
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
@@ -241,6 +240,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshTraitGrid(trait.id);
   });
   updatePreviewSamples();
+
+/* Section 3B ----------------------------------------- PROJECT MANAGEMENT FUNCTIONS ------------------------------------------------*/
 
   const openDB = () => new Promise((resolve, reject) => {
     const request = indexedDB.open('NFTProjectDB', 1);
@@ -434,6 +435,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+/* Section 3C ----------------------------------------- UI EVENT LISTENERS ------------------------------------------------*/
+
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
   generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1));
   document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
@@ -497,6 +500,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       alert(tooltipText);
     });
   }
+
+  const chosenCountInput = document.getElementById('chosen-count');
+  const updateChosenGridButton = document.getElementById('update-chosen-grid');
+  updateChosenGrid(parseInt(chosenCountInput.value));
+  updateChosenGridButton.addEventListener('click', () => {
+    updateChosenGrid(parseInt(chosenCountInput.value));
+  });
+  chosenCountInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      updateChosenGrid(parseInt(chosenCountInput.value));
+    }
+  });
+
+/* Section 3D ----------------------------------------- DRAGGING AND MAGNIFY EVENTS ------------------------------------------------*/
 
   magnifyEmoji.addEventListener('click', () => {
     enlargedPreview.style.display = 'block';
@@ -725,18 +742,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  const chosenCountInput = document.getElementById('chosen-count');
-  const updateChosenGridButton = document.getElementById('update-chosen-grid');
-  updateChosenGrid(parseInt(chosenCountInput.value));
-  updateChosenGridButton.addEventListener('click', () => {
-    updateChosenGrid(parseInt(chosenCountInput.value));
-  });
-  chosenCountInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      updateChosenGrid(parseInt(chosenCountInput.value));
-    }
-  });
-
+  const gridSection = document.getElementById('grid-section');
   const chosenGrid = document.getElementById('chosen-grid');
   chosenGrid.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -818,7 +824,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const logo = document.getElementById('logo');
   if (logo) console.log('Logo URL:', logo.src);
 });
-
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
