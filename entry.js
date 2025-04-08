@@ -742,7 +742,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  const gridSection = document.getElementById('grid-section');
   const chosenGrid = document.getElementById('chosen-grid');
   chosenGrid.addEventListener('dragover', (e) => {
     e.preventDefault();
