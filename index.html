@@ -19,50 +19,50 @@
   <!-- Section 2 ----------------------------------------- LEFT PANEL STYLES -------------------------------------------------->
 
 
-  <style>
-    body { background-image: url('/AIFN1-nft-minting/images/background.webp'); background-position: center top; background-repeat: repeat-y; background-size: 100% auto; color: black; display: flex; flex-wrap: wrap; font-family: 'Poppins', sans-serif; font-weight: 400; margin: 0; min-height: 100vh; padding: 20px; position: relative; }
-    #version { color: #333; font-size: 12px; left: 10px; position: absolute; top: 10px; z-index: 10; }
-    #left-panel { box-sizing: border-box; flex: 3; min-width: 300px; padding-right: 10px; padding-top: 30px; width: calc(100% - 570px - 30px - 10px); }
-    #logo-container { align-items: center; background-color: transparent; display: flex; height: 200px; justify-content: center; margin: 0 auto 20px; width: 100%; z-index: 1; }
-    #logo { display: block; height: 100%; object-fit: contain; width: 100%; }
-    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-      #logo { height: 100px; width: 300px; }
-      #logo-container { height: 100px; width: 300px; }
-    }
-    .trait-section { margin-bottom: 20px; min-height: 150px; width: 100%; }
-    .trait-header { align-items: center; display: flex; margin-bottom: 10px; }
-    .trait-section h2 { flex-grow: 1; font-family: 'Poppins', sans-serif; font-weight: 600; margin: 0; text-align: left; }
-    .trait-controls { display: flex; gap: 10px; position: relative; }
-    .trait-controls span { color: #666; cursor: pointer; font-size: 16px; }
-    .trait-controls span:hover { opacity: 0.8; }
-    .trait-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); margin-top: 10px; }
-    .variation-container { align-items: center; cursor: pointer; display: flex; flex-direction: column; }
-    .variation-image-wrapper { align-items: center; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 5px; box-sizing: border-box; display: flex; height: 110px; justify-content: center; width: 110px; }
-    .variation-image-wrapper.selected { border: 5px solid #f4c149; }
-    .variation { height: 100px; object-fit: contain; width: 100px; }
-    .variation-filename { font-family: 'Poppins', sans-serif; font-size: 8px; font-weight: 500; margin-top: 5px; text-align: center; word-break: break-all; }
-    input[type="text"] { border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; height: 32px; margin-bottom: 5px; padding: 5px; width: 100%; }
-    input[type="file"] { display: none; }
-    .file-input-label { background: #ccc; border: none; border-radius: 5px; box-sizing: border-box; color: black; cursor: pointer; display: inline-block; font-size: 14px; height: 32px; line-height: 22px; margin-bottom: 5px; min-width: 120px; padding: 5px 10px; text-align: center; vertical-align: middle; white-space: nowrap; width: auto; }
-    .file-input-label:hover { background: #bbb; }
-    .up-arrow:hover::after { background: #333; border-radius: 5px; color: white; content: attr(data-tooltip); font-size: 12px; left: 50%; padding: 5px 10px; position: absolute; top: -30px; transform: translateX(-50%); white-space: nowrap; z-index: 1000; }
-    .up-arrow:hover::before { border: 5px solid transparent; border-top-color: #333; content: ''; left: 50%; position: absolute; top: -10px; transform: translateX(-50%); z-index: 1000; }
-    .down-arrow:hover::after { background: #333; border-radius: 5px; color: white; content: attr(data-tooltip); font-size: 12px; left: 50%; padding: 5px 10px; position: absolute; top: -30px; transform: translateX(-50%); white-space: nowrap; z-index: 1000; }
-    .down-arrow:hover::before { border: 5px solid transparent; border-top-color: #333; content: ''; left: 50%; position: absolute; top: -10px; transform: translateX(-50%); z-index: 1000; }
-    .panel { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(5px); border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); box-sizing: border-box; margin-bottom: 20px; padding: 15px; width: 100%; }
-    #left-panel .panel { width: 100%; }
-    #right-panel .panel { width: 570px; }
-    #full-width-section .panel { width: calc(50% - 15px); }
-    .panel-content { -webkit-overflow-scrolling: touch; background: white; border-radius: 8px; box-sizing: border-box; overflow-x: hidden; overflow-y: auto; padding: 15px; width: 100%; }
-    #left-panel .panel-content { max-width: 100%; }
-    #right-panel .panel-content { max-height: 650px; max-width: 540px; }
-    #full-width-section .panel-content { max-height: 800px; max-width: none; width: 100%; }
-    .panel-content::-webkit-scrollbar { width: 8px; }
-    .panel-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 4px; }
-    .panel-content::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
-    .panel-content::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
-    ::-webkit-scrollbar:horizontal { height: 0 !important; }
-  </style>
+<style>
+  body { background-image: url('/AIFN1-nft-minting/images/background.webp'); background-position: center top; background-repeat: repeat-y; background-size: 100% auto; color: black; display: flex; flex-wrap: wrap; font-family: 'Poppins', sans-serif; font-weight: 400; margin: 0; min-height: 100vh; padding: 20px; position: relative; }
+  #version { color: #333; font-size: 12px; left: 10px; position: absolute; top: 10px; z-index: 10; }
+  #left-panel { box-sizing: border-box; flex: 3; min-width: 300px; padding-right: 10px; padding-top: 30px; width: calc(100% - 570px - 30px - 10px); }
+  #logo-container { align-items: center; background-color: transparent; display: flex; height: 200px; justify-content: center; margin: 0 auto 20px; width: 100%; z-index: 1; }
+  #logo { display: block; height: 100%; object-fit: contain; width: 100%; }
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    #logo { height: 100px; width: 300px; }
+    #logo-container { height: 100px; width: 300px; }
+  }
+  .trait-section { margin-bottom: 20px; min-height: 150px; width: 100%; }
+  .trait-header { align-items: center; display: flex; margin-bottom: 10px; }
+  .trait-section h2 { flex-grow: 1; font-family: 'Poppins', sans-serif; font-weight: 600; margin: 0; text-align: left; }
+  .trait-controls { display: flex; gap: 10px; position: relative; }
+  .trait-controls span { color: #666; cursor: pointer; font-size: 16px; }
+  .trait-controls span:hover { opacity: 0.8; }
+  .trait-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); margin-top: 10px; }
+  .variation-container { align-items: center; cursor: pointer; display: flex; flex-direction: column; }
+  .variation-image-wrapper { align-items: center; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 5px; box-sizing: border-box; display: flex; height: 110px; justify-content: center; width: 110px; }
+  .variation-image-wrapper.selected { border: 5px solid #f4c149; }
+  .variation { height: 100px; object-fit: contain; width: 100px; }
+  .variation-filename { font-family: 'Poppins', sans-serif; font-size: 8px; font-weight: 500; margin-top: 5px; text-align: center; word-break: break-all; }
+  input[type="text"] { border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; height: 32px; margin-bottom: 5px; padding: 5px; width: 100%; }
+  input[type="file"] { display: none; }
+  .file-input-label { background: #ccc; border: none; border-radius: 5px; box-sizing: border-box; color: black; cursor: pointer; display: inline-block; font-size: 14px; height: 32px; line-height: 22px; margin-bottom: 5px; min-width: 120px; padding: 5px 10px; text-align: center; vertical-align: middle; white-space: nowrap; width: auto; }
+  .file-input-label:hover { background: #bbb; }
+  .up-arrow:hover::after { background: #333; border-radius: 5px; color: white; content: attr(data-tooltip); font-size: 12px; left: 50%; padding: 5px 10px; position: absolute; top: -30px; transform: translateX(-50%); white-space: nowrap; z-index: 1000; }
+  .up-arrow:hover::before { border: 5px solid transparent; border-top-color: #333; content: ''; left: 50%; position: absolute; top: -10px; transform: translateX(-50%); z-index: 1000; }
+  .down-arrow:hover::after { background: #333; border-radius: 5px; color: white; content: attr(data-tooltip); font-size: 12px; left: 50%; padding: 5px 10px; position: absolute; top: -30px; transform: translateX(-50%); white-space: nowrap; z-index: 1000; }
+  .down-arrow:hover::before { border: 5px solid transparent; border-top-color: #333; content: ''; left: 50%; position: absolute; top: -10px; transform: translateX(-50%); z-index: 1000; }
+  .panel { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(5px); border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); box-sizing: border-box; margin-bottom: 20px; padding: 15px; width: 100%; }
+  #left-panel .panel { width: 100%; }
+  #right-panel .panel { width: 570px; }
+  #full-width-section .panel { width: calc(50% - 15px); }
+  .panel-content { -webkit-overflow-scrolling: touch; background: white; border-radius: 8px; box-sizing: border-box; overflow-x: hidden; overflow-y: auto; padding: 15px; width: 100%; }
+  #left-panel .panel-content { max-width: 100%; }
+  #right-panel .panel-content { max-height: 650px; max-width: 540px; overflow-y: hidden; }
+  #full-width-section .panel-content { max-height: 800px; max-width: none; width: 100%; }
+  .panel-content::-webkit-scrollbar { width: 8px; }
+  .panel-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 4px; }
+  .panel-content::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+  .panel-content::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
+  ::-webkit-scrollbar:horizontal { height: 0 !important; }
+</style>
 
 
   <!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
@@ -156,72 +156,72 @@
   <!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
 
 
-  <div id="left-panel">
-    <div id="logo-container">
-      <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
-    </div>
-    <div class="project-panel panel">
-      <h2>PROJECT PANEL</h2>
-      <div class="panel-content">
-        <div class="form-group" style="align-items: center; display: flex; justify-content: space-between;">
-          <div style="width: 60%;">
-            <label for="project-name">Project Name:</label>
-            <input type="text" id="project-name" placeholder="My Awesome Project" style="height: 42px; width: 100%;">
-          </div>
-          <div style="width: 40%;">
-            <label for="project-size" style="display: block; text-align: left;">Project Size <span class="info-tooltip" title="Only 600×600px is supported currently">ℹ️</span>:</label>
-            <select id="project-size" style="height: 42px; width: 100%;">
-              <option value="600x600" selected>600×600px (Default)</option>
-              <option value="800x800" disabled>800×800px</option>
-              <option value="1024x1024" disabled>1024×1024px</option>
-              <option value="custom">Custom</option>
-            </select>
-          </div>
+<div id="left-panel">
+  <div id="logo-container">
+    <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
+  </div>
+  <div class="project-panel panel">
+    <h2>PROJECT PANEL</h2>
+    <div class="panel-content">
+      <div class="form-group" style="align-items: center; display: flex; justify-content: space-between;">
+        <div style="width: 60%;">
+          <label for="project-name">Project Name:</label>
+          <input type="text" id="project-name" placeholder="My Awesome Project" style="height: 42px; width: 100%;">
         </div>
-        <div class="form-group" id="custom-size-group" style="display: none;">
-          <label>Custom Size:</label>
-          <input type="number" id="custom-width" placeholder="Width" min="100" max="2400">
-          <span>×</span>
-          <input type="number" id="custom-height" placeholder="Height" min="100" max="2400">
-          <span>px</span>
-        </div>
-        <div class="form-group" style="align-items: flex-start; display: flex; justify-content: space-between;">
-          <div style="width: 60%;">
-            <label for="project-description">Project Description:</label>
-            <textarea id="project-description" placeholder="Describe your project..." style="width: 100%;"></textarea>
-          </div>
-          <div style="width: 40%;">
-            <label for="project-slot" style="display: block; text-align: left;">Save Slot:</label>
-            <select id="project-slot" style="width: 100%;">
-              <option value="project-1">Slot 1</option>
-              <option value="project-2">Slot 2</option>
-              <option value="project-3">Slot 3</option>
-              <option value="project-4">Slot 4</option>
-              <option value="project-5">Slot 5</option>
-              <option value="project-6">Slot 6</option>
-              <option value="project-7">Slot 7</option>
-              <option value="project-8">Slot 8</option>
-              <option value="project-9">Slot 9</option>
-              <option value="project-10">Slot 10</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group" style="display: flex; justify-content: space-between;">
-          <button id="load-project" style="background: grey; border: none; border-radius: 5px; color: white; cursor: pointer; padding: 5px 10px;">LOAD PROJECT</button>
-          <button id="save-project" style="background: grey; border: none; border-radius: 5px; color: white; cursor: pointer; padding: 5px 10px;">SAVE PROJECT</button>
-          <button id="delete-project" style="background: grey; border: none; border-radius: 5px; color: white; cursor: pointer; padding: 5px 10px;">DELETE PROJECT</button>
+        <div style="width: 40%;">
+          <label for="project-size" style="display: block; text-align: left;">Project Size <span class="info-tooltip" title="Only 600×600px is supported currently">ℹ️</span>:</label>
+          <select id="project-size" style="height: 42px; width: 100%;">
+            <option value="600x600" selected>600×600px (Default)</option>
+            <option value="800x800" disabled>800×800px</option>
+            <option value="1024x1024" disabled>1024×1024px</option>
+            <option value="custom">Custom</option>
+          </select>
         </div>
       </div>
-    </div>
-    <div class="traits-panel-container">
-      <div class="traits-panel panel">
-        <h2>TRAITS MANAGER</h2>
-        <div class="panel-content" id="trait-container" tabindex="0" style="max-height: 480px; overflow-y: auto;">
-          <!-- Dynamically populated by entry.js -->
+      <div class="form-group" id="custom-size-group" style="display: none;">
+        <label>Custom Size:</label>
+        <input type="number" id="custom-width" placeholder="Width" min="100" max="2400">
+        <span>×</span>
+        <input type="number" id="custom-height" placeholder="Height" min="100" max="2400">
+        <span>px</span>
+      </div>
+      <div class="form-group" style="align-items: flex-start; display: flex; justify-content: space-between;">
+        <div style="width: 60%;">
+          <label for="project-description">Project Description:</label>
+          <textarea id="project-description" placeholder="Describe your project..." style="width: 100%;"></textarea>
+        </div>
+        <div style="width: 40%;">
+          <label for="project-slot" style="display: block; text-align: left;">Save Slot:</label>
+          <select id="project-slot" style="width: 100%;">
+            <option value="project-1">Slot 1</option>
+            <option value="project-2">Slot 2</option>
+            <option value="project-3">Slot 3</option>
+            <option value="project-4">Slot 4</option>
+            <option value="project-5">Slot 5</option>
+            <option value="project-6">Slot 6</option>
+            <option value="project-7">Slot 7</option>
+            <option value="project-8">Slot 8</option>
+            <option value="project-9">Slot 9</option>
+            <option value="project-10">Slot 10</option>
+          </select>
+          <div class="form-group" style="align-items: flex-end; display: flex; justify-content: space-between; margin-top: 10px;">
+            <button id="save-project" style="background: grey; border: none; border-radius: 5px; color: white; cursor: pointer; padding: 5px 10px;">[SAVE]</button>
+            <button id="load-project" style="background: grey; border: none; border-radius: 5px; color: white; cursor: pointer; padding: 5px 10px;">[LOAD]</button>
+            <button id="delete-project" style="background: grey; border: none; border-radius: 5px; color: white; cursor: pointer; padding: 5px 10px;">[DELETE]</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
+  <div class="traits-panel-container">
+    <div class="traits-panel panel">
+      <h2>TRAITS MANAGER</h2>
+      <div class="panel-content" id="trait-container" tabindex="0" style="max-height: 480px; overflow-y: auto;">
+        <!-- Dynamically populated by entry.js -->
+      </div>
+    </div>
+  </div>
+</div>
 
 
   <!-- Section 6 ----------------------------------------- RIGHT PANEL CONTENT -------------------------------------------------->
@@ -264,50 +264,49 @@
   <!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
 
 
-  <div id="full-width-section" style="display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px; width: 100%;">
-    <div class="panel" style="width: calc(50% - 15px);">
-      <h2>GENERATED AI BKGD</h2>
-      <div class="panel-content" style="max-height: 800px;">
-        <div id="background-section">
-          <div id="prompt-section">
-            <label for="base-prompt">Basic Prompt:</label>
-            <textarea id="base-prompt" style="display: block; width: 100%;">1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
-            <label for="user-prompt">User Prompt:</label>
-            <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')" style="display: block; width: 100%;"></textarea>
+<div id="full-width-section" style="display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px; width: 100%;">
+  <div class="panel" style="width: calc(50% - 15px);">
+    <h2>GENERATED AI BKGD</h2>
+    <div class="panel-content" style="max-height: 800px; overflow-y: auto;">
+      <div id="background-section">
+        <div id="prompt-section">
+          <label for="base-prompt">Basic Prompt:</label>
+          <textarea id="base-prompt" style="display: block; width: 100%;">1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
+          <label for="user-prompt">User Prompt:</label>
+          <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')" style="display: block; width: 100%;"></textarea>
+        </div>
+        <div id="background-controls" style="align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; width: 100%;">
+          <div style="align-items: center; display: flex; gap: 10px;">
+            <button id="generate-background" style="background-color: grey; border: none; border-radius: 4px; color: white; cursor: pointer; height: 36px; padding: 8px 16px; width: 144px;">Generate Bkgd</button>
+            <button id="gen-4x" style="background-color: grey; border: none; border-radius: 4px; color: white; cursor: pointer; height: 36px; padding: 8px 16px;">4x</button>
+            <button id="gen-16x" style="background-color: grey; border: none; border-radius: 4px; color: white; cursor: pointer; height: 36px; padding: 8px 16px;">16x</button>
+            <span id="timer-display" style="align-items: center; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; display: inline-flex; height: 36px; line-height: 36px; padding: 0 16px; text-align: center; width: 173px;">Processing: 0s</span>
           </div>
-          <div id="background-controls" style="align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; width: 100%;">
-            <div style="align-items: center; display: flex; gap: 10px;">
-              <button id="generate-background" style="background-color: #4CAF50; border: none; border-radius: 4px; color: white; cursor: pointer; height: 36px; padding: 8px 16px; width: 144px;">Generate Bkgd</button>
-              <button id="gen-4x" style="background-color: #4CAF50; border: none; border-radius: 4px; color: white; cursor: pointer; height: 36px; padding: 8px 16px;">4x</button>
-              <button id="gen-16x" style="background-color: #4CAF50; border: none; border-radius: 4px; color: white; cursor: pointer; height: 36px; padding: 8px 16px;">16x</button>
-              <span id="timer-display" style="align-items: center; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; display: inline-flex; height: 36px; line-height: 36px; padding: 0 16px; text-align: center; width: 173px;">Processing: 0s</span>
-            </div>
-            <div style="align-items: center; display: flex; gap: 10px; position: relative;">
-              <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; height: 36px; padding: 8px 30px 8px 8px; width: 80px;">
-              <span style="color: #aaa; font-size: 14px; pointer-events: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">px</span>
-              <span style="font-size: 14px;">x</span>
-              <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; height: 36px; padding: 8px 30px 8px 8px; width: 80px;">
-              <span style="color: #aaa; font-size: 14px; pointer-events: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">px</span>
-            </div>
+          <div style="align-items: center; display: flex; gap: 10px; position: relative;">
+            <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; height: 36px; padding: 8px 30px 8px 8px; width: 80px;">
+            <span style="color: #aaa; font-size: 14px; pointer-events: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">px</span>
+            <span style="font-size: 14px;">x</span>
+            <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; height: 36px; padding: 8px 30px 8px 8px; width: 80px;">
+            <span style="color: #aaa; font-size: 14px; pointer-events: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">px</span>
           </div>
-          <div style="align-items: flex-start; display: flex;">
-            <div id="background-details">
-              <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
-              <p id="background-metadata">Loading...</p>
-            </div>
-            <div id="gen-controls">
-              <span class="gen-control-emoji" data-action="left">⬅️</span>
-              <span class="gen-control-emoji" data-action="right">➡️</span>
-              <span class="gen-control-emoji" data-action="delete">❌</span>
-              <span class="gen-control-emoji" data-action="keep">✅</span>
-            </div>
+        </div>
+        <div style="align-items: flex-start; display: flex;">
+          <div id="background-details">
+            <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
+            <p id="background-metadata">Loading...</p>
+          </div>
+          <div id="gen-controls">
+            <span class="gen-control-emoji" data-action="left">⬅️</span>
+            <span class="gen-control-emoji" data-action="right">➡️</span>
+            <span class="gen-control-emoji" data-action="delete">❌</span>
+            <span class="gen-control-emoji" data-action="keep">✅</span>
           </div>
         </div>
       </div>
     </div>
     <div class="panel" style="margin-left: auto; width: calc(50% - 15px);">
       <h2>CHOSEN IMAGES</h2>
-      <div class="panel-content" style="max-height: 800px;">
+      <div class="panel-content" style="max-height: 800px; overflow-y: auto;">
         <div id="chosen-section">
           <div id="chosen-controls">
             <label for="chosen-count">Number of Slots:</label>
@@ -321,7 +320,6 @@
       </div>
     </div>
   </div>
-
 
   <!-- Section 8 ----------------------------------------- MINTING PANEL -------------------------------------------------->
 
