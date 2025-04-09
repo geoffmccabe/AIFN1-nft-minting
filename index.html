@@ -261,9 +261,13 @@
 </style>
 
 
+
+  
 <!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
 <!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
 
+
+  
 
 <style>
   #right-panel {
@@ -281,8 +285,8 @@
   }
   #preview {
     position: relative;
-    width: 600px;
-    height: 600px;
+    width: 100%;
+    max-width: 600px;
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: cover;
     background-blend-mode: overlay;
@@ -290,12 +294,12 @@
     overflow: hidden;
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 10px;
-    max-width: 100%;
+    aspect-ratio: 1 / 1;
   }
   #preview img {
     position: absolute;
-    max-width: 600px;
-    max-height: 600px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
   }
   #preview img.dragging {
@@ -504,9 +508,13 @@
 </style>
 
 
+  
+
 <!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
 <!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
 
+
+  
 
 <style>
   #background-section h2 {
@@ -814,11 +822,13 @@
 <!-- Section 6 ----------------------------------------- RIGHT PANEL CONTENT -------------------------------------------------->
 
 
+  
+
 <div id="right-panel" style="flex: 2; width: 600px; padding-left: 10px; max-width: 600px; margin-left: auto;">
   <div class="panel">
     <h2 style="text-align: left;">PREVIEW</h2>
     <div class="panel-content" style="max-height: 650px;">
-      <div id="preview" style="height: 600px;">
+      <div id="preview">
         <!-- Preview images will be added dynamically -->
       </div>
       <div id="controls">
@@ -846,7 +856,6 @@
     </div>
   </div>
 </div>
-
 
 
 
