@@ -515,8 +515,6 @@
 <!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
 
 
-  
-
 <style>
   #background-section h2 {
     font-family: 'Poppins', sans-serif;
@@ -550,30 +548,33 @@
     text-align: center;
   }
   #background-image {
-    width: 600px;
-    height: 600px;
+    width: 100%;
+    max-width: 600px;
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: 600px 600px;
+    background-size: cover;
     background-blend-mode: overlay;
     border-radius: 10px;
     border: 1px solid rgba(0, 0, 0, 0.1);
+    aspect-ratio: 1 / 1;
   }
   #gen-grid {
     display: grid;
     gap: 10px;
-    width: 600px;
-    height: 600px;
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 1 / 1;
   }
   .gen-image-container {
     position: relative;
+    width: 100%;
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: 600px 600px;
-    background-position: center;
+    background-size: cover;
     background-blend-mode: overlay;
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     box-sizing: border-box;
     cursor: pointer;
+    aspect-ratio: 1 / 1;
   }
   .gen-image-container img {
     width: 100%;
@@ -584,11 +585,11 @@
     border: 5px solid #f4c149;
   }
   .gen-image-full {
-    width: 600px;
-    height: 600px;
+    width: 100%;
+    max-width: 600px;
     border-radius: 10px;
     border: 1px solid rgba(0, 0, 0, 0.1);
-    cursor: pointer;
+    aspect-ratio: 1 / 1;
   }
   #gen-controls {
     display: flex;
@@ -622,19 +623,22 @@
     justify-content: center;
   }
   #chosen-grid {
-    display: grid;
-    gap: 10px;
-    width: 600px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    width: 100%;
+    max-width: 600px;
   }
   .chosen-image-container {
     position: relative;
+    width: 108px;
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: 600px 600px;
-    background-position: center;
+    background-size: cover;
     background-blend-mode: overlay;
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     box-sizing: border-box;
+    aspect-ratio: 1 / 1;
   }
   .chosen-image-container img {
     width: 100%;
@@ -744,6 +748,7 @@
 
 
 
+  
 <!------------------------------------------------- Section 5 ------------------------------------------------->
 <!------------------------------------------------- Section 5 ------------------------------------------------->
 
@@ -889,8 +894,8 @@
           </div>
         </div>
         <div style="display: flex; align-items: flex-start;">
-          <div id="background-details" style="width: 600px;">
-            <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background" style="width: 600px; height: 600px; border-radius: 10px; border: 1px solid black;">
+          <div id="background-details">
+            <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
             <p id="background-metadata">Loading...</p>
           </div>
           <div id="gen-controls">
@@ -912,15 +917,13 @@
           <input type="number" id="chosen-count" value="30" min="1" max="100" style="width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
           <button id="update-chosen-grid">Update Grid</button>
         </div>
-        <div id="chosen-grid" style="display: flex; flex-wrap: wrap; gap: 15px; width: 600px;">
+        <div id="chosen-grid">
           <!-- Chosen images will be added dynamically -->
         </div>
       </div>
     </div>
   </div>
 </div>
-
-
 
 
 <!-------------------------------- Section 8 -------------------------------->
