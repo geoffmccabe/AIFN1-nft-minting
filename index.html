@@ -1,11 +1,7 @@
-<!-- Section 1 ----------------------------------------- HEAD AND INITIAL SETUP -------------------------------------------------->
-<!-- Section 1 ----------------------------------------- HEAD AND INITIAL SETUP -------------------------------------------------->
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
+  <!-- Section 1 ----------------------------------------- HEAD AND INITIAL SETUP -------------------------------------------------->
   <meta charset="UTF-8">
   <title>Mint Your AIFN NFT</title>
   <link rel="icon" type="image/x-icon" href="/AIFN1-nft-minting/favicon.ico">
@@ -13,747 +9,917 @@
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" crossorigin="anonymous"></script>
   <script src="config.js"></script>
   <script src="entry.js"></script>
-
 </head>
 <body>
 
-  
-
-<!-- Section 2 ----------------------------------------- LEFT PANEL STYLES -------------------------------------------------->
-
-
 
   
-<style>
-  body {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 400;
-    background-image: url('/AIFN1-nft-minting/images/background.webp');
-    background-repeat: repeat-y;
-    background-position: center top;
-    background-size: 100% auto;
-    color: black;
-    padding: 20px;
-    margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    position: relative;
-    min-height: 100vh;
-  }
-  #version {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 12px;
-    color: #333;
-    z-index: 10;
-  }
-  #left-panel {
-    flex: 3;
-    padding-right: 10px;
-    padding-top: 30px;
-    min-width: 300px;
-    width: calc(100% - 570px - 30px - 10px); /* Total width - right panel width - gap - padding-right */
-    box-sizing: border-box;
-  }
-  #logo-container {
-    width: 100%;
-    height: 200px;
-    margin: 0 auto 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: transparent;
-    z-index: 1;
-  }
-  #logo {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-  }
-  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    #logo { width: 300px; height: 100px; }
-    #logo-container { width: 300px; height: 100px; }
-  }
-  .trait-section {
-    margin-bottom: 20px;
-    width: 100%;
-    min-height: 150px; /* Ensure scrollable height */
-  }
-  .trait-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  .trait-section h2 {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    margin: 0;
-    text-align: left;
-    flex-grow: 1;
-  }
-  .trait-controls {
-    display: flex;
-    gap: 10px;
-    position: relative;
-  }
-  .trait-controls span {
-    cursor: pointer;
-    font-size: 16px;
-    color: #666;
-  }
-  .trait-controls span:hover {
-    opacity: 0.8;
-  }
-  .trait-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 10px;
-    margin-top: 10px;
-  }
-  .variation-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-  }
-  .variation-image-wrapper {
-    width: 110px;
-    height: 110px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .variation-image-wrapper.selected {
-    border: 5px solid #f4c149;
-  }
-  .variation {
-    width: 100px;
-    height: 100px;
-    object-fit: contain;
-  }
-  .variation-filename {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    font-size: 8px;
-    text-align: center;
-    margin-top: 5px;
-    word-break: break-all;
-  }
-  input[type="text"] {
-    width: 100%;
-    padding: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    margin-bottom: 5px;
-    box-sizing: border-box;
-    height: 32px;
-  }
-  input[type="file"] {
-    display: none;
-  }
-  .file-input-label {
-    display: inline-block;
-    padding: 5px 10px;
-    background: #ccc;
-    color: black;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-bottom: 5px;
-    height: 32px;
-    line-height: 22px;
-    box-sizing: border-box;
-    text-align: center;
-    min-width: 120px;
-    width: auto;
-    white-space: nowrap;
-    vertical-align: middle;
-  }
-  .file-input-label:hover {
-    background: #bbb;
-  }
-  .up-arrow:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-  }
-  .up-arrow:hover::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #333;
-    z-index: 1000;
-  }
-  .down-arrow:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-  }
-  .down-arrow:hover::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #333;
-    z-index: 1000;
-  }
-  /* Shared Panel Styling */
-  .panel {
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(5px);
-    border-radius: 15px;
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    width: 100%; /* Project and Traits fill parent, others are 570px */
-    box-sizing: border-box;
-  }
-  #left-panel .panel {
-    width: 100%; /* Fill available space in #left-panel */
-  }
-  #right-panel .panel, #full-width-section .panel {
-    width: 570px; /* Fixed width for right and full-width panels */
-  }
-  .panel-content {
-    background: white;
-    border-radius: 8px;
-    padding: 15px;
-    max-height: 600px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    width: 100%;
-    box-sizing: border-box;
-    -webkit-overflow-scrolling: touch;
-  }
-  #left-panel .panel-content {
-    max-width: 100%; /* Allow Project and Traits to fill parent */
-  }
-  #right-panel .panel-content, #full-width-section .panel-content {
-    max-width: 540px; /* 570px - 15px left padding - 15px right padding */
-  }
-  .panel-content::-webkit-scrollbar {
-    width: 8px;
-  }
-  .panel-content::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 4px;
-  }
-  .panel-content::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-  }
-  .panel-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
-  }
-</style>
-
-  
-<!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
-
+  <!-- Section 2 ----------------------------------------- LEFT PANEL STYLES -------------------------------------------------->
 
 
   
-<style>
-  #right-panel {
-    flex: 2;
-    width: 570px; /* Match panel width */
-    padding-left: 10px;
-    max-width: 570px;
-    margin-left: auto;
-  }
-  #right-panel h2 {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    text-align: center;
-    margin: 0 0 10px;
-  }
-  #preview {
-    position: relative;
-    width: 100%;
-    max-width: 600px;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: cover;
-    background-blend-mode: overlay;
-    margin-bottom: 10px;
-    overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    aspect-ratio: 1 / 1;
-  }
-  #preview img {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  #preview img.dragging {
-    box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
-  }
-  #controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    margin-top: 5px;
-  }
-  #coordinates {
-    font-size: 14px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-  }
-  #coordinates strong {
-    font-weight: bold;
-  }
-  .direction-emoji, .magnify-emoji {
-    font-size: 16px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 0;
-    color: #666;
-  }
-  .direction-emoji:hover, .magnify-emoji:hover {
-    opacity: 0.8;
-  }
-  #enlarged-preview {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: cover;
-    background-blend-mode: overlay;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    overflow: hidden;
-  }
-  #enlarged-preview img {
-    position: absolute;
-    object-fit: contain;
-  }
-  #enlarged-preview-controls {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    z-index: 10001;
-  }
-  .play-emoji, .pause-emoji {
-    font-size: 32px;
-    cursor: pointer;
-    background: rgba(0, 0, 0, 0.7);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-  }
-  .play-emoji:hover, .pause-emoji:hover {
-    background: rgba(0, 0, 0, 0.9);
-  }
-  #preview-samples {
-    margin-top: 20px;
-  }
-  #preview-samples-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  #preview-samples h2 {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    text-align: left;
-    margin: 0;
-  }
-  #preview-samples-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 13px;
-    width: 100%;
-    max-width: 600px;
-    aspect-ratio: 1 / 1;
-  }
-  #preview-samples-grid .sample-container {
-    position: relative;
-    width: 100%;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: cover;
-    background-blend-mode: overlay;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    overflow: hidden;
-    cursor: pointer;
-    aspect-ratio: 1 / 1;
-  }
-  #preview-samples-grid img {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transform-origin: top left;
-  }
-  #update-previews {
-    padding: 5px 10px;
-    background: #ccc;
-    color: black;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  #update-previews:hover {
-    background: #bbb;
-  }
-  .form-group {
-    margin-bottom: 15px;
-  }
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-  }
-  .form-group input[type="text"],
-  .form-group input[type="number"],
-  .form-group select,
-  .form-group textarea {
-    width: 100%;
-    max-width: 510px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 400;
-  }
-  .form-group select:disabled {
-    background: #f0f0f0;
-    color: #666;
-  }
-  .form-group textarea {
-    min-height: 80px;
-    resize: vertical;
-  }
-  .info-tooltip {
-    cursor: pointer;
-    position: relative;
-    margin-left: 5px;
-  }
-  .info-tooltip:hover::after {
-    content: attr(title);
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-  }
-</style>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      background-image: url('/AIFN1-nft-minting/images/background.webp');
+      background-repeat: repeat-y;
+      background-position: center top;
+      background-size: 100% auto;
+      color: black;
+      padding: 20px;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      position: relative;
+      min-height: 100vh;
+    }
+    #version {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 12px;
+      color: #333;
+      z-index: 10;
+    }
+    #left-panel {
+      flex: 3;
+      padding-right: 10px;
+      padding-top: 30px;
+      min-width: 300px;
+      width: calc(100% - 570px - 30px - 10px); /* Total width - right panel width - gap - padding-right */
+      box-sizing: border-box;
+    }
+    #logo-container {
+      width: 100%;
+      height: 200px;
+      margin: 0 auto 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: transparent;
+      z-index: 1;
+    }
+    #logo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      #logo { width: 300px; height: 100px; }
+      #logo-container { width: 300px; height: 100px; }
+    }
+    .trait-section {
+      margin-bottom: 20px;
+      width: 100%;
+      min-height: 150px; /* Ensure scrollable height */
+    }
+    .trait-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .trait-section h2 {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      margin: 0;
+      text-align: left;
+      flex-grow: 1;
+    }
+    .trait-controls {
+      display: flex;
+      gap: 10px;
+      position: relative;
+    }
+    .trait-controls span {
+      cursor: pointer;
+      font-size: 16px;
+      color: #666;
+    }
+    .trait-controls span:hover {
+      opacity: 0.8;
+    }
+    .trait-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .variation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+    .variation-image-wrapper {
+      width: 110px;
+      height: 110px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .variation-image-wrapper.selected {
+      border: 5px solid #f4c149;
+    }
+    .variation {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+    }
+    .variation-filename {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      font-size: 8px;
+      text-align: center;
+      margin-top: 5px;
+      word-break: break-all;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 5px;
+      box-sizing: border-box;
+      height: 32px;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .file-input-label {
+      display: inline-block;
+      padding: 5px 10px;
+      background: #ccc;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-bottom: 5px;
+      height: 32px;
+      line-height: 22px;
+      box-sizing: border-box;
+      text-align: center;
+      min-width: 120px;
+      width: auto;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+    .file-input-label:hover {
+      background: #bbb;
+    }
+    .up-arrow:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1000;
+    }
+    .up-arrow:hover::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+      z-index: 1000;
+    }
+    .down-arrow:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1000;
+    }
+    .down-arrow:hover::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+      z-index: 1000;
+    }
+    /* Shared Panel Styling */
+    .panel {
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(5px);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      width: 100%; /* Project and Traits fill parent, others are set in specific sections */
+      box-sizing: border-box;
+    }
+    #left-panel .panel {
+      width: 100%; /* Fill available space in #left-panel */
+    }
+    #right-panel .panel {
+      width: 570px; /* Fixed width for right panels */
+    }
+    #full-width-section .panel {
+      width: calc(50% - 15px); /* Already set in Section 7 */
+    }
+    .panel-content {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      max-height: 600px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      width: 100%;
+      box-sizing: border-box;
+      -webkit-overflow-scrolling: touch;
+    }
+    #left-panel .panel-content {
+      max-width: 100%; /* Allow Project and Traits to fill parent */
+    }
+    #right-panel .panel-content {
+      max-width: 540px; /* 570px - 15px left padding - 15px right padding */
+    }
+    #full-width-section .panel-content {
+      width: 100%; /* Fill the panel width */
+      max-width: none; /* Remove any max-width constraint */
+    }
+    .panel-content::-webkit-scrollbar {
+      width: 8px;
+    }
+    .panel-content::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 4px;
+    }
+    .panel-content::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+    .panel-content::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+  </style>
+
 
   
+  <!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
 
-<!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
-<div id="left-panel">
-  <div id="logo-container">
-    <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
-  </div>
-  <div class="project-panel panel">
-    <h2>PROJECT PANEL</h2>
-    <div class="panel-content">
-      <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="width: 60%;">
-          <label for="project-name">Project Name:</label>
-          <input type="text" id="project-name" placeholder="My Awesome Project" style="width: 100%; height: 42px;">
+
+  
+  <style>
+    #right-panel {
+      flex: 2;
+      width: 570px; /* Match panel width */
+      padding-left: 10px;
+      max-width: 570px;
+      margin-left: auto;
+    }
+    #right-panel h2 {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      text-align: center;
+      margin: 0 0 10px;
+    }
+    #preview {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
+      background-size: cover;
+      background-blend-mode: overlay;
+      margin-bottom: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      aspect-ratio: 1 / 1;
+    }
+    #preview img {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    #preview img.dragging {
+      box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 5px;
+    }
+    #coordinates {
+      font-size: 14px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+    }
+    #coordinates strong {
+      font-weight: bold;
+    }
+    .direction-emoji, .magnify-emoji {
+      font-size: 16px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      color: #666;
+    }
+    .direction-emoji:hover, .magnify-emoji:hover {
+      opacity: 0.8;
+    }
+    #enlarged-preview {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
+      background-size: cover;
+      background-blend-mode: overlay;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      overflow: hidden;
+    }
+    #enlarged-preview img {
+      position: absolute;
+      object-fit: contain;
+    }
+    #enlarged-preview-controls {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 10001;
+    }
+    .play-emoji, .pause-emoji {
+      font-size: 32px;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .play-emoji:hover, .pause-emoji:hover {
+      background: rgba(0, 0, 0, 0.9);
+    }
+    #preview-samples {
+      margin-top: 20px;
+    }
+    #preview-samples-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    #preview-samples h2 {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      text-align: left;
+      margin: 0;
+    }
+    #preview-samples-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 13px;
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 1 / 1;
+    }
+    #preview-samples-grid .sample-container {
+      position: relative;
+      width: 100%;
+      background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
+      background-size: cover;
+      background-blend-mode: overlay;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+      overflow: hidden;
+      cursor: pointer;
+      aspect-ratio: 1 / 1;
+    }
+    #preview-samples-grid img {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transform-origin: top left;
+    }
+    #update-previews {
+      padding: 5px 10px;
+      background: #ccc;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #update-previews:hover {
+      background: #bbb;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      max-width: 510px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+    }
+    .form-group select:disabled {
+      background: #f0f0f0;
+      color: #666;
+    }
+    .form-group textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    .info-tooltip {
+      cursor: pointer;
+      position: relative;
+      margin-left: 5px;
+    }
+    .info-tooltip:hover::after {
+      content: attr(title);
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1000;
+    }
+  </style>
+
+
+  
+  <!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
+
+
+  
+  <style>
+    #background-section h2 {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      text-align: left;
+      margin: 0 0 10px;
+    }
+    #prompt-section {
+      margin-top: 10px;
+    }
+    #prompt-section p {
+      margin: 5px 0;
+    }
+    #prompt-section textarea {
+      width: 100%;
+      height: 140px;
+      resize: none;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      box-sizing: border-box;
+      display: block;
+    }
+    #prompt-section label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+    }
+    #background-details {
+      text-align: center;
+    }
+    #background-image {
+      width: 100%;
+      background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
+      background-size: cover;
+      background-blend-mode: overlay;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      aspect-ratio: 1 / 1;
+    }
+    #gen-grid {
+      display: grid;
+      gap: 10px;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+    .gen-image-container {
+      position: relative;
+      width: 100%;
+      background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
+      background-size: cover;
+      background-blend-mode: overlay;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+      box-sizing: border-box;
+      cursor: pointer;
+      aspect-ratio: 1 / 1;
+    }
+    .gen-image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .gen-image-container.selected {
+      border: 5px solid #f4c149;
+    }
+    .gen-image-full {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      aspect-ratio: 1 / 1;
+    }
+    #gen-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-left: 10px;
+    }
+    .gen-control-emoji {
+      font-size: 32px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      color: #666;
+    }
+    .gen-control-emoji:hover {
+      opacity: 0.8;
+    }
+    #chosen-section h2 {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      text-align: center;
+      margin: 0 0 10px;
+    }
+    #chosen-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      justify-content: center;
+    }
+    #chosen-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      width: 100%;
+    }
+    .chosen-image-container {
+      position: relative;
+      width: calc(20% - 12px); /* 5 per row */
+      background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
+      background-size: cover;
+      background-blend-mode: overlay;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+      box-sizing: border-box;
+      aspect-ratio: 1 / 1;
+      min-width: 100px; /* Adjusted to ensure 5 per row */
+    }
+    .chosen-image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    button {
+      padding: 10px 20px;
+      background: grey;
+      color: black;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 5px;
+      margin: 10px 0;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+    }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    button:not(:disabled) {
+      background: #4CAF50;
+    }
+    #mint-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #mintFeeDisplay {
+      font-size: 14px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+    }
+    .confirmation-dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .confirmation-dialog p {
+      margin: 0 0 10px;
+      text-align: center;
+    }
+    .confirmation-dialog .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .confirmation-dialog button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .confirmation-dialog .yes-button {
+      background: #739c6c;
+    }
+    .confirmation-dialog .no-button {
+      background: #ae645a;
+    }
+    #background-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    #timer-display {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      font-size: 16px;
+      color: #333;
+    }
+    #width-input, #height-input {
+      width: 80px;
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 14px;
+      box-sizing: border-box;
+      height: 32px;
+    }
+    @media (max-width: 900px) {
+      body { flex-direction: column; }
+      #left-panel, #right-panel { width: 100%; padding: 10px; }
+      #preview { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+      #logo { width: 100%; max-width: 600px; }
+      #preview-samples-grid { 
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+        width: 100%; 
+      }
+      #chosen-grid { 
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+        width: 100%; 
+      }
+      #full-width-section .panel {
+        width: 100% !important; /* Override for mobile */
+      }
+    }
+  </style>
+
+
+  
+  <!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
+
+
+  
+  <div id="left-panel">
+    <div id="logo-container">
+      <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
+    </div>
+    <div class="project-panel panel">
+      <h2>PROJECT PANEL</h2>
+      <div class="panel-content">
+        <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="width: 60%;">
+            <label for="project-name">Project Name:</label>
+            <input type="text" id="project-name" placeholder="My Awesome Project" style="width: 100%; height: 42px;">
+          </div>
+          <div style="width: 40%;">
+            <label for="project-size" style="text-align: left; display: block;">Project Size <span class="info-tooltip" title="Only 600×600px is supported currently">ℹ️</span>:</label>
+            <select id="project-size" style="width: 100%; height: 42px;">
+              <option value="600x600" selected>600×600px (Default)</option>
+              <option value="800x800" disabled>800×800px</option>
+              <option value="1024x1024" disabled>1024×1024px</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
         </div>
-        <div style="width: 40%;">
-          <label for="project-size" style="text-align: left; display: block;">Project Size <span class="info-tooltip" title="Only 600×600px is supported currently">ℹ️</span>:</label>
-          <select id="project-size" style="width: 100%; height: 42px;">
-            <option value="600x600" selected>600×600px (Default)</option>
-            <option value="800x800" disabled>800×800px</option>
-            <option value="1024x1024" disabled>1024×1024px</option>
-            <option value="custom">Custom</option>
-          </select>
+        <div class="form-group" id="custom-size-group" style="display: none;">
+          <label>Custom Size:</label>
+          <input type="number" id="custom-width" placeholder="Width" min="100" max="2400">
+          <span>×</span>
+          <input type="number" id="custom-height" placeholder="Height" min="100" max="2400">
+          <span>px</span>
+        </div>
+        <div class="form-group" style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="width: 60%;">
+            <label for="project-description">Project Description:</label>
+            <textarea id="project-description" placeholder="Describe your project..." style="width: 100%;"></textarea>
+          </div>
+          <div style="width: 40%;">
+            <label for="project-slot" style="text-align: left; display: block;">Save Slot:</label>
+            <select id="project-slot" style="width: 100%;">
+              <option value="project-1">Slot 1</option>
+              <option value="project-2">Slot 2</option>
+              <option value="project-3">Slot 3</option>
+              <option value="project-4">Slot 4</option>
+              <option value="project-5">Slot 5</option>
+              <option value="project-6">Slot 6</option>
+              <option value="project-7">Slot 7</option>
+              <option value="project-8">Slot 8</option>
+              <option value="project-9">Slot 9</option>
+              <option value="project-10">Slot 10</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="display: flex; justify-content: space-between;">
+          <button id="load-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">LOAD PROJECT</button>
+          <button id="save-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">SAVE PROJECT</button>
+          <button id="delete-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">DELETE PROJECT</button>
         </div>
       </div>
-      <div class="form-group" id="custom-size-group" style="display: none;">
-        <label>Custom Size:</label>
-        <input type="number" id="custom-width" placeholder="Width" min="100" max="2400">
-        <span>×</span>
-        <input type="number" id="custom-height" placeholder="Height" min="100" max="2400">
-        <span>px</span>
-      </div>
-      <div class="form-group" style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="width: 60%;">
-          <label for="project-description">Project Description:</label>
-          <textarea id="project-description" placeholder="Describe your project..." style="width: 100%;"></textarea>
+    </div>
+    <div class="traits-panel-container">
+      <div class="traits-panel panel">
+        <h2>TRAITS MANAGER</h2>
+        <div class="panel-content" id="trait-container" tabindex="0" style="max-height: 480px;">
+          <!-- Dynamically populated by entry.js -->
         </div>
-        <div style="width: 40%;">
-          <label for="project-slot" style="text-align: left; display: block;">Save Slot:</label>
-          <select id="project-slot" style="width: 100%;">
-            <option value="project-1">Slot 1</option>
-            <option value="project-2">Slot 2</option>
-            <option value="project-3">Slot 3</option>
-            <option value="project-4">Slot 4</option>
-            <option value="project-5">Slot 5</option>
-            <option value="project-6">Slot 6</option>
-            <option value="project-7">Slot 7</option>
-            <option value="project-8">Slot 8</option>
-            <option value="project-9">Slot 9</option>
-            <option value="project-10">Slot 10</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group" style="display: flex; justify-content: space-between;">
-        <button id="load-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">LOAD PROJECT</button>
-        <button id="save-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">SAVE PROJECT</button>
-        <button id="delete-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">DELETE PROJECT</button>
       </div>
     </div>
   </div>
-  <div class="traits-panel-container">
-    <div class="traits-panel panel">
-      <h2>TRAITS MANAGER</h2>
-      <div class="panel-content" id="trait-container" tabindex="0" style="max-height: 480px;">
-        <!-- Dynamically populated by entry.js -->
-      </div>
-    </div>
-  </div>
-</div>
 
-  
-  
-<!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
-<!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
-
-
-  
-<div id="left-panel">
-  <div id="logo-container">
-    <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
-  </div>
-  <div class="project-panel panel">
-    <h2>PROJECT PANEL</h2>
-    <div class="panel-content">
-      <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="width: 60%;">
-          <label for="project-name">Project Name:</label>
-          <input type="text" id="project-name" placeholder="My Awesome Project" style="width: 100%; height: 42px;">
-        </div>
-        <div style="width: 40%;">
-          <label for="project-size" style="text-align: left; display: block;">Project Size <span class="info-tooltip" title="Only 600×600px is supported currently">ℹ️</span>:</label>
-          <select id="project-size" style="width: 100%; height: 42px;">
-            <option value="600x600" selected>600×600px (Default)</option>
-            <option value="800x800" disabled>800×800px</option>
-            <option value="1024x1024" disabled>1024×1024px</option>
-            <option value="custom">Custom</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group" id="custom-size-group" style="display: none;">
-        <label>Custom Size:</label>
-        <input type="number" id="custom-width" placeholder="Width" min="100" max="2400">
-        <span>×</span>
-        <input type="number" id="custom-height" placeholder="Height" min="100" max="2400">
-        <span>px</span>
-      </div>
-      <div class="form-group">
-        <label for="project-description">Project Description:</label>
-        <textarea id="project-description" placeholder="Describe your project..." style="width: 60%;"></textarea>
-      </div>
-      <div class="form-group">
-        <label for="project-slot">Save Slot:</label>
-        <select id="project-slot">
-          <option value="project-1">Slot 1</option>
-          <option value="project-2">Slot 2</option>
-          <option value="project-3">Slot 3</option>
-          <option value="project-4">Slot 4</option>
-          <option value="project-5">Slot 5</option>
-          <option value="project-6">Slot 6</option>
-          <option value="project-7">Slot 7</option>
-          <option value="project-8">Slot 8</option>
-          <option value="project-9">Slot 9</option>
-          <option value="project-10">Slot 10</option>
-        </select>
-      </div>
-      <div class="form-group" style="display: flex; justify-content: space-between;">
-        <button id="load-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">LOAD PROJECT</button>
-        <button id="save-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">SAVE PROJECT</button>
-        <button id="delete-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">DELETE PROJECT</button>
-      </div>
-    </div>
-  </div>
-  <div class="traits-panel-container">
-    <div class="traits-panel panel">
-      <h2>TRAITS MANAGER</h2>
-      <div class="panel-content" id="trait-container" tabindex="0" style="max-height: 480px;">
-        <!-- Dynamically populated by entry.js -->
-      </div>
-    </div>
-  </div>
-</div>
-  
-  
-<!-- Section 6 ----------------------------------------- RIGHT PANEL CONTENT -------------------------------------------------->
-
-
-  
-<div id="right-panel">
-  <div class="panel">
-    <h2 style="text-align: left;">PREVIEW</h2>
-    <div class="panel-content" style="max-height: 650px;">
-      <div id="preview">
-        <!-- Preview images will be added dynamically -->
-      </div>
-      <div id="controls">
-        <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
-        <span>   </span>
-        <span class="direction-emoji" data-direction="up">⬆️</span>
-        <span class="direction-emoji" data-direction="down">⬇️</span>
-        <span class="direction-emoji" data-direction="left">⬅️</span>
-        <span class="direction-emoji" data-direction="right">➡️</span>
-        <span class="magnify-emoji">🔍</span>
-      </div>
-    </div>
-  </div>
-  <div class="panel">
-    <div id="preview-samples">
-      <div id="preview-samples-header">
-        <h2>PREVIEW SAMPLES</h2>
-        <button id="update-previews">UPDATE</button>
-      </div>
+  <!-- Section 6 ----------------------------------------- RIGHT PANEL CONTENT -------------------------------------------------->
+  <div id="right-panel">
+    <div class="panel">
+      <h2 style="text-align: left;">PREVIEW</h2>
       <div class="panel-content" style="max-height: 650px;">
-        <div id="preview-samples-grid">
-          <!-- 4x4 grid of preview samples will be added dynamically -->
+        <div id="preview">
+          <!-- Preview images will be added dynamically -->
+        </div>
+        <div id="controls">
+          <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
+          <span>   </span>
+          <span class="direction-emoji" data-direction="up">⬆️</span>
+          <span class="direction-emoji" data-direction="down">⬇️</span>
+          <span class="direction-emoji" data-direction="left">⬅️</span>
+          <span class="direction-emoji" data-direction="right">➡️</span>
+          <span class="magnify-emoji">🔍</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div id="preview-samples">
+        <div id="preview-samples-header">
+          <h2>PREVIEW SAMPLES</h2>
+          <button id="update-previews">UPDATE</button>
+        </div>
+        <div class="panel-content" style="max-height: 650px;">
+          <div id="preview-samples-grid">
+            <!-- 4x4 grid of preview samples will be added dynamically -->
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
   
-
-<!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
-<!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
-<div id="full-width-section" style="width: 100%; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 30px; margin-top: 20px;">
-  <div class="panel" style="width: calc(50% - 15px);">
-    <h2>GENERATED AI BKGD</h2>
-    <div class="panel-content" style="max-height: 800px; overflow-x: hidden;">
-      <div id="background-section">
-        <div id="prompt-section">
-          <label for="base-prompt">Basic Prompt:</label>
-          <textarea id="base-prompt" style="width: 100%; display: block;">1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
-          <label for="user-prompt">User Prompt:</label>
-          <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')" style="width: 100%; display: block;"></textarea>
-        </div>
-        <div id="background-controls" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <button id="generate-background" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px; width: 144px;">Generate Bkgd</button>
-            <button id="gen-4x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">4x</button>
-            <button id="gen-16x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">16x</button>
-            <span id="timer-display" style="padding: 0 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; height: 36px; line-height: 36px; display: inline-flex; align-items: center; box-sizing: border-box; width: 173px; text-align: center;">Processing: 0s</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px; position: relative;">
-            <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
-            <span style="font-size: 14px;">x</span>
-            <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
-          </div>
-        </div>
-        <div style="display: flex; align-items: flex-start;">
-          <div id="background-details">
-            <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
-            <p id="background-metadata">Loading...</p>
-          </div>
-          <div id="gen-controls">
-            <span class="gen-control-emoji" data-action="left">⬅️</span>
-            <span class="gen-control-emoji" data-action="right">➡️</span>
-            <span class="gen-control-emoji" data-action="delete">❌</span>
-            <span class="gen-control-emoji" data-action="keep">✅</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="panel" style="width: calc(50% - 15px); margin-left: auto;">
-    <h2>CHOSEN IMAGES</h2>
-    <div class="panel-content" style="max-height: 800px; overflow-x: hidden;">
-      <div id="chosen-section">
-        <div id="chosen-controls">
-          <label for="chosen-count">Number of Slots:</label>
-          <input type="number" id="chosen-count" value="30" min="1" max="100" style="width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
-          <button id="update-chosen-grid">Update Grid</button>
-        </div>
-        <div id="chosen-grid">
-          <!-- Chosen images will be added dynamically -->
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+  <!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
 
 
-<!-------------------------------- Section 8 -------------------------------->
-<!-------------------------------- Section 8 -------------------------------->
-
-
-
-
-<div style="width: 100%; text-align: center; margin-top: 20px;">
-  <div id="mint-section">
-    <button id="mintButton" disabled onclick="mintNFT()">Mint NFT</button>
-    <span id="mintFeeDisplay">Mint Fee: Loading...</span>
-  </div>
-  <p id="status">Status: Ready</p>
-</div>
-<div id="enlarged-preview">
-  <!-- Enlarged preview images will be added dynamically -->
-</div>
-<div id="enlarged-preview-controls" style="display: none;">
-  <span id="pause-emoji" class="pause-emoji">❚❚</span>
-  <span id="play-emoji" class="play-emoji">▶️</span>
-</div>
   
+  <div id="full-width-section" style="width: 100%; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 30px; margin-top: 20px;">
+    <div class="panel" style="width: calc(50% - 15px);">
+      <h2>GENERATED AI BKGD</h2>
+      <div class="panel-content" style="max-height: 800px; overflow-x: hidden;">
+        <div id="background-section">
+          <div id="prompt-section">
+            <label for="base-prompt">Basic Prompt:</label>
+            <textarea id="base-prompt" style="width: 100%; display: block;">1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
+            <label for="user-prompt">User Prompt:</label>
+            <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')" style="width: 100%; display: block;"></textarea>
+          </div>
+          <div id="background-controls" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <button id="generate-background" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px; width: 144px;">Generate Bkgd</button>
+              <button id="gen-4x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">4x</button>
+              <button id="gen-16x" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px;">16x</button>
+              <span id="timer-display" style="padding: 0 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; height: 36px; line-height: 36px; display: inline-flex; align-items: center; box-sizing: border-box; width: 173px; text-align: center;">Processing: 0s</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; position: relative;">
+              <input type="number" id="width-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+              <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
+              <span style="font-size: 14px;">x</span>
+              <input type="number" id="height-input" value="600" min="256" max="1024" step="1" style="padding: 8px 30px 8px 8px; height: 36px; width: 80px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+              <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none;">px</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-start;">
+            <div id="background-details">
+              <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
+              <p id="background-metadata">Loading...</p>
+            </div>
+            <div id="gen-controls">
+              <span class="gen-control-emoji" data-action="left">⬅️</span>
+              <span class="gen-control-emoji" data-action="right">➡️</span>
+              <span class="gen-control-emoji" data-action="delete">❌</span>
+              <span class="gen-control-emoji" data-action="keep">✅</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" style="width: calc(50% - 15px); margin-left: auto;">
+      <h2>CHOSEN IMAGES</h2>
+      <div class="panel-content" style="max-height: 800px; overflow-x: hidden;">
+        <div id="chosen-section">
+          <div id="chosen-controls">
+            <label for="chosen-count">Number of Slots:</label>
+            <input type="number" id="chosen-count" value="30" min="1" max="100" style="width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+            <button id="update-chosen-grid">Update Grid</button>
+          </div>
+          <div id="chosen-grid">
+            <!-- Chosen images will be added dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  
+  <!-- Section 8 ----------------------------------------- MINT SECTION AND ENLARGED PREVIEW -------------------------------------------------->
+
+
+  
+  <div style="width: 100%; text-align: center; margin-top: 20px;">
+    <div id="mint-section">
+      <button id="mintButton" disabled onclick="mintNFT()">Mint NFT</button>
+      <span id="mintFeeDisplay">Mint Fee: Loading...</span>
+    </div>
+    <p id="status">Status: Ready</p>
+  </div>
+  <div id="enlarged-preview">
+    <!-- Enlarged preview images will be added dynamically -->
+  </div>
+  <div id="enlarged-preview-controls" style="display: none;">
+    <span id="pause-emoji" class="pause-emoji">❚❚</span>
+    <span id="play-emoji" class="play-emoji">▶️</span>
+  </div>
 </body>
 </html>
