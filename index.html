@@ -48,11 +48,11 @@
     padding-right: 10px;
     padding-top: 30px;
     min-width: 300px;
-    max-width: 570px; /* Match panel width */
+    width: calc(100% - 570px - 30px - 10px); /* Total width - right panel width - gap - padding-right */
     box-sizing: border-box;
   }
   #logo-container {
-    width: 570px;
+    width: 100%;
     height: 200px;
     margin: 0 auto 20px;
     display: flex;
@@ -229,8 +229,14 @@
     padding: 15px;
     margin-bottom: 20px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    width: 570px; /* Strict width to ensure consistent padding */
+    width: 100%; /* Project and Traits fill parent, others are 570px */
     box-sizing: border-box;
+  }
+  #left-panel .panel {
+    width: 100%; /* Fill available space in #left-panel */
+  }
+  #right-panel .panel, #full-width-section .panel {
+    width: 570px; /* Fixed width for right and full-width panels */
   }
   .panel-content {
     background: white;
@@ -240,9 +246,14 @@
     overflow-y: auto;
     overflow-x: hidden;
     width: 100%;
-    max-width: 540px; /* 570px - 15px left padding - 15px right padding */
     box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
+  }
+  #left-panel .panel-content {
+    max-width: 100%; /* Allow Project and Traits to fill parent */
+  }
+  #right-panel .panel-content, #full-width-section .panel-content {
+    max-width: 540px; /* 570px - 15px left padding - 15px right padding */
   }
   .panel-content::-webkit-scrollbar {
     width: 8px;
@@ -259,7 +270,6 @@
     background: rgba(0, 0, 0, 0.3);
   }
 </style>
-
 
   
 <!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
@@ -780,9 +790,13 @@
     </div>
   </div>
 </div>
+
   
   
 <!-- Section 6 ----------------------------------------- RIGHT PANEL CONTENT -------------------------------------------------->
+
+
+  
 <div id="right-panel">
   <div class="panel">
     <h2 style="text-align: left;">PREVIEW</h2>
@@ -816,9 +830,13 @@
   </div>
 </div>
 
+  
 
 <!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
-<!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
+
+
+
+  
 <div id="full-width-section" style="width: 100%; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 20px; margin-top: 20px;">
   <div class="panel">
     <h2>GENERATED AI BKGD</h2>
@@ -860,7 +878,7 @@
       </div>
     </div>
   </div>
-  <div class="panel">
+  <div class="panel" style="margin-left: auto;">
     <h2>CHOSEN IMAGES</h2>
     <div class="panel-content">
       <div id="chosen-section">
@@ -877,6 +895,8 @@
   </div>
 </div>
 
+
+  
 <!-------------------------------- Section 8 -------------------------------->
 <!-------------------------------- Section 8 -------------------------------->
 
