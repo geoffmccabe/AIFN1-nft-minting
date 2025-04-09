@@ -1621,6 +1621,8 @@ function updatePreviewSamples() {
 }
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
+/* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
+
 
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
@@ -1628,12 +1630,9 @@ function updateChosenGrid(count) {
   chosenGrid.style.display = 'flex';
   chosenGrid.style.flexWrap = 'wrap';
   chosenGrid.style.gap = '15px';
-  chosenGrid.style.width = '600px';
   for (let i = 0; i < count; i++) {
     const container = document.createElement('div');
     container.className = 'chosen-image-container';
-    container.style.width = '108px';
-    container.style.height = '108px';
     chosenGrid.appendChild(container);
   }
   chosenImages.forEach(imageUrl => addToChosenGrid(imageUrl));
@@ -1674,19 +1673,8 @@ async function fetchMultipleBackgrounds(count) {
     const backgroundDetails = document.getElementById('background-details');
     backgroundDetails.innerHTML = '';
 
-    const gridSize = Math.sqrt(count);
-    const gap = 10;
-    const totalSize = 600;
-    const cellSize = (totalSize - (gridSize - 1) * gap) / gridSize;
-
     const grid = document.createElement('div');
     grid.id = 'gen-grid';
-    grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = `repeat(${gridSize}, ${cellSize}px)`;
-    grid.style.gridTemplateRows = `repeat(${gridSize}, ${cellSize}px)`;
-    grid.style.gap = `${gap}px`;
-    grid.style.width = `${totalSize}px`;
-    grid.style.height = `${totalSize}px`;
     backgroundDetails.appendChild(grid);
 
     const basePrompt = document.getElementById('base-prompt').value.trim();
@@ -1697,12 +1685,13 @@ async function fetchMultipleBackgrounds(count) {
     const imageUrls = new Array(count).fill(null);
     currentGridState = { count, imageUrls, deleted: new Array(count).fill(false) };
 
+    const gridSize = Math.sqrt(count);
+    const gap = 10;
+
     for (let i = 0; i < count; i++) {
       const container = document.createElement('div');
       container.className = 'gen-image-container';
       container.dataset.index = i;
-      container.style.width = `${cellSize}px`;
-      container.style.height = `${cellSize}px`;
 
       const img = document.createElement('img');
       img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
