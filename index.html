@@ -631,7 +631,7 @@
   }
   .chosen-image-container {
     position: relative;
-    width: 108px;
+    width: calc(25% - 15px); /* 4 per row, accounting for gap */
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: cover;
     background-blend-mode: overlay;
@@ -690,7 +690,7 @@
     margin: 0 0 10px;
     text-align: center;
   }
-  .confirmation-dialog .buttons {
+  .Confirmation-dialog .buttons {
     display: flex;
     justify-content: center;
     gap: 10px;
