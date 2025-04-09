@@ -496,9 +496,7 @@
 <!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
 <!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
 
-
-
-  
+<!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
 <style>
   #background-section h2 {
     font-family: 'Poppins', sans-serif;
@@ -611,7 +609,7 @@
   }
   .chosen-image-container {
     position: relative;
-    width: calc(20% - 12px); /* 5 per row, scaled to fit */
+    width: calc(20% - 12px); /* 5 per row */
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: cover;
     background-blend-mode: overlay;
@@ -619,7 +617,7 @@
     border-radius: 5px;
     box-sizing: border-box;
     aspect-ratio: 1 / 1;
-    min-width: 120px; /* Ensure squares scale up */
+    min-width: 100px; /* Adjusted to ensure 5 per row */
   }
   .chosen-image-container img {
     width: 100%;
@@ -734,6 +732,9 @@
   
 <!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
 <!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
+
+
+  
 <div id="left-panel">
   <div id="logo-container">
     <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
@@ -841,14 +842,10 @@
 
 <!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
 <!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
-
-
-
-  
 <div id="full-width-section" style="width: 100%; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 30px; margin-top: 20px;">
   <div class="panel" style="width: calc(50% - 15px);">
     <h2>GENERATED AI BKGD</h2>
-    <div class="panel-content" style="max-height: 800px;">
+    <div class="panel-content" style="max-height: 800px; overflow-x: hidden;">
       <div id="background-section">
         <div id="prompt-section">
           <label for="base-prompt">Basic Prompt:</label>
@@ -888,7 +885,7 @@
   </div>
   <div class="panel" style="width: calc(50% - 15px); margin-left: auto;">
     <h2>CHOSEN IMAGES</h2>
-    <div class="panel-content" style="max-height: 800px;">
+    <div class="panel-content" style="max-height: 800px; overflow-x: hidden;">
       <div id="chosen-section">
         <div id="chosen-controls">
           <label for="chosen-count">Number of Slots:</label>
@@ -903,7 +900,8 @@
   </div>
 </div>
 
-  
+
+
 <!-------------------------------- Section 8 -------------------------------->
 <!-------------------------------- Section 8 -------------------------------->
 
