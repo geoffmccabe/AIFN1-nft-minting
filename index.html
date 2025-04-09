@@ -1,8 +1,7 @@
+<!-- Section 1 ----------------------------------------- HEAD AND INITIAL SETUP -------------------------------------------------->
+<!-- Section 1 ----------------------------------------- HEAD AND INITIAL SETUP -------------------------------------------------->
 
-/* Section 1 ----------------------------------------- HEAD AND INITIAL SETUP ------------------------------------------------*/
-/* Section 1 ----------------------------------------- HEAD AND INITIAL SETUP ------------------------------------------------*/
 
-  
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,10 +18,10 @@
 <body>
 
 
+<!-- Section 2 ----------------------------------------- LEFT PANEL STYLES -------------------------------------------------->
+<!-- Section 2 ----------------------------------------- LEFT PANEL STYLES -------------------------------------------------->
 
 
-/* Section 2 ----------------------------------------- LEFT PANEL STYLES ------------------------------------------------*/
-/* Section 2 ----------------------------------------- LEFT PANEL STYLES ------------------------------------------------*/
 <style>
   body {
     font-family: 'Poppins', sans-serif;
@@ -225,12 +224,47 @@
     border-top-color: #333;
     z-index: 1000;
   }
+  /* Shared Panel Styling */
+  .panel {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(5px);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  .panel-content {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 540px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .panel-content::-webkit-scrollbar {
+    width: 8px;
+  }
+  .panel-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+  }
+  .panel-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+  .panel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
 </style>
 
 
-  
-/* Section 3 ----------------------------------------- RIGHT PANEL STYLES ------------------------------------------------*/
-/* Section 3 ----------------------------------------- RIGHT PANEL STYLES ------------------------------------------------*/
+<!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
+<!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
+
+
 <style>
   #right-panel {
     flex: 2;
@@ -386,47 +420,6 @@
   #update-previews:hover {
     background: #bbb;
   }
-  /* Panel Styling */
-  .project-panel, .traits-panel {
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(5px);
-    border-radius: 15px;
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  }
-  .panel-content {
-    background: white;
-    border-radius: 8px;
-    padding: 15px;
-    max-height: 500px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    width: 100%;
-    max-width: 540px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .traits-panel .panel-content {
-    max-height: 600px !important; /* Increased for 3 traits */
-    min-height: 400px;
-  }
-  #trait-container:focus {
-    outline: none; /* Remove blue border */
-  }
-  .panel-content::-webkit-scrollbar {
-    width: 8px;
-  }
-  .panel-content::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 4px;
-  }
-  .panel-content::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-  }
-  .panel-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
-  }
   .form-group {
     margin-bottom: 15px;
   }
@@ -509,11 +502,12 @@
     }
   }
 </style>
-  
 
 
-/* Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES ------------------------------------------------*/
-/* Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES ------------------------------------------------*/
+<!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
+<!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
+
+
 <style>
   #background-section h2 {
     font-family: 'Poppins', sans-serif;
@@ -816,33 +810,39 @@
 
   
   
-<!-------------------------------- Section 6 -------------------------------->
-<!-------------------------------- Section 6 -------------------------------->
-
-
+<!-- Section 6 ----------------------------------------- RIGHT PANEL CONTENT -------------------------------------------------->
+<!-- Section 6 ----------------------------------------- RIGHT PANEL CONTENT -------------------------------------------------->
 
 
 <div id="right-panel" style="flex: 2; width: 600px; padding-left: 10px; max-width: 600px; margin-left: auto;">
-  <h2 style="text-align: left;">PREVIEW</h2>
-  <div id="preview" style="height: 600px;">
-    <!-- Preview images will be added dynamically -->
-  </div>
-  <div id="controls">
-    <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
-    <span>   </span>
-    <span class="direction-emoji" data-direction="up">⬆️</span>
-    <span class="direction-emoji" data-direction="down">⬇️</span>
-    <span class="direction-emoji" data-direction="left">⬅️</span>
-    <span class="direction-emoji" data-direction="right">➡️</span>
-    <span class="magnify-emoji">🔍</span>
-  </div>
-  <div id="preview-samples">
-    <div id="preview-samples-header">
-      <h2>PREVIEW SAMPLES</h2>
-      <button id="update-previews">UPDATE</button>
+  <div class="panel">
+    <h2 style="text-align: left;">PREVIEW</h2>
+    <div class="panel-content" style="max-height: 650px;">
+      <div id="preview" style="height: 600px;">
+        <!-- Preview images will be added dynamically -->
+      </div>
+      <div id="controls">
+        <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
+        <span>   </span>
+        <span class="direction-emoji" data-direction="up">⬆️</span>
+        <span class="direction-emoji" data-direction="down">⬇️</span>
+        <span class="direction-emoji" data-direction="left">⬅️</span>
+        <span class="direction-emoji" data-direction="right">➡️</span>
+        <span class="magnify-emoji">🔍</span>
+      </div>
     </div>
-    <div id="preview-samples-grid" style="display: grid; grid-template-columns: repeat(4, 140px); grid-template-rows: repeat(4, 140px); gap: 13px; width: 600px;">
-      <!-- 4x4 grid of preview samples will be added dynamically -->
+  </div>
+  <div class="panel">
+    <div id="preview-samples">
+      <div id="preview-samples-header">
+        <h2>PREVIEW SAMPLES</h2>
+        <button id="update-previews">UPDATE</button>
+      </div>
+      <div class="panel-content" style="max-height: 650px;">
+        <div id="preview-samples-grid" style="display: grid; grid-template-columns: repeat(4, 140px); grid-template-rows: repeat(4, 140px); gap: 13px; width: 600px;">
+          <!-- 4x4 grid of preview samples will be added dynamically -->
+        </div>
+      </div>
     </div>
   </div>
 </div>
