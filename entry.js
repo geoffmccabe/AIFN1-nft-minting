@@ -1,30 +1,24 @@
 /* Section 1 ----------------------------------------- TRAIT MANAGER FRAMEWORK ------------------------------------------------*/
-/* Section 1 ----------------------------------------- TRAIT MANAGER FRAMEWORK ------------------------------------------------*/
 
-// Utility to generate unique IDs (simple incrementing counter starting at 1)
+
 let idCounter = 1;
 function generateId() {
   return `id-${idCounter++}`;
 }
 
-// TraitManager class to manage traits and variants
 const TraitManager = {
   traits: [],
-
-  // Initialize with 3 empty traits
   initialize() {
     this.traits = [];
-    for (let i = 0; i < 3; i++) { // Start with 3 traits
+    for (let i = 0; i < 3; i++) {
       this.addTrait(i + 1);
     }
-    this.sortTraits(); // NEW: Ensures proper initial ordering
+    this.sortTraits();
     const traitsPanel = document.querySelector('.traits-panel .panel-content');
     if (traitsPanel) {
-      traitsPanel.style.maxHeight = '400px'; // Initial height
+      traitsPanel.style.maxHeight = '400px';
     }
   },
-
-  // Add a new trait at the specified position
   addTrait(position) {
     const newTrait = {
       id: generateId(),
@@ -32,23 +26,17 @@ const TraitManager = {
       name: '',
       variants: [],
       selected: 0,
-      zIndex: this.traits.length + 1 - position, // Higher position = lower zIndex
+      zIndex: this.traits.length + 1 - position,
       createdAt: Date.now()
     };
-
-    // Shift existing traits with position >= new position
     this.traits.forEach(trait => {
       if (trait.position >= position) {
         trait.position++;
         trait.zIndex = this.traits.length + 1 - trait.position;
       }
     });
-
-    // Add the new trait
     this.traits.push(newTrait);
-    this.sortTraits(); // NEW: Maintain proper ordering
-    
-    // Dynamic panel height adjustment
+    this.sortTraits();
     if (this.traits.length > 3) {
       const traitsPanel = document.querySelector('.traits-panel .panel-content');
       if (traitsPanel) {
@@ -57,27 +45,18 @@ const TraitManager = {
     }
     return newTrait;
   },
-
-  // NEW: Sort traits by position and update zIndex
   sortTraits() {
     this.traits.sort((a, b) => a.position - b.position);
     this.traits.forEach((trait, idx) => {
       trait.zIndex = this.traits.length - idx;
     });
   },
-
-  // Remove a trait by ID
   removeTrait(traitId) {
     const traitIndex = this.traits.findIndex(trait => trait.id === traitId);
     if (traitIndex === -1) return;
-
     const removedTrait = this.traits[traitIndex];
     const removedPosition = removedTrait.position;
-
-    // Remove the trait
     this.traits.splice(traitIndex, 1);
-
-    // Shift positions of remaining traits
     this.traits.forEach(trait => {
       if (trait.position > removedPosition) {
         trait.position--;
@@ -85,86 +64,55 @@ const TraitManager = {
       }
     });
   },
-
-  // Move a trait to a new position
   moveTrait(traitId, newPosition) {
     const trait = this.traits.find(t => t.id === traitId);
     if (!trait) return;
-
     const oldPosition = trait.position;
-
-    // Adjust positions of other traits
     if (newPosition < oldPosition) {
       this.traits.forEach(t => {
-        if (t.position >= newPosition && t.position < oldPosition) {
-          t.position++;
-        }
+        if (t.position >= newPosition && t.position < oldPosition) t.position++;
       });
     } else if (newPosition > oldPosition) {
       this.traits.forEach(t => {
-        if (t.position > oldPosition && t.position <= newPosition) {
-          t.position--;
-        }
+        if (t.position > oldPosition && t.position <= newPosition) t.position--;
       });
     }
-
-    // Update the trait's position
     trait.position = newPosition;
-
-    // Sort traits by position and update zIndex
-    this.sortTraits(); // UPDATED: Use new sort method
+    this.sortTraits();
   },
-
-  // Add a variant to a trait
   addVariant(traitId, variantData) {
     const trait = this.traits.find(t => t.id === traitId);
     if (!trait) return;
-
     const newVariant = {
       id: generateId(),
       name: variantData.name,
       url: variantData.url,
-      chance: variantData.chance || 0.5, // Default chance if not provided
+      chance: variantData.chance || 0.5,
       createdAt: Date.now()
     };
-
     trait.variants.push(newVariant);
     return newVariant;
   },
-
-  // Remove a variant from a trait
   removeVariant(traitId, variantId) {
     const trait = this.traits.find(t => t.id === traitId);
     if (!trait) return;
-
     const variantIndex = trait.variants.findIndex(v => v.id === variantId);
     if (variantIndex === -1) return;
-
     trait.variants.splice(variantIndex, 1);
-
-    // Adjust selected index if necessary
     if (trait.selected >= trait.variants.length) {
       trait.selected = Math.max(0, trait.variants.length - 1);
     }
   },
-
-  // Update the chance of a variant
   updateVariantChance(traitId, variantId, chance) {
     const trait = this.traits.find(t => t.id === traitId);
     if (!trait) return;
-
     const variant = trait.variants.find(v => v.id === variantId);
     if (!variant) return;
-
     variant.chance = chance;
   },
-
-  // Get a trait by ID
   getTrait(traitId) {
     return this.traits.find(t => t.id === traitId);
   },
-
-  // Get all traits
   getAllTraits() {
     return [...this.traits];
   }
@@ -173,9 +121,10 @@ const TraitManager = {
 
 
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
-/* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
 
-// Declare variables globally
+
+
+
 let provider, contract, signer, contractWithSigner;
 let traitImages = [];
 let isDragging = false;
@@ -190,8 +139,8 @@ let autoPositioned = new Array(20).fill(false);
 let sampleData = Array(16).fill(null).map(() => []);
 let preview, coordinates, directionEmojis, magnifyEmoji, enlargedPreview, generateButton, traitContainer, previewSamplesGrid, updatePreviewsButton;
 let timerDisplay, widthInput, heightInput;
-let currentGridState = { count: 1, imageUrls: [], deleted: [] }; // Track the current grid state and deleted images
-let chosenImages = []; // Track chosen images
+let currentGridState = { count: 1, imageUrls: [], deleted: [] };
+let chosenImages = [];
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
 
@@ -199,7 +148,9 @@ clickSound.volume = 0.25;
 
 
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
+
+
+
 
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
@@ -222,6 +173,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   timerDisplay = document.getElementById('timer-display');
   widthInput = document.getElementById('width-input');
   heightInput = document.getElementById('height-input');
+
+  console.log('DOM Elements:', { traitContainer, previewSamplesGrid, chosenGrid: document.getElementById('chosen-grid') });
 
   if (!traitContainer || !previewSamplesGrid) {
     console.error('Critical DOM elements missing:', { traitContainer, previewSamplesGrid });
@@ -246,12 +199,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const request = indexedDB.open('NFTProjectDB', 1);
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains('projects')) {
-        db.createObjectStore('projects', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('images')) {
-        db.createObjectStore('images', { keyPath: 'id' });
-      }
+      if (!db.objectStoreNames.contains('projects')) db.createObjectStore('projects', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('images')) db.createObjectStore('images', { keyPath: 'id' });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -748,7 +697,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   chosenGrid.addEventListener('dragleave', (e) => {
     const target = e.target.closest('.chosen-image-container');
     if (target) {
-      target.style.border = '1px solid black';
+      target.style.border = '1px solid rgba(0, 0, 0, 0.1)';
     }
   });
   chosenGrid.addEventListener('drop', (e) => {
@@ -758,7 +707,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const target = e.target.closest('.chosen-image-container');
     if (!target || !imageUrl) return;
 
-    target.style.border = '1px solid black';
+    target.style.border = '1px solid rgba(0, 0, 0, 0.1)';
 
     if (source === 'chosen-grid') {
       const draggedContainer = Array.from(chosenGrid.children).find(container => 
@@ -821,8 +770,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
+
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
-/* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
+
 
 
 
@@ -834,7 +784,7 @@ function addTrait(trait) {
   const traitHeader = document.createElement('div');
   traitHeader.className = 'trait-header';
   const title = document.createElement('h2');
-  title.textContent = `TRAIT ${traitContainer.children.length + 1}`; // Use DOM position for TRAIT [x]
+  title.textContent = `TRAIT ${traitContainer.children.length + 1}`;
   if (trait.name) {
     title.textContent += ` - ${trait.name}`;
   }
@@ -869,7 +819,7 @@ function addTrait(trait) {
   nameInput.type = 'text';
   nameInput.id = `trait${trait.id}-name`;
   nameInput.placeholder = `Trait Name (e.g., ${traitContainer.children.length + 1 === 1 ? 'Eyes' : traitContainer.children.length + 1 === 2 ? 'Hair' : 'Accessories'})`;
-  nameInput.value = trait.name || ''; // Restore the trait name
+  nameInput.value = trait.name || '';
 
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
@@ -892,7 +842,6 @@ function addTrait(trait) {
   traitSection.appendChild(fileInputLabel);
   traitSection.appendChild(grid);
 
-  // Insert the trait section at the correct position
   const existingSections = traitContainer.querySelectorAll('.trait-section');
   let inserted = false;
   for (let i = 0; i < existingSections.length; i++) {
@@ -909,7 +858,6 @@ function addTrait(trait) {
     traitContainer.appendChild(traitSection);
   }
 
-  // Create or update the preview image
   let traitImage = traitImages.find(img => img.id === `preview-trait${trait.id}`);
   if (!traitImage) {
     traitImage = document.createElement('img');
@@ -921,7 +869,6 @@ function addTrait(trait) {
     traitImages.push(traitImage);
   }
 
-  // Rebuild preview DOM in correct order
   if (preview) {
     preview.innerHTML = '';
     const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
@@ -967,36 +914,22 @@ function removeTrait(traitId) {
   noButton.textContent = 'N';
 
   yesButton.addEventListener('click', () => {
-    // Remove the trait from TraitManager
     TraitManager.removeTrait(traitId);
-
-    // Remove the DOM element
     const traitSection = document.getElementById(`trait${traitId}`);
     if (traitSection) traitSection.remove();
-
-    // Remove the preview image from traitImages and DOM
     const traitImageIndex = traitImages.findIndex(img => img.id === `preview-trait${traitId}`);
     if (traitImageIndex !== -1) traitImages.splice(traitImageIndex, 1);
-
-    // Clear localStorage for the deleted trait
     Object.keys(localStorage).forEach(key => {
-      if (key.startsWith(`trait${traitId}-`)) {
-        localStorage.removeItem(key);
-      }
+      if (key.startsWith(`trait${traitId}-`)) localStorage.removeItem(key);
     });
-
-    // Re-render all traits
     traitContainer.innerHTML = '';
     if (preview) preview.innerHTML = '';
     traitImages = [];
     TraitManager.getAllTraits().forEach(trait => {
       addTrait(trait);
       refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) {
-        selectVariation(trait.id, trait.variants[trait.selected].id);
-      }
+      if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
     });
-
     updateZIndices();
     updatePreviewSamples();
     confirmationDialog.remove();
@@ -1014,9 +947,10 @@ function removeTrait(traitId) {
 
 
 
+/* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
 
-/* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
-/* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
+
+
 
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
@@ -1138,9 +1072,7 @@ function setupTraitListeners(traitId) {
       input.value = trait.name || input.placeholder;
       input.dataset.userEntered = trait.name ? 'true' : 'false';
       refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) {
-        selectVariation(trait.id, trait.variants[trait.selected].id);
-      }
+      if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
     });
 
     updateZIndices();
@@ -1165,9 +1097,7 @@ function setupTraitListeners(traitId) {
       input.value = trait.name || input.placeholder;
       input.dataset.userEntered = trait.name ? 'true' : 'false';
       refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) {
-        selectVariation(trait.id, trait.variants[trait.selected].id);
-      }
+      if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
     });
 
     updateZIndices();
@@ -1189,9 +1119,7 @@ function setupTraitListeners(traitId) {
         input.value = trait.name || input.placeholder;
         input.dataset.userEntered = trait.name ? 'true' : 'false';
         refreshTraitGrid(trait.id);
-        if (trait.variants.length > 0) {
-          selectVariation(trait.id, trait.variants[trait.selected].id);
-        }
+        if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
       });
 
       updateZIndices();
@@ -1280,7 +1208,7 @@ function updateMintButton() {
 }
 
 
-/* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
+
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
 
@@ -1295,7 +1223,6 @@ function updateZIndices() {
       console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${img.style.zIndex}`);
     }
   });
-  // Force a reflow to ensure zIndex changes are applied
   if (preview) preview.offsetHeight;
 }
 
@@ -1352,7 +1279,6 @@ function selectVariation(traitId, variationId) {
 
 function setupDragAndDrop(img, traitIndex) {
   if (img) {
-    // Remove existing listeners to prevent duplicates
     img.removeEventListener('dragstart', preventDragStart);
     img.removeEventListener('mousedown', startDragging);
     img.removeEventListener('mouseup', stopDragging);
@@ -1364,12 +1290,8 @@ function setupDragAndDrop(img, traitIndex) {
 
     function startDragging(e) {
       if (!img.src) return;
-
-      // Get all elements under the click
       const elements = document.elementsFromPoint(e.clientX, e.clientY);
       const traitImgs = elements.filter(el => traitImages.some(ti => ti === el));
-
-      // Find the first visible (non-transparent) image
       let selectedImage = null;
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -1382,13 +1304,13 @@ function setupDragAndDrop(img, traitIndex) {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const pixel = ctx.getImageData(x, y, 1, 1).data;
-        if (pixel[3] > 0) { // Alpha > 0 means non-transparent
+        if (pixel[3] > 0) {
           selectedImage = traitImg;
           break;
         }
       }
 
-      if (!selectedImage) return; // No visible image found
+      if (!selectedImage) return;
 
       currentImage = selectedImage;
       isDragging = true;
@@ -1417,14 +1339,11 @@ function setupDragAndDrop(img, traitIndex) {
       }
     }
 
-    function selectImage(e) {
-      // No longer needed as startDragging handles selection
-    }
+    function selectImage(e) {}
 
     img.addEventListener('dragstart', preventDragStart);
     img.addEventListener('mousedown', startDragging);
     img.addEventListener('mouseup', stopDragging);
-    // Remove click listener since mousedown handles it
   }
 }
 
@@ -1465,11 +1384,17 @@ function savePosition(img, traitId, variationName) {
     autoPositioned[traitIndex] = true;
   }
 
-  updateSamplePositions(traitId, variationName, position);
+  updateSamplePositions(traitId, trait.variants[trait.selected].id, position);
   updateSubsequentTraits(traitId, variationName, position);
 }
 
+
+
+
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
+
+
+
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
@@ -1537,7 +1462,6 @@ function updatePreviewSamples() {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
 
-    // Render traits in reverse order (highest position first) to ensure correct stacking
     const traits = TraitManager.getAllTraits().slice().reverse();
     for (let j = 0; j < traits.length; j++) {
       const trait = traits[j];
@@ -1590,16 +1514,13 @@ function updatePreviewSamples() {
       sampleContainer.appendChild(img);
     }
 
-    // Add click event listener to update Preview Panel and select variants
     sampleContainer.addEventListener('click', () => {
-      // Update Preview Panel with the variants from this sample
       sampleData[i].forEach(sample => {
         const traitId = sample.traitId;
         const variantId = sample.variantId;
         selectVariation(traitId, variantId);
       });
 
-      // Update selected variants on the left side
       sampleData[i].forEach(sample => {
         const traitId = sample.traitId;
         const variantId = sample.variantId;
@@ -1620,12 +1541,20 @@ function updatePreviewSamples() {
   }
 }
 
+
+
+
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
-/* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
+
+
 
 
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
+  if (!chosenGrid) {
+    console.error('Chosen Grid not found');
+    return;
+  }
   chosenGrid.innerHTML = '';
   for (let i = 0; i < count; i++) {
     const container = document.createElement('div');
@@ -1815,85 +1744,77 @@ async function fetchMultipleBackgrounds(count) {
         const containerToUpdate = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
         const imgToUpdate = containerToUpdate.querySelector('img');
         imgToUpdate.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
-        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
         preview.style.backgroundSize = 'cover';
-      };
-
-      keepEmoji.onclick = () => {
-        addToChosenGrid(fullImg.src);
-        backgroundDetails.innerHTML = '';
-        backgroundDetails.appendChild(grid);
-        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
-        preview.style.backgroundSize = 'cover';
-      };
+      }
     });
-  });
 
-  const backgroundMetadata = document.getElementById('background-metadata');
-  if (backgroundMetadata) {
-    backgroundMetadata.innerText = `Generated ${count} images with prompt: ${basePrompt}${userPrompt ? ', ' + userPrompt : ''}`;
-  }
-}
-
-function fetchMintFee() {
-  const mintFeeDisplay = document.getElementById('mintFeeDisplay');
-  if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
-}
-fetchMintFee();
-
-window.mintNFT = async function() {
-  const status = document.getElementById('status');
-  if (!status) return;
-
-  try {
-    await provider.send("eth_requestAccounts", []);
-    const numTraitCategories = TraitManager.getAllTraits().length;
-    const traitCategoryVariants = TraitManager.getAllTraits().map(trait => trait.variants.length);
-    const traitIndices = TraitManager.getAllTraits().map(trait => trait.selected);
-    const recipient = await signer.getAddress();
-
-    status.innerText = "Uploading images to Arweave...";
-    const formData = new FormData();
-    for (let i = 0; i < TraitManager.getAllTraits().length; i++) {
-      const trait = TraitManager.getAllTraits()[i];
-      const selectedVariation = trait.variants[trait.selected];
-      const response = await fetch(selectedVariation.url);
-      const blob = await response.blob();
-      formData.append('images', blob, `${trait.name}-${selectedVariation.name}.png`);
+    const backgroundMetadata = document.getElementById('background-metadata');
+    if (backgroundMetadata) {
+      backgroundMetadata.innerText = `Generated ${count} images with prompt: ${basePrompt}${userPrompt ? ', ' + userPrompt : ''}`;
     }
-
-    const uploadResponse = await fetch('https://aifn-1-api-q1ni.vercel.app/api/upload-to-arweave', {
-      method: 'POST',
-      body: formData
-    });
-    const uploadData = await uploadResponse.json();
-    if (uploadData.error) throw new Error(uploadData.error);
-
-    const arweaveUrls = uploadData.transactionIds.map(id => `https://arweave.net/${id}`);
-
-    status.innerText = "Estimating gas...";
-    const gasLimit = await contractWithSigner.estimateGas.mintNFT(
-      recipient,
-      initialHtmlUri,
-      numTraitCategories,
-      traitCategoryVariants,
-      traitIndices,
-      { value: ethers.utils.parseEther(config.sepolia.mintFee) }
-    );
-
-    status.innerText = "Minting...";
-    const tx = await contractWithSigner.mintNFT(
-      recipient,
-      initialHtmlUri,
-      numTraitCategories,
-      traitCategoryVariants,
-      traitIndices,
-      { value: ethers.utils.parseEther(config.sepolia.mintFee), gasLimit: gasLimit.add(50000) }
-    );
-    const receipt = await tx.wait();
-    const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
-    status.innerText = `Minted! Token ID: ${tokenId}`;
-  } catch (error) {
-    status.innerText = `Error: ${error.message}`;
   }
+
+  function fetchMintFee() {
+    const mintFeeDisplay = document.getElementById('mintFeeDisplay');
+    if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
+  }
+  fetchMintFee();
+
+  window.mintNFT = async function() {
+    const status = document.getElementById('status');
+    if (!status) return;
+
+    try {
+      await provider.send("eth_requestAccounts", []);
+      const numTraitCategories = TraitManager.getAllTraits().length;
+      const traitCategoryVariants = TraitManager.getAllTraits().map(trait => trait.variants.length);
+      const traitIndices = TraitManager.getAllTraits().map(trait => trait.selected);
+      const recipient = await signer.getAddress();
+
+      status.innerText = "Uploading images to Arweave...";
+      const formData = new FormData();
+      for (let i = 0; i < TraitManager.getAllTraits().length; i++) {
+        const trait = TraitManager.getAllTraits()[i];
+        const selectedVariation = trait.variants[trait.selected];
+        const response = await fetch(selectedVariation.url);
+        const blob = await response.blob();
+        formData.append('images', blob, `${trait.name}-${selectedVariation.name}.png`);
+      }
+
+      const uploadResponse = await fetch('https://aifn-1-api-q1ni.vercel.app/api/upload-to-arweave', {
+        method: 'POST',
+        body: formData
+      });
+      const uploadData = await uploadResponse.json();
+      if (uploadData.error) throw new Error(uploadData.error);
+
+      const arweaveUrls = uploadData.transactionIds.map(id => `https://arweave.net/${id}`);
+
+      status.innerText = "Estimating gas...";
+      const gasLimit = await contractWithSigner.estimateGas.mintNFT(
+        recipient,
+        initialHtmlUri,
+        numTraitCategories,
+        traitCategoryVariants,
+        traitIndices,
+        { value: ethers.utils.parseEther(config.sepolia.mintFee) }
+      );
+
+      status.innerText = "Minting...";
+      const tx = await contractWithSigner.mintNFT(
+        recipient,
+        initialHtmlUri,
+        numTraitCategories,
+        traitCategoryVariants,
+        traitIndices,
+        { value: ethers.utils.parseEther(config.sepolia.mintFee), gasLimit: gasLimit.add(50000) }
+      );
+      const receipt = await tx.wait();
+      const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
+      status.innerText = `Minted! Token ID: ${tokenId}`;
+    } catch (error) {
+      status.innerText = `Error: ${error.message}`;
+    }
+  };
 };
