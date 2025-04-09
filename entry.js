@@ -1627,9 +1627,6 @@ function updatePreviewSamples() {
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
   chosenGrid.innerHTML = '';
-  chosenGrid.style.display = 'flex';
-  chosenGrid.style.flexWrap = 'wrap';
-  chosenGrid.style.gap = '15px';
   for (let i = 0; i < count; i++) {
     const container = document.createElement('div');
     container.className = 'chosen-image-container';
@@ -1675,6 +1672,7 @@ async function fetchMultipleBackgrounds(count) {
 
     const grid = document.createElement('div');
     grid.id = 'gen-grid';
+    grid.style.gridTemplateColumns = `repeat(${Math.sqrt(count)}, 1fr)`;
     backgroundDetails.appendChild(grid);
 
     const basePrompt = document.getElementById('base-prompt').value.trim();
@@ -1684,9 +1682,6 @@ async function fetchMultipleBackgrounds(count) {
 
     const imageUrls = new Array(count).fill(null);
     currentGridState = { count, imageUrls, deleted: new Array(count).fill(false) };
-
-    const gridSize = Math.sqrt(count);
-    const gap = 10;
 
     for (let i = 0; i < count; i++) {
       const container = document.createElement('div');
