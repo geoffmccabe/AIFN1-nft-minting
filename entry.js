@@ -1238,9 +1238,6 @@ function updateMintButton() {
 
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
-
-
-
 function updateZIndices() {
   const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
   traitImages.forEach((img, index) => {
@@ -1414,7 +1411,6 @@ function savePosition(img, traitId, variationName) {
   updateSamplePositions(traitId, trait.variants[trait.selected].id, position);
   updateSubsequentTraits(traitId, variationName, position);
 }
-
 
 
 
