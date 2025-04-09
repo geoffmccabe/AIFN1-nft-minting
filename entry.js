@@ -1268,8 +1268,8 @@ function selectVariation(traitId, variationId) {
     const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
     if (savedPosition) {
       const { left, top } = JSON.parse(savedPosition);
-      previewImage.style.left = `${left}px`;
-      previewImage.style.top = `${top}px`;
+      previewImage.style.left = `${left}%`;
+      previewImage.style.top = `${top}%`;
       if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
     } else {
       let lastPosition = null;
@@ -1282,13 +1282,13 @@ function selectVariation(traitId, variationId) {
         }
       }
       if (lastPosition) {
-        previewImage.style.left = `${lastPosition.left}px`;
-        previewImage.style.top = `${lastPosition.top}px`;
+        previewImage.style.left = `${lastPosition.left}%`;
+        previewImage.style.top = `${lastPosition.top}%`;
         variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
         localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
       } else {
-        previewImage.style.left = '0px';
-        previewImage.style.top = '0px';
+        previewImage.style.left = '0%';
+        previewImage.style.top = '0%';
         variantHistories[key] = [{ left: 0, top: 0 }];
         localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
       }
@@ -1339,11 +1339,25 @@ function setupDragAndDrop(img, traitIndex) {
       currentImage = selectedImage;
       isDragging = true;
       const rect = currentImage.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
+      offsetX = (e.clientX - rect.left) / rect.width * 100; // Calculate offset as percentage
+      offsetY = (e.clientY - rect.top) / rect.height * 100; // Calculate offset as percentage
       currentImage.style.cursor = 'grabbing';
       currentImage.classList.add('dragging');
       updateCoordinates(currentImage);
+
+      // Add mousemove event listener for dragging
+      document.addEventListener('mousemove', onMouseMove);
+    }
+
+    function onMouseMove(e) {
+      if (isDragging && currentImage) {
+        const rect = currentImage.parentElement.getBoundingClientRect();
+        const newLeft = (e.clientX - rect.left - (offsetX * rect.width / 100)) / rect.width * 100;
+        const newTop = (e.clientY - rect.top - (offsetY * rect.height / 100)) / rect.height * 100;
+        currentImage.style.left = `${newLeft}%`;
+        currentImage.style.top = `${newTop}%`;
+        updateCoordinates(currentImage);
+      }
     }
 
     function stopDragging() {
@@ -1360,6 +1374,7 @@ function setupDragAndDrop(img, traitIndex) {
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
         updateZIndices();
+        document.removeEventListener('mousemove', onMouseMove);
       }
     }
 
@@ -1368,6 +1383,7 @@ function setupDragAndDrop(img, traitIndex) {
     img.addEventListener('dragstart', preventDragStart);
     img.addEventListener('mousedown', startDragging);
     img.addEventListener('mouseup', stopDragging);
+    document.addEventListener('mouseup', stopDragging); // Ensure dragging stops even if mouseup occurs outside the image
   }
 }
 
@@ -1375,7 +1391,7 @@ function updateCoordinates(img) {
   if (img && coordinates) {
     const left = parseFloat(img.style.left) || 0;
     const top = parseFloat(img.style.top) || 0;
-    coordinates.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left) + 1}, ${Math.round(top) + 1})`;
+    coordinates.innerHTML = `<strong>Coordinates:</strong> (${Math.round(left)}%, ${Math.round(top)}%)`;
   }
 }
 
@@ -1400,8 +1416,8 @@ function savePosition(img, traitId, variationName) {
       if (trait.selected === i) {
         const previewImage = traitImages.find(img => img.id === `preview-trait${traitId}`);
         if (previewImage && previewImage.src) {
-          previewImage.style.left = `${position.left}px`;
-          previewImage.style.top = `${position.top}px`;
+          previewImage.style.left = `${position.left}%`;
+          previewImage.style.top = `${position.top}%`;
         }
       }
     }
