@@ -228,6 +228,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   widthInput = document.getElementById('width-input');
   heightInput = document.getElementById('height-input');
 
+  console.log('DOM Elements Loaded:', {
+    preview,
+    coordinates,
+    directionEmojis: directionEmojis.length,
+    magnifyEmoji,
+    enlargedPreview,
+    generateButton,
+    traitContainer,
+    previewSamplesGrid,
+    updatePreviewsButton,
+    timerDisplay,
+    widthInput,
+    heightInput
+  });
+
   if (!traitContainer || !previewSamplesGrid || !generateButton || !timerDisplay) {
     console.error('Critical DOM elements missing:', { traitContainer, previewSamplesGrid, generateButton, timerDisplay });
     return;
@@ -237,6 +252,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (preview && !preview.hasChildNodes()) {
     preview.innerHTML = '';
+    console.log('Cleared preview content');
   }
 
   TraitManager.initialize();
@@ -246,7 +262,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshTraitGrid(trait.id);
   });
   updatePreviewSamples();
-
+  console.log('Initialization complete: Traits and Preview Samples loaded');
   
 
 /* Section 3B ----------------------------------------- PROJECT MANAGEMENT FUNCTIONS ------------------------------------------------*/
