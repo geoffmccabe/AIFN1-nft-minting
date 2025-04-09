@@ -1846,3 +1846,24 @@ window.mintNFT = async function() {
     status.innerText = `Error: ${error.message}`;
   }
 };
+
+/* Section 10 ----------------------------------------- PROJECT BANNER UPLOAD HANDLER ------------------------------------------------*/
+
+document.addEventListener('DOMContentLoaded', () => {
+  const bannerUploadInput = document.getElementById('project-banner-upload');
+  const bannerImage = document.getElementById('project-banner-image');
+
+  if (bannerUploadInput && bannerImage) {
+    bannerUploadInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          bannerImage.src = e.target.result;
+          bannerImage.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+});
