@@ -154,13 +154,13 @@
 </div>
 <div class="project-panel panel">
   <h2>PROJECT PANEL</h2>
-  <div class="panel-content">
-    <div class="form-group" style="align-items: center; display: flex; justify-content: space-between;">
-      <div style="width: 60%;">
+  <div class="panel-content" style="display: flex; justify-content: space-between;">
+    <div style="text-align: left; width: 60%;">
+      <div class="form-group">
         <label for="project-name">Project Name:</label>
         <input type="text" id="project-name" placeholder="My Awesome Project" style="height: 42px; width: 100%;">
       </div>
-      <div style="width: 40%;">
+      <div class="form-group">
         <label for="project-size" style="display: block; text-align: left;">Project Size <span class="info-tooltip" title="Only 600×600px is supported currently">ℹ️</span>:</label>
         <select id="project-size" style="height: 42px; width: 100%;">
           <option value="600x600" selected>600×600px (Default)</option>
@@ -169,20 +169,18 @@
           <option value="custom">Custom</option>
         </select>
       </div>
-    </div>
-    <div class="form-group" id="custom-size-group" style="display: none;">
-      <label>Custom Size:</label>
-      <input type="number" id="custom-width" placeholder="Width" min="100" max="2400">
-      <span>×</span>
-      <input type="number" id="custom-height" placeholder="Height" min="100" max="2400">
-      <span>px</span>
-    </div>
-    <div class="form-group" style="align-items: flex-start; display: flex; justify-content: space-between;">
-      <div style="width: 60%;">
+      <div class="form-group" id="custom-size-group" style="display: none;">
+        <label>Custom Size:</label>
+        <input type="number" id="custom-width" placeholder="Width" min="100" max="2400">
+        <span>×</span>
+        <input type="number" id="custom-height" placeholder="Height" min="100" max="2400">
+        <span>px</span>
+      </div>
+      <div class="form-group">
         <label for="project-description">Project Description:</label>
         <textarea id="project-description" placeholder="Describe your project..." style="width: 100%;"></textarea>
       </div>
-      <div style="width: 40%;">
+      <div class="form-group">
         <label for="project-slot" style="display: block; text-align: left;">Save Slot:</label>
         <select id="project-slot" style="width: 100%;">
           <option value="project-1">Slot 1</option>
@@ -203,6 +201,14 @@
         </div>
       </div>
     </div>
+    <div style="text-align: left; width: 40%;">
+      <h3>Project Banner</h3>
+      <input type="file" id="project-banner-upload" accept="image/*" style="display: none;">
+      <label for="project-banner-upload" class="file-input-label">Upload Banner</label>
+      <div id="project-banner-preview" style="aspect-ratio: 2 / 1; border-radius: 10px; margin-top: 10px; max-width: 100%; overflow: hidden; width: 100%;">
+        <img id="project-banner-image" src="" alt="Project Banner" style="display: none; height: 100%; object-fit: contain; width: 100%;">
+      </div>
+    </div>
   </div>
 </div>
 <div class="traits-panel-container panel">
@@ -221,10 +227,10 @@
       <div id="controls">
         <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
         <span>   </span>
-        <span class="direction-emoji" data-direction="up">⬆️</span>
-        <span class="direction-emoji" data-direction="down">⬇️</span>
-        <span class="direction-emoji" data-direction="left">⬅️</span>
-        <span class="direction-emoji" data-direction="right">➡️</span>
+        <span class="direction-emoji" data-action="up">⬆️</span>
+        <span class="direction-emoji" data-action="down">⬇️</span>
+        <span class="direction-emoji" data-action="left">⬅️</span>
+        <span class="direction-emoji" data-action="right">➡️</span>
         <span class="magnify-emoji">🔍</span>
       </div>
     </div>
@@ -244,42 +250,10 @@
   </div>
 </div>
 
-
   <!-- Section 6 ----------------------------------------- RIGHT PANEL CONTENT -------------------------------------------------->
 
 
-  <div id="right-panel">
-    <div class="panel">
-      <h2 style="text-align: left;">PREVIEW</h2>
-      <div class="panel-content" style="max-height: 650px;">
-        <div id="preview">
-          <!-- Preview images will be added dynamically -->
-        </div>
-        <div id="controls">
-          <span id="coordinates"><strong>Coordinates:</strong> (1, 1)</span>
-          <span>   </span>
-          <span class="direction-emoji" data-direction="up">⬆️</span>
-          <span class="direction-emoji" data-direction="down">⬇️</span>
-          <span class="direction-emoji" data-direction="left">⬅️</span>
-          <span class="direction-emoji" data-direction="right">➡️</span>
-          <span class="magnify-emoji">🔍</span>
-        </div>
-      </div>
-    </div>
-    <div class="panel">
-      <div id="preview-samples">
-        <div id="preview-samples-header">
-          <h2>PREVIEW SAMPLES</h2>
-          <button id="update-previews">UPDATE</button>
-        </div>
-        <div class="panel-content" style="max-height: 650px;">
-          <div id="preview-samples-grid">
-            <!-- 4x4 grid of preview samples will be added dynamically -->
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+
 
 
   <!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
