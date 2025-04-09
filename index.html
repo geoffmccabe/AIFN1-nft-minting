@@ -1,35 +1,32 @@
+
+/* Section 1 ----------------------------------------- HEAD AND INITIAL SETUP ------------------------------------------------*/
+/* Section 1 ----------------------------------------- HEAD AND INITIAL SETUP ------------------------------------------------*/
+
+  
 <!DOCTYPE html>
 <html lang="en">
 <head>
 
-<!-------------------------------- Section 1 -------------------------------->
-<!-------------------------------- Section 1 -------------------------------->
-
-
-
-
   <meta charset="UTF-8">
   <title>Mint Your AIFN NFT</title>
   <link rel="icon" type="image/x-icon" href="/AIFN1-nft-minting/favicon.ico">
-  <link href="https://fonts.googleapis.com/css2?family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" crossorigin="anonymous"></script>
   <script src="config.js"></script>
   <script src="entry.js"></script>
 
+</head>
+<body>
 
 
 
 
-<!-------------------------------- Section 2 -------------------------------->
-<!-------------------------------- Section 2 -------------------------------->
-
-
-
-
+/* Section 2 ----------------------------------------- LEFT PANEL STYLES ------------------------------------------------*/
+/* Section 2 ----------------------------------------- LEFT PANEL STYLES ------------------------------------------------*/
 <style>
   body {
     font-family: 'Poppins', sans-serif;
+    font-weight: 400;
     background-image: url('/AIFN1-nft-minting/images/background.webp');
     background-repeat: repeat-y;
     background-position: center top;
@@ -89,8 +86,8 @@
     margin-bottom: 10px;
   }
   .trait-section h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
     margin: 0;
     text-align: left;
     flex-grow: 1;
@@ -123,7 +120,7 @@
   .variation-image-wrapper {
     width: 110px;
     height: 110px;
-    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     box-sizing: border-box;
     display: flex;
@@ -139,6 +136,8 @@
     object-fit: contain;
   }
   .variation-filename {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
     font-size: 8px;
     text-align: center;
     margin-top: 5px;
@@ -230,12 +229,8 @@
 
 
   
-<!-------------------------------- Section 3 -------------------------------->
-<!-------------------------------- Section 3 -------------------------------->
-
-
-
-
+/* Section 3 ----------------------------------------- RIGHT PANEL STYLES ------------------------------------------------*/
+/* Section 3 ----------------------------------------- RIGHT PANEL STYLES ------------------------------------------------*/
 <style>
   #right-panel {
     flex: 2;
@@ -245,8 +240,8 @@
     margin-left: auto;
   }
   #right-panel h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
     text-align: center;
     margin: 0 0 10px;
   }
@@ -254,11 +249,12 @@
     position: relative;
     width: 600px;
     height: 600px;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: cover;
+    background-blend-mode: overlay;
     margin-bottom: 10px;
     overflow: hidden;
-    border: 2px solid #666;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     max-width: 100%;
   }
@@ -280,6 +276,8 @@
   }
   #coordinates {
     font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
   }
   #coordinates strong {
     font-weight: bold;
@@ -301,9 +299,10 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: cover;
-    border: 1px solid black;
+    background-blend-mode: overlay;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     z-index: 1000;
     overflow: hidden;
   }
@@ -346,8 +345,8 @@
     margin-bottom: 10px;
   }
   #preview-samples h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
     text-align: left;
     margin: 0;
   }
@@ -362,9 +361,10 @@
     position: relative;
     width: 140px;
     height: 140px;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
-    background-size: 140px 140px;
-    border: 1px solid black;
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
+    background-size: cover;
+    background-blend-mode: overlay;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     overflow: hidden;
     cursor: pointer;
@@ -435,6 +435,7 @@
     margin-bottom: 5px;
     font-weight: bold;
     font-family: 'Poppins', sans-serif;
+    font-weight: 500;
   }
   .form-group input[type="text"],
   .form-group input[type="number"],
@@ -446,6 +447,7 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     font-family: 'Poppins', sans-serif;
+    font-weight: 400;
   }
   .form-group select:disabled {
     background: #f0f0f0;
@@ -510,16 +512,12 @@
   
 
 
-<!-------------------------------- Section 4 -------------------------------->
-<!-------------------------------- Section 4 -------------------------------->
-
-
-
-
+/* Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES ------------------------------------------------*/
+/* Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES ------------------------------------------------*/
 <style>
   #background-section h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
     text-align: left;
     margin: 0 0 10px;
   }
@@ -535,11 +533,15 @@
     resize: none;
     border-radius: 5px;
     border: 1px solid #ccc;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
   }
   #prompt-section label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
   }
   #background-details {
     text-align: center;
@@ -547,10 +549,11 @@
   #background-image {
     width: 600px;
     height: 600px;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: 600px 600px;
+    background-blend-mode: overlay;
     border-radius: 10px;
-    border: 1px solid black;
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
   #gen-grid {
     display: grid;
@@ -560,10 +563,11 @@
   }
   .gen-image-container {
     position: relative;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: 600px 600px;
     background-position: center;
-    border: 1px solid black;
+    background-blend-mode: overlay;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     box-sizing: border-box;
     cursor: pointer;
@@ -580,7 +584,7 @@
     width: 600px;
     height: 600px;
     border-radius: 10px;
-    border: 1px solid black;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     cursor: pointer;
   }
   #gen-controls {
@@ -602,8 +606,8 @@
     opacity: 0.8;
   }
   #chosen-section h2 {
-    font-family: 'Rowdies', sans-serif;
-    font-weight: 400;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
     text-align: center;
     margin: 0 0 10px;
   }
@@ -621,10 +625,11 @@
   }
   .chosen-image-container {
     position: relative;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp');
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: 600px 600px;
     background-position: center;
-    border: 1px solid black;
+    background-blend-mode: overlay;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     box-sizing: border-box;
   }
@@ -642,6 +647,8 @@
     font-size: 16px;
     border-radius: 5px;
     margin: 10px 0;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
   }
   button:disabled {
     cursor: not-allowed;
@@ -657,6 +664,8 @@
   }
   #mintFeeDisplay {
     font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
   }
   .confirmation-dialog {
     position: fixed;
@@ -699,6 +708,7 @@
   }
   #timer-display {
     font-family: 'Poppins', sans-serif;
+    font-weight: 500;
     font-size: 16px;
     color: #333;
   }
@@ -708,6 +718,7 @@
     border-radius: 5px;
     border: 1px solid #ccc;
     font-family: 'Poppins', sans-serif;
+    font-weight: 400;
     font-size: 14px;
     box-sizing: border-box;
     height: 32px;
@@ -730,10 +741,13 @@
 
 
 
+<!------------------------------------------------- Section 5 ------------------------------------------------->
+<!------------------------------------------------- Section 5 ------------------------------------------------->
 
 
-<!-------------------------------- Section 5 -------------------------------->
 
+
+  
 <div id="left-panel">
   <div id="logo-container">
     <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
