@@ -201,7 +201,6 @@ clickSound.volume = 0.25;
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 
-
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000;
@@ -390,7 +389,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         addTrait(trait);
         refreshTraitGrid(trait.id);
         if (trait.variants.length > 0) {
-          selectVariation(trait.id, trait.variants[trait.selected].id);
+          selectVariation(trait.id, trait.variants[trait.selected]?.id);
         }
       });
       updatePreviewSamples();
@@ -435,37 +434,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Scaling Logic
-  const updatePreviewScaling = () => {
-    const preview = document.getElementById('preview');
-    if (!preview) return;
-    
-    const rect = preview.getBoundingClientRect();
-    const scale = rect.width / 600; // Reference size is 600px
-    const sampleScale = scale * (140 / 600); // Scale samples proportionally
-    
-    preview.style.setProperty('--preview-scale', scale);
-    previewSamplesGrid.style.setProperty('--sample-scale', sampleScale);
-    
-    traitImages.forEach(img => {
-      if (img.dataset.originalLeft && img.dataset.originalTop) {
-        img.style.left = `${img.dataset.originalLeft * scale}px`;
-        img.style.top = `${img.dataset.originalTop * scale}px`;
-      }
-    });
-  };
-
-  updatePreviewScaling();
-  window.addEventListener('resize', updatePreviewScaling);
-
-  const projectSizeSelect = document.getElementById('project-size');
-  projectSizeSelect.addEventListener('change', () => {
-    const [width, height] = projectSizeSelect.value.split('x').map(Number) || [600, 600];
-    preview.style.setProperty('--aspect-ratio', `${width} / ${height}`);
-    updatePreviewScaling();
-    updatePreviewSamples();
-  });
-
   updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
   generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1));
   document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
@@ -488,14 +456,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelector('.up-scroll').onclick = () => scrollTrait('up');
   document.querySelector('.down-scroll').onclick = () => scrollTrait('down');
 
+  const projectSizeSelect = document.getElementById('project-size');
   const customSizeGroup = document.getElementById('custom-size-group');
   projectSizeSelect.onchange = () => {
     customSizeGroup.style.display = projectSizeSelect.value === 'custom' ? 'block' : 'none';
     document.getElementById('width-input').value = '600';
     document.getElementById('height-input').value = '600';
-    const [width, height] = projectSizeSelect.value.split('x').map(Number) || [600, 600];
-    preview.style.setProperty('--aspect-ratio', `${width} / ${height}`);
-    updatePreviewScaling();
   };
 
   document.getElementById('save-project').addEventListener('click', async () => {
@@ -596,7 +562,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const traitIndex = Math.floor(Math.random() * magnifiedState.length);
         const trait = magnifiedState[traitIndex];
         if (trait.variants.length > 0) {
-          kuuktrait.selected = Math.floor(Math.random() * trait.variants.length);
+          trait.selected = Math.floor(Math.random() * trait.variants.length);
           console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
           updateEnlargedPreview();
         }
@@ -647,16 +613,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const direction = emoji.getAttribute('data-direction');
     emoji.addEventListener('mousedown', () => {
       if (!currentImage || currentImage.src === '') return;
-      const scale = parseFloat(preview.style.getPropertyValue('--preview-scale')) || 1;
       moveInterval = setInterval(() => {
         let left = parseFloat(currentImage.style.left) || 0;
         let top = parseFloat(currentImage.style.top) || 0;
-        if (direction === 'up') top -= scale;
-        if (direction === 'down') top += scale;
-        if (direction === 'left') left -= scale;
-        if (direction === 'right') left += scale;
-        left = Math.max(0, Math.min(left, 600 * scale - currentImage.width));
-        top = Math.max(0, Math.min(top, 600 * scale - currentImage.height));
+        if (direction === 'up') top -= 1;
+        if (direction === 'down') top += 1;
+        if (direction === 'left') left -= 1;
+        if (direction === 'right') left += 1;
+        left = Math.max(0, Math.min(left, 600 - currentImage.width));
+        top = Math.max(0, Math.min(top, 600 - currentImage.height));
         currentImage.style.left = `${left}px`;
         currentImage.style.top = `${top}px`;
         currentImage.classList.add('dragging');
@@ -710,9 +675,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (variantHistories[key] && variantHistories[key].length > 1) {
         variantHistories[key].pop();
         const previousPosition = variantHistories[key][variantHistories[key].length - 1];
-        const scale = parseFloat(preview.style.getPropertyValue('--preview-scale')) || 1;
-        currentImage.style.left = `${previousPosition.left * scale}px`;
-        currentImage.style.top = `${previousPosition.top * scale}px`;
+        currentImage.style.left = `${previousPosition.left}px`;
+        currentImage.style.top = `${previousPosition.top}px`;
         localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
         updateCoordinates(currentImage);
         updateSamplePositions(trait.id, trait.variants[trait.selected].id, previousPosition);
@@ -725,11 +689,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     preview.addEventListener('mousemove', (e) => {
       if (!isDragging || !currentImage) return;
       const rect = preview.getBoundingClientRect();
-      const scale = parseFloat(preview.style.getPropertyValue('--preview-scale')) || 1;
       let newLeft = e.clientX - rect.left - offsetX;
       let newTop = e.clientY - rect.top - offsetY;
-      newLeft = Math.max(0, Math.min(newLeft, 600 * scale - currentImage.width));
-      newTop = Math.max(0, Math.min(newTop, 600 * scale - currentImage.height));
+      newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
+      newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
       currentImage.style.left = `${newLeft}px`;
       currentImage.style.top = `${newTop}px`;
       updateCoordinates(currentImage);
@@ -785,7 +748,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   chosenGrid.addEventListener('dragleave', (e) => {
     const target = e.target.closest('.chosen-image-container');
     if (target) {
-      target.style.border = '1px solid rgba(0, 0, 0, 0.1)';
+      target.style.border = '1px solid black';
     }
   });
   chosenGrid.addEventListener('drop', (e) => {
@@ -795,7 +758,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const target = e.target.closest('.chosen-image-container');
     if (!target || !imageUrl) return;
 
-    target.style.border = '1px solid rgba(0, 0, 0, 0.1)';
+    target.style.border = '1px solid black';
 
     if (source === 'chosen-grid') {
       const draggedContainer = Array.from(chosenGrid.children).find(container => 
@@ -1506,14 +1469,7 @@ function savePosition(img, traitId, variationName) {
   updateSubsequentTraits(traitId, variationName, position);
 }
 
-
-
-
-/*-- Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) --------------------------------------------------*/
-/*-- Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) --------------------------------------------------*/
-
-
-
+/* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
@@ -1531,9 +1487,8 @@ function updateSubsequentTraits(currentTraitId, currentVariationName, position) 
         if (currentTrait.selected === i) {
           const previewImage = document.getElementById(`preview-trait${currentTraitId}`);
           if (previewImage && previewImage.src) {
-            const scale = parseFloat(document.getElementById('preview').style.getPropertyValue('--preview-scale')) || 1;
-            previewImage.style.left = `${position.left * scale}px`;
-            previewImage.style.top = `${position.top * scale}px`;
+            previewImage.style.left = `${position.left}px`;
+            previewImage.style.top = `${position.top}px`;
           }
         }
       }
@@ -1553,9 +1508,8 @@ function updateSubsequentTraits(currentTraitId, currentVariationName, position) 
         if (nextTrait.selected === i) {
           const previewImage = document.getElementById(`preview-trait${nextTrait.id}`);
           if (previewImage && previewImage.src) {
-            const scale = parseFloat(document.getElementById('preview').style.getPropertyValue('--preview-scale')) || 1;
-            previewImage.style.left = `${position.left * scale}px`;
-            previewImage.style.top = `${position.top * scale}px`;
+            previewImage.style.left = `${position.left}px`;
+            previewImage.style.top = `${position.top}px`;
           }
         }
       }
@@ -1579,14 +1533,11 @@ function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
 
-  const preview = document.getElementById('preview');
-  const scale = preview ? parseFloat(preview.style.getPropertyValue('--preview-scale')) || 1 : 1;
-  const sampleScale = scale * (140 / 600);
-
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
 
+    // Render traits in reverse order (highest position first) to ensure correct stacking
     const traits = TraitManager.getAllTraits().slice().reverse();
     for (let j = 0; j < traits.length; j++) {
       const trait = traits[j];
@@ -1605,8 +1556,9 @@ function updatePreviewSamples() {
       let position;
       if (savedPosition) {
         position = JSON.parse(savedPosition);
-        img.style.left = `${position.left * sampleScale}px`;
-        img.style.top = `${position.top * sampleScale}px`;
+        const scale = 140 / 600;
+        img.style.left = `${position.left * scale}px`;
+        img.style.top = `${position.top * scale}px`;
         if (!variantHistories[key]) variantHistories[key] = [{ left: position.left, top: position.top }];
       } else {
         let lastPosition = null;
@@ -1618,10 +1570,11 @@ function updatePreviewSamples() {
             lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
           }
         }
+        const scale = 140 / 600;
         if (lastPosition) {
           position = lastPosition;
-          img.style.left = `${lastPosition.left * sampleScale}px`;
-          img.style.top = `${lastPosition.top * sampleScale}px`;
+          img.style.left = `${lastPosition.left * scale}px`;
+          img.style.top = `${lastPosition.top * scale}px`;
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           localStorage.setItem(`trait${trait.id}-${variant.name}-position`, JSON.stringify(lastPosition));
         } else {
@@ -1637,13 +1590,16 @@ function updatePreviewSamples() {
       sampleContainer.appendChild(img);
     }
 
+    // Add click event listener to update Preview Panel and select variants
     sampleContainer.addEventListener('click', () => {
+      // Update Preview Panel with the variants from this sample
       sampleData[i].forEach(sample => {
         const traitId = sample.traitId;
         const variantId = sample.variantId;
         selectVariation(traitId, variantId);
       });
 
+      // Update selected variants on the left side
       sampleData[i].forEach(sample => {
         const traitId = sample.traitId;
         const variantId = sample.variantId;
@@ -1664,13 +1620,7 @@ function updatePreviewSamples() {
   }
 }
 
-
-
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
-/* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
-
-
-
 
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
@@ -1963,4 +1913,3 @@ window.mintNFT = async function() {
     status.innerText = `Error: ${error.message}`;
   }
 };
-  
