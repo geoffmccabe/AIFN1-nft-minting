@@ -237,12 +237,61 @@
     background: white;
     border-radius: 8px;
     padding: 15px;
-    max-height: 600px;
-    overflow-y: auto;
-    overflow-x: hidden;
     width: 100%;
     max-width: 540px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     -webkit-overflow-scrolling: touch;
+  }
+  #preview {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
+    background-size: contain;
+    background-blend-mode: overlay;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    aspect-ratio: var(--aspect-ratio, 1 / 1);
+    contain: layout paint;
+  }
+  #preview img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transform-origin: 0 0;
+    transform: scale(var(--preview-scale, 1));
+  }
+  #preview-samples-grid {
+    display: grid;
+    grid-template-columns: repeat(4, calc(23.33% - 10px));
+    gap: 13px;
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 1 / 1;
+  }
+  #preview-samples-grid .sample-container {
+    position: relative;
+    width: 100%;
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
+    background-size: contain;
+    background-blend-mode: overlay;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+    aspect-ratio: 1 / 1;
+  }
+  #preview-samples-grid img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transform-origin: 0 0;
+    transform: scale(var(--sample-scale, 1));
   }
   .panel-content::-webkit-scrollbar {
     width: 8px;
@@ -817,8 +866,8 @@
 <div id="right-panel" style="flex: 2; width: 600px; padding-left: 10px; max-width: 600px; margin-left: auto;">
   <div class="panel">
     <h2 style="text-align: left;">PREVIEW</h2>
-    <div class="panel-content" style="max-height: 650px;">
-      <div id="preview" style="height: 600px;">
+    <div class="panel-content">
+      <div id="preview">
         <!-- Preview images will be added dynamically -->
       </div>
       <div id="controls">
@@ -838,8 +887,8 @@
         <h2>PREVIEW SAMPLES</h2>
         <button id="update-previews">UPDATE</button>
       </div>
-      <div class="panel-content" style="max-height: 650px;">
-        <div id="preview-samples-grid" style="display: grid; grid-template-columns: repeat(4, 140px); grid-template-rows: repeat(4, 140px); gap: 13px; width: 600px;">
+      <div class="panel-content">
+        <div id="preview-samples-grid">
           <!-- 4x4 grid of preview samples will be added dynamically -->
         </div>
       </div>
