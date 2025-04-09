@@ -1620,237 +1620,280 @@ function updatePreviewSamples() {
   }
 }
 
-<!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
-<!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
+/* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
+/* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
 
 
-<style>
-  #background-section h2 {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    text-align: left;
-    margin: 0 0 10px;
+function updateChosenGrid(count) {
+  const chosenGrid = document.getElementById('chosen-grid');
+  chosenGrid.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const container = document.createElement('div');
+    container.className = 'chosen-image-container';
+    chosenGrid.appendChild(container);
   }
-  #prompt-section {
-    margin-top: 10px;
-  }
-  #prompt-section p {
-    margin: 5px 0;
-  }
-  #prompt-section textarea {
-    width: 100%;
-    height: 140px;
-    resize: none;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 400;
-  }
-  #prompt-section label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-  }
-  #background-details {
-    text-align: center;
-  }
-  #background-image {
-    width: 100%;
-    max-width: 600px;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: cover;
-    background-blend-mode: overlay;
-    border-radius: 10px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    aspect-ratio: 1 / 1;
-  }
-  #gen-grid {
-    display: none; /* Hidden until content loads */
-    gap: 10px;
-    width: 100%;
-    max-width: 600px;
-    aspect-ratio: 1 / 1;
-  }
-  .gen-image-container {
-    position: relative;
-    width: 100%;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: cover;
-    background-blend-mode: overlay;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    box-sizing: border-box;
-    cursor: pointer;
-    aspect-ratio: 1 / 1;
-  }
-  .gen-image-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  .gen-image-container.selected {
-    border: 5px solid #f4c149;
-  }
-  .gen-image-full {
-    width: 100%;
-    max-width: 600px;
-    border-radius: 10px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    aspect-ratio: 1 / 1;
-  }
-  #gen-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    margin-left: 10px;
-  }
-  .gen-control-emoji {
-    font-size: 32px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 0;
-    color: #666;
-  }
-  .gen-control-emoji:hover {
-    opacity: 0.8;
-  }
-  #chosen-section h2 {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    text-align: center;
-    margin: 0 0 10px;
-  }
-  #chosen-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-    justify-content: center;
-  }
-  #chosen-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    width: 100%;
-    max-width: 100%; /* Prevents overflow beyond panel */
-  }
-  .chosen-image-container {
-    position: relative;
-    width: calc(25% - 12px); /* 4 per row, fits 510px */
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: cover;
-    background-blend-mode: overlay;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    box-sizing: border-box;
-    aspect-ratio: 1 / 1;
-  }
-  .chosen-image-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  button {
-    padding: 10px 20px;
-    background: grey;
-    color: black;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    border-radius: 5px;
-    margin: 10px 0;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-  }
-  button:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-  button:not(:disabled) {
-    background: #4CAF50;
-  }
-  #mint-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  #mintFeeDisplay {
-    font-size: 14px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-  }
-  .confirmation-dialog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    z-index: 1000;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  .confirmation-dialog p {
-    margin: 0 0 10px;
-    text-align: center;
-  }
-  .confirmation-dialog .buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-  }
-  .confirmation-dialog button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  .confirmation-dialog .yes-button {
-    background: #739c6c;
-  }
-  .confirmation-dialog .no-button {
-    background: #ae645a;
-  }
-  #background-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 10px 0;
-  }
-  #timer-display {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    font-size: 16px;
-    color: #333;
-  }
-  #width-input, #height-input {
-    width: 80px;
-    padding: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 400;
-    font-size: 14px;
-    box-sizing: border-box;
-    height: 32px;
-  }
-  @media (max-width: 900px) {
-    body { flex-direction: column; }
-    #left-panel, #right-panel { width: 100%; padding: 10px; }
-    #preview { width: 100%; height: auto; aspect-ratio: 1 / 1; }
-    #logo { width: 100%; max-width: 600px; }
-    #preview-samples-grid { 
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-      width: 100%; 
+  chosenImages.forEach(imageUrl => addToChosenGrid(imageUrl));
+}
+
+function addToChosenGrid(imageUrl, targetContainer = null) {
+  const chosenGrid = document.getElementById('chosen-grid');
+  let container = targetContainer || chosenGrid.querySelector('.chosen-image-container:not(:has(img))');
+  if (container) {
+    const existingImg = container.querySelector('img');
+    if (existingImg) {
+      const index = chosenImages.indexOf(existingImg.src);
+      if (index !== -1) chosenImages.splice(index, 1);
+      existingImg.remove();
     }
-    #chosen-grid { 
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-      width: 100%; 
-    }
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.draggable = true;
+    img.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', img.src);
+      e.dataTransfer.setData('source', 'chosen-grid');
+    });
+    container.appendChild(img);
+    chosenImages.push(imageUrl);
   }
-</style>
+}
+
+async function fetchMultipleBackgrounds(count) {
+  try {
+    clickSound.play().catch(error => console.error(error));
+    let seconds = 0;
+    generateButton.disabled = true;
+    timerInterval = setInterval(() => {
+      seconds++;
+      timerDisplay.innerText = `Processing: ${seconds}s`;
+    }, 1000);
+
+    const backgroundDetails = document.getElementById('background-details');
+    backgroundDetails.innerHTML = '';
+
+    const grid = document.createElement('div');
+    grid.id = 'gen-grid';
+    grid.style.gridTemplateColumns = `repeat(${Math.sqrt(count)}, 1fr)`;
+    backgroundDetails.appendChild(grid);
+
+    const basePrompt = document.getElementById('base-prompt').value.trim();
+    const userPrompt = document.getElementById('user-prompt').value.trim();
+    const width = document.getElementById('width-input').value;
+    const height = document.getElementById('height-input').value;
+
+    const imageUrls = new Array(count).fill(null);
+    currentGridState = { count, imageUrls, deleted: new Array(count).fill(false) };
+
+    for (let i = 0; i < count; i++) {
+      const container = document.createElement('div');
+      container.className = 'gen-image-container';
+      container.dataset.index = i;
+
+      const img = document.createElement('img');
+      img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+      img.draggable = true;
+      img.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', img.src);
+        e.dataTransfer.setData('source', 'gen-grid');
+      });
+      container.appendChild(img);
+      grid.appendChild(container);
+    }
+
+    for (let i = 0; i < count; i++) {
+      const randomNumber = Math.floor(1000000 + Math.random() * 9000000);
+      const modifiedPrompt = `${basePrompt}${userPrompt ? ', ' + userPrompt : ''}, ${randomNumber}`;
+      const url = `https://aifn-1-api-new3.vercel.app/api/generate-background?basePrompt=${encodeURIComponent(modifiedPrompt)}&userPrompt=&width=${width}&height=${height}`;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error(`Failed: ${response.status} ${response.statusText}`);
+        const data = await response.json();
+        imageUrls[i] = data.imageUrl;
+        const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
+        const img = container.querySelector('img');
+        img.src = data.imageUrl;
+      } catch (error) {
+        console.error(`Error fetching background ${i + 1}:`, error);
+        imageUrls[i] = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+        const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
+        const img = container.querySelector('img');
+        img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+      }
+    }
+
+    currentGridState.imageUrls = imageUrls;
+  } catch (error) {
+    console.error('Error:', error);
+    const backgroundMetadata = document.getElementById('background-metadata');
+    if (backgroundMetadata) backgroundMetadata.innerText = `Failed: ${error.message}`;
+  } finally {
+    clearInterval(timerInterval);
+    generateButton.innerText = 'Generate Bkgd';
+    timerDisplay.innerText = 'Processing: 0s';
+    generateButton.disabled = false;
+  }
+
+  const grid = document.getElementById('gen-grid');
+  currentGridState.imageUrls.forEach((imageUrl, index) => {
+    if (!imageUrl) return;
+    const container = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
+    const img = container.querySelector('img');
+
+    container.addEventListener('click', () => {
+      if (currentGridState.deleted[index]) {
+        currentGridState.deleted[index] = false;
+        img.src = currentGridState.imageUrls[index];
+        return;
+      }
+
+      document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
+      container.classList.add('selected');
+
+      const backgroundDetails = document.getElementById('background-details');
+      backgroundDetails.innerHTML = '';
+      const fullImg = document.createElement('img');
+      fullImg.className = 'gen-image-full';
+      fullImg.src = imageUrl;
+      fullImg.dataset.index = index;
+      backgroundDetails.appendChild(fullImg);
+
+      preview.style.background = `url(${imageUrl})`;
+      preview.style.backgroundSize = 'cover';
+
+      fullImg.addEventListener('click', () => {
+        backgroundDetails.innerHTML = '';
+        backgroundDetails.appendChild(grid);
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        preview.style.backgroundSize = 'cover';
+      });
+
+      const leftArrow = document.querySelector('.gen-control-emoji[data-action="left"]');
+      const rightArrow = document.querySelector('.gen-control-emoji[data-action="right"]');
+      const deleteEmoji = document.querySelector('.gen-control-emoji[data-action="delete"]');
+      const keepEmoji = document.querySelector('.gen-control-emoji[data-action="keep"]');
+
+      leftArrow.onclick = () => {
+        let newIndex = parseInt(fullImg.dataset.index) - 1;
+        if (newIndex < 0) newIndex = currentGridState.imageUrls.length - 1;
+        while (currentGridState.deleted[newIndex] || !currentGridState.imageUrls[newIndex]) {
+          newIndex--;
+          if (newIndex < 0) newIndex = currentGridState.imageUrls.length - 1;
+        }
+        fullImg.src = currentGridState.imageUrls[newIndex];
+        fullImg.dataset.index = newIndex;
+        preview.style.background = `url(${currentGridState.imageUrls[newIndex]})`;
+        preview.style.backgroundSize = 'cover';
+        document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
+        document.querySelector(`.gen-image-container[data-index="${newIndex}"]`).classList.add('selected');
+      };
+
+      rightArrow.onclick = () => {
+        let newIndex = parseInt(fullImg.dataset.index) + 1;
+        if (newIndex >= currentGridState.imageUrls.length) newIndex = 0;
+        while (currentGridState.deleted[newIndex] || !currentGridState.imageUrls[newIndex]) {
+          newIndex++;
+          if (newIndex >= currentGridState.imageUrls.length) newIndex = 0;
+        }
+        fullImg.src = currentGridState.imageUrls[newIndex];
+        fullImg.dataset.index = newIndex;
+        preview.style.background = `url(${currentGridState.imageUrls[newIndex]})`;
+        preview.style.backgroundSize = 'cover';
+        document.querySelectorAll('.gen-image-container').forEach(c => c.classList.remove('selected'));
+        document.querySelector(`.gen-image-container[data-index="${newIndex}"]`).classList.add('selected');
+      };
+
+      deleteEmoji.onclick = () => {
+        const index = parseInt(fullImg.dataset.index);
+        currentGridState.deleted[index] = true;
+        backgroundDetails.innerHTML = '';
+        backgroundDetails.appendChild(grid);
+        const containerToUpdate = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
+        const imgToUpdate = containerToUpdate.querySelector('img');
+        imgToUpdate.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        preview.style.backgroundSize = 'cover';
+      };
+
+      keepEmoji.onclick = () => {
+        addToChosenGrid(fullImg.src);
+        backgroundDetails.innerHTML = '';
+        backgroundDetails.appendChild(grid);
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        preview.style.backgroundSize = 'cover';
+      };
+    });
+  });
+
+  const backgroundMetadata = document.getElementById('background-metadata');
+  if (backgroundMetadata) {
+    backgroundMetadata.innerText = `Generated ${count} images with prompt: ${basePrompt}${userPrompt ? ', ' + userPrompt : ''}`;
+  }
+}
+
+function fetchMintFee() {
+  const mintFeeDisplay = document.getElementById('mintFeeDisplay');
+  if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
+}
+fetchMintFee();
+
+window.mintNFT = async function() {
+  const status = document.getElementById('status');
+  if (!status) return;
+
+  try {
+    await provider.send("eth_requestAccounts", []);
+    const numTraitCategories = TraitManager.getAllTraits().length;
+    const traitCategoryVariants = TraitManager.getAllTraits().map(trait => trait.variants.length);
+    const traitIndices = TraitManager.getAllTraits().map(trait => trait.selected);
+    const recipient = await signer.getAddress();
+
+    status.innerText = "Uploading images to Arweave...";
+    const formData = new FormData();
+    for (let i = 0; i < TraitManager.getAllTraits().length; i++) {
+      const trait = TraitManager.getAllTraits()[i];
+      const selectedVariation = trait.variants[trait.selected];
+      const response = await fetch(selectedVariation.url);
+      const blob = await response.blob();
+      formData.append('images', blob, `${trait.name}-${selectedVariation.name}.png`);
+    }
+
+    const uploadResponse = await fetch('https://aifn-1-api-q1ni.vercel.app/api/upload-to-arweave', {
+      method: 'POST',
+      body: formData
+    });
+    const uploadData = await uploadResponse.json();
+    if (uploadData.error) throw new Error(uploadData.error);
+
+    const arweaveUrls = uploadData.transactionIds.map(id => `https://arweave.net/${id}`);
+
+    status.innerText = "Estimating gas...";
+    const gasLimit = await contractWithSigner.estimateGas.mintNFT(
+      recipient,
+      initialHtmlUri,
+      numTraitCategories,
+      traitCategoryVariants,
+      traitIndices,
+      { value: ethers.utils.parseEther(config.sepolia.mintFee) }
+    );
+
+    status.innerText = "Minting...";
+    const tx = await contractWithSigner.mintNFT(
+      recipient,
+      initialHtmlUri,
+      numTraitCategories,
+      traitCategoryVariants,
+      traitIndices,
+      { value: ethers.utils.parseEther(config.sepolia.mintFee), gasLimit: gasLimit.add(50000) }
+    );
+    const receipt = await tx.wait();
+    const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
+    status.innerText = `Minted! Token ID: ${tokenId}`;
+  } catch (error) {
+    status.innerText = `Error: ${error.message}`;
+  }
+};
