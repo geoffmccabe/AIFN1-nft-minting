@@ -48,11 +48,11 @@
     padding-right: 10px;
     padding-top: 30px;
     min-width: 300px;
-    max-width: 600px;
+    max-width: 570px; /* Match panel width */
     box-sizing: border-box;
   }
   #logo-container {
-    width: 600px;
+    width: 570px;
     height: 200px;
     margin: 0 auto 20px;
     display: flex;
@@ -229,6 +229,8 @@
     padding: 15px;
     margin-bottom: 20px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 570px; /* Strict width to ensure consistent padding */
+    box-sizing: border-box;
   }
   .panel-content {
     background: white;
@@ -238,7 +240,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     width: 100%;
-    max-width: 510px; /* Adjusted to ensure 15px edge on all sides within 570px panel */
+    max-width: 540px; /* 570px - 15px left padding - 15px right padding */
     box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
   }
@@ -261,15 +263,16 @@
 
   
 <!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
-<!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
 
 
+
+  
 <style>
   #right-panel {
     flex: 2;
-    width: 600px;
+    width: 570px; /* Match panel width */
     padding-left: 10px;
-    max-width: 600px;
+    max-width: 570px;
     margin-left: auto;
   }
   #right-panel h2 {
@@ -471,40 +474,7 @@
     white-space: nowrap;
     z-index: 1000;
   }
-  .traits-panel-container {
-    position: relative;
-  }
-  .scroll-control {
-    position: absolute;
-    right: 10px;
-    width: 34px;
-    height: 34px;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 100;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    font-size: 28px;
-  }
-  .up-scroll {
-    top: 55px;
-  }
-  .down-scroll {
-    bottom: 20px;
-  }
-  @media (max-width: 768px) {
-    .scroll-control {
-      right: 5px;
-    }
-    .traits-panel-container {
-      padding-right: 50px;
-    }
-  }
 </style>
-
 
   
 
@@ -747,11 +717,12 @@
   
   
 <!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
+<!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
 <div id="left-panel">
   <div id="logo-container">
     <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
   </div>
-  <div class="project-panel panel" style="max-width: 570px;">
+  <div class="project-panel panel">
     <h2>PROJECT PANEL</h2>
     <div class="panel-content">
       <div class="form-group">
@@ -801,7 +772,7 @@
     </div>
   </div>
   <div class="traits-panel-container">
-    <div class="traits-panel panel" style="max-width: 570px;">
+    <div class="traits-panel panel">
       <h2>TRAITS MANAGER</h2>
       <div class="panel-content" id="trait-container" tabindex="0" style="max-height: 480px;">
         <!-- Dynamically populated by entry.js -->
@@ -812,10 +783,7 @@
   
   
 <!-- Section 6 ----------------------------------------- RIGHT PANEL CONTENT -------------------------------------------------->
-<!-- Section 6 ----------------------------------------- RIGHT PANEL CONTENT -------------------------------------------------->
-
-
-<div id="right-panel" style="flex: 2; width: 600px; padding-left: 10px; max-width: 600px; margin-left: auto;">
+<div id="right-panel">
   <div class="panel">
     <h2 style="text-align: left;">PREVIEW</h2>
     <div class="panel-content" style="max-height: 650px;">
@@ -849,13 +817,10 @@
 </div>
 
 
-
 <!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
 <!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
-
-
 <div id="full-width-section" style="width: 100%; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 20px; margin-top: 20px;">
-  <div class="panel" style="flex: 1 1 570px; min-width: 570px; max-width: 570px;">
+  <div class="panel">
     <h2>GENERATED AI BKGD</h2>
     <div class="panel-content">
       <div id="background-section">
@@ -895,7 +860,7 @@
       </div>
     </div>
   </div>
-  <div class="panel" style="flex: 1 1 570px; min-width: 570px; max-width: 570px;">
+  <div class="panel">
     <h2>CHOSEN IMAGES</h2>
     <div class="panel-content">
       <div id="chosen-section">
