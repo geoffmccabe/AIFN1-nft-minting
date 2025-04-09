@@ -493,240 +493,73 @@
 
   
 
-<!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
-<!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
-
-<!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
-<style>
-  #background-section h2 {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    text-align: left;
-    margin: 0 0 10px;
-  }
-  #prompt-section {
-    margin-top: 10px;
-  }
-  #prompt-section p {
-    margin: 5px 0;
-  }
-  #prompt-section textarea {
-    width: 100%;
-    height: 140px;
-    resize: none;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 400;
-  }
-  #prompt-section label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-  }
-  #background-details {
-    text-align: center;
-  }
-  #background-image {
-    width: 100%;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: cover;
-    background-blend-mode: overlay;
-    border-radius: 10px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    aspect-ratio: 1 / 1;
-  }
-  #gen-grid {
-    display: grid;
-    gap: 10px;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-  }
-  .gen-image-container {
-    position: relative;
-    width: 100%;
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: cover;
-    background-blend-mode: overlay;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    box-sizing: border-box;
-    cursor: pointer;
-    aspect-ratio: 1 / 1;
-  }
-  .gen-image-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  .gen-image-container.selected {
-    border: 5px solid #f4c149;
-  }
-  .gen-image-full {
-    width: 100%;
-    border-radius: 10px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    aspect-ratio: 1 / 1;
-  }
-  #gen-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    margin-left: 10px;
-  }
-  .gen-control-emoji {
-    font-size: 32px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 0;
-    color: #666;
-  }
-  .gen-control-emoji:hover {
-    opacity: 0.8;
-  }
-  #chosen-section h2 {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    text-align: center;
-    margin: 0 0 10px;
-  }
-  #chosen-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-    justify-content: center;
-  }
-  #chosen-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    width: 100%;
-  }
-  .chosen-image-container {
-    position: relative;
-    width: calc(20% - 12px); /* 5 per row */
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-size: cover;
-    background-blend-mode: overlay;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    box-sizing: border-box;
-    aspect-ratio: 1 / 1;
-    min-width: 100px; /* Adjusted to ensure 5 per row */
-  }
-  .chosen-image-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  button {
-    padding: 10px 20px;
-    background: grey;
-    color: black;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    border-radius: 5px;
-    margin: 10px 0;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-  }
-  button:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-  button:not(:disabled) {
-    background: #4CAF50;
-  }
-  #mint-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  #mintFeeDisplay {
-    font-size: 14px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-  }
-  .confirmation-dialog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    z-index: 1000;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  .confirmation-dialog p {
-    margin: 0 0 10px;
-    text-align: center;
-  }
-  .confirmation-dialog .buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-  }
-  .confirmation-dialog button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  .confirmation-dialog .yes-button {
-    background: #739c6c;
-  }
-  .confirmation-dialog .no-button {
-    background: #ae645a;
-  }
-  #background-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 10px 0;
-  }
-  #timer-display {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    font-size: 16px;
-    color: #333;
-  }
-  #width-input, #height-input {
-    width: 80px;
-    padding: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 400;
-    font-size: 14px;
-    box-sizing: border-box;
-    height: 32px;
-  }
-  @media (max-width: 900px) {
-    body { flex-direction: column; }
-    #left-panel, #right-panel { width: 100%; padding: 10px; }
-    #preview { width: 100%; height: auto; aspect-ratio: 1 / 1; }
-    #logo { width: 100%; max-width: 600px; }
-    #preview-samples-grid { 
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-      width: 100%; 
-    }
-    #chosen-grid { 
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-      width: 100%; 
-    }
-    #full-width-section .panel {
-      width: 100% !important; /* Override for mobile */
-    }
-  }
-</style>
+<!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
+<div id="left-panel">
+  <div id="logo-container">
+    <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
+  </div>
+  <div class="project-panel panel">
+    <h2>PROJECT PANEL</h2>
+    <div class="panel-content">
+      <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="width: 60%;">
+          <label for="project-name">Project Name:</label>
+          <input type="text" id="project-name" placeholder="My Awesome Project" style="width: 100%; height: 42px;">
+        </div>
+        <div style="width: 40%;">
+          <label for="project-size" style="text-align: left; display: block;">Project Size <span class="info-tooltip" title="Only 600×600px is supported currently">ℹ️</span>:</label>
+          <select id="project-size" style="width: 100%; height: 42px;">
+            <option value="600x600" selected>600×600px (Default)</option>
+            <option value="800x800" disabled>800×800px</option>
+            <option value="1024x1024" disabled>1024×1024px</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" id="custom-size-group" style="display: none;">
+        <label>Custom Size:</label>
+        <input type="number" id="custom-width" placeholder="Width" min="100" max="2400">
+        <span>×</span>
+        <input type="number" id="custom-height" placeholder="Height" min="100" max="2400">
+        <span>px</span>
+      </div>
+      <div class="form-group" style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="width: 60%;">
+          <label for="project-description">Project Description:</label>
+          <textarea id="project-description" placeholder="Describe your project..." style="width: 100%;"></textarea>
+        </div>
+        <div style="width: 40%;">
+          <label for="project-slot" style="text-align: left; display: block;">Save Slot:</label>
+          <select id="project-slot" style="width: 100%;">
+            <option value="project-1">Slot 1</option>
+            <option value="project-2">Slot 2</option>
+            <option value="project-3">Slot 3</option>
+            <option value="project-4">Slot 4</option>
+            <option value="project-5">Slot 5</option>
+            <option value="project-6">Slot 6</option>
+            <option value="project-7">Slot 7</option>
+            <option value="project-8">Slot 8</option>
+            <option value="project-9">Slot 9</option>
+            <option value="project-10">Slot 10</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="display: flex; justify-content: space-between;">
+        <button id="load-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">LOAD PROJECT</button>
+        <button id="save-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">SAVE PROJECT</button>
+        <button id="delete-project" style="padding: 5px 10px; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer;">DELETE PROJECT</button>
+      </div>
+    </div>
+  </div>
+  <div class="traits-panel-container">
+    <div class="traits-panel panel">
+      <h2>TRAITS MANAGER</h2>
+      <div class="panel-content" id="trait-container" tabindex="0" style="max-height: 480px;">
+        <!-- Dynamically populated by entry.js -->
+      </div>
+    </div>
+  </div>
+</div>
 
   
   
@@ -849,9 +682,9 @@
       <div id="background-section">
         <div id="prompt-section">
           <label for="base-prompt">Basic Prompt:</label>
-          <textarea id="base-prompt" style="width: 100%;"></textarea>
+          <textarea id="base-prompt" style="width: 100%; display: block;">1girl, shiyang, ((((small breasts)))), (white skull belt buckle, front hair locks, black flat dragon tattoo on right shoulder, black flat dragon tattoo on right arm, red clothes, shoulder tattoo,:1.1), golden jewelry, long hair, earrings, black hair, golden hoop earrings, clothing cutout, ponytail, cleavage cutout, cleavage, bracelet, midriff, cheongsam top, red choli top, navel, makeup, holding, pirate pistol, lips, pirate gun, black shorts, looking at viewer, dynamic pose, ((asian girl)), action pose, (white skull belt buckle), black dragon tattoo on right shoulder, black dragon tattoo on right arm, ((shoulder tattoo))</textarea>
           <label for="user-prompt">User Prompt:</label>
-          <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')" style="width: 100%;"></textarea>
+          <textarea id="user-prompt" placeholder="Add your custom prompt (e.g., 'with a cyberpunk city background')" style="width: 100%; display: block;"></textarea>
         </div>
         <div id="background-controls" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 10px;">
           <div style="display: flex; align-items: center; gap: 10px;">
@@ -899,7 +732,6 @@
     </div>
   </div>
 </div>
-
 
 
 <!-------------------------------- Section 8 -------------------------------->
