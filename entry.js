@@ -148,10 +148,6 @@ clickSound.volume = 0.25;
 
 
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-
-
-
-
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000;
@@ -387,23 +383,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1));
   document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
   document.getElementById('gen-16x').addEventListener('click', () => fetchMultipleBackgrounds(16));
-
-  const scrollTrait = (direction) => {
-    const traits = [...traitContainer.querySelectorAll('.trait-section')];
-    if (traits.length === 0) return;
-    const visibleTraits = traits.filter(t =>
-      t.offsetTop + t.offsetHeight > traitContainer.scrollTop &&
-      t.offsetTop < traitContainer.scrollTop + traitContainer.clientHeight
-    );
-    const target = direction === 'up'
-      ? visibleTraits[0]?.previousElementSibling ?? traits[0]
-      : visibleTraits[visibleTraits.length - 1]?.nextElementSibling ?? traits[traits.length - 1];
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  };
-  document.querySelector('.up-scroll').onclick = () => scrollTrait('up');
-  document.querySelector('.down-scroll').onclick = () => scrollTrait('down');
 
   const projectSizeSelect = document.getElementById('project-size');
   const customSizeGroup = document.getElementById('custom-size-group');
@@ -767,7 +746,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const logo = document.getElementById('logo');
   if (logo) console.log('Logo URL:', logo.src);
 });
-
 
 
 
