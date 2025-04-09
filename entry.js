@@ -148,6 +148,11 @@ clickSound.volume = 0.25;
 
 
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
+/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
+
+
+
+
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000;
@@ -340,7 +345,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       updatePreviewSamples();
 
       console.log('Loaded project:', project);
-      alert(`Project "${project.name}" loaded from ${slot} successfully!`);
+
+      // Update slot dropdown with project names
+      const projectSlotSelect = document.getElementById('project-slot');
+      const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
+      const slotPromises = slots.map(slotId => 
+        new Promise(resolve => projectStore.get(slotId).onsuccess = e => resolve({ id: slotId, project: e.target.result || null }))
+      );
+      const slotData = await Promise.all(slotPromises);
+      
+      slotData.forEach((data, index) => {
+        const option = projectSlotSelect.options[index];
+        const projectName = data.project ? data.project.name : '';
+        option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
+      });
     } catch (err) {
       console.error('Load failed:', err);
       alert('Failed to load project');
@@ -373,6 +391,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       await new Promise(resolve => projectStore.delete(slot).onsuccess = () => resolve());
 
       alert(`Deleted project "${project.name}" from ${slot}`);
+
+      // Update slot dropdown after deletion
+      const projectSlotSelect = document.getElementById('project-slot');
+      const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
+      const slotPromises = slots.map(slotId => 
+        new Promise(resolve => projectStore.get(slotId).onsuccess = e => resolve({ id: slotId, project: e.target.result || null }))
+      );
+      const slotData = await Promise.all(slotPromises);
+      
+      slotData.forEach((data, index) => {
+        const option = projectSlotSelect.options[index];
+        const projectName = data.project ? data.project.name : '';
+        option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
+      });
     } catch (err) {
       console.error('Delete failed:', err);
       alert('Failed to delete project');
@@ -745,6 +777,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const logo = document.getElementById('logo');
   if (logo) console.log('Logo URL:', logo.src);
+
+  // Initial load of slot names
+  const projectSlotSelect = document.getElementById('project-slot');
+  const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
+  const db = await openDB();
+  const tx = db.transaction(['projects'], 'readonly');
+  const projectStore = tx.objectStore('projects');
+  const slotPromises = slots.map(slotId => 
+    new Promise(resolve => projectStore.get(slotId).onsuccess = e => resolve({ id: slotId, project: e.target.result || null }))
+  );
+  const slotData = await Promise.all(slotPromises);
+  
+  slotData.forEach((data, index) => {
+    const option = projectSlotSelect.options[index];
+    const projectName = data.project ? data.project.name : '';
+    option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
+  });
 });
 
 
