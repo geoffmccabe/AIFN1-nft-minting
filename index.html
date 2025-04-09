@@ -558,7 +558,7 @@
     aspect-ratio: 1 / 1;
   }
   #gen-grid {
-    display: none; /* Hidden until content loads */
+    display: grid;
     gap: 10px;
     width: 100%;
     max-width: 600px;
@@ -627,11 +627,11 @@
     flex-wrap: wrap;
     gap: 15px;
     width: 100%;
-    max-width: 100%; /* Prevents overflow beyond panel */
+    max-width: 100%;
   }
   .chosen-image-container {
     position: relative;
-    width: calc(25% - 12px); /* 4 per row, fits 510px */
+    width: calc(20% - 12px); /* 5 per row, fits 510px */
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: cover;
     background-blend-mode: overlay;
@@ -745,7 +745,6 @@
     }
   }
 </style>
-
 
   
 <!------------------------------------------------- Section 5 ------------------------------------------------->
