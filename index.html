@@ -494,6 +494,7 @@
   
 
 <!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
+<!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
 
 
 
@@ -532,7 +533,6 @@
   }
   #background-image {
     width: 100%;
-    max-width: 600px;
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: cover;
     background-blend-mode: overlay;
@@ -544,7 +544,6 @@
     display: grid;
     gap: 10px;
     width: 100%;
-    max-width: 600px;
     aspect-ratio: 1 / 1;
   }
   .gen-image-container {
@@ -569,7 +568,6 @@
   }
   .gen-image-full {
     width: 100%;
-    max-width: 600px;
     border-radius: 10px;
     border: 1px solid rgba(0, 0, 0, 0.1);
     aspect-ratio: 1 / 1;
@@ -610,11 +608,10 @@
     flex-wrap: wrap;
     gap: 15px;
     width: 100%;
-    max-width: 510px; /* Matches 5 columns of ~102px each + gaps */
   }
   .chosen-image-container {
     position: relative;
-    width: calc(20% - 12px); /* 5 per row, ~102px each in 510px */
+    width: calc(20% - 12px); /* 5 per row, scaled to fit */
     background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
     background-size: cover;
     background-blend-mode: overlay;
@@ -622,6 +619,7 @@
     border-radius: 5px;
     box-sizing: border-box;
     aspect-ratio: 1 / 1;
+    min-width: 120px; /* Ensure squares scale up */
   }
   .chosen-image-container img {
     width: 100%;
@@ -726,6 +724,9 @@
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
       width: 100%; 
     }
+    #full-width-section .panel {
+      width: 100% !important; /* Override for mobile */
+    }
   }
 </style>
 
@@ -733,6 +734,10 @@
   
 <!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
 <!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
+
+
+
+  
 <div id="left-panel">
   <div id="logo-container">
     <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
