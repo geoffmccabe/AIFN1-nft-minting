@@ -1546,9 +1546,6 @@ function updatePreviewSamples() {
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
 
-
-
-
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
   if (!chosenGrid) {
@@ -1744,77 +1741,85 @@ async function fetchMultipleBackgrounds(count) {
         const containerToUpdate = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
         const imgToUpdate = containerToUpdate.querySelector('img');
         imgToUpdate.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
-preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
         preview.style.backgroundSize = 'cover';
-      }
+      };
+
+      keepEmoji.onclick = () => {
+        addToChosenGrid(fullImg.src);
+        backgroundDetails.innerHTML = '';
+        backgroundDetails.appendChild(grid);
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        preview.style.backgroundSize = 'cover';
+      };
     });
+  });
 
-    const backgroundMetadata = document.getElementById('background-metadata');
-    if (backgroundMetadata) {
-      backgroundMetadata.innerText = `Generated ${count} images with prompt: ${basePrompt}${userPrompt ? ', ' + userPrompt : ''}`;
-    }
+  const backgroundMetadata = document.getElementById('background-metadata');
+  if (backgroundMetadata) {
+    backgroundMetadata.innerText = `Generated ${count} images with prompt: ${basePrompt}${userPrompt ? ', ' + userPrompt : ''}`;
   }
+}
 
-  function fetchMintFee() {
-    const mintFeeDisplay = document.getElementById('mintFeeDisplay');
-    if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
-  }
-  fetchMintFee();
+function fetchMintFee() {
+  const mintFeeDisplay = document.getElementById('mintFeeDisplay');
+  if (mintFeeDisplay) mintFeeDisplay.innerText = `Mint Fee: 0.001 ETH (Mock)`;
+}
+fetchMintFee();
 
-  window.mintNFT = async function() {
-    const status = document.getElementById('status');
-    if (!status) return;
+window.mintNFT = async function() {
+  const status = document.getElementById('status');
+  if (!status) return;
 
-    try {
-      await provider.send("eth_requestAccounts", []);
-      const numTraitCategories = TraitManager.getAllTraits().length;
-      const traitCategoryVariants = TraitManager.getAllTraits().map(trait => trait.variants.length);
-      const traitIndices = TraitManager.getAllTraits().map(trait => trait.selected);
-      const recipient = await signer.getAddress();
+  try {
+    await provider.send("eth_requestAccounts", []);
+    const numTraitCategories = TraitManager.getAllTraits().length;
+    const traitCategoryVariants = TraitManager.getAllTraits().map(trait => trait.variants.length);
+    const traitIndices = TraitManager.getAllTraits().map(trait => trait.selected);
+    const recipient = await signer.getAddress();
 
-      status.innerText = "Uploading images to Arweave...";
-      const formData = new FormData();
-      for (let i = 0; i < TraitManager.getAllTraits().length; i++) {
-        const trait = TraitManager.getAllTraits()[i];
-        const selectedVariation = trait.variants[trait.selected];
-        const response = await fetch(selectedVariation.url);
-        const blob = await response.blob();
-        formData.append('images', blob, `${trait.name}-${selectedVariation.name}.png`);
-      }
-
-      const uploadResponse = await fetch('https://aifn-1-api-q1ni.vercel.app/api/upload-to-arweave', {
-        method: 'POST',
-        body: formData
-      });
-      const uploadData = await uploadResponse.json();
-      if (uploadData.error) throw new Error(uploadData.error);
-
-      const arweaveUrls = uploadData.transactionIds.map(id => `https://arweave.net/${id}`);
-
-      status.innerText = "Estimating gas...";
-      const gasLimit = await contractWithSigner.estimateGas.mintNFT(
-        recipient,
-        initialHtmlUri,
-        numTraitCategories,
-        traitCategoryVariants,
-        traitIndices,
-        { value: ethers.utils.parseEther(config.sepolia.mintFee) }
-      );
-
-      status.innerText = "Minting...";
-      const tx = await contractWithSigner.mintNFT(
-        recipient,
-        initialHtmlUri,
-        numTraitCategories,
-        traitCategoryVariants,
-        traitIndices,
-        { value: ethers.utils.parseEther(config.sepolia.mintFee), gasLimit: gasLimit.add(50000) }
-      );
-      const receipt = await tx.wait();
-      const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
-      status.innerText = `Minted! Token ID: ${tokenId}`;
-    } catch (error) {
-      status.innerText = `Error: ${error.message}`;
+    status.innerText = "Uploading images to Arweave...";
+    const formData = new FormData();
+    for (let i = 0; i < TraitManager.getAllTraits().length; i++) {
+      const trait = TraitManager.getAllTraits()[i];
+      const selectedVariation = trait.variants[trait.selected];
+      const response = await fetch(selectedVariation.url);
+      const blob = await response.blob();
+      formData.append('images', blob, `${trait.name}-${selectedVariation.name}.png`);
     }
-  };
+
+    const uploadResponse = await fetch('https://aifn-1-api-q1ni.vercel.app/api/upload-to-arweave', {
+      method: 'POST',
+      body: formData
+    });
+    const uploadData = await uploadResponse.json();
+    if (uploadData.error) throw new Error(uploadData.error);
+
+    const arweaveUrls = uploadData.transactionIds.map(id => `https://arweave.net/${id}`);
+
+    status.innerText = "Estimating gas...";
+    const gasLimit = await contractWithSigner.estimateGas.mintNFT(
+      recipient,
+      initialHtmlUri,
+      numTraitCategories,
+      traitCategoryVariants,
+      traitIndices,
+      { value: ethers.utils.parseEther(config.sepolia.mintFee) }
+    );
+
+    status.innerText = "Minting...";
+    const tx = await contractWithSigner.mintNFT(
+      recipient,
+      initialHtmlUri,
+      numTraitCategories,
+      traitCategoryVariants,
+      traitIndices,
+      { value: ethers.utils.parseEther(config.sepolia.mintFee), gasLimit: gasLimit.add(50000) }
+    );
+    const receipt = await tx.wait();
+    const tokenId = receipt.events.find(e => e.event === "Transfer").args.tokenId.toString();
+    status.innerText = `Minted! Token ID: ${tokenId}`;
+  } catch (error) {
+    status.innerText = `Error: ${error.message}`;
+  }
 };
