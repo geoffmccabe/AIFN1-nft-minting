@@ -19,9 +19,6 @@
 
 
 <!-- Section 2 ----------------------------------------- LEFT PANEL STYLES -------------------------------------------------->
-<!-- Section 2 ----------------------------------------- LEFT PANEL STYLES -------------------------------------------------->
-
-
 <style>
   body {
     font-family: 'Poppins', sans-serif;
@@ -241,7 +238,8 @@
     overflow-y: auto;
     overflow-x: hidden;
     width: 100%;
-    max-width: 540px;
+    max-width: 510px; /* Adjusted to ensure 15px edge on all sides within 570px panel */
+    box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
   }
   .panel-content::-webkit-scrollbar {
@@ -259,7 +257,6 @@
     background: rgba(0, 0, 0, 0.3);
   }
 </style>
-
 
 
   
@@ -750,17 +747,13 @@
   
   
 <!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
-<!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
-
-
-  
 <div id="left-panel">
   <div id="logo-container">
     <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
   </div>
-  <div class="project-panel panel">
+  <div class="project-panel panel" style="max-width: 570px;">
     <h2>PROJECT PANEL</h2>
-    <div class="panel-content" style="padding: 15px;">
+    <div class="panel-content">
       <div class="form-group">
         <label for="project-name">Project Name:</label>
         <input type="text" id="project-name" placeholder="My Awesome Project">
@@ -808,7 +801,7 @@
     </div>
   </div>
   <div class="traits-panel-container">
-    <div class="traits-panel panel">
+    <div class="traits-panel panel" style="max-width: 570px;">
       <h2>TRAITS MANAGER</h2>
       <div class="panel-content" id="trait-container" tabindex="0" style="max-height: 480px;">
         <!-- Dynamically populated by entry.js -->
