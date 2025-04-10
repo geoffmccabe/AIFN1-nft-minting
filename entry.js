@@ -1238,6 +1238,9 @@ function updateMintButton() {
 
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
+
+
+
 function updateZIndices() {
   const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
   traitImages.forEach((img, index) => {
@@ -1248,6 +1251,37 @@ function updateZIndices() {
     }
   });
   if (preview) preview.offsetHeight;
+}
+
+// Function to calculate the scaling factor based on the largest trait and container size
+function calculateScalingFactor() {
+  let maxDimension = 0;
+  traitImages.forEach(img => {
+    if (img && img.naturalWidth && img.naturalHeight) {
+      const maxTraitDimension = Math.max(img.naturalWidth, img.naturalHeight);
+      maxDimension = Math.max(maxDimension, maxTraitDimension);
+    }
+  });
+
+  const container = document.getElementById('preview');
+  if (!container) return 1; // Default scaling factor if container not found
+
+  const containerRect = container.getBoundingClientRect();
+  const containerSize = Math.min(containerRect.width, containerRect.height); // Use the smaller dimension to fit within the container
+  return maxDimension > 0 ? containerSize / maxDimension : 1; // Scaling factor to fit the largest trait
+}
+
+// Function to apply scaling to all trait images
+function applyScalingToTraits() {
+  const scale = calculateScalingFactor();
+  traitImages.forEach(img => {
+    if (img && img.naturalWidth && img.naturalHeight) {
+      const scaledWidth = img.naturalWidth * scale;
+      const scaledHeight = img.naturalHeight * scale;
+      img.style.width = `${scaledWidth}px`;
+      img.style.height = `${scaledHeight}px`;
+    }
+  });
 }
 
 function selectVariation(traitId, variationId) {
@@ -1264,38 +1298,45 @@ function selectVariation(traitId, variationId) {
     previewImage.src = trait.variants[variationIndex].url;
     previewImage.style.visibility = 'visible';
     console.log(`Selected variation ${variationId} for trait ${traitId}, src: ${previewImage.src}, visibility: ${previewImage.style.visibility}`);
-    const key = `${traitId}-${trait.variants[variationIndex].name}`;
-    const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
-    if (savedPosition) {
-      const { left, top } = JSON.parse(savedPosition);
-      previewImage.style.left = `${left}%`;
-      previewImage.style.top = `${top}%`;
-      if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
-    } else {
-      let lastPosition = null;
-      for (let i = 0; i < trait.variants.length; i++) {
-        if (i === variationIndex) continue;
-        const otherVariationName = trait.variants[i].name;
-        const otherKey = `${traitId}-${otherVariationName}`;
-        if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
-          lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
+    
+    // Apply scaling after setting the new image
+    const img = new Image();
+    img.src = previewImage.src;
+    img.onload = () => {
+      applyScalingToTraits();
+      const key = `${traitId}-${trait.variants[variationIndex].name}`;
+      const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
+      if (savedPosition) {
+        const { left, top } = JSON.parse(savedPosition);
+        previewImage.style.left = `${left}%`;
+        previewImage.style.top = `${top}%`;
+        if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
+      } else {
+        let lastPosition = null;
+        for (let i = 0; i < trait.variants.length; i++) {
+          if (i === variationIndex) continue;
+          const otherVariationName = trait.variants[i].name;
+          const otherKey = `${traitId}-${otherVariationName}`;
+          if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
+            lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
+          }
+        }
+        if (lastPosition) {
+          previewImage.style.left = `${lastPosition.left}%`;
+          previewImage.style.top = `${lastPosition.top}%`;
+          variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
+          localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
+        } else {
+          previewImage.style.left = '0%';
+          previewImage.style.top = '0%';
+          variantHistories[key] = [{ left: 0, top: 0 }];
+          localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
         }
       }
-      if (lastPosition) {
-        previewImage.style.left = `${lastPosition.left}%`;
-        previewImage.style.top = `${lastPosition.top}%`;
-        variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
-        localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
-      } else {
-        previewImage.style.left = '0%';
-        previewImage.style.top = '0%';
-        variantHistories[key] = [{ left: 0, top: 0 }];
-        localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
-      }
-    }
-    currentImage = previewImage;
-    updateZIndices();
-    updateCoordinates(previewImage);
+      currentImage = previewImage;
+      updateZIndices();
+      updateCoordinates(previewImage);
+    };
   } else {
     console.error(`Preview image for trait ${traitId} not found in traitImages`);
   }
@@ -1427,6 +1468,9 @@ function savePosition(img, traitId, variationName) {
   updateSamplePositions(traitId, trait.variants[trait.selected].id, position);
   updateSubsequentTraits(traitId, variationName, position);
 }
+
+// Apply scaling on window resize
+window.addEventListener('resize', applyScalingToTraits);
 
 
 
