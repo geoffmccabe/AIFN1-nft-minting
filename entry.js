@@ -148,10 +148,6 @@ clickSound.volume = 0.25;
 
 
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-
-
-
 
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
@@ -337,10 +333,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       TraitManager.sortTraits();
       TraitManager.getAllTraits().forEach(trait => {
         addTrait(trait);
+        const input = document.getElementById(`trait${trait.id}-name`);
+        input.value = trait.name || input.placeholder;
+        input.dataset.userEntered = trait.name ? 'true' : 'false';
         refreshTraitGrid(trait.id);
-        if (trait.variants.length > 0) {
-          selectVariation(trait.id, trait.variants[trait.selected]?.id);
-        }
+        if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
       });
       updatePreviewSamples();
 
@@ -494,8 +491,19 @@ document.addEventListener('DOMContentLoaded', async () => {
           const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
           img.style.width = `${parseFloat(baseImg.style.width || '600') * scale}px`;
           img.style.height = `${parseFloat(baseImg.style.height || '600') * scale}px`;
-          img.style.left = `${parseFloat(baseImg.style.left || '0') * scale}px`;
-          img.style.top = `${parseFloat(baseImg.style.top || '0') * scale}px`;
+          // Fix position calculation: Convert percentage to pixels, scale, then convert back to percentage
+          const previewSize = 600; // Preview Window size (pixels)
+          const leftPercent = parseFloat(baseImg.style.left || '0'); // e.g., '50%'
+          const topPercent = parseFloat(baseImg.style.top || '0'); // e.g., '50%'
+          const leftPixels = (leftPercent / 100) * previewSize; // e.g., 50% of 600 = 300px
+          const topPixels = (topPercent / 100) * previewSize; // e.g., 50% of 600 = 300px
+          const magnifiedSize = parseFloat(enlargedPreview.style.width); // e.g., 900px
+          const scaledLeftPixels = leftPixels * scale; // e.g., 300 * 1.5 = 450px
+          const scaledTopPixels = topPixels * scale; // e.g., 300 * 1.5 = 450px
+          const scaledLeftPercent = (scaledLeftPixels / magnifiedSize) * 100; // e.g., 450 / 900 * 100 = 50%
+          const scaledTopPercent = (scaledTopPixels / magnifiedSize) * 100; // e.g., 450 / 900 * 100 = 50%
+          img.style.left = `${scaledLeftPercent}%`;
+          img.style.top = `${scaledTopPercent}%`;
           img.style.zIndex = trait.zIndex;
           img.style.position = 'absolute';
           img.style.visibility = 'visible';
@@ -635,8 +643,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (variantHistories[key] && variantHistories[key].length > 1) {
         variantHistories[key].pop();
         const previousPosition = variantHistories[key][variantHistories[key].length - 1];
-        currentImage.style.left = `${previousPosition.left}px`;
-        currentImage.style.top = `${previousPosition.top}px`;
+        currentImage.style.left = `${previousPosition.left}%`;
+        currentImage.style.top = `${previousPosition.top}%`;
         localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
         updateCoordinates(currentImage);
         updateSamplePositions(trait.id, trait.variants[trait.selected].id, previousPosition);
@@ -1276,23 +1284,16 @@ function applyScalingToTraits() {
 // Function to apply scaling to all sample images in the Preview Samples Panel
 function applyScalingToSamples() {
   const sampleImages = document.querySelectorAll('#preview-samples-grid img');
-  sampleImages.forEach(img => applyScalingToImage(img));
-}
-
-// Function to update positions in the Magnify window
-function updateMagnifyPositions() {
-  const enlargedPreview = document.getElementById('enlarged-preview');
-  if (enlargedPreview) {
-    const enlargedImages = enlargedPreview.querySelectorAll('img');
-    enlargedImages.forEach((enlargedImg, index) => {
-      const traitImg = traitImages[index];
-      if (traitImg) {
-        enlargedImg.style.left = traitImg.style.left || '0%';
-        enlargedImg.style.top = traitImg.style.top || '0%';
-        applyScalingToImage(enlargedImg); // Ensure scaling is applied
-      }
-    });
-  }
+  sampleImages.forEach(img => {
+    applyScalingToImage(img);
+    // Center the image within the 150x150 sample container
+    const containerWidth = 150;
+    const containerHeight = 150;
+    const imgWidth = parseFloat(img.style.width || '0');
+    const imgHeight = parseFloat(img.style.height || '0');
+    img.style.left = `${(containerWidth - imgWidth) / 2}px`;
+    img.style.top = `${(containerHeight - imgHeight) / 2}px`;
+  });
 }
 
 function selectVariation(traitId, variationId) {
@@ -1315,7 +1316,7 @@ function selectVariation(traitId, variationId) {
     img.src = previewImage.src;
     img.onload = () => {
       applyScalingToTraits();
-      applyScalingToSamples(); // Re-enabled for Preview Samples
+      applyScalingToSamples();
       const key = `${traitId}-${trait.variants[variationIndex].name}`;
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
@@ -1348,7 +1349,6 @@ function selectVariation(traitId, variationId) {
       currentImage = previewImage;
       updateZIndices();
       updateCoordinates(previewImage);
-      updateMagnifyPositions(); // Update positions in the Magnify window
     };
   } else {
     console.error(`Preview image for trait ${traitId} not found in traitImages`);
@@ -1431,7 +1431,6 @@ function setupDragAndDrop(img, traitIndex) {
         currentImage.style.left = `${clampedLeft}%`;
         currentImage.style.top = `${clampedTop}%`;
         updateCoordinates(currentImage);
-        updateMagnifyPositions(); // Update positions in the Magnify window during drag
       }
     }
 
@@ -1514,7 +1513,6 @@ document.addEventListener('DOMContentLoaded', () => {
   applyScalingToTraits();
   applyScalingToSamples();
 });
-
 
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
