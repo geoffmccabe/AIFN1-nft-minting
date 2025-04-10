@@ -1250,17 +1250,17 @@ function updateZIndices() {
   if (preview) preview.offsetHeight;
 }
 
-// Function to calculate the scaling factor based on the user-defined size (currently 600x600)
-function calculateScalingFactor(naturalWidth, naturalHeight, containerSize = 600) {
-  const maxDimension = Math.max(naturalWidth, naturalHeight);
-  if (maxDimension === 0) return 1; // Avoid division by zero
-  return containerSize / maxDimension; // Scale to fit within the user-defined size
+// Function to calculate the uniform scaling factor based on window size and project size
+function calculateScalingFactor() {
+  const windowSize = 600; // Hardcoded window size (preview container size)
+  const projectSize = 600; // Hardcoded project size (user-defined, from Project Manager)
+  return windowSize / projectSize; // Uniform scaling factor
 }
 
 // Function to apply scaling to a single image
-function applyScalingToImage(img, containerSize = 600) {
+function applyScalingToImage(img) {
   if (img && img.naturalWidth && img.naturalHeight) {
-    const scale = calculateScalingFactor(img.naturalWidth, img.naturalHeight, containerSize);
+    const scale = calculateScalingFactor();
     const scaledWidth = img.naturalWidth * scale;
     const scaledHeight = img.naturalHeight * scale;
     img.style.width = `${scaledWidth}px`;
@@ -1270,10 +1270,10 @@ function applyScalingToImage(img, containerSize = 600) {
 
 // Function to apply scaling to all trait images in the Preview Panel
 function applyScalingToTraits() {
-  traitImages.forEach(img => applyScalingToImage(img, 600)); // 600x600 user-defined size
+  traitImages.forEach(img => applyScalingToImage(img));
 }
 
-// Function to apply scaling to all sample images in the Preview Samples Panel
+// Function to apply scaling to all sample images in the Preview Samples Panel (not used for now)
 function applyScalingToSamples() {
   const sampleImages = document.querySelectorAll('#preview-samples-grid img');
   sampleImages.forEach(img => applyScalingToImage(img, 150)); // 150x150 container size (1/4 of 600px)
@@ -1299,7 +1299,7 @@ function selectVariation(traitId, variationId) {
     img.src = previewImage.src;
     img.onload = () => {
       applyScalingToTraits();
-      applyScalingToSamples(); // Update samples as well
+      // applyScalingToSamples(); // Commented out for now, focusing on Preview Panel only
       const key = `${traitId}-${trait.variants[variationIndex].name}`;
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
@@ -1468,13 +1468,13 @@ function savePosition(img, traitId, variationName) {
 // Apply scaling on window resize
 window.addEventListener('resize', () => {
   applyScalingToTraits();
-  applyScalingToSamples();
+  // applyScalingToSamples(); // Commented out for now, focusing on Preview Panel only
 });
 
 // Initial scaling on load
 document.addEventListener('DOMContentLoaded', () => {
   applyScalingToTraits();
-  applyScalingToSamples();
+  // applyScalingToSamples(); // Commented out for now, focusing on Preview Panel only
 });
 
 
