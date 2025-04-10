@@ -822,6 +822,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
 
 
