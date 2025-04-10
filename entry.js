@@ -1238,9 +1238,6 @@ function updateMintButton() {
 
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
-
-
-
 function updateZIndices() {
   const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
   traitImages.forEach((img, index) => {
@@ -1253,35 +1250,33 @@ function updateZIndices() {
   if (preview) preview.offsetHeight;
 }
 
-// Function to calculate the scaling factor based on the largest trait and container size
-function calculateScalingFactor() {
-  let maxDimension = 0;
-  traitImages.forEach(img => {
-    if (img && img.naturalWidth && img.naturalHeight) {
-      const maxTraitDimension = Math.max(img.naturalWidth, img.naturalHeight);
-      maxDimension = Math.max(maxDimension, maxTraitDimension);
-    }
-  });
-
-  const container = document.getElementById('preview');
-  if (!container) return 1; // Default scaling factor if container not found
-
-  const containerRect = container.getBoundingClientRect();
-  const containerSize = Math.min(containerRect.width, containerRect.height); // Use the smaller dimension to fit within the container
-  return maxDimension > 0 ? containerSize / maxDimension : 1; // Scaling factor to fit the largest trait
+// Function to calculate the scaling factor based on the user-defined size (currently 600x600)
+function calculateScalingFactor(naturalWidth, naturalHeight, containerSize = 600) {
+  const maxDimension = Math.max(naturalWidth, naturalHeight);
+  if (maxDimension === 0) return 1; // Avoid division by zero
+  return containerSize / maxDimension; // Scale to fit within the user-defined size
 }
 
-// Function to apply scaling to all trait images
+// Function to apply scaling to a single image
+function applyScalingToImage(img, containerSize = 600) {
+  if (img && img.naturalWidth && img.naturalHeight) {
+    const scale = calculateScalingFactor(img.naturalWidth, img.naturalHeight, containerSize);
+    const scaledWidth = img.naturalWidth * scale;
+    const scaledHeight = img.naturalHeight * scale;
+    img.style.width = `${scaledWidth}px`;
+    img.style.height = `${scaledHeight}px`;
+  }
+}
+
+// Function to apply scaling to all trait images in the Preview Panel
 function applyScalingToTraits() {
-  const scale = calculateScalingFactor();
-  traitImages.forEach(img => {
-    if (img && img.naturalWidth && img.naturalHeight) {
-      const scaledWidth = img.naturalWidth * scale;
-      const scaledHeight = img.naturalHeight * scale;
-      img.style.width = `${scaledWidth}px`;
-      img.style.height = `${scaledHeight}px`;
-    }
-  });
+  traitImages.forEach(img => applyScalingToImage(img, 600)); // 600x600 user-defined size
+}
+
+// Function to apply scaling to all sample images in the Preview Samples Panel
+function applyScalingToSamples() {
+  const sampleImages = document.querySelectorAll('#preview-samples-grid img');
+  sampleImages.forEach(img => applyScalingToImage(img, 150)); // 150x150 container size (1/4 of 600px)
 }
 
 function selectVariation(traitId, variationId) {
@@ -1304,6 +1299,7 @@ function selectVariation(traitId, variationId) {
     img.src = previewImage.src;
     img.onload = () => {
       applyScalingToTraits();
+      applyScalingToSamples(); // Update samples as well
       const key = `${traitId}-${trait.variants[variationIndex].name}`;
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
@@ -1470,7 +1466,16 @@ function savePosition(img, traitId, variationName) {
 }
 
 // Apply scaling on window resize
-window.addEventListener('resize', applyScalingToTraits);
+window.addEventListener('resize', () => {
+  applyScalingToTraits();
+  applyScalingToSamples();
+});
+
+// Initial scaling on load
+document.addEventListener('DOMContentLoaded', () => {
+  applyScalingToTraits();
+  applyScalingToSamples();
+});
 
 
 
