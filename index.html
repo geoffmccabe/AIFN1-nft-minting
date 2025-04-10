@@ -65,7 +65,7 @@
   #preview-panel-container { display: flex; flex-wrap: wrap; gap: 30px; width: 100%; }
   #preview-panel-container .panel { min-height: 650px; width: calc(50% - 15px); }
   #preview { aspect-ratio: 1 / 1; background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 10px; height: 600px; margin-bottom: 10px; max-width: 600px; overflow: hidden; position: relative; width: 600px; }
-  #preview img { object-fit: contain; position: absolute; }
+  #preview img { position: absolute; }
   #preview img.dragging { box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5); }
   #controls { align-items: center; display: flex; gap: 10px; justify-content: center; margin-top: 5px; }
   #coordinates { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 500; }
@@ -82,7 +82,7 @@
   #preview-samples h2 { font-family: 'Poppins', sans-serif; font-weight: 600; margin: 0; text-align: left; }
   #preview-samples-grid { display: grid; gap: 13px; grid-template-columns: repeat(4, 1fr); height: 600px; max-width: 600px; width: 600px; }
   #preview-samples-grid .sample-container { aspect-ratio: 1 / 1; background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 5px; cursor: pointer; height: 150px; overflow: hidden; position: relative; width: 150px; }
-  #preview-samples-grid img { object-fit: contain; position: absolute; }
+  #preview-samples-grid img { position: absolute; }
   #update-previews { background: #ccc; border: none; border-radius: 5px; color: black; cursor: pointer; font-size: 14px; padding: 5px 10px; }
   #update-previews:hover { background: #bbb; }
   .form-group { margin-bottom: 15px; }
