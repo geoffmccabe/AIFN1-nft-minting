@@ -456,18 +456,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   magnifyEmoji.addEventListener('click', () => {
-    enlargedPreview.style.display = 'block';
+    const magnifyPanel = document.getElementById('magnify-panel');
+    magnifyPanel.style.display = 'block';
     const maxWidth = window.innerWidth * 0.9;
     const maxHeight = window.innerHeight * 0.9;
     let scale = 1;
     if (maxWidth / maxHeight > 1) {
-      enlargedPreview.style.height = `${maxHeight}px`;
-      enlargedPreview.style.width = `${maxHeight}px`;
-      scale = maxHeight / 600;
+      enlargedPreview.style.height = `${maxHeight - 60}px`; // Account for header height
+      enlargedPreview.style.width = `${maxHeight - 60}px`;
+      scale = (maxHeight - 60) / 600;
     } else {
-      enlargedPreview.style.width = `${maxWidth}px`;
-      enlargedPreview.style.height = `${maxWidth}px`;
-      scale = maxWidth / 600;
+      enlargedPreview.style.width = `${maxWidth - 60}px`;
+      enlargedPreview.style.height = `${maxWidth - 60}px`;
+      scale = (maxWidth - 60) / 600;
     }
 
     const controls = document.getElementById('enlarged-preview-controls');
@@ -489,9 +490,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           const img = document.createElement('img');
           img.src = variant.url;
           const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
+          applyScalingToImage(baseImg); // Ensure baseImg is scaled
           img.style.width = `${parseFloat(baseImg.style.width || '600') * scale}px`;
           img.style.height = `${parseFloat(baseImg.style.height || '600') * scale}px`;
-          // Fix position calculation: Convert percentage to pixels, scale, then convert back to percentage
+          // Position calculation
           const previewSize = 600; // Preview Window size (pixels)
           const leftPercent = parseFloat(baseImg.style.left || '0'); // e.g., '50%'
           const topPercent = parseFloat(baseImg.style.top || '0'); // e.g., '50%'
@@ -532,6 +534,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (trait.variants.length > 0) {
           trait.selected = Math.floor(Math.random() * trait.variants.length);
           console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
+          // Update traitImages to reflect the new selection
+          const traitInMain = TraitManager.getTrait(trait.id);
+          traitInMain.selected = trait.selected;
+          const previewImage = traitImages.find(img => img.id === `preview-trait${trait.id}`);
+          if (previewImage) {
+            previewImage.src = trait.variants[trait.selected].url;
+            applyScalingToImage(previewImage); // Ensure scaling is updated
+          }
           updateEnlargedPreview();
         }
       }, currentSpeed);
@@ -572,7 +582,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         randomizeInterval = null;
         currentSpeed = 1000;
       }
-      enlargedPreview.style.display = 'none';
+      magnifyPanel.style.display = 'none';
       controls.style.display = 'none';
     };
   });
