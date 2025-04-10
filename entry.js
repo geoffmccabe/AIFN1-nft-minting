@@ -1273,10 +1273,26 @@ function applyScalingToTraits() {
   traitImages.forEach(img => applyScalingToImage(img));
 }
 
-// Function to apply scaling to all sample images in the Preview Samples Panel (not used for now)
+// Function to apply scaling to all sample images in the Preview Samples Panel
 function applyScalingToSamples() {
   const sampleImages = document.querySelectorAll('#preview-samples-grid img');
-  sampleImages.forEach(img => applyScalingToImage(img, 150)); // 150x150 container size (1/4 of 600px)
+  sampleImages.forEach(img => applyScalingToImage(img));
+}
+
+// Function to update positions in the Magnify window
+function updateMagnifyPositions() {
+  const enlargedPreview = document.getElementById('enlarged-preview');
+  if (enlargedPreview) {
+    const enlargedImages = enlargedPreview.querySelectorAll('img');
+    enlargedImages.forEach((enlargedImg, index) => {
+      const traitImg = traitImages[index];
+      if (traitImg) {
+        enlargedImg.style.left = traitImg.style.left || '0%';
+        enlargedImg.style.top = traitImg.style.top || '0%';
+        applyScalingToImage(enlargedImg); // Ensure scaling is applied
+      }
+    });
+  }
 }
 
 function selectVariation(traitId, variationId) {
@@ -1299,7 +1315,7 @@ function selectVariation(traitId, variationId) {
     img.src = previewImage.src;
     img.onload = () => {
       applyScalingToTraits();
-      // applyScalingToSamples(); // Commented out for now, focusing on Preview Panel only
+      applyScalingToSamples(); // Re-enabled for Preview Samples
       const key = `${traitId}-${trait.variants[variationIndex].name}`;
       const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
       if (savedPosition) {
@@ -1332,6 +1348,7 @@ function selectVariation(traitId, variationId) {
       currentImage = previewImage;
       updateZIndices();
       updateCoordinates(previewImage);
+      updateMagnifyPositions(); // Update positions in the Magnify window
     };
   } else {
     console.error(`Preview image for trait ${traitId} not found in traitImages`);
@@ -1378,10 +1395,6 @@ function setupDragAndDrop(img, traitIndex) {
       const containerRect = currentImage.parentElement.getBoundingClientRect();
       const imageRect = currentImage.getBoundingClientRect();
 
-      // Calculate the current position of the image in percentage
-      const currentLeft = parseFloat(currentImage.style.left) || 0;
-      const currentTop = parseFloat(currentImage.style.top) || 0;
-
       // Calculate the pointer's position relative to the image's top-left corner
       const pointerX = e.clientX - imageRect.left;
       const pointerY = e.clientY - imageRect.top;
@@ -1418,6 +1431,7 @@ function setupDragAndDrop(img, traitIndex) {
         currentImage.style.left = `${clampedLeft}%`;
         currentImage.style.top = `${clampedTop}%`;
         updateCoordinates(currentImage);
+        updateMagnifyPositions(); // Update positions in the Magnify window during drag
       }
     }
 
@@ -1492,13 +1506,13 @@ function savePosition(img, traitId, variationName) {
 // Apply scaling on window resize
 window.addEventListener('resize', () => {
   applyScalingToTraits();
-  // applyScalingToSamples(); // Commented out for now, focusing on Preview Panel only
+  applyScalingToSamples();
 });
 
 // Initial scaling on load
 document.addEventListener('DOMContentLoaded', () => {
   applyScalingToTraits();
-  // applyScalingToSamples(); // Commented out for now, focusing on Preview Panel only
+  applyScalingToSamples();
 });
 
 
