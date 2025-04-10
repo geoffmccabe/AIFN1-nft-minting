@@ -72,10 +72,54 @@
   #coordinates strong { font-weight: bold; }
   .direction-emoji, .magnify-emoji { background: none; border: none; color: #666; cursor: pointer; font-size: 16px; padding: 0; }
   .direction-emoji:hover, .magnify-emoji:hover { opacity: 0.8; }
-  #enlarged-preview { background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); display: none; left: 50%; overflow: hidden; position: fixed; top: 50%; transform: translate(-50%, -50%); z-index: 1000; }
-  #enlarged-preview img { object-fit: contain; position: absolute; }
-  #enlarged-preview-controls { bottom: 30px; display: flex; flex-direction: column; gap: 10px; left: 50%; position: fixed; transform: translateX(-50%); z-index: 10001; }
-  .play-emoji, .pause-emoji { align-items: center; background: rgba(0, 0, 0, 0.7); border-radius: 50%; color: white; cursor: pointer; display: flex; font-size: 32px; height: 50px; justify-content: center; width: 50px; }
+  #magnify-panel { 
+    background: rgba(200, 200, 200, 0.9); /* Grey panel background */
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    display: none; /* Initially hidden */
+  }
+  #enlarged-preview { 
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); 
+    background-blend-mode: overlay; 
+    background-size: cover; 
+    border: 1px solid rgba(0, 0, 0, 0.1); 
+    border-radius: 10px;
+  }
+  #enlarged-preview img { position: absolute; }
+  #magnify-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  #magnify-header h2 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    margin: 0;
+    font-size: 18px;
+  }
+  #enlarged-preview-controls { 
+    display: flex; 
+    gap: 10px; 
+  }
+  .play-emoji, .pause-emoji { 
+    align-items: center; 
+    background: rgba(0, 0, 0, 0.7); 
+    border-radius: 50%; 
+    color: white; 
+    cursor: pointer; 
+    display: flex; 
+    font-size: 32px; 
+    height: 40px; 
+    justify-content: center; 
+    width: 40px; 
+  }
   .play-emoji:hover, .pause-emoji:hover { background: rgba(0, 0, 0, 0.9); }
   #preview-samples { margin-top: 20px; }
   #preview-samples-header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; }
@@ -93,7 +137,6 @@
   .info-tooltip { cursor: pointer; margin-left: 5px; position: relative; }
   .info-tooltip:hover::after { background: rgba(0, 0, 0, 0.8); border-radius: 5px; color: white; content: attr(title); font-size: 12px; left: 50%; padding: 5px 10px; position: absolute; top: -30px; transform: translateX(-50%); white-space: nowrap; z-index: 1000; }
 </style>
-
   
   <!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
 
