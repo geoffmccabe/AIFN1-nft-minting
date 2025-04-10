@@ -73,7 +73,9 @@
   .direction-emoji, .magnify-emoji { background: none; border: none; color: #666; cursor: pointer; font-size: 16px; padding: 0; }
   .direction-emoji:hover, .magnify-emoji:hover { opacity: 0.8; }
   #magnify-panel { 
-    background: rgba(200, 200, 200, 0.9); /* Grey panel background */
+    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); /* Match other panels */
+    background-blend-mode: overlay;
+    background-size: cover;
     border-radius: 15px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     padding: 15px;
@@ -85,11 +87,10 @@
     display: none; /* Initially hidden */
   }
   #enlarged-preview { 
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); 
-    background-blend-mode: overlay; 
-    background-size: cover; 
+    background: rgba(255, 255, 255, 0.5); /* White inner box */
     border: 1px solid rgba(0, 0, 0, 0.1); 
     border-radius: 10px;
+    overflow: hidden; /* Confine traits within the window */
   }
   #enlarged-preview img { position: absolute; }
   #magnify-header {
