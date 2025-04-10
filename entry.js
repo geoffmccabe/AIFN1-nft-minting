@@ -1376,8 +1376,20 @@ function setupDragAndDrop(img, traitIndex) {
       currentImage = selectedImage;
       isDragging = true;
       const containerRect = currentImage.parentElement.getBoundingClientRect();
-      offsetX = (e.clientX - containerRect.left) / containerRect.width * 100; // Calculate offset as percentage of container
-      offsetY = (e.clientY - containerRect.top) / containerRect.height * 100; // Calculate offset as percentage of container
+      const imageRect = currentImage.getBoundingClientRect();
+
+      // Calculate the current position of the image in percentage
+      const currentLeft = parseFloat(currentImage.style.left) || 0;
+      const currentTop = parseFloat(currentImage.style.top) || 0;
+
+      // Calculate the pointer's position relative to the image's top-left corner
+      const pointerX = e.clientX - imageRect.left;
+      const pointerY = e.clientY - imageRect.top;
+
+      // Calculate the offset as a percentage of the container's dimensions
+      offsetX = pointerX / containerRect.width * 100;
+      offsetY = pointerY / containerRect.height * 100;
+
       currentImage.style.cursor = 'grabbing';
       currentImage.classList.add('dragging');
       updateCoordinates(currentImage);
@@ -1392,8 +1404,8 @@ function setupDragAndDrop(img, traitIndex) {
         const imageRect = currentImage.getBoundingClientRect();
 
         // Calculate new position as percentage of container
-        const newLeft = (e.clientX - containerRect.left - (offsetX * containerRect.width / 100)) / containerRect.width * 100;
-        const newTop = (e.clientY - containerRect.top - (offsetY * containerRect.height / 100)) / containerRect.height * 100;
+        const newLeft = (e.clientX - containerRect.left) / containerRect.width * 100 - offsetX;
+        const newTop = (e.clientY - containerRect.top) / containerRect.height * 100 - offsetY;
 
         // Calculate boundaries to keep the image within the container
         const maxLeft = 100 - (imageRect.width / containerRect.width * 100);
