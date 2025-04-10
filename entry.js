@@ -1375,9 +1375,9 @@ function setupDragAndDrop(img, traitIndex) {
 
       currentImage = selectedImage;
       isDragging = true;
-      const rect = currentImage.getBoundingClientRect();
-      offsetX = (e.clientX - rect.left) / rect.width * 100; // Calculate offset as percentage
-      offsetY = (e.clientY - rect.top) / rect.height * 100; // Calculate offset as percentage
+      const containerRect = currentImage.parentElement.getBoundingClientRect();
+      offsetX = (e.clientX - containerRect.left) / containerRect.width * 100; // Calculate offset as percentage of container
+      offsetY = (e.clientY - containerRect.top) / containerRect.height * 100; // Calculate offset as percentage of container
       currentImage.style.cursor = 'grabbing';
       currentImage.classList.add('dragging');
       updateCoordinates(currentImage);
@@ -1388,11 +1388,23 @@ function setupDragAndDrop(img, traitIndex) {
 
     function onMouseMove(e) {
       if (isDragging && currentImage) {
-        const rect = currentImage.parentElement.getBoundingClientRect();
-        const newLeft = (e.clientX - rect.left - (offsetX * rect.width / 100)) / rect.width * 100;
-        const newTop = (e.clientY - rect.top - (offsetY * rect.height / 100)) / rect.height * 100;
-        currentImage.style.left = `${newLeft}%`;
-        currentImage.style.top = `${newTop}%`;
+        const containerRect = currentImage.parentElement.getBoundingClientRect();
+        const imageRect = currentImage.getBoundingClientRect();
+
+        // Calculate new position as percentage of container
+        const newLeft = (e.clientX - containerRect.left - (offsetX * containerRect.width / 100)) / containerRect.width * 100;
+        const newTop = (e.clientY - containerRect.top - (offsetY * containerRect.height / 100)) / containerRect.height * 100;
+
+        // Calculate boundaries to keep the image within the container
+        const maxLeft = 100 - (imageRect.width / containerRect.width * 100);
+        const maxTop = 100 - (imageRect.height / containerRect.height * 100);
+
+        // Clamp the position to keep the image within the container
+        const clampedLeft = Math.max(0, Math.min(newLeft, maxLeft));
+        const clampedTop = Math.max(0, Math.min(newTop, maxTop));
+
+        currentImage.style.left = `${clampedLeft}%`;
+        currentImage.style.top = `${clampedTop}%`;
         updateCoordinates(currentImage);
       }
     }
