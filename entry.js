@@ -491,8 +491,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           img.src = variant.url;
           const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
           applyScalingToImage(baseImg); // Ensure baseImg is scaled
-          img.style.width = `${parseFloat(baseImg.style.width || '600') * scale}px`;
-          img.style.height = `${parseFloat(baseImg.style.height || '600') * scale}px`;
+          const scaledWidth = parseFloat(baseImg.style.width || '600') * scale;
+          const scaledHeight = parseFloat(baseImg.style.height || '600') * scale;
+          img.style.width = `${scaledWidth}px`;
+          img.style.height = `${scaledHeight}px`;
           // Position calculation
           const previewSize = 600; // Preview Window size (pixels)
           const leftPercent = parseFloat(baseImg.style.left || '0'); // e.g., '50%'
@@ -502,10 +504,15 @@ document.addEventListener('DOMContentLoaded', async () => {
           const magnifiedSize = parseFloat(enlargedPreview.style.width); // e.g., 900px
           const scaledLeftPixels = leftPixels * scale; // e.g., 300 * 1.5 = 450px
           const scaledTopPixels = topPixels * scale; // e.g., 300 * 1.5 = 450px
-          const scaledLeftPercent = (scaledLeftPixels / magnifiedSize) * 100; // e.g., 450 / 900 * 100 = 50%
-          const scaledTopPercent = (scaledTopPixels / magnifiedSize) * 100; // e.g., 450 / 900 * 100 = 50%
-          img.style.left = `${scaledLeftPercent}%`;
-          img.style.top = `${scaledTopPercent}%`;
+          // Clamp positions to keep the trait within the Magnify window
+          const maxLeftPixels = magnifiedSize - scaledWidth;
+          const maxTopPixels = magnifiedSize - scaledHeight;
+          const clampedLeftPixels = Math.max(0, Math.min(scaledLeftPixels, maxLeftPixels));
+          const clampedTopPixels = Math.max(0, Math.min(scaledTopPixels, maxTopPixels));
+          const clampedLeftPercent = (clampedLeftPixels / magnifiedSize) * 100;
+          const clampedTopPercent = (clampedTopPixels / magnifiedSize) * 100;
+          img.style.left = `${clampedLeftPercent}%`;
+          img.style.top = `${clampedTopPercent}%`;
           img.style.zIndex = trait.zIndex;
           img.style.position = 'absolute';
           img.style.visibility = 'visible';
@@ -813,7 +820,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
   });
 });
-
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
