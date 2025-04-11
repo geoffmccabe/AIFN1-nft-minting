@@ -483,45 +483,62 @@ document.addEventListener('DOMContentLoaded', async () => {
     })).sort((a, b) => b.position - a.position);
 
     const updateEnlargedPreview = () => {
-      enlargedPreview.innerHTML = '';
-      magnifiedState.forEach(trait => {
-        const variant = trait.variants[trait.selected];
-        if (variant && variant.url) {
-          const img = document.createElement('img');
-          img.src = variant.url;
-          const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
-          applyScalingToImage(baseImg); // Ensure baseImg is scaled
-          const scaledWidth = parseFloat(baseImg.style.width || '600') * scale;
-          const scaledHeight = parseFloat(baseImg.style.height || '600') * scale;
-          img.style.width = `${scaledWidth}px`;
-          img.style.height = `${scaledHeight}px`;
-          // Position calculation
-          const previewSize = 600; // Preview Window size (pixels)
-          const leftPercent = parseFloat(baseImg.style.left || '0'); // e.g., '50%'
-          const topPercent = parseFloat(baseImg.style.top || '0'); // e.g., '50%'
-          const leftPixels = (leftPercent / 100) * previewSize; // e.g., 50% of 600 = 300px
-          const topPixels = (topPercent / 100) * previewSize; // e.g., 50% of 600 = 300px
-          const magnifiedSize = parseFloat(enlargedPreview.style.width); // e.g., 900px
-          const scaledLeftPixels = leftPixels * scale; // e.g., 300 * 1.5 = 450px
-          const scaledTopPixels = topPixels * scale; // e.g., 300 * 1.5 = 450px
-          // Clamp positions to keep the entire trait within the Magnify window
-          const panelPadding = 15; // Padding of #magnify-panel
-          const effectiveMagnifiedSize = magnifiedSize - 2 * panelPadding; // Account for padding on both sides
-          const maxLeftPixels = effectiveMagnifiedSize - scaledWidth; // Right edge constraint
-          const maxTopPixels = effectiveMagnifiedSize - scaledHeight; // Bottom edge constraint
-          const clampedLeftPixels = Math.max(0, Math.min(scaledLeftPixels, maxLeftPixels < 0 ? 0 : maxLeftPixels));
-          const clampedTopPixels = Math.max(0, Math.min(scaledTopPixels, maxTopPixels < 0 ? 0 : maxTopPixels));
-          const clampedLeftPercent = (clampedLeftPixels / effectiveMagnifiedSize) * 100;
-          const clampedTopPercent = (clampedTopPixels / effectiveMagnifiedSize) * 100;
-          img.style.left = `${clampedLeftPercent}%`;
-          img.style.top = `${clampedTopPercent}%`;
-          img.style.zIndex = trait.zIndex;
-          img.style.position = 'absolute';
-          img.style.visibility = 'visible';
-          enlargedPreview.appendChild(img);
-        }
-      });
-    };
+  enlargedPreview.innerHTML = '';
+  magnifiedState.forEach(trait => {
+    const variant = trait.variants[trait.selected];
+    if (variant && variant.url) {
+      const img = document.createElement('img');
+      img.src = variant.url;
+      const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
+      applyScalingToImage(baseImg); // Ensure baseImg is scaled
+      
+      // Get the actual dimensions of the base image in the preview window
+      const baseWidth = parseFloat(baseImg.style.width || '600');
+      const baseHeight = parseFloat(baseImg.style.height || '600');
+      
+      // Calculate scaled dimensions for the magnified view
+      const scaledWidth = baseWidth * scale;
+      const scaledHeight = baseHeight * scale;
+      img.style.width = `${scaledWidth}px`;
+      img.style.height = `${scaledHeight}px`;
+      
+      // Get the base image position in the preview window
+      const baseLeft = parseFloat(baseImg.style.left || '0');
+      const baseTop = parseFloat(baseImg.style.top || '0');
+      
+      // Convert percentage positions to pixel values in the preview window (600x600)
+      const previewSize = 600;
+      const leftPixels = (baseLeft / 100) * previewSize;
+      const topPixels = (baseTop / 100) * previewSize;
+      
+      // Calculate the magnified position (scaled from preview position)
+      const magnifiedLeft = leftPixels * scale;
+      const magnifiedTop = topPixels * scale;
+      
+      // Get the magnified container dimensions
+      const magnifiedSize = parseFloat(enlargedPreview.style.width);
+      
+      // Calculate maximum allowed positions (accounting for image size)
+      const maxLeft = magnifiedSize - scaledWidth;
+      const maxTop = magnifiedSize - scaledHeight;
+      
+      // Clamp the positions to keep the image within bounds
+      const clampedLeft = Math.max(0, Math.min(magnifiedLeft, maxLeft));
+      const clampedTop = Math.max(0, Math.min(magnifiedTop, maxTop));
+      
+      // Convert back to percentages relative to the magnified container
+      const leftPercent = (clampedLeft / magnifiedSize) * 100;
+      const topPercent = (clampedTop / magnifiedSize) * 100;
+      
+      img.style.left = `${leftPercent}%`;
+      img.style.top = `${topPercent}%`;
+      img.style.zIndex = trait.zIndex;
+      img.style.position = 'absolute';
+      img.style.visibility = 'visible';
+      enlargedPreview.appendChild(img);
+    }
+  });
+};
     updateEnlargedPreview();
 
     const playEmoji = document.getElementById('play-emoji');
