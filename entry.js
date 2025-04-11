@@ -1660,7 +1660,7 @@ function updatePreviewSamples() {
         img.style.width = `${tempImg.naturalWidth * scale}px`;
         img.style.height = `${tempImg.naturalHeight * scale}px`;
         
-        // Get position from storage or use current preview position
+        // Get position from storage or use current preview position, but don't save to localStorage
         const key = `${trait.id}-${variant.name}`;
         const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
         const previewImg = traitImages.find(ti => ti.id === `preview-trait${trait.id}`);
@@ -1668,15 +1668,16 @@ function updatePreviewSamples() {
         let position;
         if (savedPosition) {
           position = JSON.parse(savedPosition);
+          console.log(`Sample ${i + 1}, Trait ${trait.id}, Variant ${variant.name}: Using saved position ${position.left}%, ${position.top}%`);
         } else if (previewImg) {
           position = {
             left: parseFloat(previewImg.style.left) || 0,
             top: parseFloat(previewImg.style.top) || 0
           };
-          // Save this position for future use
-          localStorage.setItem(`trait${trait.id}-${variant.name}-position`, JSON.stringify(position));
+          console.log(`Sample ${i + 1}, Trait ${trait.id}, Variant ${variant.name}: Using current preview position ${position.left}%, ${position.top}% (not saving)`);
         } else {
           position = { left: 0, top: 0 };
+          console.log(`Sample ${i + 1}, Trait ${trait.id}, Variant ${variant.name}: Defaulting to 0%, 0%`);
         }
 
         img.style.left = `${position.left}%`;
@@ -1756,7 +1757,6 @@ function safeGetPosition(traitId, variantName) {
   
   return { left: 0, top: 0 };
 }
-
 
 
 
