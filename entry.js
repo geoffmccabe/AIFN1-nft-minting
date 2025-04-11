@@ -143,7 +143,7 @@ let currentGridState = { count: 1, imageUrls: [], deleted: [] };
 let chosenImages = [];
 const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
-
+let initialHtmlUri = '';
 
 
 
