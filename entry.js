@@ -484,57 +484,59 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const updateEnlargedPreview = () => {
   enlargedPreview.innerHTML = '';
+  const panelPadding = 15; // Padding of #magnify-panel
+  const previewBorder = 1; // Border width of #enlarged-preview
+  
+  // Get the actual available space inside the white preview area
+  const magnifiedWidth = parseFloat(enlargedPreview.style.width) - (2 * previewBorder);
+  const magnifiedHeight = parseFloat(enlargedPreview.style.height) - (2 * previewBorder);
+
   magnifiedState.forEach(trait => {
     const variant = trait.variants[trait.selected];
     if (variant && variant.url) {
       const img = document.createElement('img');
       img.src = variant.url;
       const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
-      applyScalingToImage(baseImg); // Ensure baseImg is scaled
+      applyScalingToImage(baseImg);
       
-      // Get the actual dimensions of the base image in the preview window
+      // Get dimensions from base preview
       const baseWidth = parseFloat(baseImg.style.width || '600');
       const baseHeight = parseFloat(baseImg.style.height || '600');
       
-      // Calculate scaled dimensions for the magnified view
+      // Scale dimensions for magnified view
       const scaledWidth = baseWidth * scale;
       const scaledHeight = baseHeight * scale;
       img.style.width = `${scaledWidth}px`;
       img.style.height = `${scaledHeight}px`;
       
-      // Get the base image position in the preview window
-      const baseLeft = parseFloat(baseImg.style.left || '0');
-      const baseTop = parseFloat(baseImg.style.top || '0');
+      // Get base position (percentage)
+      const baseLeftPercent = parseFloat(baseImg.style.left || '0');
+      const baseTopPercent = parseFloat(baseImg.style.top || '0');
       
-      // Convert percentage positions to pixel values in the preview window (600x600)
-      const previewSize = 600;
-      const leftPixels = (baseLeft / 100) * previewSize;
-      const topPixels = (baseTop / 100) * previewSize;
+      // Convert to pixels in original preview (600x600)
+      const leftPixels = (baseLeftPercent / 100) * 600;
+      const topPixels = (baseTopPercent / 100) * 600;
       
-      // Calculate the magnified position (scaled from preview position)
-      const magnifiedLeft = leftPixels * scale;
-      const magnifiedTop = topPixels * scale;
+      // Scale position to magnified view
+      let scaledLeft = leftPixels * scale;
+      let scaledTop = topPixels * scale;
       
-      // Get the magnified container dimensions
-      const magnifiedSize = parseFloat(enlargedPreview.style.width);
+      // Calculate maximum allowed positions
+      const maxLeft = magnifiedWidth - scaledWidth;
+      const maxTop = magnifiedHeight - scaledHeight;
       
-      // Calculate maximum allowed positions (accounting for image size)
-      const maxLeft = magnifiedSize - scaledWidth;
-      const maxTop = magnifiedSize - scaledHeight;
+      // Clamp positions to keep within white preview area
+      scaledLeft = Math.max(0, Math.min(scaledLeft, maxLeft));
+      scaledTop = Math.max(0, Math.min(scaledTop, maxTop));
       
-      // Clamp the positions to keep the image within bounds
-      const clampedLeft = Math.max(0, Math.min(magnifiedLeft, maxLeft));
-      const clampedTop = Math.max(0, Math.min(magnifiedTop, maxTop));
-      
-      // Convert back to percentages relative to the magnified container
-      const leftPercent = (clampedLeft / magnifiedSize) * 100;
-      const topPercent = (clampedTop / magnifiedSize) * 100;
+      // Convert back to percentages relative to magnified preview
+      const leftPercent = (scaledLeft / magnifiedWidth) * 100;
+      const topPercent = (scaledTop / magnifiedHeight) * 100;
       
       img.style.left = `${leftPercent}%`;
       img.style.top = `${topPercent}%`;
-      img.style.zIndex = trait.zIndex;
       img.style.position = 'absolute';
-      img.style.visibility = 'visible';
+      img.style.zIndex = trait.zIndex;
       enlargedPreview.appendChild(img);
     }
   });
