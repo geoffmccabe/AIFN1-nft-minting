@@ -408,9 +408,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-updatePreviewsButton.addEventListener('click', () => {
-  updatePreviewSamples();
-});
+  updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
   generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1));
   document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
   document.getElementById('gen-16x').addEventListener('click', () => fetchMultipleBackgrounds(16));
@@ -485,64 +483,51 @@ updatePreviewsButton.addEventListener('click', () => {
     })).sort((a, b) => b.position - a.position);
 
     const updateEnlargedPreview = () => {
-  enlargedPreview.innerHTML = '';
-  const panelPadding = 15; // Padding of #magnify-panel
-  const previewBorder = 1; // Border width of #enlarged-preview
-  
-  // Get the actual available space inside the white preview area
-  const magnifiedWidth = parseFloat(enlargedPreview.style.width) - (2 * previewBorder);
-  const magnifiedHeight = parseFloat(enlargedPreview.style.height) - (2 * previewBorder);
-
-  magnifiedState.forEach(trait => {
-    const variant = trait.variants[trait.selected];
-    if (variant && variant.url) {
-      const img = document.createElement('img');
-      img.src = variant.url;
-      const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
-      applyScalingToImage(baseImg);
-      
-      // Get dimensions from base preview
-      const baseWidth = parseFloat(baseImg.style.width || '600');
-      const baseHeight = parseFloat(baseImg.style.height || '600');
-      
-      // Scale dimensions for magnified view
-      const scaledWidth = baseWidth * scale;
-      const scaledHeight = baseHeight * scale;
-      img.style.width = `${scaledWidth}px`;
-      img.style.height = `${scaledHeight}px`;
-      
-      // Get base position (percentage)
-      const baseLeftPercent = parseFloat(baseImg.style.left || '0');
-      const baseTopPercent = parseFloat(baseImg.style.top || '0');
-      
-      // Convert to pixels in original preview (600x600)
-      const leftPixels = (baseLeftPercent / 100) * 600;
-      const topPixels = (baseTopPercent / 100) * 600;
-      
-      // Scale position to magnified view
-      let scaledLeft = leftPixels * scale;
-      let scaledTop = topPixels * scale;
-      
-      // Calculate maximum allowed positions
-      const maxLeft = magnifiedWidth - scaledWidth;
-      const maxTop = magnifiedHeight - scaledHeight;
-      
-      // Clamp positions to keep within white preview area
-      scaledLeft = Math.max(0, Math.min(scaledLeft, maxLeft));
-      scaledTop = Math.max(0, Math.min(scaledTop, maxTop));
-      
-      // Convert back to percentages relative to magnified preview
-      const leftPercent = (scaledLeft / magnifiedWidth) * 100;
-      const topPercent = (scaledTop / magnifiedHeight) * 100;
-      
-      img.style.left = `${leftPercent}%`;
-      img.style.top = `${topPercent}%`;
-      img.style.position = 'absolute';
-      img.style.zIndex = trait.zIndex;
-      enlargedPreview.appendChild(img);
-    }
-  });
-};
+      enlargedPreview.innerHTML = '';
+      magnifiedState.forEach(trait => {
+        const variant = trait.variants[trait.selected];
+        if (variant && variant.url) {
+          const img = document.createElement('img');
+          img.src = variant.url;
+          const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
+          applyScalingToImage(baseImg); // Ensure baseImg is scaled
+          
+          // Get the actual dimensions of the base image in the preview window
+          const baseWidth = parseFloat(baseImg.style.width || '600');
+          const baseHeight = parseFloat(baseImg.style.height || '600');
+          
+          // Calculate scaled dimensions for the magnified view
+          const scaledWidth = baseWidth * scale;
+          const scaledHeight = baseHeight * scale;
+          img.style.width = `${scaledWidth}px`;
+          img.style.height = `${scaledHeight}px`;
+          
+          // Get the base image position in the preview window (as percentage)
+          const baseLeftPercent = parseFloat(baseImg.style.left || '0'); // e.g., '50%'
+          const baseTopPercent = parseFloat(baseImg.style.top || '0'); // e.g., '50%'
+          
+          // Get the magnified container dimensions
+          const magnifiedSize = parseFloat(enlargedPreview.style.width);
+          
+          // Calculate the trait's size as a percentage of the magnified container
+          const widthPercent = (scaledWidth / magnifiedSize) * 100;
+          const heightPercent = (scaledHeight / magnifiedSize) * 100;
+          
+          // Clamp the percentage position to keep the trait within the Magnify window
+          const maxLeftPercent = 100 - widthPercent; // Right edge constraint
+          const maxTopPercent = 100 - heightPercent; // Bottom edge constraint
+          const clampedLeftPercent = Math.max(0, Math.min(baseLeftPercent, maxLeftPercent < 0 ? 0 : maxLeftPercent));
+          const clampedTopPercent = Math.max(0, Math.min(baseTopPercent, maxTopPercent < 0 ? 0 : maxTopPercent));
+          
+          img.style.left = `${clampedLeftPercent}%`;
+          img.style.top = `${clampedTopPercent}%`;
+          img.style.zIndex = trait.zIndex;
+          img.style.position = 'absolute';
+          img.style.visibility = 'visible';
+          enlargedPreview.appendChild(img);
+        }
+      });
+    };
     updateEnlargedPreview();
 
     const playEmoji = document.getElementById('play-emoji');
@@ -851,7 +836,6 @@ updatePreviewsButton.addEventListener('click', () => {
     option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
   });
 });
-
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
 
