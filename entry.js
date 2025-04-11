@@ -505,12 +505,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           const scaledLeftPixels = leftPixels * scale; // e.g., 300 * 1.5 = 450px
           const scaledTopPixels = topPixels * scale; // e.g., 300 * 1.5 = 450px
           // Clamp positions to keep the entire trait within the Magnify window
-          const maxLeftPixels = magnifiedSize - scaledWidth; // Right edge constraint
-          const maxTopPixels = magnifiedSize - scaledHeight; // Bottom edge constraint
+          const panelPadding = 15; // Padding of #magnify-panel
+          const effectiveMagnifiedSize = magnifiedSize - 2 * panelPadding; // Account for padding on both sides
+          const maxLeftPixels = effectiveMagnifiedSize - scaledWidth; // Right edge constraint
+          const maxTopPixels = effectiveMagnifiedSize - scaledHeight; // Bottom edge constraint
           const clampedLeftPixels = Math.max(0, Math.min(scaledLeftPixels, maxLeftPixels < 0 ? 0 : maxLeftPixels));
           const clampedTopPixels = Math.max(0, Math.min(scaledTopPixels, maxTopPixels < 0 ? 0 : maxTopPixels));
-          const clampedLeftPercent = (clampedLeftPixels / magnifiedSize) * 100;
-          const clampedTopPercent = (clampedTopPixels / magnifiedSize) * 100;
+          const clampedLeftPercent = (clampedLeftPixels / effectiveMagnifiedSize) * 100;
+          const clampedTopPercent = (clampedTopPixels / effectiveMagnifiedSize) * 100;
           img.style.left = `${clampedLeftPercent}%`;
           img.style.top = `${clampedTopPercent}%`;
           img.style.zIndex = trait.zIndex;
@@ -548,6 +550,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (previewImage) {
             previewImage.src = trait.variants[trait.selected].url;
             applyScalingToImage(previewImage); // Ensure scaling is updated
+            // Sync position from magnifiedState to traitImages
+            const key = `${trait.id}-${trait.variants[trait.selected].name}`;
+            const savedPosition = localStorage.getItem(`trait${trait.id}-${trait.variants[trait.selected].name}-position`);
+            if (savedPosition) {
+              const { left, top } = JSON.parse(savedPosition);
+              previewImage.style.left = `${left}%`;
+              previewImage.style.top = `${top}%`;
+            }
           }
           updateEnlargedPreview();
         }
@@ -820,7 +830,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
   });
 });
-
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
