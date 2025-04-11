@@ -1622,9 +1622,8 @@ function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
 
-  const scaleFactor = 150 / 600; // 150px sample / 600px preview
+  const scaleFactor = 150 / 600;
 
-  // First create all samples without modifying any positions
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
@@ -1650,7 +1649,6 @@ function updatePreviewSamples() {
       img.style.position = 'absolute';
       img.style.zIndex = trait.zIndex;
 
-      // Apply scaling without modifying original image
       const tempImg = new Image();
       tempImg.src = variant.url;
       tempImg.onload = () => {
@@ -1660,7 +1658,6 @@ function updatePreviewSamples() {
         img.style.width = `${tempImg.naturalWidth * scale}px`;
         img.style.height = `${tempImg.naturalHeight * scale}px`;
         
-        // Get position from storage or use current preview position, but don't save to localStorage
         const key = `${trait.id}-${variant.name}`;
         const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
         const previewImg = traitImages.find(ti => ti.id === `preview-trait${trait.id}`);
@@ -1668,16 +1665,13 @@ function updatePreviewSamples() {
         let position;
         if (savedPosition) {
           position = JSON.parse(savedPosition);
-          console.log(`Sample ${i + 1}, Trait ${trait.id}, Variant ${variant.name}: Using saved position ${position.left}%, ${position.top}%`);
         } else if (previewImg) {
           position = {
             left: parseFloat(previewImg.style.left) || 0,
             top: parseFloat(previewImg.style.top) || 0
           };
-          console.log(`Sample ${i + 1}, Trait ${trait.id}, Variant ${variant.name}: Using current preview position ${position.left}%, ${position.top}% (not saving)`);
         } else {
           position = { left: 0, top: 0 };
-          console.log(`Sample ${i + 1}, Trait ${trait.id}, Variant ${variant.name}: Defaulting to 0%, 0%`);
         }
 
         img.style.left = `${position.left}%`;
@@ -1687,7 +1681,7 @@ function updatePreviewSamples() {
       sampleData[i].push({
         traitId: trait.id,
         variantId: variant.id,
-        position: { left: 0, top: 0 } // Temporary, updated in onload
+        position: { left: 0, top: 0 }
       });
 
       previewContainer.appendChild(img);
@@ -1696,7 +1690,6 @@ function updatePreviewSamples() {
     sampleContainer.appendChild(previewContainer);
     previewSamplesGrid.appendChild(sampleContainer);
 
-    // Modified click handler that doesn't modify original positions
     sampleContainer.addEventListener('click', (e) => {
       e.stopPropagation();
       
@@ -1705,13 +1698,11 @@ function updatePreviewSamples() {
         const variantIndex = trait.variants.findIndex(v => v.id === sample.variantId);
         
         if (variantIndex !== -1) {
-          // Update selection without modifying position
           trait.selected = variantIndex;
           const previewImg = traitImages.find(ti => ti.id === `preview-trait${trait.id}`);
           if (previewImg) {
             previewImg.src = trait.variants[variantIndex].url;
             previewImg.style.visibility = 'visible';
-            // Ensure scaling is applied
             const tempImg = new Image();
             tempImg.src = previewImg.src;
             tempImg.onload = () => {
@@ -1721,7 +1712,6 @@ function updatePreviewSamples() {
             };
           }
           
-          // Update grid selection
           const grid = document.getElementById(`trait${trait.id}-grid`);
           if (grid) {
             grid.querySelectorAll('.variation-image-wrapper').forEach(w => w.classList.remove('selected'));
@@ -1732,9 +1722,6 @@ function updatePreviewSamples() {
           }
         }
       });
-      
-      // Refresh samples to show current selections
-      updatePreviewSamples();
     });
   }
 }
