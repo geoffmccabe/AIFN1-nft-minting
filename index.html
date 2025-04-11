@@ -166,15 +166,18 @@
     position: relative;
     width: 100%;
     height: 0;
-    padding-bottom: 100%; /* Maintain aspect ratio */
+    padding-bottom: 100%;
   }
-  #preview-samples-grid img { 
+  #preview-samples-grid .sample-preview {
     position: absolute;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    top: 0;
-    left: 0;
+    width: 600px; /* Match main preview size */
+    height: 600px;
+    transform: scale(0.25); /* Scale down to 150px (600 * 0.25) */
+    transform-origin: 0 0;
+  }
+  #preview-samples-grid .sample-preview img {
+    position: absolute;
+    /* Positions and sizes will be set via JavaScript to match main preview */
   }
   #update-previews { 
     background: #ccc; 
