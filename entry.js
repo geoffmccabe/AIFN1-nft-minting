@@ -334,16 +334,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       TraitManager.getAllTraits().forEach(trait => {
         addTrait(trait);
         const input = document.getElementById(`trait${trait.id}-name`);
-        input.value = trait.name || input.placeholder;
-        input.dataset.userEntered = trait.name ? 'true' : 'false';
-        refreshTraitGrid(trait.id);
-        if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
+        if (input) {
+          input.value = trait.name || input.placeholder;
+          input.dataset.userEntered = trait.name ? 'true' : 'false';
+          refreshTraitGrid(trait.id);
+          if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
+        }
       });
       updatePreviewSamples();
 
       console.log('Loaded project:', project);
 
-      // Update slot dropdown with project names
       const projectSlotSelect = document.getElementById('project-slot');
       const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
       const slotPromises = slots.map(slotId => 
@@ -389,7 +390,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       alert(`Deleted project "${project.name}" from ${slot}`);
 
-      // Update slot dropdown after deletion
       const projectSlotSelect = document.getElementById('project-slot');
       const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
       const slotPromises = slots.map(slotId => 
@@ -462,7 +462,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const maxHeight = window.innerHeight * 0.9;
     let scale = 1;
     if (maxWidth / maxHeight > 1) {
-      enlargedPreview.style.height = `${maxHeight - 60}px`; // Account for header height
+      enlargedPreview.style.height = `${maxHeight - 60}px`;
       enlargedPreview.style.width = `${maxHeight - 60}px`;
       scale = (maxHeight - 60) / 600;
     } else {
@@ -490,32 +490,26 @@ document.addEventListener('DOMContentLoaded', async () => {
           const img = document.createElement('img');
           img.src = variant.url;
           const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
-          applyScalingToImage(baseImg); // Ensure baseImg is scaled
+          applyScalingToImage(baseImg);
           
-          // Get the actual dimensions of the base image in the preview window
           const baseWidth = parseFloat(baseImg.style.width || '600');
           const baseHeight = parseFloat(baseImg.style.height || '600');
           
-          // Calculate scaled dimensions for the magnified view
           const scaledWidth = baseWidth * scale;
           const scaledHeight = baseHeight * scale;
           img.style.width = `${scaledWidth}px`;
           img.style.height = `${scaledHeight}px`;
           
-          // Get the base image position in the preview window (as percentage)
-          const baseLeftPercent = parseFloat(baseImg.style.left || '0'); // e.g., '50%'
-          const baseTopPercent = parseFloat(baseImg.style.top || '0'); // e.g., '50%'
+          const baseLeftPercent = parseFloat(baseImg.style.left || '0');
+          const baseTopPercent = parseFloat(baseImg.style.top || '0');
           
-          // Get the magnified container dimensions
           const magnifiedSize = parseFloat(enlargedPreview.style.width);
           
-          // Calculate the trait's size as a percentage of the magnified container
           const widthPercent = (scaledWidth / magnifiedSize) * 100;
           const heightPercent = (scaledHeight / magnifiedSize) * 100;
           
-          // Clamp the percentage position to keep the trait within the Magnify window
-          const maxLeftPercent = 100 - widthPercent; // Right edge constraint
-          const maxTopPercent = 100 - heightPercent; // Bottom edge constraint
+          const maxLeftPercent = 100 - widthPercent;
+          const maxTopPercent = 100 - heightPercent;
           const clampedLeftPercent = Math.max(0, Math.min(baseLeftPercent, maxLeftPercent < 0 ? 0 : maxLeftPercent));
           const clampedTopPercent = Math.max(0, Math.min(baseTopPercent, maxTopPercent < 0 ? 0 : maxTopPercent));
           
@@ -549,16 +543,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (trait.variants.length > 0) {
           trait.selected = Math.floor(Math.random() * trait.variants.length);
           console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
-          // Update traitImages to reflect the new selection
           const traitInMain = TraitManager.getTrait(trait.id);
           traitInMain.selected = trait.selected;
           const previewImage = traitImages.find(img => img.id === `preview-trait${trait.id}`);
           if (previewImage) {
             previewImage.src = trait.variants[trait.selected].url;
-            applyScalingToImage(previewImage); // Ensure scaling is updated
-            // Sync position from magnifiedState to traitImages
-            const key = `${trait.id}-${trait.variants[trait.selected].name}`;
-            const savedPosition = localStorage.getItem(`trait${trait.id}-${trait.variants[trait.selected].name}-position`);
+            applyScalingToImage(previewImage);
+            const key = `trait${trait.id}-position`;
+            const savedPosition = localStorage.getItem(key);
             if (savedPosition) {
               const { left, top } = JSON.parse(savedPosition);
               previewImage.style.left = `${left}%`;
@@ -672,13 +664,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const traitIndex = traitImages.indexOf(currentImage);
       const trait = TraitManager.getAllTraits()[traitIndex];
       const variationName = trait.variants[trait.selected].name;
-      const key = `${trait.id}-${variationName}`;
+      const key = `trait${trait.id}-position`;
       if (variantHistories[key] && variantHistories[key].length > 1) {
         variantHistories[key].pop();
         const previousPosition = variantHistories[key][variantHistories[key].length - 1];
         currentImage.style.left = `${previousPosition.left}%`;
         currentImage.style.top = `${previousPosition.top}%`;
-        localStorage.setItem(`trait${trait.id}-${variationName}-position`, JSON.stringify(previousPosition));
+        localStorage.setItem(key, JSON.stringify(previousPosition));
         updateCoordinates(currentImage);
         updateSamplePositions(trait.id, trait.variants[trait.selected].id, previousPosition);
         updateSubsequentTraits(trait.id, variationName, previousPosition);
@@ -819,7 +811,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const logo = document.getElementById('logo');
   if (logo) console.log('Logo URL:', logo.src);
 
-  // Initial load of slot names
   const projectSlotSelect = document.getElementById('project-slot');
   const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
   const db = await openDB();
@@ -836,6 +827,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
   });
 });
+
+
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
 
