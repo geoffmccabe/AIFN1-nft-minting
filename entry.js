@@ -193,22 +193,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   updatePreviewSamples();
 
-  if (chosenCountInput) {
-    updateChosenGrid(parseInt(chosenCountInput.value));
-  }
-
-  const updateChosenGridButton = document.getElementById('update-chosen-grid');
-  if (chosenCountInput && updateChosenGridButton) {
-    updateChosenGrid(parseInt(chosenCountInput.value));
-    updateChosenGridButton.addEventListener('click', () => {
-      updateChosenGrid(parseInt(chosenCountInput.value));
-    });
-    chosenCountInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        updateChosenGrid(parseInt(chosenCountInput.value));
-      }
-    });
-  }
+  const openDB = () => new Promise((resolve, reject) => {
+    const request = indexedDB.open('NFTProjectDB', 1);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('projects')) db.createObjectStore('projects', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('images')) db.createObjectStore('images', { keyPath: 'id' });
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 
   async function saveProject() {
     try {
@@ -863,6 +857,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
   });
 });
+
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
@@ -1542,8 +1537,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
-
-
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
   const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === currentTraitId);
@@ -1559,28 +1552,6 @@ function updateSubsequentTraits(currentTraitId, currentVariationName, position) 
       if (previewImage && previewImage.src) {
         previewImage.style.left = `${position.left}%`;
         previewImage.style.top = `${position.top}%`;
-      }
-    }
-  }
-}
-
-  for (let traitIndex = currentTraitIndex + 1; traitIndex < TraitManager.getAllTraits().length; traitIndex++) {
-    const nextTrait = TraitManager.getAllTraits()[traitIndex];
-    if (nextTrait.variants.length === 0) continue;
-    for (let i = 0; i < nextTrait.variants.length; i++) {
-      const nextVariationName = nextTrait.variants[i].name;
-      const key = `${nextTrait.id}-${nextVariationName}`;
-      const manuallyMoved = localStorage.getItem(`trait${nextTrait.id}-${nextVariationName}-manuallyMoved`);
-      if (!manuallyMoved && !variantHistories[key]) {
-        variantHistories[key] = [{ left: position.left, top: position.top }];
-        localStorage.setItem(`trait${nextTrait.id}-${nextVariationName}-position`, JSON.stringify(position));
-        if (nextTrait.selected === i) {
-          const previewImage = document.getElementById(`preview-trait${nextTrait.id}`);
-          if (previewImage && previewImage.src) {
-            previewImage.style.left = `${position.left}%`;
-            previewImage.style.top = `${position.top}%`;
-          }
-        }
       }
     }
   }
@@ -1638,8 +1609,8 @@ function updatePreviewSamples() {
         img.style.width = `${tempImg.naturalWidth * scale}px`;
         img.style.height = `${tempImg.naturalHeight * scale}px`;
         
-        const key = `${trait.id}-${variant.name}`;
-        const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
+        const key = `trait${trait.id}-position`;
+        const savedPosition = localStorage.getItem(key);
         const previewImg = traitImages.find(ti => ti.id === `preview-trait${trait.id}`);
         
         let position;
@@ -1730,6 +1701,9 @@ function safeGetPosition(traitId, variantName) {
 
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
+
+
+
 
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
