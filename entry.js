@@ -1345,7 +1345,6 @@ function selectVariation(traitId, variationId) {
     previewImage.style.visibility = 'visible';
     console.log(`Selected variation ${variationId} for trait ${traitId}, src: ${previewImage.src}, visibility: ${previewImage.style.visibility}`);
     
-    // Ensure the image is fully loaded before applying scaling
     const img = new Image();
     img.src = previewImage.src;
     img.onload = () => {
@@ -1355,33 +1354,17 @@ function selectVariation(traitId, variationId) {
         applyScalingToTraits();
         applyScalingToSamples();
         const key = `${traitId}-${trait.variants[variationIndex].name}`;
-        const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`);
+        const savedPosition = localStorage.getItem(`trait${traitId}-position`);
         if (savedPosition) {
           const { left, top } = JSON.parse(savedPosition);
           previewImage.style.left = `${left}%`;
           previewImage.style.top = `${top}%`;
           if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
         } else {
-          let lastPosition = null;
-          for (let i = 0; i < trait.variants.length; i++) {
-            if (i === variationIndex) continue;
-            const otherVariationName = trait.variants[i].name;
-            const otherKey = `${traitId}-${otherVariationName}`;
-            if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
-              lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
-            }
-          }
-          if (lastPosition) {
-            previewImage.style.left = `${lastPosition.left}%`;
-            previewImage.style.top = `${lastPosition.top}%`;
-            variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
-            localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify(lastPosition));
-          } else {
-            previewImage.style.left = '0%';
-            previewImage.style.top = '0%';
-            variantHistories[key] = [{ left: 0, top: 0 }];
-            localStorage.setItem(`trait${traitId}-${trait.variants[variationIndex].name}-position`, JSON.stringify({ left: 0, top: 0 }));
-          }
+          previewImage.style.left = '0%';
+          previewImage.style.top = '0%';
+          variantHistories[key] = [{ left: 0, top: 0 }];
+          localStorage.setItem(`trait${traitId}-position`, JSON.stringify({ left: 0, top: 0 }));
         }
         currentImage = previewImage;
         updateZIndices();
@@ -1563,26 +1546,22 @@ document.addEventListener('DOMContentLoaded', () => {
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
   const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === currentTraitId);
-  const currentVariationIndex = currentTrait.variants.findIndex(v => v.name === currentVariationName);
 
-  if (currentTrait.variants.length > 1) {
-    for (let i = currentVariationIndex + 1; i < currentTrait.variants.length; i++) {
-      const nextVariationName = currentTrait.variants[i].name;
-      const key = `${currentTraitId}-${nextVariationName}`;
-      const manuallyMoved = localStorage.getItem(`trait${currentTraitId}-${nextVariationName}-manuallyMoved`);
-      if (!manuallyMoved && !variantHistories[key]) {
-        variantHistories[key] = [{ left: position.left, top: position.top }];
-        localStorage.setItem(`trait${currentTraitId}-${nextVariationName}-position`, JSON.stringify(position));
-        if (currentTrait.selected === i) {
-          const previewImage = document.getElementById(`preview-trait${currentTraitId}`);
-          if (previewImage && previewImage.src) {
-            previewImage.style.left = `${position.left}%`;
-            previewImage.style.top = `${position.top}%`;
-          }
-        }
+  for (let traitIndex = currentTraitIndex + 1; traitIndex < TraitManager.getAllTraits().length; traitIndex++) {
+    const nextTrait = TraitManager.getAllTraits()[traitIndex];
+    if (nextTrait.variants.length === 0) continue;
+    const key = `trait${nextTrait.id}-position`;
+    const manuallyMoved = localStorage.getItem(`trait${nextTrait.id}-manuallyMoved`);
+    if (!manuallyMoved) {
+      localStorage.setItem(key, JSON.stringify(position));
+      const previewImage = document.getElementById(`preview-trait${nextTrait.id}`);
+      if (previewImage && previewImage.src) {
+        previewImage.style.left = `${position.left}%`;
+        previewImage.style.top = `${position.top}%`;
       }
     }
   }
+}
 
   for (let traitIndex = currentTraitIndex + 1; traitIndex < TraitManager.getAllTraits().length; traitIndex++) {
     const nextTrait = TraitManager.getAllTraits()[traitIndex];
