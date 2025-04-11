@@ -478,7 +478,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  if (magnifyEmoji) {
+   if (magnifyEmoji) {
     magnifyEmoji.addEventListener('click', () => {
       const magnifyPanel = document.getElementById('magnify-panel');
       if (magnifyPanel) {
