@@ -173,8 +173,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   console.log('DOM Elements:', { traitContainer, previewSamplesGrid, chosenGrid: document.getElementById('chosen-grid') });
 
-  if (!traitContainer || !previewSamplesGrid) {
-    console.error('Critical DOM elements missing:', { traitContainer, previewSamplesGrid });
+  if (!traitContainer || !previewSamplesGrid || !document.getElementById('chosen-grid')) {
+    console.error('Critical DOM elements missing:', { traitContainer, previewSamplesGrid, chosenGrid: document.getElementById('chosen-grid') });
     return;
   }
 
@@ -190,7 +190,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     addTrait(trait);
     refreshTraitGrid(trait.id);
   });
+
   updatePreviewSamples();
+
+  const chosenCountInput = document.getElementById('chosen-count');
+  if (chosenCountInput) {
+    updateChosenGrid(parseInt(chosenCountInput.value));
+  }
 
   const openDB = () => new Promise((resolve, reject) => {
     const request = indexedDB.open('NFTProjectDB', 1);
@@ -408,43 +414,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
+  updatePreviewsButton.addEventListener('click', () => {
+    updatePreviewSamples();
+  });
+
   generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1));
-  document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
-  document.getElementById('gen-16x').addEventListener('click', () => fetchMultipleBackgrounds(16));
+  document.getElementById('gen-4x')?.addEventListener('click', () => fetchMultipleBackgrounds(4));
+  document.getElementById('gen-16x')?.addEventListener('click', () => fetchMultipleBackgrounds(16));
 
   const projectSizeSelect = document.getElementById('project-size');
   const customSizeGroup = document.getElementById('custom-size-group');
-  projectSizeSelect.onchange = () => {
-    customSizeGroup.style.display = projectSizeSelect.value === 'custom' ? 'block' : 'none';
-    document.getElementById('width-input').value = '600';
-    document.getElementById('height-input').value = '600';
-  };
+  if (projectSizeSelect && customSizeGroup) {
+    projectSizeSelect.onchange = () => {
+      customSizeGroup.style.display = projectSizeSelect.value === 'custom' ? 'block' : 'none';
+      document.getElementById('width-input').value = '600';
+      document.getElementById('height-input').value = '600';
+    };
+  }
 
-  document.getElementById('save-project').addEventListener('click', async () => {
-    try {
-      await saveProject();
-    } catch (err) {
-      console.error('Save failed:', err);
-      alert('Failed to save project');
-    }
-  });
-  document.getElementById('load-project').addEventListener('click', async () => {
-    try {
-      await loadProject();
-    } catch (err) {
-      console.error('Load failed:', err);
-      alert('Failed to load project');
-    }
-  });
-  document.getElementById('delete-project').addEventListener('click', async () => {
-    try {
-      await deleteProject();
-    } catch (err) {
-      console.error('Delete failed:', err);
-      alert('Failed to delete project');
-    }
-  });
+  const saveButton = document.getElementById('save-project');
+  const loadButton = document.getElementById('load-project');
+  const deleteButton = document.getElementById('delete-project');
+
+  if (saveButton) {
+    saveButton.addEventListener('click', async () => {
+      try {
+        await saveProject();
+      } catch (err) {
+        console.error('Save failed:', err);
+        alert('Failed to save project');
+      }
+    });
+  }
+
+  if (loadButton) {
+    loadButton.addEventListener('click', async () => {
+      try {
+        await loadProject();
+      } catch (err) {
+        console.error('Load failed:', err);
+        alert('Failed to load project');
+      }
+    });
+  }
+
+  if (deleteButton) {
+    deleteButton.addEventListener('click', async () => {
+      try {
+        await deleteProject();
+      } catch (err) {
+        console.error('Delete failed:', err);
+        alert('Failed to delete project');
+      }
+    });
+  }
 
   const infoTooltip = document.querySelector('.info-tooltip');
   if (infoTooltip) {
@@ -455,152 +478,160 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  magnifyEmoji.addEventListener('click', () => {
-    const magnifyPanel = document.getElementById('magnify-panel');
-    magnifyPanel.style.display = 'block';
-    const maxWidth = window.innerWidth * 0.9;
-    const maxHeight = window.innerHeight * 0.9;
-    let scale = 1;
-    if (maxWidth / maxHeight > 1) {
-      enlargedPreview.style.height = `${maxHeight - 60}px`;
-      enlargedPreview.style.width = `${maxHeight - 60}px`;
-      scale = (maxHeight - 60) / 600;
-    } else {
-      enlargedPreview.style.width = `${maxWidth - 60}px`;
-      enlargedPreview.style.height = `${maxWidth - 60}px`;
-      scale = (maxWidth - 60) / 600;
-    }
-
-    const controls = document.getElementById('enlarged-preview-controls');
-    controls.style.display = 'flex';
-
-    const magnifiedState = TraitManager.getAllTraits().map(trait => ({
-      id: trait.id,
-      variants: [...trait.variants],
-      selected: trait.selected,
-      position: trait.position,
-      zIndex: trait.zIndex
-    })).sort((a, b) => b.position - a.position);
-
-    const updateEnlargedPreview = () => {
-      enlargedPreview.innerHTML = '';
-      magnifiedState.forEach(trait => {
-        const variant = trait.variants[trait.selected];
-        if (variant && variant.url) {
-          const img = document.createElement('img');
-          img.src = variant.url;
-          const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
-          applyScalingToImage(baseImg);
-          
-          const baseWidth = parseFloat(baseImg.style.width || '600');
-          const baseHeight = parseFloat(baseImg.style.height || '600');
-          
-          const scaledWidth = baseWidth * scale;
-          const scaledHeight = baseHeight * scale;
-          img.style.width = `${scaledWidth}px`;
-          img.style.height = `${scaledHeight}px`;
-          
-          const baseLeftPercent = parseFloat(baseImg.style.left || '0');
-          const baseTopPercent = parseFloat(baseImg.style.top || '0');
-          
-          const magnifiedSize = parseFloat(enlargedPreview.style.width);
-          
-          const widthPercent = (scaledWidth / magnifiedSize) * 100;
-          const heightPercent = (scaledHeight / magnifiedSize) * 100;
-          
-          const maxLeftPercent = 100 - widthPercent;
-          const maxTopPercent = 100 - heightPercent;
-          const clampedLeftPercent = Math.max(0, Math.min(baseLeftPercent, maxLeftPercent < 0 ? 0 : maxLeftPercent));
-          const clampedTopPercent = Math.max(0, Math.min(baseTopPercent, maxTopPercent < 0 ? 0 : maxTopPercent));
-          
-          img.style.left = `${clampedLeftPercent}%`;
-          img.style.top = `${clampedTopPercent}%`;
-          img.style.zIndex = trait.zIndex;
-          img.style.position = 'absolute';
-          img.style.visibility = 'visible';
-          enlargedPreview.appendChild(img);
+  if (magnifyEmoji) {
+    magnifyEmoji.addEventListener('click', () => {
+      const magnifyPanel = document.getElementById('magnify-panel');
+      if (magnifyPanel) {
+        magnifyPanel.style.display = 'block';
+        const maxWidth = window.innerWidth * 0.9;
+        const maxHeight = window.innerHeight * 0.9;
+        let scale = 1;
+        if (maxWidth / maxHeight > 1) {
+          enlargedPreview.style.height = `${maxHeight - 60}px`;
+          enlargedPreview.style.width = `${maxHeight - 60}px`;
+          scale = (maxHeight - 60) / 600;
+        } else {
+          enlargedPreview.style.width = `${maxWidth - 60}px`;
+          enlargedPreview.style.height = `${maxWidth - 60}px`;
+          scale = (maxWidth - 60) / 600;
         }
-      });
-    };
-    updateEnlargedPreview();
 
-    const playEmoji = document.getElementById('play-emoji');
-    const pauseEmoji = document.getElementById('pause-emoji');
+        const controls = document.getElementById('enlarged-preview-controls');
+        if (controls) controls.style.display = 'flex';
 
-    playEmoji.onclick = (e) => {
-      e.stopPropagation();
-      console.log('Play clicked');
-      if (randomizeInterval) {
-        clearInterval(randomizeInterval);
-        if (currentSpeed === 1000) currentSpeed = 100;
-        else if (currentSpeed === 100) currentSpeed = 10;
-      } else {
-        currentSpeed = 1000;
-      }
-      randomizeInterval = setInterval(() => {
-        const traitIndex = Math.floor(Math.random() * magnifiedState.length);
-        const trait = magnifiedState[traitIndex];
-        if (trait.variants.length > 0) {
-          trait.selected = Math.floor(Math.random() * trait.variants.length);
-          console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
-          const traitInMain = TraitManager.getTrait(trait.id);
-          traitInMain.selected = trait.selected;
-          const previewImage = traitImages.find(img => img.id === `preview-trait${trait.id}`);
-          if (previewImage) {
-            previewImage.src = trait.variants[trait.selected].url;
-            applyScalingToImage(previewImage);
-            const key = `trait${trait.id}-position`;
-            const savedPosition = localStorage.getItem(key);
-            if (savedPosition) {
-              const { left, top } = JSON.parse(savedPosition);
-              previewImage.style.left = `${left}%`;
-              previewImage.style.top = `${top}%`;
+        const magnifiedState = TraitManager.getAllTraits().map(trait => ({
+          id: trait.id,
+          variants: [...trait.variants],
+          selected: trait.selected,
+          position: trait.position,
+          zIndex: trait.zIndex
+        })).sort((a, b) => b.position - a.position);
+
+        const updateEnlargedPreview = () => {
+          enlargedPreview.innerHTML = '';
+          magnifiedState.forEach(trait => {
+            const variant = trait.variants[trait.selected];
+            if (variant && variant.url) {
+              const img = document.createElement('img');
+              img.src = variant.url;
+              const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
+              applyScalingToImage(baseImg);
+              
+              const baseWidth = parseFloat(baseImg.style.width || '600');
+              const baseHeight = parseFloat(baseImg.style.height || '600');
+              
+              const scaledWidth = baseWidth * scale;
+              const scaledHeight = baseHeight * scale;
+              img.style.width = `${scaledWidth}px`;
+              img.style.height = `${scaledHeight}px`;
+              
+              const baseLeftPercent = parseFloat(baseImg.style.left || '0');
+              const baseTopPercent = parseFloat(baseImg.style.top || '0');
+              
+              const magnifiedSize = parseFloat(enlargedPreview.style.width);
+              
+              const widthPercent = (scaledWidth / magnifiedSize) * 100;
+              const heightPercent = (scaledHeight / magnifiedSize) * 100;
+              
+              const maxLeftPercent = 100 - widthPercent;
+              const maxTopPercent = 100 - heightPercent;
+              const clampedLeftPercent = Math.max(0, Math.min(baseLeftPercent, maxLeftPercent < 0 ? 0 : maxLeftPercent));
+              const clampedTopPercent = Math.max(0, Math.min(baseTopPercent, maxTopPercent < 0 ? 0 : maxTopPercent));
+              
+              img.style.left = `${clampedLeftPercent}%`;
+              img.style.top = `${clampedTopPercent}%`;
+              img.style.zIndex = trait.zIndex;
+              img.style.position = 'absolute';
+              img.style.visibility = 'visible';
+              enlargedPreview.appendChild(img);
             }
-          }
-          updateEnlargedPreview();
+          });
+        };
+        updateEnlargedPreview();
+
+        const playEmoji = document.getElementById('play-emoji');
+        const pauseEmoji = document.getElementById('pause-emoji');
+
+        if (playEmoji) {
+          playEmoji.onclick = (e) => {
+            e.stopPropagation();
+            console.log('Play clicked');
+            if (randomizeInterval) {
+              clearInterval(randomizeInterval);
+              if (currentSpeed === 1000) currentSpeed = 100;
+              else if (currentSpeed === 100) currentSpeed = 10;
+            } else {
+              currentSpeed = 1000;
+            }
+            randomizeInterval = setInterval(() => {
+              const traitIndex = Math.floor(Math.random() * magnifiedState.length);
+              const trait = magnifiedState[traitIndex];
+              if (trait.variants.length > 0) {
+                trait.selected = Math.floor(Math.random() * trait.variants.length);
+                console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
+                const traitInMain = TraitManager.getTrait(trait.id);
+                traitInMain.selected = trait.selected;
+                const previewImage = traitImages.find(img => img.id === `preview-trait${trait.id}`);
+                if (previewImage) {
+                  previewImage.src = trait.variants[trait.selected].url;
+                  applyScalingToImage(previewImage);
+                  const key = `trait${trait.id}-position`;
+                  const savedPosition = localStorage.getItem(key);
+                  if (savedPosition) {
+                    const { left, top } = JSON.parse(savedPosition);
+                    previewImage.style.left = `${left}%`;
+                    previewImage.style.top = `${top}%`;
+                  }
+                }
+                updateEnlargedPreview();
+              }
+            }, currentSpeed);
+          };
         }
-      }, currentSpeed);
-    };
 
-    pauseEmoji.onclick = (e) => {
-      e.stopPropagation();
-      if (randomizeInterval) {
-        clearInterval(randomizeInterval);
-        randomizeInterval = null;
-        currentSpeed = 1000;
-      }
-    };
+        if (pauseEmoji) {
+          pauseEmoji.onclick = (e) => {
+            e.stopPropagation();
+            if (randomizeInterval) {
+              clearInterval(randomizeInterval);
+              randomizeInterval = null;
+              currentSpeed = 1000;
+            }
+          };
+        }
 
-    enlargedPreview.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      const projectName = document.getElementById('project-name').value || 'Unnamed';
-      let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
-      if (saveCount > 100) {
-        console.warn('Save limit reached');
-        return;
+        enlargedPreview.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          const projectName = document.getElementById('project-name').value || 'Unnamed';
+          let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
+          if (saveCount > 100) {
+            console.warn('Save limit reached');
+            return;
+          }
+          localStorage.setItem(`${projectName}_saveCount`, saveCount);
+          const saveKey = `${projectName}_${saveCount}`;
+          const currentState = magnifiedState.map(trait => ({
+            id: trait.id,
+            selected: trait.selected,
+            variants: trait.variants.map(v => ({ id: v.id, name: v.name, url: v.url }))
+          }));
+          localStorage.setItem(saveKey, JSON.stringify(currentState));
+          console.log(`Saved as ${saveKey}`);
+        });
+
+        enlargedPreview.onclick = (e) => {
+          if (e.target === playEmoji || e.target === pauseEmoji) return;
+          if (randomizeInterval) {
+            clearInterval(randomizeInterval);
+            randomizeInterval = null;
+            currentSpeed = 1000;
+          }
+          magnifyPanel.style.display = 'none';
+          controls.style.display = 'none';
+        };
       }
-      localStorage.setItem(`${projectName}_saveCount`, saveCount);
-      const saveKey = `${projectName}_${saveCount}`;
-      const currentState = magnifiedState.map(trait => ({
-        id: trait.id,
-        selected: trait.selected,
-        variants: trait.variants.map(v => ({ id: v.id, name: v.name, url: v.url }))
-      }));
-      localStorage.setItem(saveKey, JSON.stringify(currentState));
-      console.log(`Saved as ${saveKey}`);
     });
-
-    enlargedPreview.onclick = (e) => {
-      if (e.target === playEmoji || e.target === pauseEmoji) return;
-      if (randomizeInterval) {
-        clearInterval(randomizeInterval);
-        randomizeInterval = null;
-        currentSpeed = 1000;
-      }
-      magnifyPanel.style.display = 'none';
-      controls.style.display = 'none';
-    };
-  });
+  }
 
   directionEmojis.forEach(emoji => {
     const direction = emoji.getAttribute('data-direction');
@@ -720,93 +751,97 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const chosenCountInput = document.getElementById('chosen-count');
   const updateChosenGridButton = document.getElementById('update-chosen-grid');
-  updateChosenGrid(parseInt(chosenCountInput.value));
-  updateChosenGridButton.addEventListener('click', () => {
+  if (chosenCountInput && updateChosenGridButton) {
     updateChosenGrid(parseInt(chosenCountInput.value));
-  });
-  chosenCountInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+    updateChosenGridButton.addEventListener('click', () => {
       updateChosenGrid(parseInt(chosenCountInput.value));
-    }
-  });
+    });
+    chosenCountInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        updateChosenGrid(parseInt(chosenCountInput.value));
+      }
+    });
+  }
 
   const chosenGrid = document.getElementById('chosen-grid');
-  chosenGrid.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    const target = e.target.closest('.chosen-image-container');
-    if (target) {
-      target.style.border = '2px dashed #4CAF50';
-    }
-  });
-  chosenGrid.addEventListener('dragleave', (e) => {
-    const target = e.target.closest('.chosen-image-container');
-    if (target) {
+  if (chosenGrid) {
+    chosenGrid.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const target = e.target.closest('.chosen-image-container');
+      if (target) {
+        target.style.border = '2px dashed #4CAF50';
+      }
+    });
+    chosenGrid.addEventListener('dragleave', (e) => {
+      const target = e.target.closest('.chosen-image-container');
+      if (target) {
+        target.style.border = '1px solid rgba(0, 0, 0, 0.1)';
+      }
+    });
+    chosenGrid.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const imageUrl = e.dataTransfer.getData('text/plain');
+      const source = e.dataTransfer.getData('source');
+      const target = e.target.closest('.chosen-image-container');
+      if (!target || !imageUrl) return;
+
       target.style.border = '1px solid rgba(0, 0, 0, 0.1)';
-    }
-  });
-  chosenGrid.addEventListener('drop', (e) => {
-    e.preventDefault();
-    const imageUrl = e.dataTransfer.getData('text/plain');
-    const source = e.dataTransfer.getData('source');
-    const target = e.target.closest('.chosen-image-container');
-    if (!target || !imageUrl) return;
 
-    target.style.border = '1px solid rgba(0, 0, 0, 0.1)';
+      if (source === 'chosen-grid') {
+        const draggedContainer = Array.from(chosenGrid.children).find(container => 
+          container.querySelector('img')?.src === imageUrl
+        );
+        if (draggedContainer && draggedContainer !== target) {
+          const draggedImg = draggedContainer.querySelector('img');
+          const targetImg = target.querySelector('img');
+          const draggedIndex = chosenImages.indexOf(imageUrl);
 
-    if (source === 'chosen-grid') {
-      const draggedContainer = Array.from(chosenGrid.children).find(container => 
-        container.querySelector('img')?.src === imageUrl
-      );
-      if (draggedContainer && draggedContainer !== target) {
-        const draggedImg = draggedContainer.querySelector('img');
-        const targetImg = target.querySelector('img');
-        const draggedIndex = chosenImages.indexOf(imageUrl);
-
-        if (draggedIndex !== -1) {
-          chosenImages.splice(draggedIndex, 1);
-        }
-
-        if (targetImg) {
-          const targetIndex = chosenImages.indexOf(targetImg.src);
-          if (targetIndex !== -1) {
-            chosenImages.splice(targetIndex, 1, imageUrl);
-            draggedImg.src = targetImg.src;
-            chosenImages.splice(draggedIndex, 0, targetImg.src);
+          if (draggedIndex !== -1) {
+            chosenImages.splice(draggedIndex, 1);
           }
-        } else {
-          const targetIndex = Array.from(chosenGrid.children).indexOf(target);
-          chosenImages.splice(targetIndex, 0, imageUrl);
-          target.appendChild(draggedImg);
+
+          if (targetImg) {
+            const targetIndex = chosenImages.indexOf(targetImg.src);
+            if (targetIndex !== -1) {
+              chosenImages.splice(targetIndex, 1, imageUrl);
+              draggedImg.src = targetImg.src;
+              chosenImages.splice(draggedIndex, 0, targetImg.src);
+            }
+          } else {
+            const targetIndex = Array.from(chosenGrid.children).indexOf(target);
+            chosenImages.splice(targetIndex, 0, imageUrl);
+            target.appendChild(draggedImg);
+          }
         }
-      }
-    } else {
-      const existingImg = target.querySelector('img');
-      if (existingImg) {
-        const index = chosenImages.indexOf(existingImg.src);
-        if (index !== -1) {
-          chosenImages.splice(index, 1);
+      } else {
+        const existingImg = target.querySelector('img');
+        if (existingImg) {
+          const index = chosenImages.indexOf(existingImg.src);
+          if (index !== -1) {
+            chosenImages.splice(index, 1);
+          }
+          existingImg.remove();
         }
-        existingImg.remove();
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.draggable = true;
+        img.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', img.src);
+          e.dataTransfer.setData('source', 'chosen-grid');
+        });
+        target.appendChild(img);
+        chosenImages.push(imageUrl);
       }
-      const img = document.createElement('img');
-      img.src = imageUrl;
+    });
+
+    chosenGrid.querySelectorAll('.chosen-image-container img').forEach(img => {
       img.draggable = true;
       img.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', img.src);
         e.dataTransfer.setData('source', 'chosen-grid');
       });
-      target.appendChild(img);
-      chosenImages.push(imageUrl);
-    }
-  });
-
-  chosenGrid.querySelectorAll('.chosen-image-container img').forEach(img => {
-    img.draggable = true;
-    img.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', img.src);
-      e.dataTransfer.setData('source', 'chosen-grid');
     });
-  });
+  }
 
   const logo = document.getElementById('logo');
   if (logo) console.log('Logo URL:', logo.src);
@@ -827,7 +862,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
   });
 });
-
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
