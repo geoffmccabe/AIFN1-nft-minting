@@ -193,21 +193,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   updatePreviewSamples();
 
-  const chosenCountInput = document.getElementById('chosen-count');
-  if (chosenCountInput) {
+  const updateChosenGridButton = document.getElementById('update-chosen-grid');
+  if (chosenCountInput && updateChosenGridButton) {
     updateChosenGrid(parseInt(chosenCountInput.value));
+    updateChosenGridButton.addEventListener('click', () => {
+      updateChosenGrid(parseInt(chosenCountInput.value));
+    });
+    chosenCountInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        updateChosenGrid(parseInt(chosenCountInput.value));
+      }
+    });
   }
-
-  const openDB = () => new Promise((resolve, reject) => {
-    const request = indexedDB.open('NFTProjectDB', 1);
-    request.onupgradeneeded = (e) => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains('projects')) db.createObjectStore('projects', { keyPath: 'id' });
-      if (!db.objectStoreNames.contains('images')) db.createObjectStore('images', { keyPath: 'id' });
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
 
   async function saveProject() {
     try {
