@@ -1627,9 +1627,20 @@ function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
 
+  // Calculate scale factor (150px sample container / 600px main preview)
+  const scaleFactor = 150 / 600;
+
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
+
+    // Create a scaled preview container
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'sample-preview';
+    previewContainer.style.width = '600px';
+    previewContainer.style.height = '600px';
+    previewContainer.style.transform = `scale(${scaleFactor})`;
+    previewContainer.style.transformOrigin = '0 0';
 
     const traits = TraitManager.getAllTraits().slice().reverse();
     for (let j = 0; j < traits.length; j++) {
@@ -1642,46 +1653,37 @@ function updatePreviewSamples() {
       const img = document.createElement('img');
       img.src = variant.url;
       img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
+      img.style.position = 'absolute';
       img.style.zIndex = trait.zIndex;
 
+      // Apply the same scaling as in the main preview
+      applyScalingToImage(img);
+
+      // Get saved position or default to center
       const key = `${trait.id}-${variant.name}`;
       const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
       let position;
       if (savedPosition) {
         position = JSON.parse(savedPosition);
-        const scale = 140 / 600;
-        img.style.left = `${position.left * scale}px`;
-        img.style.top = `${position.top * scale}px`;
-        if (!variantHistories[key]) variantHistories[key] = [{ left: position.left, top: position.top }];
+        img.style.left = `${position.left}%`;
+        img.style.top = `${position.top}%`;
       } else {
-        let lastPosition = null;
-        for (let k = 0; k < trait.variants.length; k++) {
-          if (k === randomIndex) continue;
-          const otherVariationName = trait.variants[k].name;
-          const otherKey = `${trait.id}-${otherVariationName}`;
-          if (variantHistories[otherKey] && variantHistories[otherKey].length > 0) {
-            lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
-          }
-        }
-        const scale = 140 / 600;
-        if (lastPosition) {
-          position = lastPosition;
-          img.style.left = `${lastPosition.left * scale}px`;
-          img.style.top = `${lastPosition.top * scale}px`;
-          variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
-          localStorage.setItem(`trait${trait.id}-${variant.name}-position`, JSON.stringify(lastPosition));
-        } else {
-          position = { left: 0, top: 0 };
-          img.style.left = '0px';
-          img.style.top = '0px';
-          variantHistories[key] = [{ left: 0, top: 0 }];
-          localStorage.setItem(`trait${trait.id}-${variant.name}-position`, JSON.stringify({ left: 0, top: 0 }));
-        }
+        position = { left: 0, top: 0 };
+        img.style.left = '0%';
+        img.style.top = '0%';
       }
 
-      sampleData[i].push({ traitId: trait.id, variantId: variant.id, position });
-      sampleContainer.appendChild(img);
+      sampleData[i].push({ 
+        traitId: trait.id, 
+        variantId: variant.id, 
+        position 
+      });
+      
+      previewContainer.appendChild(img);
     }
+
+    sampleContainer.appendChild(previewContainer);
+    previewSamplesGrid.appendChild(sampleContainer);
 
     sampleContainer.addEventListener('click', () => {
       sampleData[i].forEach(sample => {
@@ -1705,8 +1707,6 @@ function updatePreviewSamples() {
         }
       });
     });
-
-    previewSamplesGrid.appendChild(sampleContainer);
   }
 }
 
