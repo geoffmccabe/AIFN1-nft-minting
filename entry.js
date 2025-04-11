@@ -504,11 +504,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           const magnifiedSize = parseFloat(enlargedPreview.style.width); // e.g., 900px
           const scaledLeftPixels = leftPixels * scale; // e.g., 300 * 1.5 = 450px
           const scaledTopPixels = topPixels * scale; // e.g., 300 * 1.5 = 450px
-          // Clamp positions to keep the trait within the Magnify window
-          const maxLeftPixels = magnifiedSize - scaledWidth;
-          const maxTopPixels = magnifiedSize - scaledHeight;
-          const clampedLeftPixels = Math.max(0, Math.min(scaledLeftPixels, maxLeftPixels));
-          const clampedTopPixels = Math.max(0, Math.min(scaledTopPixels, maxTopPixels));
+          // Clamp positions to keep the entire trait within the Magnify window
+          const maxLeftPixels = magnifiedSize - scaledWidth; // Right edge constraint
+          const maxTopPixels = magnifiedSize - scaledHeight; // Bottom edge constraint
+          const clampedLeftPixels = Math.max(0, Math.min(scaledLeftPixels, maxLeftPixels < 0 ? 0 : maxLeftPixels));
+          const clampedTopPixels = Math.max(0, Math.min(scaledTopPixels, maxTopPixels < 0 ? 0 : maxTopPixels));
           const clampedLeftPercent = (clampedLeftPixels / magnifiedSize) * 100;
           const clampedTopPercent = (clampedTopPixels / magnifiedSize) * 100;
           img.style.left = `${clampedLeftPercent}%`;
