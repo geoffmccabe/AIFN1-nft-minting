@@ -1282,14 +1282,12 @@ function updateZIndices() {
   if (preview) preview.offsetHeight;
 }
 
-// Function to calculate the uniform scaling factor based on window size and project size
 function calculateScalingFactor() {
-  const windowSize = 600; // Hardcoded window size (preview container size)
-  const projectSize = 600; // Hardcoded project size (user-defined, from Project Manager)
-  return windowSize / projectSize; // Uniform scaling factor
+  const windowSize = 600;
+  const projectSize = 600;
+  return windowSize / projectSize;
 }
 
-// Function to apply scaling to a single image
 function applyScalingToImage(img) {
   if (img && img.naturalWidth && img.naturalHeight) {
     const scale = calculateScalingFactor();
@@ -1303,18 +1301,15 @@ function applyScalingToImage(img) {
   }
 }
 
-// Function to apply scaling to all trait images in the Preview Panel
 function applyScalingToTraits() {
   traitImages.forEach(img => applyScalingToImage(img));
 }
 
-// Function to apply scaling to all sample images in the Preview Samples Panel
 function applyScalingToSamples() {
   const sampleImages = document.querySelectorAll('#preview-samples-grid .sample-preview img');
   sampleImages.forEach(img => {
     applyScalingToImage(img);
-    // Center the image within the scaled preview container
-    const containerWidth = 600; // Sample preview container size before scaling
+    const containerWidth = 600;
     const containerHeight = 600;
     const imgWidth = parseFloat(img.style.width || '0');
     const imgHeight = parseFloat(img.style.height || '0');
@@ -1346,8 +1341,8 @@ function selectVariation(traitId, variationId) {
         previewImage.naturalHeight = img.naturalHeight;
         applyScalingToTraits();
         applyScalingToSamples();
-        const key = `${traitId}-${trait.variants[variationIndex].name}`;
-        const savedPosition = localStorage.getItem(`trait${traitId}-position`);
+        const key = `trait${traitId}-position`;
+        const savedPosition = localStorage.getItem(key);
         if (savedPosition) {
           const { left, top } = JSON.parse(savedPosition);
           previewImage.style.left = `${left}%`;
@@ -1357,7 +1352,7 @@ function selectVariation(traitId, variationId) {
           previewImage.style.left = '0%';
           previewImage.style.top = '0%';
           variantHistories[key] = [{ left: 0, top: 0 }];
-          localStorage.setItem(`trait${traitId}-position`, JSON.stringify({ left: 0, top: 0 }));
+          localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
         }
         currentImage = previewImage;
         updateZIndices();
@@ -1414,11 +1409,9 @@ function setupDragAndDrop(img, traitIndex) {
       const containerRect = currentImage.parentElement.getBoundingClientRect();
       const imageRect = currentImage.getBoundingClientRect();
 
-      // Calculate the pointer's position relative to the image's top-left corner
       const pointerX = e.clientX - imageRect.left;
       const pointerY = e.clientY - imageRect.top;
 
-      // Calculate the offset as a percentage of the container's dimensions
       offsetX = pointerX / containerRect.width * 100;
       offsetY = pointerY / containerRect.height * 100;
 
@@ -1426,7 +1419,6 @@ function setupDragAndDrop(img, traitIndex) {
       currentImage.classList.add('dragging');
       updateCoordinates(currentImage);
 
-      // Add mousemove event listener for dragging
       document.addEventListener('mousemove', onMouseMove);
     }
 
@@ -1435,15 +1427,12 @@ function setupDragAndDrop(img, traitIndex) {
         const containerRect = currentImage.parentElement.getBoundingClientRect();
         const imageRect = currentImage.getBoundingClientRect();
 
-        // Calculate new position as percentage of container
         const newLeft = (e.clientX - containerRect.left) / containerRect.width * 100 - offsetX;
         const newTop = (e.clientY - containerRect.top) / containerRect.height * 100 - offsetY;
 
-        // Calculate boundaries to keep the image within the container
         const maxLeft = 100 - (imageRect.width / containerRect.width * 100);
         const maxTop = 100 - (imageRect.height / containerRect.height * 100);
 
-        // Clamp the position to keep the image within the container
         const clampedLeft = Math.max(0, Math.min(newLeft, maxLeft));
         const clampedTop = Math.max(0, Math.min(newTop, maxTop));
 
@@ -1476,7 +1465,7 @@ function setupDragAndDrop(img, traitIndex) {
     img.addEventListener('dragstart', preventDragStart);
     img.addEventListener('mousedown', startDragging);
     img.addEventListener('mouseup', stopDragging);
-    document.addEventListener('mouseup', stopDragging); // Ensure dragging stops even if mouseup occurs outside the image
+    document.addEventListener('mouseup', stopDragging);
   }
 }
 
@@ -1490,51 +1479,35 @@ function updateCoordinates(img) {
 
 function savePosition(img, traitId, variationName) {
   const position = { left: parseFloat(img.style.left) || 0, top: parseFloat(img.style.top) || 0 };
-  const key = `${traitId}-${variationName}`;
+  const key = `trait${traitId}-position`;
   if (!variantHistories[key]) variantHistories[key] = [];
   variantHistories[key].push(position);
-  localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify(position));
-  localStorage.setItem(`trait${traitId}-${variationName}-manuallyMoved`, 'true');
+  localStorage.setItem(key, JSON.stringify(position));
+  localStorage.setItem(`trait${traitId}-manuallyMoved`, 'true');
 
   const trait = TraitManager.getTrait(traitId);
   const traitIndex = TraitManager.getAllTraits().findIndex(t => t.id === traitId);
-  const currentVariationIndex = trait.variants.findIndex(v => v.name === variationName);
-  if (currentVariationIndex === 0 && !autoPositioned[traitIndex]) {
-    for (let i = 1; i < trait.variants.length; i++) {
-      const otherVariationName = trait.variants[i].name;
-      const otherKey = `${traitId}-${otherVariationName}`;
-      variantHistories[otherKey] = [{ left: position.left, top: position.top }];
-      localStorage.setItem(`trait${traitId}-${otherVariationName}-position`, JSON.stringify(position));
-      localStorage.removeItem(`trait${traitId}-${otherVariationName}-manuallyMoved`);
-      if (trait.selected === i) {
-        const previewImage = traitImages.find(img => img.id === `preview-trait${traitId}`);
-        if (previewImage && previewImage.src) {
-          previewImage.style.left = `${position.left}%`;
-          previewImage.style.top = `${position.top}%`;
-        }
-      }
-    }
-    autoPositioned[traitIndex] = true;
-  }
+  autoPositioned[traitIndex] = true;
 
   updateSamplePositions(traitId, trait.variants[trait.selected].id, position);
   updateSubsequentTraits(traitId, variationName, position);
 }
 
-// Apply scaling on window resize
 window.addEventListener('resize', () => {
   applyScalingToTraits();
   applyScalingToSamples();
 });
 
-// Initial scaling on load
 document.addEventListener('DOMContentLoaded', () => {
   applyScalingToTraits();
   applyScalingToSamples();
 });
 
 
+
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
+
+
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
