@@ -1627,14 +1627,13 @@ function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
 
-  // Calculate scale factor (150px sample container / 600px main preview)
-  const scaleFactor = 150 / 600;
+  const scaleFactor = 150 / 600; // 150px sample / 600px preview
 
+  // First create all samples without modifying any positions
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
 
-    // Create a scaled preview container
     const previewContainer = document.createElement('div');
     previewContainer.className = 'sample-preview';
     previewContainer.style.width = '600px';
@@ -1656,58 +1655,101 @@ function updatePreviewSamples() {
       img.style.position = 'absolute';
       img.style.zIndex = trait.zIndex;
 
-      // Apply the same scaling as in the main preview
-      applyScalingToImage(img);
+      // Apply scaling without modifying original image
+      const tempImg = new Image();
+      tempImg.src = variant.url;
+      tempImg.onload = () => {
+        const scale = calculateScalingFactor();
+        img.style.width = `${tempImg.naturalWidth * scale}px`;
+        img.style.height = `${tempImg.naturalHeight * scale}px`;
+        
+        // Get position from storage or use current preview position
+        const key = `${trait.id}-${variant.name}`;
+        const savedPosition = localStorage.getItem(key);
+        const previewImg = traitImages.find(ti => ti.id === `preview-trait${trait.id}`);
+        
+        let position;
+        if (savedPosition) {
+          position = JSON.parse(savedPosition);
+        } else if (previewImg) {
+          position = {
+            left: parseFloat(previewImg.style.left) || 0,
+            top: parseFloat(previewImg.style.top) || 0
+          };
+          // Save this position for future use
+          localStorage.setItem(key, JSON.stringify(position));
+        } else {
+          position = { left: 0, top: 0 };
+        }
 
-      // Get saved position or default to center
-      const key = `${trait.id}-${variant.name}`;
-      const savedPosition = localStorage.getItem(`trait${trait.id}-${variant.name}-position`);
-      let position;
-      if (savedPosition) {
-        position = JSON.parse(savedPosition);
         img.style.left = `${position.left}%`;
         img.style.top = `${position.top}%`;
-      } else {
-        position = { left: 0, top: 0 };
-        img.style.left = '0%';
-        img.style.top = '0%';
-      }
+      };
 
-      sampleData[i].push({ 
-        traitId: trait.id, 
-        variantId: variant.id, 
-        position 
+      sampleData[i].push({
+        traitId: trait.id,
+        variantId: variant.id,
+        position: { left: 0, top: 0 } // Temporary, updated in onload
       });
-      
+
       previewContainer.appendChild(img);
     }
 
     sampleContainer.appendChild(previewContainer);
     previewSamplesGrid.appendChild(sampleContainer);
 
-    sampleContainer.addEventListener('click', () => {
+    // Modified click handler that doesn't modify original positions
+    sampleContainer.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
       sampleData[i].forEach(sample => {
-        const traitId = sample.traitId;
-        const variantId = sample.variantId;
-        selectVariation(traitId, variantId);
-      });
-
-      sampleData[i].forEach(sample => {
-        const traitId = sample.traitId;
-        const variantId = sample.variantId;
-        const grid = document.getElementById(`trait${traitId}-grid`);
-        if (grid) {
-          const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
-          allWrappers.forEach(w => w.classList.remove('selected'));
-          const container = grid.querySelector(`[data-variation-id="${variantId}"]`);
-          if (container) {
-            const imageWrapper = container.querySelector('.variation-image-wrapper');
-            if (imageWrapper) imageWrapper.classList.add('selected');
+        const trait = TraitManager.getTrait(sample.traitId);
+        const variantIndex = trait.variants.findIndex(v => v.id === sample.variantId);
+        
+        if (variantIndex !== -1) {
+          // Update selection without modifying position
+          trait.selected = variantIndex;
+          const previewImg = traitImages.find(ti => ti.id === `preview-trait${trait.id}`);
+          if (previewImg) {
+            previewImg.src = trait.variants[variantIndex].url;
+            previewImg.style.visibility = 'visible';
+          }
+          
+          // Update grid selection
+          const grid = document.getElementById(`trait${trait.id}-grid`);
+          if (grid) {
+            grid.querySelectorAll('.variation-image-wrapper').forEach(w => w.classList.remove('selected'));
+            const container = grid.querySelector(`[data-variation-id="${sample.variantId}"]`);
+            if (container) {
+              container.querySelector('.variation-image-wrapper')?.classList.add('selected');
+            }
           }
         }
       });
+      
+      // Refresh samples to show current selections
+      updatePreviewSamples();
     });
   }
+}
+
+// Add this new function to prevent position corruption
+function safeGetPosition(traitId, variantName) {
+  const key = `${traitId}-${variantName}`;
+  const savedPosition = localStorage.getItem(key);
+  if (savedPosition) return JSON.parse(savedPosition);
+
+  const trait = TraitManager.getTrait(traitId);
+  const previewImg = traitImages.find(ti => ti.id === `preview-trait${traitId}`);
+  
+  if (previewImg) {
+    return {
+      left: parseFloat(previewImg.style.left) || 0,
+      top: parseFloat(previewImg.style.top) || 0
+    };
+  }
+  
+  return { left: 0, top: 0 };
 }
 
 
