@@ -1693,6 +1693,7 @@ function updatePreviewSamples() {
     sampleContainer.addEventListener('click', (e) => {
       e.stopPropagation();
       
+      // Update the full-sized Preview Window with the clicked sample's variants
       sampleData[i].forEach(sample => {
         const trait = TraitManager.getTrait(sample.traitId);
         const variantIndex = trait.variants.findIndex(v => v.id === sample.variantId);
@@ -1722,6 +1723,7 @@ function updatePreviewSamples() {
           }
         }
       });
+      // Do not call updatePreviewSamples here to avoid resetting the samples
     });
   }
 }
