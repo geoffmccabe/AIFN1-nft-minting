@@ -193,7 +193,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   updatePreviewSamples();
 
-  const updateChosenGridButton = document.getElementById('update-chosen-grid');
   if (chosenCountInput && updateChosenGridButton) {
     updateChosenGrid(parseInt(chosenCountInput.value));
     updateChosenGridButton.addEventListener('click', () => {
