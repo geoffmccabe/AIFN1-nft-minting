@@ -1300,6 +1300,8 @@ function updateMintButton() {
 
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
+
+
 function updateZIndices() {
   const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
   traitImages.forEach((img, index) => {
@@ -1313,9 +1315,10 @@ function updateZIndices() {
 }
 
 function calculateScalingFactor() {
-  const windowSize = 600;
-  const projectSize = 600;
-  return windowSize / projectSize;
+  const windowSize = 600; // Preview window size including borders
+  const projectSize = 600; // Expected project size
+  const borderAdjustment = 2; // 1px border on each side (total 2px)
+  return (windowSize - borderAdjustment) / projectSize;
 }
 
 function applyScalingToImage(img) {
@@ -1457,11 +1460,15 @@ function setupDragAndDrop(img, traitIndex) {
         const containerRect = currentImage.parentElement.getBoundingClientRect();
         const imageRect = currentImage.getBoundingClientRect();
 
-        const newLeft = (e.clientX - containerRect.left) / containerRect.width * 100 - offsetX;
-        const newTop = (e.clientY - containerRect.top) / containerRect.height * 100 - offsetY;
+        const borderAdjustment = 2; // 1px border on each side
+        const contentWidth = containerRect.width - borderAdjustment;
+        const contentHeight = containerRect.height - borderAdjustment;
 
-        const maxLeft = 100 - (imageRect.width / containerRect.width * 100);
-        const maxTop = 100 - (imageRect.height / containerRect.height * 100);
+        const newLeft = (e.clientX - containerRect.left) / contentWidth * 100 - offsetX;
+        const newTop = (e.clientY - containerRect.top) / contentHeight * 100 - offsetY;
+
+        const maxLeft = 100 - (imageRect.width / contentWidth * 100);
+        const maxTop = 100 - (imageRect.height / contentHeight * 100);
 
         const clampedLeft = Math.max(0, Math.min(newLeft, maxLeft));
         const clampedTop = Math.max(0, Math.min(newTop, maxTop));
