@@ -61,6 +61,7 @@
 <!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
 
 
+
 <style>
   #preview-panel-container { display: flex; flex-wrap: wrap; gap: 30px; width: 100%; }
   #preview-panel-container .panel { min-height: 650px; width: calc(50% - 15px); }
@@ -73,9 +74,7 @@
   .direction-emoji, .magnify-emoji { background: none; border: none; color: #666; cursor: pointer; font-size: 16px; padding: 0; }
   .direction-emoji:hover, .magnify-emoji:hover { opacity: 0.8; }
   #magnify-panel { 
-    background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5);
-    background-blend-mode: overlay;
-    background-size: cover;
+    background: rgba(240, 240, 240, 0.95); /* Solid light grey background */
     border-radius: 15px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     padding: 15px;
@@ -87,39 +86,54 @@
     display: none; /* Initially hidden */
   }
   #enlarged-preview { 
-    background: rgba(255, 255, 255, 0.5); /* White inner box */
+    background: white;
     border: 1px solid rgba(0, 0, 0, 0.1); 
     border-radius: 10px;
     overflow: hidden; /* Confine traits within the window */
+    position: relative;
+    width: 900px;
+    height: 900px;
+    box-sizing: border-box; /* Include border in width/height calculations */
   }
-  #enlarged-preview img { position: absolute; }
+  #enlarged-preview img { 
+    position: absolute;
+    transform-origin: 0 0; /* Ensure scaling happens from top-left */
+  }
   #magnify-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
+    padding: 0 5px;
   }
   #magnify-header h2 {
     font-family: 'Poppins', sans-serif;
     font-weight: 600;
     margin: 0;
     font-size: 18px;
+    color: #333;
   }
   #enlarged-preview-controls { 
     display: flex; 
-    gap: 10px; 
+    gap: 10px;
+    align-items: center;
   }
   .play-emoji, .pause-emoji { 
-    align-items: center; 
-    color: white; 
+    background: none;
+    border: none;
+    color: #666; 
     cursor: pointer; 
-    display: flex; 
-    font-size: 32px; 
-    height: 40px; 
-    justify-content: center; 
-    width: 40px; 
+    font-size: 24px; 
+    height: 30px; 
+    width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
   }
-  .play-emoji:hover, .pause-emoji:hover { opacity: 0.8; }
+  .play-emoji:hover, .pause-emoji:hover { 
+    color: #333;
+  }
   #preview-samples { margin-top: 20px; }
   #preview-samples-header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; }
   #preview-samples h2 { font-family: 'Poppins', sans-serif; font-weight: 600; margin: 0; text-align: left; }
