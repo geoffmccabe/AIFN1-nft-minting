@@ -408,7 +408,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  updatePreviewsButton.addEventListener('click', () => updatePreviewSamples());
+updatePreviewsButton.addEventListener('click', () => {
+  updatePreviewSamples();
+});
   generateButton.addEventListener('click', () => fetchMultipleBackgrounds(1));
   document.getElementById('gen-4x').addEventListener('click', () => fetchMultipleBackgrounds(4));
   document.getElementById('gen-16x').addEventListener('click', () => fetchMultipleBackgrounds(16));
