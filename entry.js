@@ -1,6 +1,5 @@
 /* Section 1 ----------------------------------------- TRAIT MANAGER FRAMEWORK ------------------------------------------------*/
 
-
 let idCounter = 1;
 function generateId() {
   return `id-${idCounter++}`;
@@ -118,12 +117,7 @@ const TraitManager = {
   }
 };
 
-
-
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
-
-
-
 
 let provider, contract, signer, contractWithSigner;
 let traitImages = [];
@@ -145,7 +139,16 @@ const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3');
 clickSound.volume = 0.25;
 let initialHtmlUri = '';
 
+const DIMENSIONS = {
+  BASE_SIZE: 598,
+  BORDER_ADJUSTMENT: 2,
+  GRID_GAP: 13
+};
 
+const DEBUG = true;
+function debugLog(...args) {
+  if (DEBUG) console.log('[DEBUG]', ...args);
+}
 
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 
@@ -153,7 +156,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000;
 
-  // Clear residual localStorage data to prevent positioning issues
   Object.keys(localStorage).forEach(key => {
     if (key.includes('-position') || key.includes('-manuallyMoved') || key.includes('_saveCount')) {
       localStorage.removeItem(key);
@@ -178,7 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   widthInput = document.getElementById('width-input');
   heightInput = document.getElementById('height-input');
 
-  console.log('DOM Elements:', { traitContainer, previewSamplesGrid, chosenGrid: document.getElementById('chosen-grid') });
+  debugLog('DOM Elements:', { traitContainer, previewSamplesGrid, chosenGrid: document.getElementById('chosen-grid') });
 
   if (!traitContainer || !previewSamplesGrid || !document.getElementById('chosen-grid')) {
     console.error('Critical DOM elements missing:', { traitContainer, previewSamplesGrid, chosenGrid: document.getElementById('chosen-grid') });
@@ -198,22 +200,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshTraitGrid(trait.id);
   });
 
+  initializePositions();
   updatePreviewSamples();
+  await populateProjectSlots();
 
-  const openDB = () => new Promise((resolve, reject) => {
-    const request = indexedDB.open('NFTProjectDB', 1);
-    request.onupgradeneeded = (e) => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains('projects')) db.createObjectStore('projects', { keyPath: 'id' });
-      if (!db.objectStoreNames.contains('images')) db.createObjectStore('images', { keyPath: 'id' });
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+  async function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('NFTProjectDB', 1);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('projects')) db.createObjectStore('projects', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('images')) db.createObjectStore('images', { keyPath: 'id' });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function populateProjectSlots() {
+    const projectSlotSelect = document.getElementById('project-slot');
+    const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
+    const db = await openDB();
+    const tx = db.transaction(['projects'], 'readonly');
+    const projectStore = tx.objectStore('projects');
+    const slotPromises = slots.map(slotId => 
+      new Promise(resolve => projectStore.get(slotId).onsuccess = e => resolve({ id: slotId, project: e.target.result || null }))
+    );
+    const slotData = await Promise.all(slotPromises);
+    
+    slotData.forEach((data, index) => {
+      const option = projectSlotSelect.options[index];
+      const projectName = data.project ? data.project.name : '';
+      option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
+    });
+  }
 
   async function saveProject() {
     try {
-      console.log('Starting saveProject...');
+      debugLog('Starting saveProject...');
       const db = await openDB();
       const tx = db.transaction(['projects', 'images'], 'readwrite');
       const imageStore = tx.objectStore('images');
@@ -224,7 +248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         clearRequest.onsuccess = () => resolve();
         clearRequest.onerror = () => reject(clearRequest.error);
       });
-      console.log('Cleared existing images');
+      debugLog('Cleared existing images');
 
       const traitsToSave = TraitManager.getAllTraits().map(trait => ({
         id: trait.id,
@@ -245,7 +269,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (variant.data) {
             try {
               const key = `${trait.id}_${variant.id}`;
-              console.log(`Storing image with key: ${key}, size: ${variant.data.byteLength} bytes`);
+              debugLog(`Storing image with key: ${key}, size: ${variant.data.byteLength} bytes`);
               await new Promise((resolve, reject) => {
                 const request = imageStore.put({ id: key, data: variant.data });
                 request.onsuccess = () => resolve();
@@ -256,7 +280,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               throw error;
             }
           } else {
-            console.warn(`No data for variant ${trait.id}_${variant.id} - skipping image save`);
+            debugLog(`No data for variant ${trait.id}_${variant.id} - skipping image save`);
           }
         }
       }
@@ -269,15 +293,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         description: document.getElementById('project-description').value,
         traits: traitsToSave
       };
-      console.log('Saving project metadata:', projectData);
+      debugLog('Saving project metadata:', projectData);
       await new Promise((resolve, reject) => {
         const request = projectStore.put(projectData);
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
       });
 
-      console.log('Saved project:', projectData);
+      debugLog('Saved project:', projectData);
       alert(`Project saved to ${slot} successfully!`);
+      await populateProjectSlots();
     } catch (err) {
       console.error('SaveProject caught error:', err);
       alert('Failed to save project');
@@ -331,9 +356,9 @@ document.addEventListener('DOMContentLoaded', async () => {
               createdAt: savedVariant.createdAt
             };
             newTrait.variants.push(variantData);
-            console.log(`Loaded variant ${variantData.id} for trait ${savedTrait.id}: Image present`);
+            debugLog(`Loaded variant ${variantData.id} for trait ${savedTrait.id}: Image present`);
           } else {
-            console.warn(`Missing image data for variant ${savedVariant.id} in trait ${savedTrait.id}`);
+            debugLog(`Missing image data for variant ${savedVariant.id} in trait ${savedTrait.id}`);
           }
         }
       }
@@ -349,72 +374,49 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
         }
       });
+      initializePositions();
       updatePreviewSamples();
 
-      console.log('Loaded project:', project);
-
-      const projectSlotSelect = document.getElementById('project-slot');
-      const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
-      const slotPromises = slots.map(slotId => 
-        new Promise(resolve => projectStore.get(slotId).onsuccess = e => resolve({ id: slotId, project: e.target.result || null }))
-      );
-      const slotData = await Promise.all(slotPromises);
-      
-      slotData.forEach((data, index) => {
-        const option = projectSlotSelect.options[index];
-        const projectName = data.project ? data.project.name : '';
-        option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
-      });
+      debugLog('Loaded project:', project);
+      await populateProjectSlots();
     } catch (err) {
       console.error('Load failed:', err);
       alert('Failed to load project');
     }
   }
 
-async function deleteProject() {
-  try {
-    const slot = document.getElementById('project-slot').value;
-    const db = await openDB();
-    const tx = db.transaction(['projects', 'images'], 'readwrite');
-    const projectStore = tx.objectStore('projects');
-    const imageStore = tx.objectStore('images');
+  async function deleteProject() {
+    try {
+      const slot = document.getElementById('project-slot').value;
+      const db = await openDB();
+      const tx = db.transaction(['projects', 'images'], 'readwrite');
+      const projectStore = tx.objectStore('projects');
+      const imageStore = tx.objectStore('images');
 
-    const project = await new Promise(resolve => projectStore.get(slot).onsuccess = e => resolve(e.target.result));
-    if (!project) {
-      alert('No project found in ' + slot);
-      return;
-    }
-
-    if (!confirm('Are you sure you want to delete project "' + project.name + '" from ' + slot + '?')) return;
-
-    for (const trait of project.traits) {
-      for (const variant of trait.variants) {
-        const imageId = trait.id + '_' + variant.id;
-        await new Promise(resolve => imageStore.delete(imageId).onsuccess = () => resolve());
+      const project = await new Promise(resolve => projectStore.get(slot).onsuccess = e => resolve(e.target.result));
+      if (!project) {
+        alert('No project found in ' + slot);
+        return;
       }
+
+      if (!confirm('Are you sure you want to delete project "' + project.name + '" from ' + slot + '?')) return;
+
+      for (const trait of project.traits) {
+        for (const variant of trait.variants) {
+          const imageId = trait.id + '_' + variant.id;
+          await new Promise(resolve => imageStore.delete(imageId).onsuccess = () => resolve());
+        }
+      }
+
+      await new Promise(resolve => projectStore.delete(slot).onsuccess = () => resolve());
+
+      alert('Deleted project "' + project.name + '" from ' + slot);
+      await populateProjectSlots();
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Failed to delete project');
     }
-
-    await new Promise(resolve => projectStore.delete(slot).onsuccess = () => resolve());
-
-    alert('Deleted project "' + project.name + '" from ' + slot);
-
-    const projectSlotSelect = document.getElementById('project-slot');
-    const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
-    const slotPromises = slots.map(slotId => 
-      new Promise(resolve => projectStore.get(slotId).onsuccess = e => resolve({ id: slotId, project: e.target.result || null }))
-    );
-    const slotData = await Promise.all(slotPromises);
-    
-    slotData.forEach((data, index) => {
-      const option = projectSlotSelect.options[index];
-      const projectName = data.project ? data.project.name : '';
-      option.text = 'Slot ' + (index + 1) + (projectName ? ' - ' + projectName : '');
-    });
-  } catch (err) {
-    console.error('Delete failed:', err);
-    alert('Failed to delete project');
   }
-}
 
   updatePreviewsButton.addEventListener('click', () => {
     updatePreviewSamples();
@@ -491,11 +493,11 @@ async function deleteProject() {
         if (maxWidth / maxHeight > 1) {
           enlargedPreview.style.height = `${maxHeight - 60}px`;
           enlargedPreview.style.width = `${maxHeight - 60}px`;
-          scale = (maxHeight - 60) / 598;
+          scale = (maxHeight - 60) / DIMENSIONS.BASE_SIZE;
         } else {
           enlargedPreview.style.width = `${maxWidth - 60}px`;
           enlargedPreview.style.height = `${maxWidth - 60}px`;
-          scale = (maxWidth - 60) / 598;
+          scale = (maxWidth - 60) / DIMENSIONS.BASE_SIZE;
         }
 
         const controls = document.getElementById('enlarged-preview-controls');
@@ -516,32 +518,26 @@ async function deleteProject() {
             if (variant && variant.url) {
               const img = document.createElement('img');
               img.src = variant.url;
-              const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
-              applyScalingToImage(baseImg);
-              
-              const baseWidth = parseFloat(baseImg.style.width || '598');
-              const baseHeight = parseFloat(baseImg.style.height || '598');
-              
-              const scaledWidth = baseWidth * scale;
-              const scaledHeight = baseHeight * scale;
+              const key = `trait${trait.id}-position`;
+              const savedPosition = localStorage.getItem(key);
+              let leftPercent = 0, topPercent = 0;
+              try {
+                if (savedPosition) {
+                  const { left, top } = JSON.parse(savedPosition);
+                  const normalized = normalizePosition(left, top, DIMENSIONS.BASE_SIZE, DIMENSIONS.BASE_SIZE, DIMENSIONS.BASE_SIZE * scale, DIMENSIONS.BASE_SIZE * scale);
+                  leftPercent = (normalized.left / (DIMENSIONS.BASE_SIZE * scale)) * 100;
+                  topPercent = (normalized.top / (DIMENSIONS.BASE_SIZE * scale)) * 100;
+                }
+              } catch (e) {
+                debugLog('Invalid position data for magnified trait ' + trait.id + ':', e);
+              }
+
+              const scaledWidth = DIMENSIONS.BASE_SIZE * scale;
+              const scaledHeight = DIMENSIONS.BASE_SIZE * scale;
               img.style.width = `${scaledWidth}px`;
               img.style.height = `${scaledHeight}px`;
-              
-              const baseLeftPercent = parseFloat(baseImg.style.left || '0');
-              const baseTopPercent = parseFloat(baseImg.style.top || '0');
-              
-              const magnifiedSize = parseFloat(enlargedPreview.style.width);
-              
-              const widthPercent = (scaledWidth / magnifiedSize) * 100;
-              const heightPercent = (scaledHeight / magnifiedSize) * 100;
-              
-              const maxLeftPercent = 100 - widthPercent;
-              const maxTopPercent = 100 - heightPercent;
-              const clampedLeftPercent = Math.max(0, Math.min(baseLeftPercent, maxLeftPercent < 0 ? 0 : maxLeftPercent));
-              const clampedTopPercent = Math.max(0, Math.min(baseTopPercent, maxTopPercent < 0 ? 0 : maxTopPercent));
-              
-              img.style.left = `${clampedLeftPercent}%`;
-              img.style.top = `${clampedTopPercent}%`;
+              img.style.left = `${leftPercent}%`;
+              img.style.top = `${topPercent}%`;
               img.style.zIndex = trait.zIndex;
               img.style.position = 'absolute';
               img.style.visibility = 'visible';
@@ -557,7 +553,7 @@ async function deleteProject() {
         if (playEmoji) {
           playEmoji.onclick = (e) => {
             e.stopPropagation();
-            console.log('Play clicked');
+            debugLog('Play clicked');
             if (randomizeInterval) {
               clearInterval(randomizeInterval);
               if (currentSpeed === 1000) currentSpeed = 100;
@@ -570,7 +566,7 @@ async function deleteProject() {
               const trait = magnifiedState[traitIndex];
               if (trait.variants.length > 0) {
                 trait.selected = Math.floor(Math.random() * trait.variants.length);
-                console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
+                debugLog(`Randomized trait ${trait.id} to variant ${trait.selected}`);
                 const traitInMain = TraitManager.getTrait(trait.id);
                 traitInMain.selected = trait.selected;
                 const previewImage = traitImages.find(img => img.id === `preview-trait${trait.id}`);
@@ -579,10 +575,16 @@ async function deleteProject() {
                   applyScalingToImage(previewImage);
                   const key = `trait${trait.id}-position`;
                   const savedPosition = localStorage.getItem(key);
-                  if (savedPosition) {
-                    const { left, top } = JSON.parse(savedPosition);
-                    previewImage.style.left = `${left}%`;
-                    previewImage.style.top = `${top}%`;
+                  try {
+                    if (savedPosition) {
+                      const { left, top } = JSON.parse(savedPosition);
+                      previewImage.style.left = `${left}%`;
+                      previewImage.style.top = `${top}%`;
+                    }
+                  } catch (e) {
+                    debugLog('Invalid position data in playEmoji:', e);
+                    previewImage.style.left = '0%';
+                    previewImage.style.top = '0%';
                   }
                 }
                 updateEnlargedPreview();
@@ -607,7 +609,7 @@ async function deleteProject() {
           const projectName = document.getElementById('project-name').value || 'Unnamed';
           let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
           if (saveCount > 100) {
-            console.warn('Save limit reached');
+            debugLog('Save limit reached');
             return;
           }
           localStorage.setItem(`${projectName}_saveCount`, saveCount);
@@ -618,7 +620,7 @@ async function deleteProject() {
             variants: trait.variants.map(v => ({ id: v.id, name: v.name, url: v.url }))
           }));
           localStorage.setItem(saveKey, JSON.stringify(currentState));
-          console.log(`Saved as ${saveKey}`);
+          debugLog(`Saved as ${saveKey}`);
         });
 
         enlargedPreview.onclick = (e) => {
@@ -635,19 +637,29 @@ async function deleteProject() {
     });
   }
 
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
   directionEmojis.forEach(emoji => {
     const direction = emoji.getAttribute('data-direction');
     emoji.addEventListener('mousedown', () => {
-      if (!currentImage || currentImage.src === '') return;
+      if (!currentImage || currentImage.src === '') {
+        currentImage = traitImages.find(img => isValidImage(img)) || traitImages[0];
+        if (!currentImage) return;
+      }
       moveInterval = setInterval(() => {
         let left = parseFloat(currentImage.style.left) || 0;
         let top = parseFloat(currentImage.style.top) || 0;
-        const contentWidth = 598; // After border adjustment
-        const contentHeight = 598;
-        const imgWidth = parseFloat(currentImage.style.width || currentImage.naturalWidth * calculateScalingFactor());
-        const imgHeight = parseFloat(currentImage.style.height || currentImage.naturalHeight * calculateScalingFactor());
+        const contentWidth = preview.getBoundingClientRect().width;
+        const contentHeight = contentWidth;
+        const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
+        const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
 
-        // Convert percentage to pixels for precise movement
         let leftPx = (left / 100) * contentWidth;
         let topPx = (top / 100) * contentHeight;
 
@@ -656,16 +668,14 @@ async function deleteProject() {
         if (direction === 'left') leftPx -= 1;
         if (direction === 'right') leftPx += 1;
 
-        // Clamp pixel values
         leftPx = Math.max(0, Math.min(leftPx, contentWidth - imgWidth));
         topPx = Math.max(0, Math.min(topPx, contentHeight - imgHeight));
 
-        // Convert back to percentages
         left = (leftPx / contentWidth) * 100;
         top = (topPx / contentHeight) * 100;
 
-        currentImage.style.left = `${left}%`;
-        currentImage.style.top = `${top}%`;
+        currentImage.style.left = left + '%';
+        currentImage.style.top = top + '%';
         currentImage.classList.add('dragging');
         updateCoordinates(currentImage);
       }, 50);
@@ -676,10 +686,10 @@ async function deleteProject() {
         clearInterval(moveInterval);
         moveInterval = null;
         if (currentImage) {
-          const traitIndex = traitImages.indexOf(currentImage);
-          const trait = TraitManager.getAllTraits()[traitIndex];
+          const traitId = currentImage.id.substring('preview-trait'.length);
+          const trait = TraitManager.getTrait(traitId);
           const variationName = trait.variants[trait.selected].name;
-          savePosition(currentImage, trait.id, variationName);
+          savePosition(currentImage, traitId, variationName);
           currentImage.classList.remove('dragging');
           TraitManager.sortTraits();
         }
@@ -691,10 +701,10 @@ async function deleteProject() {
         clearInterval(moveInterval);
         moveInterval = null;
         if (currentImage) {
-          const traitIndex = traitImages.indexOf(currentImage);
-          const trait = TraitManager.getAllTraits()[traitIndex];
+          const traitId = currentImage.id.substring('preview-trait'.length);
+          const trait = TraitManager.getTrait(traitId);
           const variationName = trait.variants[trait.selected].name;
-          savePosition(currentImage, trait.id, variationName);
+          savePosition(currentImage, traitId, variationName);
           currentImage.classList.remove('dragging');
           TraitManager.sortTraits();
         }
@@ -702,7 +712,30 @@ async function deleteProject() {
     });
   });
 
-  document.addEventListener('keydown', (e) => {
+  preview.addEventListener('mousemove', debounce((e) => {
+    if (!isDragging || !currentImage) return;
+    const rect = preview.getBoundingClientRect();
+    const borderAdjustment = DIMENSIONS.BORDER_ADJUSTMENT;
+    const contentWidth = rect.width - borderAdjustment;
+    const contentHeight = rect.height - borderAdjustment;
+
+    let newLeft = (e.clientX - rect.left) / contentWidth * 100 - offsetX;
+    let newTop = (e.clientY - rect.top) / contentHeight * 100 - offsetY;
+
+    const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
+    const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
+    const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
+    const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
+
+    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+    newTop = Math.max(0, Math.min(newTop, maxTop));
+
+    currentImage.style.left = newLeft + '%';
+    currentImage.style.top = newTop + '%';
+    updateCoordinates(currentImage);
+  }, 32));
+
+  document.addEventListener('keydown', debounce((e) => {
     const now = Date.now();
     if (now - lastUndoTime < 300) return;
     lastUndoTime = now;
@@ -710,53 +743,29 @@ async function deleteProject() {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       e.preventDefault();
       if (!currentImage) return;
-      const traitIndex = traitImages.indexOf(currentImage);
-      const trait = TraitManager.getAllTraits()[traitIndex];
+      const traitId = currentImage.id.substring('preview-trait'.length);
+      const trait = TraitManager.getTrait(traitId);
       const variationName = trait.variants[trait.selected].name;
-      const key = `trait${trait.id}-position`;
+      const key = 'trait' + traitId + '-position';
       if (variantHistories[key] && variantHistories[key].length > 1) {
         variantHistories[key].pop();
         const previousPosition = variantHistories[key][variantHistories[key].length - 1];
-        currentImage.style.left = `${previousPosition.left}%`;
-        currentImage.style.top = `${previousPosition.top}%`;
+        currentImage.style.left = previousPosition.left + '%';
+        currentImage.style.top = previousPosition.top + '%';
         localStorage.setItem(key, JSON.stringify(previousPosition));
         updateCoordinates(currentImage);
-        updateSamplePositions(trait.id, trait.variants[trait.selected].id, previousPosition);
-        updateSubsequentTraits(trait.id, variationName, previousPosition);
+        updateSamplePositions(traitId, trait.variants[trait.selected].id, previousPosition);
       }
     }
-  });
+  }, 32));
 
   if (preview) {
-    preview.addEventListener('mousemove', (e) => {
-      if (!isDragging || !currentImage) return;
-      const rect = preview.getBoundingClientRect();
-      const borderAdjustment = 2; // 1px border on each side
-      const contentWidth = rect.width - borderAdjustment;
-      const contentHeight = rect.height - borderAdjustment;
-
-      let newLeft = (e.clientX - rect.left) / contentWidth * 100 - offsetX;
-      let newTop = (e.clientY - rect.top) / contentHeight * 100 - offsetY;
-
-      const imgWidth = parseFloat(currentImage.style.width || currentImage.naturalWidth * calculateScalingFactor());
-      const imgHeight = parseFloat(currentImage.style.height || currentImage.naturalHeight * calculateScalingFactor());
-      const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
-      const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
-
-      newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-      newTop = Math.max(0, Math.min(newTop, maxTop));
-
-      currentImage.style.left = `${newLeft}%`;
-      currentImage.style.top = `${newTop}%`;
-      updateCoordinates(currentImage);
-    });
-
     preview.addEventListener('mouseup', () => {
       if (isDragging && currentImage) {
-        const traitIndex = traitImages.indexOf(currentImage);
-        const trait = TraitManager.getAllTraits()[traitIndex];
+        const traitId = currentImage.id.substring('preview-trait'.length);
+        const trait = TraitManager.getTrait(traitId);
         const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, trait.id, variationName);
+        savePosition(currentImage, traitId, variationName);
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
@@ -766,10 +775,10 @@ async function deleteProject() {
 
     preview.addEventListener('mouseleave', () => {
       if (isDragging && currentImage) {
-        const traitIndex = traitImages.indexOf(currentImage);
-        const trait = TraitManager.getAllTraits()[traitIndex];
+        const traitId = currentImage.id.substring('preview-trait'.length);
+        const trait = TraitManager.getTrait(traitId);
         const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, trait.id, variationName);
+        savePosition(currentImage, traitId, variationName);
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
@@ -873,31 +882,10 @@ async function deleteProject() {
   }
 
   const logo = document.getElementById('logo');
-  if (logo) console.log('Logo URL:', logo.src);
-
-  const projectSlotSelect = document.getElementById('project-slot');
-  const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
-  const db = await openDB();
-  const tx = db.transaction(['projects'], 'readonly');
-  const projectStore = tx.objectStore('projects');
-  const slotPromises = slots.map(slotId => 
-    new Promise(resolve => projectStore.get(slotId).onsuccess = e => resolve({ id: slotId, project: e.target.result || null }))
-  );
-  const slotData = await Promise.all(slotPromises);
-  
-  slotData.forEach((data, index) => {
-    const option = projectSlotSelect.options[index];
-    const projectName = data.project ? data.project.name : '';
-    option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
-  });
+  if (logo) debugLog('Logo URL:', logo.src);
 });
 
-
-
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
-
-
-
 
 function addTrait(trait) {
   const traitSection = document.createElement('div');
@@ -1008,12 +996,12 @@ function addTrait(trait) {
       preview.appendChild(img);
       return img;
     });
-    console.log(`Added trait image ${traitImage.id} to preview, position: ${trait.position}, zIndex: ${traitImage.style.zIndex}`);
+    debugLog(`Added trait image ${traitImage.id} to preview, position: ${trait.position}, zIndex: ${traitImage.style.zIndex}`);
   }
 
   setupTraitListeners(trait.id);
   requestAnimationFrame(() => {
-    console.log(`Setting up drag-and-drop for trait ${trait.id}, image:`, traitImage);
+    debugLog(`Setting up drag-and-drop for trait ${trait.id}, image:`, traitImage);
     setupDragAndDrop(traitImage, TraitManager.getAllTraits().findIndex(t => t.id === trait.id));
   });
   updateZIndices();
@@ -1044,14 +1032,7 @@ function removeTrait(traitId) {
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith(`trait${traitId}-`)) localStorage.removeItem(key);
     });
-    traitContainer.innerHTML = '';
-    if (preview) preview.innerHTML = '';
-    traitImages = [];
-    TraitManager.getAllTraits().forEach(trait => {
-      addTrait(trait);
-      refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
-    });
+    renumberTraits();
     updateZIndices();
     updatePreviewSamples();
     confirmationDialog.remove();
@@ -1066,13 +1047,7 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
-
-
-
 /* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
-
-
-
 
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
@@ -1141,7 +1116,7 @@ function setupTraitListeners(traitId) {
         container.appendChild(imageWrapper);
         container.appendChild(filename);
         container.addEventListener('click', () => {
-          console.log(`Clicked variant: Trait ${traitId}, Variation ${variationName}`);
+          debugLog(`Clicked variant: Trait ${traitId}, Variation ${variationName}`);
           const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
           allWrappers.forEach(w => w.classList.remove('selected'));
           imageWrapper.classList.add('selected');
@@ -1178,25 +1153,16 @@ function setupTraitListeners(traitId) {
 
   upArrow.addEventListener('click', () => {
     const trait = TraitManager.getTrait(traitId);
-    if (trait.position === 1) {
-      const lastPosition = TraitManager.getAllTraits().length;
-      TraitManager.moveTrait(traitId, lastPosition);
-    } else {
-      TraitManager.moveTrait(traitId, trait.position - 1);
+    const newPosition = trait.position === 1 ? TraitManager.getAllTraits().length : trait.position - 1;
+    TraitManager.moveTrait(traitId, newPosition);
+    const traitSection = document.getElementById(`trait${traitId}`);
+    const sibling = traitSection.parentNode.children[newPosition - 1];
+    if (sibling && sibling !== traitSection) {
+      traitSection.parentNode.insertBefore(traitSection, sibling);
+    } else if (!sibling) {
+      traitSection.parentNode.appendChild(traitSection);
     }
-
-    traitContainer.innerHTML = '';
-    if (preview) preview.innerHTML = '';
-    traitImages = [];
-    TraitManager.getAllTraits().forEach(trait => {
-      addTrait(trait);
-      const input = document.getElementById(`trait${trait.id}-name`);
-      input.value = trait.name || input.placeholder;
-      input.dataset.userEntered = trait.name ? 'true' : 'false';
-      refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
-    });
-
+    renumberTraits();
     updateZIndices();
     updatePreviewSamples();
   });
@@ -1204,24 +1170,16 @@ function setupTraitListeners(traitId) {
   downArrow.addEventListener('click', () => {
     const trait = TraitManager.getTrait(traitId);
     const lastPosition = TraitManager.getAllTraits().length;
-    if (trait.position === lastPosition) {
-      TraitManager.moveTrait(traitId, 1);
-    } else {
-      TraitManager.moveTrait(traitId, trait.position + 1);
+    const newPosition = trait.position === lastPosition ? 1 : trait.position + 1;
+    TraitManager.moveTrait(traitId, newPosition);
+    const traitSection = document.getElementById(`trait${traitId}`);
+    const sibling = traitSection.parentNode.children[newPosition - 1];
+    if (sibling && sibling !== traitSection) {
+      traitSection.parentNode.insertBefore(traitSection, sibling);
+    } else if (!sibling) {
+      traitSection.parentNode.appendChild(traitSection);
     }
-
-    traitContainer.innerHTML = '';
-    if (preview) preview.innerHTML = '';
-    traitImages = [];
-    TraitManager.getAllTraits().forEach(trait => {
-      addTrait(trait);
-      const input = document.getElementById(`trait${trait.id}-name`);
-      input.value = trait.name || input.placeholder;
-      input.dataset.userEntered = trait.name ? 'true' : 'false';
-      refreshTraitGrid(trait.id);
-      if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
-    });
-
+    renumberTraits();
     updateZIndices();
     updatePreviewSamples();
   });
@@ -1229,21 +1187,9 @@ function setupTraitListeners(traitId) {
   addTraitBtn.addEventListener('click', () => {
     if (TraitManager.getAllTraits().length < 20) {
       const trait = TraitManager.getTrait(traitId);
-      const newPosition = trait.position;
-      TraitManager.addTrait(newPosition);
-
-      traitContainer.innerHTML = '';
-      if (preview) preview.innerHTML = '';
-      traitImages = [];
-      TraitManager.getAllTraits().forEach(trait => {
-        addTrait(trait);
-        const input = document.getElementById(`trait${trait.id}-name`);
-        input.value = trait.name || input.placeholder;
-        input.dataset.userEntered = trait.name ? 'true' : 'false';
-        refreshTraitGrid(trait.id);
-        if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
-      });
-
+      const newTrait = TraitManager.addTrait(trait.position);
+      addTrait(newTrait);
+      renumberTraits();
       updateZIndices();
       updatePreviewSamples();
     }
@@ -1280,7 +1226,7 @@ function refreshTraitGrid(traitId) {
     container.appendChild(imageWrapper);
     container.appendChild(filename);
     container.addEventListener('click', () => {
-      console.log(`Clicked variant: Trait ${traitId}, Variation ${variant.name}`);
+      debugLog(`Clicked variant: Trait ${traitId}, Variation ${variant.name}`);
       const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
       allWrappers.forEach(w => w.classList.remove('selected'));
       imageWrapper.classList.add('selected');
@@ -1295,13 +1241,19 @@ function refreshTraitGrid(traitId) {
   if (selectedWrapper) selectedWrapper.classList.add('selected');
 
   const previewImage = traitImages.find(img => img.id === `preview-trait${traitId}`);
-  if (previewImage && previewImage.src && trait.variants[trait.selected]) {
+  if (previewImage && isValidImage(previewImage) && trait.variants[trait.selected]) {
     const key = `${traitId}-${trait.variants[trait.selected].name}`;
     const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[trait.selected].name}-position`);
     if (savedPosition) {
-      const { left, top } = JSON.parse(savedPosition);
-      previewImage.style.left = `${left}px`;
-      previewImage.style.top = `${top}px`;
+      try {
+        const { left, top } = JSON.parse(savedPosition);
+        previewImage.style.left = `${left}px`;
+        previewImage.style.top = `${top}px`;
+      } catch (e) {
+        debugLog('Invalid position data in refreshTraitGrid:', e);
+        previewImage.style.left = '0px';
+        previewImage.style.top = '0px';
+      }
     }
   }
 }
@@ -1329,32 +1281,46 @@ function updateMintButton() {
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
-
-
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
-function updateZIndices() {
-  const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
-  traitImages.forEach((img, index) => {
-    if (img) {
-      const trait = sortedTraits[index];
-      img.style.zIndex = TraitManager.getAllTraits().length - trait.position + 1;
-      console.log(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${img.style.zIndex}`);
+class ScalingManager {
+  static baseSize = 598;
+  static getScaleFactor(currentSize) {
+    return currentSize / this.baseSize;
+  }
+  static applyScaling(element, container) {
+    const currentSize = container.getBoundingClientRect().width;
+    const scale = this.getScaleFactor(currentSize);
+    if (element.naturalWidth && element.naturalHeight) {
+      element.style.width = (element.naturalWidth * scale) + 'px';
+      element.style.height = (element.naturalHeight * scale) + 'px';
     }
-  });
-  if (preview) preview.offsetHeight;
+    return scale;
+  }
 }
 
-function calculateScalingFactor() {
-  const windowSize = 600; // Preview window size including borders
-  const projectSize = 600; // Expected project size
-  const borderAdjustment = 2; // 1px border on each side (total 2px)
-  return (windowSize - borderAdjustment) / projectSize;
+function isValidImage(img) {
+  return img && img.src && img.src !== '' && img.complete && img.naturalWidth > 0;
+}
+
+function normalizePosition(left, top, fromWidth, fromHeight, toWidth, toHeight) {
+  return {
+    left: (left / fromWidth) * toWidth,
+    top: (top / fromHeight) * toHeight
+  };
+}
+
+function calculateScalingFactor(container = preview) {
+  return ScalingManager.getScaleFactor(container.getBoundingClientRect().width);
 }
 
 function applyScalingToImage(img, callback) {
-  if (!img || !img.src) {
-    console.warn('Cannot apply scaling: id=' + (img ? img.id : 'undefined') + ', no src available');
+  if (!isValidImage(img)) {
+    debugLog('Cannot apply scaling: id=' + (img ? img.id : 'undefined') + ', invalid image');
+    if (callback) callback();
+    return;
+  }
+  if (img.dataset.scaled === 'true') {
     if (callback) callback();
     return;
   }
@@ -1363,24 +1329,67 @@ function applyScalingToImage(img, callback) {
   tempImg.onload = () => {
     img.naturalWidth = tempImg.naturalWidth;
     img.naturalHeight = tempImg.naturalHeight;
-    const scale = calculateScalingFactor();
+    const scale = calculateScalingFactor(img.parentElement);
     const scaledWidth = img.naturalWidth * scale;
     const scaledHeight = img.naturalHeight * scale;
     img.style.width = scaledWidth + 'px';
     img.style.height = scaledHeight + 'px';
-    console.log('Applied scaling: id=' + img.id + ', naturalWidth=' + img.naturalWidth + ', naturalHeight=' + img.naturalHeight + ', scale=' + scale + ', scaledWidth=' + scaledWidth + ', scaledHeight=' + scaledHeight);
+    debugLog('Applied scaling: id=' + img.id + ', naturalWidth=' + img.naturalWidth + ', naturalHeight=' + img.naturalHeight + ', scale=' + scale + ', scaledWidth=' + scaledWidth + ', scaledHeight=' + scaledHeight);
+    img.dataset.scaled = 'true';
     if (callback) callback();
   };
   tempImg.onerror = () => {
-    console.warn('Cannot apply scaling: id=' + img.id + ', image failed to load');
+    debugLog('Cannot apply scaling: id=' + img.id + ', image failed to load');
+    img.style.width = DIMENSIONS.BASE_SIZE + 'px';
+    img.style.height = DIMENSIONS.BASE_SIZE + 'px';
+    img.dataset.scaled = 'true';
     if (callback) callback();
   };
 }
 
 function applyScalingToTraits() {
   traitImages.forEach(img => {
-    if (img.src) {
+    if (isValidImage(img)) {
       applyScalingToImage(img);
+    }
+  });
+}
+
+function applyScalingToSamples() {
+  const sampleImages = document.querySelectorAll('#preview-samples-grid .sample-preview img');
+  sampleImages.forEach(img => {
+    if (isValidImage(img)) {
+      applyScalingToImage(img, () => {
+        const containerWidth = DIMENSIONS.BASE_SIZE;
+        const containerHeight = DIMENSIONS.BASE_SIZE;
+        const imgWidth = parseFloat(img.style.width) || 0;
+        const imgHeight = parseFloat(img.style.height) || 0;
+        img.style.left = ((containerWidth - imgWidth) / 2) + 'px';
+        img.style.top = ((containerHeight - imgHeight) / 2) + 'px';
+      });
+    }
+  });
+}
+
+function initializePositions() {
+  TraitManager.getAllTraits().forEach(trait => {
+    const img = traitImages.find(ti => ti.id === 'preview-trait' + trait.id);
+    if (isValidImage(img)) {
+      applyScalingToImage(img, () => {
+        const key = 'trait' + trait.id + '-position';
+        const savedPosition = localStorage.getItem(key);
+        try {
+          if (savedPosition) {
+            const { left, top } = JSON.parse(savedPosition);
+            img.style.left = left + '%';
+            img.style.top = top + '%';
+          }
+        } catch (e) {
+          debugLog('Invalid position data for trait ' + trait.id + ':', e);
+          img.style.left = '0%';
+          img.style.top = '0%';
+        }
+      });
     }
   });
 }
@@ -1389,36 +1398,43 @@ function selectVariation(traitId, variationId) {
   const trait = TraitManager.getTrait(traitId);
   const variationIndex = trait.variants.findIndex(v => v.id === variationId);
   if (variationIndex === -1) {
-    console.error('Variation ' + variationId + ' not found in Trait ' + traitId);
+    debugLog('Variation ' + variationId + ' not found in Trait ' + traitId);
     return;
   }
   trait.selected = variationIndex;
 
-  const previewImage = traitImages.find(img => img.id === `preview-trait${traitId}`);
+  const previewImage = traitImages.find(img => img.id === 'preview-trait' + traitId);
   if (previewImage) {
     previewImage.src = trait.variants[variationIndex].url;
     previewImage.style.visibility = 'visible';
-    console.log('Selected variation ' + variationId + ' for trait ' + traitId + ', src: ' + previewImage.src + ', visibility: ' + previewImage.style.visibility);
+    debugLog('Selected variation ' + variationId + ' for trait ' + traitId + ', src: ' + previewImage.src + ', visibility: ' + previewImage.style.visibility);
     
     applyScalingToImage(previewImage, () => {
       const key = 'trait' + traitId + '-position';
       const savedPosition = localStorage.getItem(key);
-      const contentWidth = 598; // After border adjustment
-      const contentHeight = 598;
-      const imgWidth = parseFloat(previewImage.style.width) || 0;
-      const imgHeight = parseFloat(previewImage.style.height) || 0;
-      const maxLeft = imgWidth ? (contentWidth - imgWidth) / contentWidth * 100 : 0;
-      const maxTop = imgHeight ? (contentHeight - imgHeight) / contentHeight * 100 : 0;
-      if (savedPosition) {
-        const { left, top } = JSON.parse(savedPosition);
-        previewImage.style.left = Math.max(0, Math.min(left, maxLeft)) + '%';
-        previewImage.style.top = Math.max(0, Math.min(top, maxTop)) + '%';
-        if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
-      } else {
+      const contentWidth = preview.getBoundingClientRect().width;
+      const contentHeight = contentWidth;
+      const imgWidth = parseFloat(previewImage.style.width) || contentWidth;
+      const imgHeight = parseFloat(previewImage.style.height) || contentHeight;
+      const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
+      const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
+      try {
+        if (savedPosition) {
+          const { left, top } = JSON.parse(savedPosition);
+          const normalized = normalizePosition(left, top, DIMENSIONS.BASE_SIZE, DIMENSIONS.BASE_SIZE, contentWidth, contentHeight);
+          previewImage.style.left = Math.max(0, Math.min(normalized.left, maxLeft)) + '%';
+          previewImage.style.top = Math.max(0, Math.min(normalized.top, maxTop)) + '%';
+          if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
+        } else {
+          previewImage.style.left = '0%';
+          previewImage.style.top = '0%';
+          variantHistories[key] = [{ left: 0, top: 0 }];
+          localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
+        }
+      } catch (e) {
+        debugLog('Invalid position data for trait ' + traitId + ':', e);
         previewImage.style.left = '0%';
         previewImage.style.top = '0%';
-        variantHistories[key] = [{ left: 0, top: 0 }];
-        localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
       }
       currentImage = previewImage;
       updateZIndices();
@@ -1426,7 +1442,7 @@ function selectVariation(traitId, variationId) {
       applyScalingToSamples();
     });
   } else {
-    console.error('Preview image for trait ' + traitId + ' not found in traitImages');
+    debugLog('Preview image for trait ' + traitId + ' not found in traitImages');
   }
 }
 
@@ -1442,30 +1458,13 @@ function setupDragAndDrop(img, traitIndex) {
     }
 
     function startDragging(e) {
-      if (!img.src) return;
-      const elements = document.elementsFromPoint(e.clientX, e.clientY);
-      const traitImgs = elements.filter(el => traitImages.some(ti => ti === el));
-      let selectedImage = null;
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      for (const traitImg of traitImgs) {
-        canvas.width = traitImg.width;
-        canvas.height = traitImg.height;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(traitImg, 0, 0);
-        const rect = traitImg.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const pixel = ctx.getImageData(x, y, 1, 1).data;
-        if (pixel[3] > 0) {
-          selectedImage = traitImg;
-          break;
-        }
-      }
+      if (!isValidImage(img)) return;
+      const targetImg = e.target;
+      if (!traitImages.includes(targetImg)) return;
+      const highestZIndex = Math.max(...traitImages.map(i => parseInt(i.style.zIndex) || 0));
+      if (parseInt(targetImg.style.zIndex) < highestZIndex) return;
 
-      if (!selectedImage) return;
-
-      currentImage = selectedImage;
+      currentImage = targetImg;
       isDragging = true;
       const containerRect = currentImage.parentElement.getBoundingClientRect();
       const imageRect = currentImage.getBoundingClientRect();
@@ -1486,17 +1485,15 @@ function setupDragAndDrop(img, traitIndex) {
     function onMouseMove(e) {
       if (isDragging && currentImage) {
         const containerRect = currentImage.parentElement.getBoundingClientRect();
-        const imageRect = currentImage.getBoundingClientRect();
-
-        const borderAdjustment = 2; // 1px border on each side
+        const borderAdjustment = DIMENSIONS.BORDER_ADJUSTMENT;
         const contentWidth = containerRect.width - borderAdjustment;
         const contentHeight = containerRect.height - borderAdjustment;
 
         let newLeft = (e.clientX - containerRect.left) / contentWidth * 100 - offsetX;
         let newTop = (e.clientY - containerRect.top) / contentHeight * 100 - offsetY;
 
-        const imgWidth = parseFloat(currentImage.style.width || currentImage.naturalWidth * calculateScalingFactor());
-        const imgHeight = parseFloat(currentImage.style.height || currentImage.naturalHeight * calculateScalingFactor());
+        const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
+        const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
         const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
         const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
 
@@ -1511,14 +1508,14 @@ function setupDragAndDrop(img, traitIndex) {
 
     function stopDragging() {
       if (isDragging && currentImage) {
-        const traitIndex = traitImages.indexOf(currentImage);
-        if (traitIndex === -1) {
-          console.error('Current image not found in traitImages');
+        const traitId = currentImage.id.substring('preview-trait'.length);
+        const trait = TraitManager.getTrait(traitId);
+        if (!trait) {
+          debugLog('Trait not found for image:', currentImage.id);
           return;
         }
-        const trait = TraitManager.getAllTraits()[traitIndex];
         const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, trait.id, variationName);
+        savePosition(currentImage, traitId, variationName);
         isDragging = false;
         currentImage.style.cursor = 'grab';
         currentImage.classList.remove('dragging');
@@ -1545,10 +1542,10 @@ function updateCoordinates(img) {
 }
 
 function savePosition(img, traitId, variationName) {
-  const contentWidth = 598;
-  const contentHeight = 598;
-  const imgWidth = parseFloat(img.style.width) || 598;
-  const imgHeight = parseFloat(img.style.height) || 598;
+  const contentWidth = preview.getBoundingClientRect().width;
+  const contentHeight = contentWidth;
+  const imgWidth = parseFloat(img.style.width) || contentWidth;
+  const imgHeight = parseFloat(img.style.height) || contentHeight;
   const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
   const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
 
@@ -1558,12 +1555,20 @@ function savePosition(img, traitId, variationName) {
   left = Math.max(0, Math.min(left, maxLeft));
   top = Math.max(0, Math.min(top, maxTop));
 
-  const position = { left, top };
-  const key = 'trait' + traitId + '-position';
+  const position = {
+    left,
+    top,
+    absWidth: imgWidth,
+    absHeight: imgHeight
+  };
+  const key = `trait${traitId}-position`;
   if (!variantHistories[key]) variantHistories[key] = [];
   variantHistories[key].push(position);
+  if (variantHistories[key].length > 20) {
+    variantHistories[key].shift();
+  }
   localStorage.setItem(key, JSON.stringify(position));
-  localStorage.setItem('trait' + traitId + '-manuallyMoved', 'true');
+  localStorage.setItem(`trait${traitId}-manuallyMoved`, 'true');
 
   img.style.left = left + '%';
   img.style.top = top + '%';
@@ -1573,35 +1578,21 @@ function savePosition(img, traitId, variationName) {
   autoPositioned[traitIndex] = true;
 
   updateSamplePositions(traitId, trait.variants[trait.selected].id, position);
-  updateSubsequentTraits(traitId, variationName, position);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Scaling deferred to selectVariation
-});
-
+function updateZIndices() {
+  const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
+  traitImages.forEach((img, index) => {
+    if (img) {
+      const trait = sortedTraits[index];
+      img.style.zIndex = TraitManager.getAllTraits().length - trait.position + 1;
+      debugLog(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${img.style.zIndex}`);
+    }
+  });
+  if (preview) preview.offsetHeight;
+}
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
-
-function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
-  const currentTrait = TraitManager.getTrait(currentTraitId);
-  const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === currentTraitId);
-
-  for (let traitIndex = currentTraitIndex + 1; traitIndex < TraitManager.getAllTraits().length; traitIndex++) {
-    const nextTrait = TraitManager.getAllTraits()[traitIndex];
-    if (nextTrait.variants.length === 0) continue;
-    const key = `trait${nextTrait.id}-position`;
-    const manuallyMoved = localStorage.getItem(`trait${nextTrait.id}-manuallyMoved`);
-    if (!manuallyMoved) {
-      localStorage.setItem(key, JSON.stringify(position));
-      const previewImage = document.getElementById(`preview-trait${nextTrait.id}`);
-      if (previewImage && previewImage.src) {
-        previewImage.style.left = `${position.left}%`;
-        previewImage.style.top = `${position.top}%`;
-      }
-    }
-  }
-}
 
 function updateSamplePositions(traitId, variationId, position) {
   for (let i = 0; i < 16; i++) {
@@ -1619,12 +1610,12 @@ function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
 
-  const panelContentWidth = 540;
-  const gap = 13;
+  const panelWidth = previewSamplesGrid.getBoundingClientRect().width;
+  const gap = DIMENSIONS.GRID_GAP;
   const columns = 4;
   const totalGap = gap * (columns - 1);
-  const containerSize = (panelContentWidth - totalGap) / columns;
-  const scaleFactor = containerSize / 598;
+  const containerSize = (panelWidth - totalGap) / columns;
+  const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE;
 
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
@@ -1634,8 +1625,8 @@ function updatePreviewSamples() {
 
     const previewContainer = document.createElement('div');
     previewContainer.className = 'sample-preview';
-    previewContainer.style.width = '598px';
-    previewContainer.style.height = '598px';
+    previewContainer.style.width = DIMENSIONS.BASE_SIZE + 'px';
+    previewContainer.style.height = DIMENSIONS.BASE_SIZE + 'px';
     previewContainer.style.transform = 'scale(' + scaleFactor + ')';
     previewContainer.style.transformOrigin = '0 0';
 
@@ -1654,12 +1645,27 @@ function updatePreviewSamples() {
       img.style.zIndex = trait.zIndex;
 
       applyScalingToImage(img, () => {
-        const containerWidth = 598;
-        const containerHeight = 598;
-        const imgWidth = parseFloat(img.style.width) || 0;
-        const imgHeight = parseFloat(img.style.height) || 0;
-        img.style.left = ((containerWidth - imgWidth) / 2) + 'px';
-        img.style.top = ((containerHeight - imgHeight) / 2) + 'px';
+        const key = 'trait' + trait.id + '-position';
+        const savedPosition = localStorage.getItem(key);
+        try {
+          if (savedPosition) {
+            const { left, top } = JSON.parse(savedPosition);
+            const normalized = normalizePosition(left, top, DIMENSIONS.BASE_SIZE, DIMENSIONS.BASE_SIZE, containerSize, containerSize);
+            img.style.left = normalized.left + 'px';
+            img.style.top = normalized.top + 'px';
+          } else {
+            const containerWidth = DIMENSIONS.BASE_SIZE;
+            const containerHeight = DIMENSIONS.BASE_SIZE;
+            const imgWidth = parseFloat(img.style.width) || 0;
+            const imgHeight = parseFloat(img.style.height) || 0;
+            img.style.left = ((containerWidth - imgWidth) / 2) + 'px';
+            img.style.top = ((containerHeight - imgHeight) / 2) + 'px';
+          }
+        } catch (e) {
+          debugLog('Invalid position data for sample ' + i + ':', e);
+          img.style.left = '0px';
+          img.style.top = '0px';
+        }
       });
 
       sampleData[i].push({
@@ -1704,30 +1710,7 @@ function updatePreviewSamples() {
   }
 }
 
-// Add this new function to prevent position corruption
-function safeGetPosition(traitId, variantName) {
-  const key = `trait${traitId}-position`;
-  const savedPosition = localStorage.getItem(key);
-  if (savedPosition) return JSON.parse(savedPosition);
-
-  const trait = TraitManager.getTrait(traitId);
-  const previewImg = traitImages.find(ti => ti.id === `preview-trait${traitId}`);
-  
-  if (previewImg) {
-    return {
-      left: parseFloat(previewImg.style.left) || 0,
-      top: parseFloat(previewImg.style.top) || 0
-    };
-  }
-  
-  return { left: 0, top: 0 };
-}
-
-
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
-
-
-
 
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
@@ -1751,7 +1734,9 @@ function addToChosenGrid(imageUrl, targetContainer = null) {
     const existingImg = container.querySelector('img');
     if (existingImg) {
       const index = chosenImages.indexOf(existingImg.src);
-      if (index !== -1) chosenImages.splice(index, 1);
+      if (index !== -1) {
+        chosenImages.splice(index, 1);
+      }
       existingImg.remove();
     }
     const img = document.createElement('img');
@@ -1827,7 +1812,7 @@ async function fetchMultipleBackgrounds(count) {
         const img = container.querySelector('img');
         img.src = data.imageUrl;
       } catch (error) {
-        console.error(`Error fetching background ${i + 1}:`, error);
+        debugLog(`Error fetching background ${i + 1}:`, error);
         imageUrls[i] = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
         const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
         const img = container.querySelector('img');
@@ -2026,4 +2011,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+});
+
+window.addEventListener('resize', () => {
+  applyScalingToTraits();
+  applyScalingToSamples();
 });
