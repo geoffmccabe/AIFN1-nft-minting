@@ -1017,7 +1017,6 @@ function addTrait(trait) {
     setupDragAndDrop(traitImage, TraitManager.getAllTraits().findIndex(t => t.id === trait.id));
   });
   updateZIndices();
-  updatePreviewSamples();
 }
 
 function removeTrait(traitId) {
@@ -1353,17 +1352,29 @@ function calculateScalingFactor() {
   return (windowSize - borderAdjustment) / projectSize;
 }
 
-function applyScalingToImage(img) {
-  if (img && img.naturalWidth && img.naturalHeight) {
+function applyScalingToImage(img, callback) {
+  if (!img || !img.src) {
+    console.warn('Cannot apply scaling: id=' + (img ? img.id : 'undefined') + ', no src available');
+    if (callback) callback();
+    return;
+  }
+  const tempImg = new Image();
+  tempImg.src = img.src;
+  tempImg.onload = () => {
+    img.naturalWidth = tempImg.naturalWidth;
+    img.naturalHeight = tempImg.naturalHeight;
     const scale = calculateScalingFactor();
     const scaledWidth = img.naturalWidth * scale;
     const scaledHeight = img.naturalHeight * scale;
     img.style.width = scaledWidth + 'px';
     img.style.height = scaledHeight + 'px';
-    console.log('Applied scaling to image ' + img.id + ': naturalWidth=' + img.naturalWidth + ', naturalHeight=' + img.naturalHeight + ', scale=' + scale + ', scaledWidth=' + scaledWidth + ', scaledHeight=' + scaledHeight);
-  } else {
-    console.warn('Cannot apply scaling to image ' + img.id + ': naturalWidth or naturalHeight not available');
-  }
+    console.log('Applied scaling: id=' + img.id + ', naturalWidth=' + img.naturalWidth + ', naturalHeight=' + img.naturalHeight + ', scale=' + scale + ', scaledWidth=' + scaledWidth + ', scaledHeight=' + scaledHeight);
+    if (callback) callback();
+  };
+  tempImg.onerror = () => {
+    console.warn('Cannot apply scaling: id=' + img.id + ', image failed to load');
+    if (callback) callback();
+  };
 }
 
 function applyScalingToTraits() {
@@ -1387,7 +1398,7 @@ function selectVariation(traitId, variationId) {
   const trait = TraitManager.getTrait(traitId);
   const variationIndex = trait.variants.findIndex(v => v.id === variationId);
   if (variationIndex === -1) {
-    console.error(`Variation ${variationId} not found in Trait ${traitId}`);
+    console.error('Variation ' + variationId + ' not found in Trait ' + traitId);
     return;
   }
   trait.selected = variationIndex;
@@ -1396,47 +1407,35 @@ function selectVariation(traitId, variationId) {
   if (previewImage) {
     previewImage.src = trait.variants[variationIndex].url;
     previewImage.style.visibility = 'visible';
-    console.log(`Selected variation ${variationId} for trait ${traitId}, src: ${previewImage.src}, visibility: ${previewImage.style.visibility}`);
+    console.log('Selected variation ' + variationId + ' for trait ' + traitId + ', src: ' + previewImage.src + ', visibility: ' + previewImage.style.visibility);
     
-    const img = new Image();
-    img.src = previewImage.src;
-    img.onload = () => {
-      if (img.naturalWidth && img.naturalHeight) {
-        previewImage.naturalWidth = img.naturalWidth;
-        previewImage.naturalHeight = img.naturalHeight;
-        applyScalingToTraits();
-        applyScalingToSamples();
-        const key = `trait${traitId}-position`;
-        const savedPosition = localStorage.getItem(key);
-        const contentWidth = 598; // After border adjustment
-        const contentHeight = 598;
-        const imgWidth = parseFloat(previewImage.style.width || img.naturalWidth * calculateScalingFactor());
-        const imgHeight = parseFloat(previewImage.style.height || img.naturalHeight * calculateScalingFactor());
-        const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
-        const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
-        if (savedPosition) {
-          const { left, top } = JSON.parse(savedPosition);
-          previewImage.style.left = `${Math.max(0, Math.min(left, maxLeft))}%`;
-          previewImage.style.top = `${Math.max(0, Math.min(top, maxTop))}%`;
-          if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
-        } else {
-          previewImage.style.left = '0%';
-          previewImage.style.top = '0%';
-          variantHistories[key] = [{ left: 0, top: 0 }];
-          localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
-        }
-        currentImage = previewImage;
-        updateZIndices();
-        updateCoordinates(previewImage);
+    applyScalingToImage(previewImage, () => {
+      const key = 'trait' + traitId + '-position';
+      const savedPosition = localStorage.getItem(key);
+      const contentWidth = 598; // After border adjustment
+      const contentHeight = 598;
+      const imgWidth = parseFloat(previewImage.style.width) || 0;
+      const imgHeight = parseFloat(previewImage.style.height) || 0;
+      const maxLeft = imgWidth ? (contentWidth - imgWidth) / contentWidth * 100 : 0;
+      const maxTop = imgHeight ? (contentHeight - imgHeight) / contentHeight * 100 : 0;
+      if (savedPosition) {
+        const { left, top } = JSON.parse(savedPosition);
+        previewImage.style.left = Math.max(0, Math.min(left, maxLeft)) + '%';
+        previewImage.style.top = Math.max(0, Math.min(top, maxTop)) + '%';
+        if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
       } else {
-        console.error(`Failed to load image dimensions for trait ${traitId}, variation ${variationId}`);
+        previewImage.style.left = '0%';
+        previewImage.style.top = '0%';
+        variantHistories[key] = [{ left: 0, top: 0 }];
+        localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
       }
-    };
-    img.onerror = () => {
-      console.error(`Failed to load image for trait ${traitId}, variation ${variationId}`);
-    };
+      currentImage = previewImage;
+      updateZIndices();
+      updateCoordinates(previewImage);
+      applyScalingToSamples();
+    });
   } else {
-    console.error(`Preview image for trait ${traitId} not found in traitImages`);
+    console.error('Preview image for trait ' + traitId + ' not found in traitImages');
   }
 }
 
