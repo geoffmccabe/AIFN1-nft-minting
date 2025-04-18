@@ -1545,30 +1545,28 @@ function updateCoordinates(img) {
 }
 
 function savePosition(img, traitId, variationName) {
-  const contentWidth = 598; // After border adjustment
+  const contentWidth = 598;
   const contentHeight = 598;
-  const imgWidth = parseFloat(img.style.width || img.naturalWidth * calculateScalingFactor());
-  const imgHeight = parseFloat(img.style.height || img.naturalHeight * calculateScalingFactor());
+  const imgWidth = parseFloat(img.style.width) || 598;
+  const imgHeight = parseFloat(img.style.height) || 598;
   const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
   const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
 
   let left = parseFloat(img.style.left) || 0;
   let top = parseFloat(img.style.top) || 0;
 
-  // Clamp the position to valid bounds
   left = Math.max(0, Math.min(left, maxLeft));
   top = Math.max(0, Math.min(top, maxTop));
 
   const position = { left, top };
-  const key = `trait${traitId}-position`;
+  const key = 'trait' + traitId + '-position';
   if (!variantHistories[key]) variantHistories[key] = [];
   variantHistories[key].push(position);
   localStorage.setItem(key, JSON.stringify(position));
-  localStorage.setItem(`trait${traitId}-manuallyMoved`, 'true');
+  localStorage.setItem('trait' + traitId + '-manuallyMoved', 'true');
 
-  // Apply the clamped position back to the image
-  img.style.left = `${left}%`;
-  img.style.top = `${top}%`;
+  img.style.left = left + '%';
+  img.style.top = top + '%';
 
   const trait = TraitManager.getTrait(traitId);
   const traitIndex = TraitManager.getAllTraits().findIndex(t => t.id === traitId);
@@ -1578,14 +1576,8 @@ function savePosition(img, traitId, variationName) {
   updateSubsequentTraits(traitId, variationName, position);
 }
 
-window.addEventListener('resize', () => {
-  applyScalingToTraits();
-  applyScalingToSamples();
-});
-
 document.addEventListener('DOMContentLoaded', () => {
-  applyScalingToTraits();
-  applyScalingToSamples();
+  // Scaling deferred to selectVariation
 });
 
 
@@ -1627,25 +1619,24 @@ function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
 
-  // Calculate the actual container size based on the panel's content area
-  const panelContentWidth = 540; // Adjusted for ~30px total padding (15px per side)
-  const gap = 13; // Gap between grid cells
+  const panelContentWidth = 540;
+  const gap = 13;
   const columns = 4;
-  const totalGap = gap * (columns - 1); // 39px
-  const containerSize = (panelContentWidth - totalGap) / columns; // (540 - 39) / 4 ≈ 125.25px
-  const scaleFactor = containerSize / 598; // Scale to fit the content area (598px after border adjustment)
+  const totalGap = gap * (columns - 1);
+  const containerSize = (panelContentWidth - totalGap) / columns;
+  const scaleFactor = containerSize / 598;
 
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
-    sampleContainer.style.width = `${containerSize}px`;
-    sampleContainer.style.height = `${containerSize}px`;
+    sampleContainer.style.width = containerSize + 'px';
+    sampleContainer.style.height = containerSize + 'px';
 
     const previewContainer = document.createElement('div');
     previewContainer.className = 'sample-preview';
     previewContainer.style.width = '598px';
     previewContainer.style.height = '598px';
-    previewContainer.style.transform = `scale(${scaleFactor})`;
+    previewContainer.style.transform = 'scale(' + scaleFactor + ')';
     previewContainer.style.transformOrigin = '0 0';
 
     const traits = TraitManager.getAllTraits().slice().reverse();
@@ -1658,27 +1649,18 @@ function updatePreviewSamples() {
 
       const img = document.createElement('img');
       img.src = variant.url;
-      img.alt = `Sample ${i + 1} - Trait ${trait.position}`;
+      img.alt = 'Sample ' + (i + 1) + ' - Trait ' + trait.position;
       img.style.position = 'absolute';
       img.style.zIndex = trait.zIndex;
 
-      const tempImg = new Image();
-      tempImg.src = variant.url;
-      tempImg.onload = () => {
-        const scale = calculateScalingFactor();
-        img.naturalWidth = tempImg.naturalWidth;
-        img.naturalHeight = tempImg.naturalHeight;
-        img.style.width = `${tempImg.naturalWidth * scale}px`;
-        img.style.height = `${tempImg.naturalHeight * scale}px`;
-
-        // Center the image in the previewContainer
-        const containerWidth = 598; // After border adjustment
+      applyScalingToImage(img, () => {
+        const containerWidth = 598;
         const containerHeight = 598;
-        const imgWidth = parseFloat(img.style.width);
-        const imgHeight = parseFloat(img.style.height);
-        img.style.left = `${(containerWidth - imgWidth) / 2}px`;
-        img.style.top = `${(containerHeight - imgHeight) / 2}px`;
-      };
+        const imgWidth = parseFloat(img.style.width) || 0;
+        const imgHeight = parseFloat(img.style.height) || 0;
+        img.style.left = ((containerWidth - imgWidth) / 2) + 'px';
+        img.style.top = ((containerHeight - imgHeight) / 2) + 'px';
+      });
 
       sampleData[i].push({
         traitId: trait.id,
@@ -1695,37 +1677,29 @@ function updatePreviewSamples() {
     sampleContainer.addEventListener('click', (e) => {
       e.stopPropagation();
       
-      // Update the full-sized Preview Window with the clicked sample's variants
       sampleData[i].forEach(sample => {
         const trait = TraitManager.getTrait(sample.traitId);
         const variantIndex = trait.variants.findIndex(v => v.id === sample.variantId);
         
         if (variantIndex !== -1) {
           trait.selected = variantIndex;
-          const previewImg = traitImages.find(ti => ti.id === `preview-trait${trait.id}`);
+          const previewImg = traitImages.find(ti => ti.id === 'preview-trait' + trait.id);
           if (previewImg) {
             previewImg.src = trait.variants[variantIndex].url;
             previewImg.style.visibility = 'visible';
-            const tempImg = new Image();
-            tempImg.src = previewImg.src;
-            tempImg.onload = () => {
-              previewImg.naturalWidth = tempImg.naturalWidth;
-              previewImg.naturalHeight = tempImg.naturalHeight;
-              applyScalingToImage(previewImg);
-            };
+            applyScalingToImage(previewImg);
           }
           
-          const grid = document.getElementById(`trait${trait.id}-grid`);
+          const grid = document.getElementById('trait' + trait.id + '-grid');
           if (grid) {
             grid.querySelectorAll('.variation-image-wrapper').forEach(w => w.classList.remove('selected'));
-            const container = grid.querySelector(`[data-variation-id="${sample.variantId}"]`);
+            const container = grid.querySelector('[data-variation-id="' + sample.variantId + '"]');
             if (container) {
               container.querySelector('.variation-image-wrapper')?.classList.add('selected');
             }
           }
         }
       });
-      // Do not call updatePreviewSamples here to avoid resetting the samples
     });
   }
 }
