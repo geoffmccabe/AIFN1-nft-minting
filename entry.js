@@ -371,7 +371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
- async function deleteProject() {
+async function deleteProject() {
   try {
     const slot = document.getElementById('project-slot').value;
     const db = await openDB();
