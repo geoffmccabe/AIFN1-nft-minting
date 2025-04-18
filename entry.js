@@ -484,11 +484,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (maxWidth / maxHeight > 1) {
           enlargedPreview.style.height = `${maxHeight - 60}px`;
           enlargedPreview.style.width = `${maxHeight - 60}px`;
-          scale = (maxHeight - 60) / 600;
+          scale = (maxHeight - 60) / 598;
         } else {
           enlargedPreview.style.width = `${maxWidth - 60}px`;
           enlargedPreview.style.height = `${maxWidth - 60}px`;
-          scale = (maxWidth - 60) / 600;
+          scale = (maxWidth - 60) / 598;
         }
 
         const controls = document.getElementById('enlarged-preview-controls');
@@ -512,8 +512,8 @@ document.addEventListener('DOMContentLoaded', async () => {
               const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
               applyScalingToImage(baseImg);
               
-              const baseWidth = parseFloat(baseImg.style.width || '600');
-              const baseHeight = parseFloat(baseImg.style.height || '600');
+              const baseWidth = parseFloat(baseImg.style.width || '598');
+              const baseHeight = parseFloat(baseImg.style.height || '598');
               
               const scaledWidth = baseWidth * scale;
               const scaledHeight = baseHeight * scale;
@@ -635,14 +635,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       moveInterval = setInterval(() => {
         let left = parseFloat(currentImage.style.left) || 0;
         let top = parseFloat(currentImage.style.top) || 0;
-        if (direction === 'up') top -= 1;
-        if (direction === 'down') top += 1;
-        if (direction === 'left') left -= 1;
-        if (direction === 'right') left += 1;
-        left = Math.max(0, Math.min(left, 600 - currentImage.width));
-        top = Math.max(0, Math.min(top, 600 - currentImage.height));
-        currentImage.style.left = `${left}px`;
-        currentImage.style.top = `${top}px`;
+        const contentWidth = 598; // After border adjustment
+        const contentHeight = 598;
+        const imgWidth = parseFloat(currentImage.style.width || currentImage.naturalWidth * calculateScalingFactor());
+        const imgHeight = parseFloat(currentImage.style.height || currentImage.naturalHeight * calculateScalingFactor());
+
+        // Convert percentage to pixels for precise movement
+        let leftPx = (left / 100) * contentWidth;
+        let topPx = (top / 100) * contentHeight;
+
+        if (direction === 'up') topPx -= 1;
+        if (direction === 'down') topPx += 1;
+        if (direction === 'left') leftPx -= 1;
+        if (direction === 'right') leftPx += 1;
+
+        // Clamp pixel values
+        leftPx = Math.max(0, Math.min(leftPx, contentWidth - imgWidth));
+        topPx = Math.max(0, Math.min(topPx, contentHeight - imgHeight));
+
+        // Convert back to percentages
+        left = (leftPx / contentWidth) * 100;
+        top = (topPx / contentHeight) * 100;
+
+        currentImage.style.left = `${left}%`;
+        currentImage.style.top = `${top}%`;
         currentImage.classList.add('dragging');
         updateCoordinates(currentImage);
       }, 50);
@@ -708,12 +724,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     preview.addEventListener('mousemove', (e) => {
       if (!isDragging || !currentImage) return;
       const rect = preview.getBoundingClientRect();
-      let newLeft = e.clientX - rect.left - offsetX;
-      let newTop = e.clientY - rect.top - offsetY;
-      newLeft = Math.max(0, Math.min(newLeft, 600 - currentImage.width));
-      newTop = Math.max(0, Math.min(newTop, 600 - currentImage.height));
-      currentImage.style.left = `${newLeft}px`;
-      currentImage.style.top = `${newTop}px`;
+      const borderAdjustment = 2; // 1px border on each side
+      const contentWidth = rect.width - borderAdjustment;
+      const contentHeight = rect.height - borderAdjustment;
+
+      let newLeft = (e.clientX - rect.left) / contentWidth * 100 - offsetX;
+      let newTop = (e.clientY - rect.top) / contentHeight * 100 - offsetY;
+
+      const imgWidth = parseFloat(currentImage.style.width || currentImage.naturalWidth * calculateScalingFactor());
+      const imgHeight = parseFloat(currentImage.style.height || currentImage.naturalHeight * calculateScalingFactor());
+      const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
+      const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
+
+      newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+      newTop = Math.max(0, Math.min(newTop, maxTop));
+
+      currentImage.style.left = `${newLeft}%`;
+      currentImage.style.top = `${newTop}%`;
       updateCoordinates(currentImage);
     });
 
@@ -1340,8 +1367,8 @@ function applyScalingToSamples() {
   const sampleImages = document.querySelectorAll('#preview-samples-grid .sample-preview img');
   sampleImages.forEach(img => {
     applyScalingToImage(img);
-    const containerWidth = 600;
-    const containerHeight = 600;
+    const containerWidth = 598; // After border adjustment
+    const containerHeight = 598;
     const imgWidth = parseFloat(img.style.width || '0');
     const imgHeight = parseFloat(img.style.height || '0');
     img.style.left = `${(containerWidth - imgWidth) / 2}px`;
@@ -1376,8 +1403,14 @@ function selectVariation(traitId, variationId) {
         const savedPosition = localStorage.getItem(key);
         if (savedPosition) {
           const { left, top } = JSON.parse(savedPosition);
-          previewImage.style.left = `${left}%`;
-          previewImage.style.top = `${top}%`;
+          const contentWidth = 598; // After border adjustment
+          const contentHeight = 598;
+          const imgWidth = parseFloat(previewImage.style.width || img.naturalWidth * calculateScalingFactor());
+          const imgHeight = parseFloat(previewImage.style.height || img.naturalHeight * calculateScalingFactor());
+          const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
+          const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
+          previewImage.style.left = `${Math.max(0, Math.min(left, maxLeft))}%`;
+          previewImage.style.top = `${Math.max(0, Math.min(top, maxTop))}%`;
           if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
         } else {
           previewImage.style.left = '0%';
@@ -1513,12 +1546,30 @@ function updateCoordinates(img) {
 }
 
 function savePosition(img, traitId, variationName) {
-  const position = { left: parseFloat(img.style.left) || 0, top: parseFloat(img.style.top) || 0 };
+  const contentWidth = 598; // After border adjustment
+  const contentHeight = 598;
+  const imgWidth = parseFloat(img.style.width || img.naturalWidth * calculateScalingFactor());
+  const imgHeight = parseFloat(img.style.height || img.naturalHeight * calculateScalingFactor());
+  const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
+  const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
+
+  let left = parseFloat(img.style.left) || 0;
+  let top = parseFloat(img.style.top) || 0;
+
+  // Clamp the position to valid bounds
+  left = Math.max(0, Math.min(left, maxLeft));
+  top = Math.max(0, Math.min(top, maxTop));
+
+  const position = { left, top };
   const key = `trait${traitId}-position`;
   if (!variantHistories[key]) variantHistories[key] = [];
   variantHistories[key].push(position);
   localStorage.setItem(key, JSON.stringify(position));
   localStorage.setItem(`trait${traitId}-manuallyMoved`, 'true');
+
+  // Apply the clamped position back to the image
+  img.style.left = `${left}%`;
+  img.style.top = `${top}%`;
 
   const trait = TraitManager.getTrait(traitId);
   const traitIndex = TraitManager.getAllTraits().findIndex(t => t.id === traitId);
@@ -1539,11 +1590,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
-
-
-
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
@@ -1581,22 +1628,24 @@ function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
 
-  // Calculate the actual container size based on the grid layout
-  const gridWidth = 600; // #preview-samples-grid width
-  const gap = 13; // gap between grid cells
+  // Calculate the actual container size based on the panel's content area
+  const panelContentWidth = 540; // Adjusted for ~30px total padding (15px per side)
+  const gap = 13; // Gap between grid cells
   const columns = 4;
   const totalGap = gap * (columns - 1); // 3 gaps for 4 columns
-  const containerSize = (gridWidth - totalGap) / columns; // ~140.25px
-  const scaleFactor = containerSize / 600; // Scale to fit the container
+  const containerSize = (panelContentWidth - totalGap) / columns; // ~125.25px
+  const scaleFactor = containerSize / 598; // Scale to fit the content area (598px after border adjustment)
 
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
+    sampleContainer.style.width = `${containerSize}px`;
+    sampleContainer.style.height = `${containerSize}px`;
 
     const previewContainer = document.createElement('div');
     previewContainer.className = 'sample-preview';
-    previewContainer.style.width = '600px';
-    previewContainer.style.height = '600px';
+    previewContainer.style.width = '598px';
+    previewContainer.style.height = '598px';
     previewContainer.style.transform = `scale(${scaleFactor})`;
     previewContainer.style.transformOrigin = '0 0';
 
@@ -1624,8 +1673,8 @@ function updatePreviewSamples() {
         img.style.height = `${tempImg.naturalHeight * scale}px`;
 
         // Center the image in the previewContainer
-        const containerWidth = 600; // Before scaling
-        const containerHeight = 600;
+        const containerWidth = 598; // After border adjustment
+        const containerHeight = 598;
         const imgWidth = parseFloat(img.style.width);
         const imgHeight = parseFloat(img.style.height);
         img.style.left = `${(containerWidth - imgWidth) / 2}px`;
