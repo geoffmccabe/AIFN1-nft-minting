@@ -1,3 +1,4 @@
+// config.js - Configuration for AIFN1-nft-minting frontend
 window.config = {
   sepolia: {
     contractAddress: "0x94a885Bbfff517958B971478c1Aa4E13ED2CFf64",
@@ -47,11 +48,4 @@ window.config = {
     {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}
   ]
-};// Configuration for AIFN1-nft-minting frontend
-const blockchainConfig = {
-    sepolia: {
-        contractAddress: "0x526383e54d97e65e7cc447c467dac5d37fa32dc9", // New deployed contract
-        mintFee: "0.001", // 0.001 ETH on Sepolia
-        gasLimit: 300000 // Base gas limit, overridden by estimation
-    }
 };
