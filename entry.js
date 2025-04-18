@@ -1378,19 +1378,10 @@ function applyScalingToImage(img, callback) {
 }
 
 function applyScalingToTraits() {
-  traitImages.forEach(img => applyScalingToImage(img));
-}
-
-function applyScalingToSamples() {
-  const sampleImages = document.querySelectorAll('#preview-samples-grid .sample-preview img');
-  sampleImages.forEach(img => {
-    applyScalingToImage(img);
-    const containerWidth = 598; // After border adjustment
-    const containerHeight = 598;
-    const imgWidth = parseFloat(img.style.width || '0');
-    const imgHeight = parseFloat(img.style.height || '0');
-    img.style.left = `${(containerWidth - imgWidth) / 2}px`;
-    img.style.top = `${(containerHeight - imgHeight) / 2}px`;
+  traitImages.forEach(img => {
+    if (img.src) {
+      applyScalingToImage(img);
+    }
   });
 }
 
