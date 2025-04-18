@@ -153,6 +153,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000;
 
+  // Clear residual localStorage data to prevent positioning issues
+  Object.keys(localStorage).forEach(key => {
+    if (key.includes('-position') || key.includes('-manuallyMoved') || key.includes('_saveCount')) {
+      localStorage.removeItem(key);
+    }
+  });
+
   provider = new ethers.providers.Web3Provider(window.ethereum);
   contract = new ethers.Contract(config.sepolia.contractAddress, config.abi, provider);
   signer = provider.getSigner();
@@ -378,7 +385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      if (!confirm(`Are you sure you want to delete project "${project.name}" from ${slot}?`)) return;
+      if (!confirm(`Are you sure you want to delete project "${  "${project.name}" from ${slot}?`)) return;
 
       for (const trait of project.traits) {
         for (const variant of trait.variants) {
@@ -1401,14 +1408,14 @@ function selectVariation(traitId, variationId) {
         applyScalingToSamples();
         const key = `trait${traitId}-position`;
         const savedPosition = localStorage.getItem(key);
+        const contentWidth = 598; // After border adjustment
+        const contentHeight = 598;
+        const imgWidth = parseFloat(previewImage.style.width || img.naturalWidth * calculateScalingFactor());
+        const imgHeight = parseFloat(previewImage.style.height || img.naturalHeight * calculateScalingFactor());
+        const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
+        const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
         if (savedPosition) {
           const { left, top } = JSON.parse(savedPosition);
-          const contentWidth = 598; // After border adjustment
-          const contentHeight = 598;
-          const imgWidth = parseFloat(previewImage.style.width || img.naturalWidth * calculateScalingFactor());
-          const imgHeight = parseFloat(previewImage.style.height || img.naturalHeight * calculateScalingFactor());
-          const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
-          const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
           previewImage.style.left = `${Math.max(0, Math.min(left, maxLeft))}%`;
           previewImage.style.top = `${Math.max(0, Math.min(top, maxTop))}%`;
           if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
@@ -1495,17 +1502,19 @@ function setupDragAndDrop(img, traitIndex) {
         const contentWidth = containerRect.width - borderAdjustment;
         const contentHeight = containerRect.height - borderAdjustment;
 
-        const newLeft = (e.clientX - containerRect.left) / contentWidth * 100 - offsetX;
-        const newTop = (e.clientY - containerRect.top) / contentHeight * 100 - offsetY;
+        let newLeft = (e.clientX - containerRect.left) / contentWidth * 100 - offsetX;
+        let newTop = (e.clientY - containerRect.top) / contentHeight * 100 - offsetY;
 
-        const maxLeft = 100 - (imageRect.width / contentWidth * 100);
-        const maxTop = 100 - (imageRect.height / contentHeight * 100);
+        const imgWidth = parseFloat(currentImage.style.width || currentImage.naturalWidth * calculateScalingFactor());
+        const imgHeight = parseFloat(currentImage.style.height || currentImage.naturalHeight * calculateScalingFactor());
+        const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
+        const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
 
-        const clampedLeft = Math.max(0, Math.min(newLeft, maxLeft));
-        const clampedTop = Math.max(0, Math.min(newTop, maxTop));
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+        newTop = Math.max(0, Math.min(newTop, maxTop));
 
-        currentImage.style.left = `${clampedLeft}%`;
-        currentImage.style.top = `${clampedTop}%`;
+        currentImage.style.left = `${newLeft}%`;
+        currentImage.style.top = `${newTop}%`;
         updateCoordinates(currentImage);
       }
     }
@@ -1632,8 +1641,8 @@ function updatePreviewSamples() {
   const panelContentWidth = 540; // Adjusted for ~30px total padding (15px per side)
   const gap = 13; // Gap between grid cells
   const columns = 4;
-  const totalGap = gap * (columns - 1); // 3 gaps for 4 columns
-  const containerSize = (panelContentWidth - totalGap) / columns; // ~125.25px
+  const totalGap = gap * (columns - 1); // 39px
+  const containerSize = (panelContentWidth - totalGap) / columns; // (540 - 39) / 4 ≈ 125.25px
   const scaleFactor = containerSize / 598; // Scale to fit the content area (598px after border adjustment)
 
   for (let i = 0; i < 16; i++) {
@@ -1749,7 +1758,6 @@ function safeGetPosition(traitId, variantName) {
   
   return { left: 0, top: 0 };
 }
-
 
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
