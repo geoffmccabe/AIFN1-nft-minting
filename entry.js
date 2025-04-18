@@ -1542,6 +1542,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
+
+
+
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
   const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === currentTraitId);
@@ -1578,7 +1581,13 @@ function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
 
-  const scaleFactor = 150 / 600;
+  // Calculate the actual container size based on the grid layout
+  const gridWidth = 600; // #preview-samples-grid width
+  const gap = 13; // gap between grid cells
+  const columns = 4;
+  const totalGap = gap * (columns - 1); // 3 gaps for 4 columns
+  const containerSize = (gridWidth - totalGap) / columns; // ~140.25px
+  const scaleFactor = containerSize / 600; // Scale to fit the container
 
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
@@ -1613,25 +1622,14 @@ function updatePreviewSamples() {
         img.naturalHeight = tempImg.naturalHeight;
         img.style.width = `${tempImg.naturalWidth * scale}px`;
         img.style.height = `${tempImg.naturalHeight * scale}px`;
-        
-        const key = `trait${trait.id}-position`;
-        const savedPosition = localStorage.getItem(key);
-        const previewImg = traitImages.find(ti => ti.id === `preview-trait${trait.id}`);
-        
-        let position;
-        if (savedPosition) {
-          position = JSON.parse(savedPosition);
-        } else if (previewImg) {
-          position = {
-            left: parseFloat(previewImg.style.left) || 0,
-            top: parseFloat(previewImg.style.top) || 0
-          };
-        } else {
-          position = { left: 0, top: 0 };
-        }
 
-        img.style.left = `${position.left}%`;
-        img.style.top = `${position.top}%`;
+        // Center the image in the previewContainer
+        const containerWidth = 600; // Before scaling
+        const containerHeight = 600;
+        const imgWidth = parseFloat(img.style.width);
+        const imgHeight = parseFloat(img.style.height);
+        img.style.left = `${(containerWidth - imgWidth) / 2}px`;
+        img.style.top = `${(containerHeight - imgHeight) / 2}px`;
       };
 
       sampleData[i].push({
@@ -1686,8 +1684,8 @@ function updatePreviewSamples() {
 
 // Add this new function to prevent position corruption
 function safeGetPosition(traitId, variantName) {
-  const key = `${traitId}-${variantName}`;
-  const savedPosition = localStorage.getItem(`trait${traitId}-${variantName}-position`);
+  const key = `trait${traitId}-position`;
+  const savedPosition = localStorage.getItem(key);
   if (savedPosition) return JSON.parse(savedPosition);
 
   const trait = TraitManager.getTrait(traitId);
