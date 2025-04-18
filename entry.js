@@ -1358,11 +1358,11 @@ function applyScalingToImage(img) {
     const scale = calculateScalingFactor();
     const scaledWidth = img.naturalWidth * scale;
     const scaledHeight = img.naturalHeight * scale;
-    img.style.width = `${scaledWidth}px`;
-    img.style.height = `${scaledHeight}px`;
-    console.log(`Applied scaling to image ${img.id}: naturalWidth=${img.naturalWidth}, naturalHeight=${img.naturalHeight}, scale=${scale}, scaledWidth=${scaledWidth}, scaledHeight=${scaledHeight}`);
+    img.style.width = scaledWidth + 'px';
+    img.style.height = scaledHeight + 'px';
+    console.log('Applied scaling to image ' + img.id + ': naturalWidth=' + img.naturalWidth + ', naturalHeight=' + img.naturalHeight + ', scale=' + scale + ', scaledWidth=' + scaledWidth + ', scaledHeight=' + scaledHeight);
   } else {
-    console.warn(`Cannot apply scaling to image ${img.id}: naturalWidth or naturalHeight not available`);
+    console.warn('Cannot apply scaling to image ' + img.id + ': naturalWidth or naturalHeight not available');
   }
 }
 
