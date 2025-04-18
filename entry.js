@@ -371,50 +371,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  async function deleteProject() {
-    try {
-      const slot = document.getElementById('project-slot').value;
-      const db = await openDB();
-      const tx = db.transaction(['projects', 'images'], 'readwrite');
-      const projectStore = tx.objectStore('projects');
-      const imageStore = tx.objectStore('images');
+ async function deleteProject() {
+  try {
+    const slot = document.getElementById('project-slot').value;
+    const db = await openDB();
+    const tx = db.transaction(['projects', 'images'], 'readwrite');
+    const projectStore = tx.objectStore('projects');
+    const imageStore = tx.objectStore('images');
 
-      const project = await new Promise(resolve => projectStore.get(slot).onsuccess = e => resolve(e.target.result));
-      if (!project) {
-        alert(`No project found in ${slot}`);
-        return;
-      }
-
-      if (!confirm(`Are you sure you want to delete project "${  "${project.name}" from ${slot}?`)) return;
-
-      for (const trait of project.traits) {
-        for (const variant of trait.variants) {
-          const imageId = `${trait.id}_${variant.id}`;
-          await new Promise(resolve => imageStore.delete(imageId).onsuccess = () => resolve());
-        }
-      }
-
-      await new Promise(resolve => projectStore.delete(slot).onsuccess = () => resolve());
-
-      alert(`Deleted project "${project.name}" from ${slot}`);
-
-      const projectSlotSelect = document.getElementById('project-slot');
-      const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
-      const slotPromises = slots.map(slotId => 
-        new Promise(resolve => projectStore.get(slotId).onsuccess = e => resolve({ id: slotId, project: e.target.result || null }))
-      );
-      const slotData = await Promise.all(slotPromises);
-      
-      slotData.forEach((data, index) => {
-        const option = projectSlotSelect.options[index];
-        const projectName = data.project ? data.project.name : '';
-        option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
-      });
-    } catch (err) {
-      console.error('Delete failed:', err);
-      alert('Failed to delete project');
+    const project = await new Promise(resolve => projectStore.get(slot).onsuccess = e => resolve(e.target.result));
+    if (!project) {
+      alert(`No project found in ${slot}`);
+      return;
     }
+
+    if (!confirm(`Are you sure you want to delete project "${project.name}" from ${slot}?`)) return;
+
+    for (const trait of project.traits) {
+      for (const variant of trait.variants) {
+        const imageId = `${trait.id}_${variant.id}`;
+        await new Promise(resolve => imageStore.delete(imageId).onsuccess = () => resolve());
+      }
+    }
+
+    await new Promise(resolve => projectStore.delete(slot).onsuccess = () => resolve());
+
+    alert(`Deleted project "${project.name}" from ${slot}`);
+
+    const projectSlotSelect = document.getElementById('project-slot');
+    const slots = ['project-1', 'project-2', 'project-3', 'project-4', 'project-5', 'project-6', 'project-7', 'project-8', 'project-9', 'project-10'];
+    const slotPromises = slots.map(slotId => 
+      new Promise(resolve => projectStore.get(slotId).onsuccess = e => resolve({ id: slotId, project: e.target.result || null }))
+    );
+    const slotData = await Promise.all(slotPromises);
+    
+    slotData.forEach((data, index) => {
+      const option = projectSlotSelect.options[index];
+      const projectName = data.project ? data.project.name : '';
+      option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
+    });
+  } catch (err) {
+    console.error('Delete failed:', err);
+    alert('Failed to delete project');
   }
+}
 
   updatePreviewsButton.addEventListener('click', () => {
     updatePreviewSamples();
