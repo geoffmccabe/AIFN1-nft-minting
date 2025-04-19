@@ -649,11 +649,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   directionEmojis.forEach(emoji => {
     const direction = emoji.getAttribute('data-direction');
-    emoji.addEventListener('mousedown', () => {
-      if (!currentImage || currentImage.src === '') {
-        currentImage = traitImages.find(img => isValidImage(img)) || traitImages[0];
-        if (!currentImage) return;
-      }
+    emoji.addEventListener('mousedown', async () => {
+      // Select the topmost trait image based on zIndex
+      const validImages = traitImages.filter(img => isValidImage(img));
+      if (validImages.length === 0) return;
+      currentImage = validImages.reduce((topImg, img) => {
+        const zIndex = parseInt(img.style.zIndex) || 0;
+        const topZIndex = parseInt(topImg.style.zIndex) || 0;
+        return zIndex > topZIndex ? img : topImg;
+      }, validImages[0]);
+
+      if (!currentImage) return;
+
+      // Ensure the image is scaled before moving
+      await applyScalingToImage(currentImage);
+
       moveInterval = setInterval(() => {
         let left = parseFloat(currentImage.style.left) || 0;
         let top = parseFloat(currentImage.style.top) || 0;
@@ -887,7 +897,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (logo) debugLog('Logo URL:', logo.src);
 });
 
+
+
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
+
+
 
 function addTrait(trait) {
   const traitSection = document.createElement('div');
@@ -1287,8 +1301,6 @@ function updateMintButton() {
 
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
-
-
 class ScalingManager {
   static baseSize = 598;
   static getScaleFactor(currentSize) {
@@ -1460,7 +1472,7 @@ async function selectVariation(traitId, variationId) {
   }
 }
 
-function setupDragAndDrop(img, traitIndex) {
+async function setupDragAndDrop(img, traitIndex) {
   if (img) {
     img.removeEventListener('dragstart', preventDragStart);
     img.removeEventListener('mousedown', startDragging);
@@ -1471,7 +1483,8 @@ function setupDragAndDrop(img, traitIndex) {
       e.preventDefault();
     }
 
-    function startDragging(e) {
+    async function startDragging(e) {
+      await applyScalingToImage(img); // Ensure scaling is applied before dragging
       if (!isValidImage(img)) return;
       const targetImg = e.target;
       if (!traitImages.includes(targetImg)) return;
