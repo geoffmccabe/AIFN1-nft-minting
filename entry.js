@@ -896,40 +896,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
 
-
-
 function addTrait(trait) {
-  const traitSection = document.createElement('div');
+  const traitSection = document.createElement("div");
   traitSection.id = `trait${trait.id}`;
-  traitSection.className = 'trait-section';
+  traitSection.className = "trait-section";
 
-  const traitHeader = document.createElement('div');
-  traitHeader.className = 'trait-header';
-  const title = document.createElement('h2');
+  const traitHeader = document.createElement("div");
+  traitHeader.className = "trait-header";
+  const title = document.createElement("h2");
   title.textContent = `TRAIT ${traitContainer.children.length + 1}`;
   if (trait.name) {
     title.textContent += ` - ${trait.name}`;
   }
-  const controls = document.createElement('div');
-  controls.className = 'trait-controls';
-  const upArrow = document.createElement('span');
-  upArrow.className = 'up-arrow';
-  upArrow.setAttribute('data-trait', trait.id);
-  upArrow.setAttribute('data-tooltip', 'Swap Trait Order');
-  upArrow.textContent = '⬆️';
-  const downArrow = document.createElement('span');
-  downArrow.className = 'down-arrow';
-  downArrow.setAttribute('data-trait', trait.id);
-  downArrow.setAttribute('data-tooltip', 'Swap Trait Order');
-  downArrow.textContent = '⬇️';
-  const addTraitBtn = document.createElement('span');
-  addTraitBtn.className = 'add-trait';
-  addTraitBtn.setAttribute('data-trait', trait.id);
-  addTraitBtn.textContent = '➕';
-  const removeTraitBtn = document.createElement('span');
-  removeTraitBtn.className = 'remove-trait';
-  removeTraitBtn.setAttribute('data-trait', trait.id);
-  removeTraitBtn.textContent = '➖';
+  const controls = document.createElement("div");
+  controls.className = "trait-controls";
+  const upArrow = document.createElement("span");
+  upArrow.className = "up-arrow";
+  upArrow.setAttribute("data-trait", trait.id);
+  upArrow.setAttribute("data-tooltip", "Swap Trait Order");
+  upArrow.textContent = "⬆️";
+  const downArrow = document.createElement("span");
+  downArrow.className = "down-arrow";
+  downArrow.setAttribute("data-trait", trait.id);
+  downArrow.setAttribute("data-tooltip", "Swap Trait Order");
+  downArrow.textContent = "⬇️";
+  const addTraitBtn = document.createElement("span");
+  addTraitBtn.className = "add-trait";
+  addTraitBtn.setAttribute("data-trait", trait.id);
+  addTraitBtn.textContent = "➕";
+  const removeTraitBtn = document.createElement("span");
+  removeTraitBtn.className = "remove-trait";
+  removeTraitBtn.setAttribute("data-trait", trait.id);
+  removeTraitBtn.textContent = "➖";
   controls.appendChild(upArrow);
   controls.appendChild(downArrow);
   controls.appendChild(addTraitBtn);
@@ -937,26 +935,26 @@ function addTrait(trait) {
   traitHeader.appendChild(title);
   traitHeader.appendChild(controls);
 
-  const nameInput = document.createElement('input');
-  nameInput.type = 'text';
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
   nameInput.id = `trait${trait.id}-name`;
-  nameInput.placeholder = `Trait Name (e.g., ${traitContainer.children.length + 1 === 1 ? 'Eyes' : traitContainer.children.length + 1 === 2 ? 'Hair' : 'Accessories'})`;
-  nameInput.value = trait.name || '';
+  nameInput.placeholder = `Trait Name (e.g., ${traitContainer.children.length + 1 === 1 ? "Eyes" : traitContainer.children.length + 1 === 2 ? "Hair" : "Accessories"})`;
+  nameInput.value = trait.name || "";
 
-  const fileInput = document.createElement('input');
-  fileInput.type = 'file';
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
   fileInput.id = `trait${trait.id}-files`;
-  fileInput.accept = 'image/png,image/webp';
+  fileInput.accept = "image/png,image/webp";
   fileInput.multiple = true;
 
-  const fileInputLabel = document.createElement('label');
-  fileInputLabel.className = 'file-input-label';
+  const fileInputLabel = document.createElement("label");
+  fileInputLabel.className = "file-input-label";
   fileInputLabel.htmlFor = `trait${trait.id}-files`;
-  fileInputLabel.textContent = 'Choose Files';
+  fileInputLabel.textContent = "Choose Files";
 
-  const grid = document.createElement('div');
+  const grid = document.createElement("div");
   grid.id = `trait${trait.id}-grid`;
-  grid.className = 'trait-grid';
+  grid.className = "trait-grid";
 
   traitSection.appendChild(traitHeader);
   traitSection.appendChild(nameInput);
@@ -964,11 +962,11 @@ function addTrait(trait) {
   traitSection.appendChild(fileInputLabel);
   traitSection.appendChild(grid);
 
-  const existingSections = traitContainer.querySelectorAll('.trait-section');
+  const existingSections = traitContainer.querySelectorAll(".trait-section");
   let inserted = false;
   for (let i = 0; i < existingSections.length; i++) {
     const existingSection = existingSections[i];
-    const existingTraitId = existingSection.id.replace('trait', '');
+    const existingTraitId = existingSection.id.replace("trait", "");
     const existingTrait = TraitManager.getTrait(existingTraitId);
     if (existingTrait && existingTrait.position > trait.position) {
       traitContainer.insertBefore(traitSection, existingSection);
@@ -980,14 +978,14 @@ function addTrait(trait) {
     traitContainer.appendChild(traitSection);
   }
 
-  let traitImage = traitImages.find(img => img.id === `preview-trait${trait.id}`);
+  let traitImage = traitImages.find((img) => img.id === `preview-trait${trait.id}`);
   if (!traitImage) {
-    traitImage = document.createElement('img');
+    traitImage = document.createElement("img");
     traitImage.id = `preview-trait${trait.id}`;
-    traitImage.src = '';
-    traitImage.alt = '';
+    traitImage.src = "";
+    traitImage.alt = "";
     traitImage.style.zIndex = TraitManager.getAllTraits().length - trait.position + 1;
-    traitImage.style.visibility = 'hidden';
+    traitImage.style.visibility = "hidden";
     traitImages.push(traitImage);
   }
 
@@ -995,14 +993,14 @@ function addTrait(trait) {
   if (preview) {
     const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
     const existingImages = Array.from(preview.children);
-    const newImages = sortedTraits.map(trait => {
-      let img = traitImages.find(i => i.id === `preview-trait${trait.id}`);
+    const newImages = sortedTraits.map((trait) => {
+      let img = traitImages.find((i) => i.id === `preview-trait${trait.id}`);
       if (!img) {
-        img = document.createElement('img');
+        img = document.createElement("img");
         img.id = `preview-trait${trait.id}`;
-        img.src = '';
-        img.alt = '';
-        img.style.visibility = 'hidden';
+        img.src = "";
+        img.alt = "";
+        img.style.visibility = "hidden";
         traitImages.push(img);
       }
       img.style.zIndex = TraitManager.getAllTraits().length - trait.position + 1;
@@ -1010,12 +1008,12 @@ function addTrait(trait) {
     });
 
     // Update preview children while preserving event listeners
-    existingImages.forEach(img => {
+    existingImages.forEach((img) => {
       if (!newImages.includes(img)) {
         preview.removeChild(img);
       }
     });
-    newImages.forEach(img => {
+    newImages.forEach((img) => {
       if (!preview.contains(img)) {
         preview.appendChild(img);
       }
@@ -1027,7 +1025,7 @@ function addTrait(trait) {
   setupTraitListeners(trait.id);
   requestAnimationFrame(() => {
     debugLog(`Setting up drag-and-drop for trait ${trait.id}, image:`, traitImage);
-    setupDragAndDrop(traitImage, TraitManager.getAllTraits().findIndex(t => t.id === trait.id));
+    setupDragAndDrop(traitImage, TraitManager.getAllTraits().findIndex((t) => t.id === trait.id));
   });
   updateZIndices();
 }
@@ -1035,26 +1033,26 @@ function addTrait(trait) {
 function removeTrait(traitId) {
   if (TraitManager.getAllTraits().length <= 1) return;
 
-  const confirmationDialog = document.createElement('div');
-  confirmationDialog.className = 'confirmation-dialog';
-  const message = document.createElement('p');
+  const confirmationDialog = document.createElement("div");
+  confirmationDialog.className = "confirmation-dialog";
+  const message = document.createElement("p");
   message.textContent = `Are you sure you want to delete Trait ${TraitManager.getTrait(traitId).position}?`;
-  const buttonsDiv = document.createElement('div');
-  buttonsDiv.className = 'buttons';
-  const yesButton = document.createElement('button');
-  yesButton.className = 'yes-button';
-  yesButton.textContent = 'Y';
-  const noButton = document.createElement('button');
-  noButton.className = 'no-button';
-  noButton.textContent = 'N';
+  const buttonsDiv = document.createElement("div");
+  buttonsDiv.className = "buttons";
+  const yesButton = document.createElement("button");
+  yesButton.className = "yes-button";
+  yesButton.textContent = "Y";
+  const noButton = document.createElement("button");
+  noButton.className = "no-button";
+  noButton.textContent = "N";
 
-  yesButton.addEventListener('click', () => {
+  yesButton.addEventListener("click", () => {
     TraitManager.removeTrait(traitId);
     const traitSection = document.getElementById(`trait${traitId}`);
     if (traitSection) traitSection.remove();
-    const traitImageIndex = traitImages.findIndex(img => img.id === `preview-trait${traitId}`);
+    const traitImageIndex = traitImages.findIndex((img) => img.id === `preview-trait${traitId}`);
     if (traitImageIndex !== -1) traitImages.splice(traitImageIndex, 1);
-    Object.keys(localStorage).forEach(key => {
+    Object.keys(localStorage).forEach((key) => {
       if (key.startsWith(`trait${traitId}-`)) localStorage.removeItem(key);
     });
     renumberTraits();
@@ -1063,47 +1061,7 @@ function removeTrait(traitId) {
     confirmationDialog.remove();
   });
 
-  noButton.addEventListener('click', () => confirmationDialog.remove());
-
-  buttonsDiv.appendChild(yesButton);
-  buttonsDiv.appendChild(noButton);
-  confirmationDialog.appendChild(message);
-  confirmationDialog.appendChild(buttonsDiv);
-  document.body.appendChild(confirmationDialog);
-}
-
-function removeTrait(traitId) {
-  if (TraitManager.getAllTraits().length <= 1) return;
-
-  const confirmationDialog = document.createElement('div');
-  confirmationDialog.className = 'confirmation-dialog';
-  const message = document.createElement('p');
-  message.textContent = `Are you sure you want to delete Trait ${TraitManager.getTrait(traitId).position}?`;
-  const buttonsDiv = document.createElement('div');
-  buttonsDiv.className = 'buttons';
-  const yesButton = document.createElement('button');
-  yesButton.className = 'yes-button';
-  yesButton.textContent = 'Y';
-  const noButton = document.createElement('button');
-  noButton.className = 'no-button';
-  noButton.textContent = 'N';
-
-  yesButton.addEventListener('click', () => {
-    TraitManager.removeTrait(traitId);
-    const traitSection = document.getElementById(`trait${traitId}`);
-    if (traitSection) traitSection.remove();
-    const traitImageIndex = traitImages.findIndex(img => img.id === `preview-trait${traitId}`);
-    if (traitImageIndex !== -1) traitImages.splice(traitImageIndex, 1);
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith(`trait${traitId}-`)) localStorage.removeItem(key);
-    });
-    renumberTraits();
-    updateZIndices();
-    updatePreviewSamples();
-    confirmationDialog.remove();
-  });
-
-  noButton.addEventListener('click', () => confirmationDialog.remove());
+  noButton.addEventListener("click", () => confirmationDialog.remove());
 
   buttonsDiv.appendChild(yesButton);
   buttonsDiv.appendChild(noButton);
