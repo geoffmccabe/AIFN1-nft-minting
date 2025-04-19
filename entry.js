@@ -1623,8 +1623,6 @@ function updateZIndices() {
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
-
-
 function updateSamplePositions(traitId, variationId, position) {
   for (let i = 0; i < 16; i++) {
     const sample = sampleData[i];
@@ -1683,11 +1681,12 @@ async function updatePreviewSamples() {
         try {
           if (savedPosition) {
             const { left, top } = JSON.parse(savedPosition);
-            // Convert percentage positions to pixels for the sample container
+            // Convert percentage positions to pixels for the sample container, adjusted for scaleFactor
             const leftPx = (left / 100) * previewWidth;
             const topPx = (top / 100) * previewHeight;
-            img.style.left = leftPx + 'px';
-            img.style.top = topPx + 'px';
+            // Adjust for the scaling applied to the preview container
+            img.style.left = (leftPx / scaleFactor) + 'px';
+            img.style.top = (topPx / scaleFactor) + 'px';
           } else {
             const containerWidth = DIMENSIONS.BASE_SIZE;
             const containerHeight = DIMENSIONS.BASE_SIZE;
@@ -1745,7 +1744,11 @@ async function updatePreviewSamples() {
   }
 }
 
+
+
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
+
+
 
 function updateChosenGrid(count) {
   const chosenGrid = document.getElementById('chosen-grid');
