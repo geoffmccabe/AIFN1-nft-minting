@@ -13,7 +13,7 @@ const TraitManager = {
       this.addTrait(i + 1);
     }
     this.sortTraits();
-    const traitsPanel = document.querySelector('.traits-panel .panel-content');
+    const traitsPanel = document.querySelector('.traits-panel-container .panel-content');
     if (traitsPanel) {
       traitsPanel.style.maxHeight = '400px';
     }
@@ -37,7 +37,7 @@ const TraitManager = {
     this.traits.push(newTrait);
     this.sortTraits();
     if (this.traits.length > 3) {
-      const traitsPanel = document.querySelector('.traits-panel .panel-content');
+      const traitsPanel = document.querySelector('.traits-panel-container .panel-content');
       if (traitsPanel) {
         traitsPanel.style.maxHeight = 'max(70vh, 2400px)';
       }
@@ -520,13 +520,15 @@ document.addEventListener('DOMContentLoaded', async () => {
               img.src = variant.url;
               const key = `trait${trait.id}-position`;
               const savedPosition = localStorage.getItem(key);
-              let leftPercent = 0, topPercent = 0;
+              let leftPx = 0, topPx = 0;
               try {
                 if (savedPosition) {
                   const { left, top } = JSON.parse(savedPosition);
-                  const normalized = normalizePosition(left, top, DIMENSIONS.BASE_SIZE, DIMENSIONS.BASE_SIZE, DIMENSIONS.BASE_SIZE * scale, DIMENSIONS.BASE_SIZE * scale);
-                  leftPercent = (normalized.left / (DIMENSIONS.BASE_SIZE * scale)) * 100;
-                  topPercent = (normalized.top / (DIMENSIONS.BASE_SIZE * scale)) * 100;
+                  // Convert percentage positions to pixels for #enlarged-preview
+                  const previewWidth = preview.getBoundingClientRect().width;
+                  const previewHeight = previewWidth; // Assuming square
+                  leftPx = (left / 100) * previewWidth * scale;
+                  topPx = (top / 100) * previewHeight * scale;
                 }
               } catch (e) {
                 debugLog('Invalid position data for magnified trait ' + trait.id + ':', e);
@@ -536,8 +538,8 @@ document.addEventListener('DOMContentLoaded', async () => {
               const scaledHeight = DIMENSIONS.BASE_SIZE * scale;
               img.style.width = `${scaledWidth}px`;
               img.style.height = `${scaledHeight}px`;
-              img.style.left = `${leftPercent}%`;
-              img.style.top = `${topPercent}%`;
+              img.style.left = `${leftPx}px`;
+              img.style.top = `${topPx}px`;
               img.style.zIndex = trait.zIndex;
               img.style.position = 'absolute';
               img.style.visibility = 'visible';
@@ -1281,7 +1283,11 @@ function updateMintButton() {
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
 
+
+
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
+
+
 
 class ScalingManager {
   static baseSize = 598;
@@ -1300,13 +1306,15 @@ class ScalingManager {
 }
 
 function isValidImage(img) {
-  return img && img.src && img.src !== '' && img.complete && img.naturalWidth > 0;
+  return img && img.src && img.src !== '' && img.naturalWidth > 0;
 }
 
-function normalizePosition(left, top, fromWidth, fromHeight, toWidth, toHeight) {
+function normalizePosition(leftPercent, topPercent, previewWidth, previewHeight, targetWidth, targetHeight) {
+  const leftPx = (leftPercent / 100) * previewWidth;
+  const topPx = (topPercent / 100) * previewHeight;
   return {
-    left: (left / fromWidth) * toWidth,
-    top: (top / fromHeight) * toHeight
+    left: (leftPx / previewWidth) * targetWidth,
+    top: (topPx / previewHeight) * targetHeight
   };
 }
 
@@ -1314,8 +1322,8 @@ function calculateScalingFactor(container = preview) {
   return ScalingManager.getScaleFactor(container.getBoundingClientRect().width);
 }
 
-function applyScalingToImage(img, callback) {
-  if (!isValidImage(img)) {
+async function applyScalingToImage(img, callback) {
+  if (!img || !img.src || img.src === '') {
     debugLog('Cannot apply scaling: id=' + (img ? img.id : 'undefined') + ', invalid image');
     if (callback) callback();
     return;
@@ -1324,32 +1332,38 @@ function applyScalingToImage(img, callback) {
     if (callback) callback();
     return;
   }
+
   const tempImg = new Image();
   tempImg.src = img.src;
-  tempImg.onload = () => {
-    img.naturalWidth = tempImg.naturalWidth;
-    img.naturalHeight = tempImg.naturalHeight;
-    const scale = calculateScalingFactor(img.parentElement);
-    const scaledWidth = img.naturalWidth * scale;
-    const scaledHeight = img.naturalHeight * scale;
-    img.style.width = scaledWidth + 'px';
-    img.style.height = scaledHeight + 'px';
-    debugLog('Applied scaling: id=' + img.id + ', naturalWidth=' + img.naturalWidth + ', naturalHeight=' + img.naturalHeight + ', scale=' + scale + ', scaledWidth=' + scaledWidth + ', scaledHeight=' + scaledHeight);
-    img.dataset.scaled = 'true';
-    if (callback) callback();
-  };
-  tempImg.onerror = () => {
-    debugLog('Cannot apply scaling: id=' + img.id + ', image failed to load');
-    img.style.width = DIMENSIONS.BASE_SIZE + 'px';
-    img.style.height = DIMENSIONS.BASE_SIZE + 'px';
-    img.dataset.scaled = 'true';
-    if (callback) callback();
-  };
+
+  await new Promise((resolve, reject) => {
+    tempImg.onload = () => {
+      img.naturalWidth = tempImg.naturalWidth;
+      img.naturalHeight = tempImg.naturalHeight;
+      const scale = calculateScalingFactor(img.parentElement);
+      const scaledWidth = img.naturalWidth * scale;
+      const scaledHeight = img.naturalHeight * scale;
+      img.style.width = scaledWidth + 'px';
+      img.style.height = scaledHeight + 'px';
+      debugLog('Applied scaling: id=' + (img.id || ''), ', naturalWidth=' + img.naturalWidth + ', naturalHeight=' + img.naturalHeight + ', scale=' + scale + ', scaledWidth=' + scaledWidth + ', scaledHeight=' + scaledHeight);
+      img.dataset.scaled = 'true';
+      resolve();
+    };
+    tempImg.onerror = () => {
+      debugLog('Cannot apply scaling: id=' + (img.id || ''), ', image failed to load');
+      img.style.width = DIMENSIONS.BASE_SIZE + 'px';
+      img.style.height = DIMENSIONS.BASE_SIZE + 'px';
+      img.dataset.scaled = 'true';
+      resolve();
+    };
+  });
+
+  if (callback) callback();
 }
 
 function applyScalingToTraits() {
   traitImages.forEach(img => {
-    if (isValidImage(img)) {
+    if (img.src && img.src !== '') {
       applyScalingToImage(img);
     }
   });
@@ -1358,7 +1372,7 @@ function applyScalingToTraits() {
 function applyScalingToSamples() {
   const sampleImages = document.querySelectorAll('#preview-samples-grid .sample-preview img');
   sampleImages.forEach(img => {
-    if (isValidImage(img)) {
+    if (img.src && img.src !== '') {
       applyScalingToImage(img, () => {
         const containerWidth = DIMENSIONS.BASE_SIZE;
         const containerHeight = DIMENSIONS.BASE_SIZE;
@@ -1374,7 +1388,7 @@ function applyScalingToSamples() {
 function initializePositions() {
   TraitManager.getAllTraits().forEach(trait => {
     const img = traitImages.find(ti => ti.id === 'preview-trait' + trait.id);
-    if (isValidImage(img)) {
+    if (img && img.src && img.src !== '') {
       applyScalingToImage(img, () => {
         const key = 'trait' + trait.id + '-position';
         const savedPosition = localStorage.getItem(key);
@@ -1394,7 +1408,7 @@ function initializePositions() {
   });
 }
 
-function selectVariation(traitId, variationId) {
+async function selectVariation(traitId, variationId) {
   const trait = TraitManager.getTrait(traitId);
   const variationIndex = trait.variants.findIndex(v => v.id === variationId);
   if (variationIndex === -1) {
@@ -1409,7 +1423,7 @@ function selectVariation(traitId, variationId) {
     previewImage.style.visibility = 'visible';
     debugLog('Selected variation ' + variationId + ' for trait ' + traitId + ', src: ' + previewImage.src + ', visibility: ' + previewImage.style.visibility);
     
-    applyScalingToImage(previewImage, () => {
+    await applyScalingToImage(previewImage, () => {
       const key = 'trait' + traitId + '-position';
       const savedPosition = localStorage.getItem(key);
       const contentWidth = preview.getBoundingClientRect().width;
@@ -1421,7 +1435,7 @@ function selectVariation(traitId, variationId) {
       try {
         if (savedPosition) {
           const { left, top } = JSON.parse(savedPosition);
-          const normalized = normalizePosition(left, top, DIMENSIONS.BASE_SIZE, DIMENSIONS.BASE_SIZE, contentWidth, contentHeight);
+          const normalized = normalizePosition(left, top, contentWidth, contentHeight, contentWidth, contentHeight);
           previewImage.style.left = Math.max(0, Math.min(normalized.left, maxLeft)) + '%';
           previewImage.style.top = Math.max(0, Math.min(normalized.top, maxTop)) + '%';
           if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
@@ -1592,7 +1606,11 @@ function updateZIndices() {
   if (preview) preview.offsetHeight;
 }
 
+
+
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
+
+
 
 function updateSamplePositions(traitId, variationId, position) {
   for (let i = 0; i < 16; i++) {
@@ -1606,7 +1624,7 @@ function updateSamplePositions(traitId, variationId, position) {
   updatePreviewSamples();
 }
 
-function updatePreviewSamples() {
+async function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
 
@@ -1644,15 +1662,19 @@ function updatePreviewSamples() {
       img.style.position = 'absolute';
       img.style.zIndex = trait.zIndex;
 
-      applyScalingToImage(img, () => {
+      await applyScalingToImage(img, () => {
         const key = 'trait' + trait.id + '-position';
         const savedPosition = localStorage.getItem(key);
+        const previewWidth = preview.getBoundingClientRect().width;
+        const previewHeight = previewWidth; // Assuming square
         try {
           if (savedPosition) {
             const { left, top } = JSON.parse(savedPosition);
-            const normalized = normalizePosition(left, top, DIMENSIONS.BASE_SIZE, DIMENSIONS.BASE_SIZE, containerSize, containerSize);
-            img.style.left = normalized.left + 'px';
-            img.style.top = normalized.top + 'px';
+            // Convert percentage positions to pixels for the sample container
+            const leftPx = (left / 100) * previewWidth;
+            const topPx = (top / 100) * previewHeight;
+            img.style.left = leftPx + 'px';
+            img.style.top = topPx + 'px';
           } else {
             const containerWidth = DIMENSIONS.BASE_SIZE;
             const containerHeight = DIMENSIONS.BASE_SIZE;
@@ -1671,7 +1693,7 @@ function updatePreviewSamples() {
       sampleData[i].push({
         traitId: trait.id,
         variantId: variant.id,
-        position: { left: 0, top: 0 }
+        position: { left: parseFloat(img.style.left), top: parseFloat(img.style.top) }
       });
 
       previewContainer.appendChild(img);
