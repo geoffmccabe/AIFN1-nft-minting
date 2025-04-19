@@ -648,81 +648,77 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   directionEmojis.forEach(emoji => {
-    const direction = emoji.getAttribute('data-direction');
-    emoji.addEventListener('mousedown', async () => {
-      // Select the topmost trait image based on zIndex
-      const validImages = traitImages.filter(img => isValidImage(img));
-      if (validImages.length === 0) return;
-      currentImage = validImages.reduce((topImg, img) => {
-        const zIndex = parseInt(img.style.zIndex) || 0;
-        const topZIndex = parseInt(topImg.style.zIndex) || 0;
-        return zIndex > topZIndex ? img : topImg;
-      }, validImages[0]);
+  const direction = emoji.getAttribute('data-direction');
+  emoji.addEventListener('mousedown', async () => {
+    // Use the currently selected trait (currentImage)
+    if (!currentImage || !isValidImage(currentImage)) {
+      // Fallback to first valid image if none selected
+      currentImage = traitImages.find(img => isValidImage(img));
+    }
+    if (!currentImage) return;
 
-      if (!currentImage) return;
+    // Ensure the image is scaled before moving
+    await applyScalingToImage(currentImage);
 
-      // Ensure the image is scaled before moving
-      await applyScalingToImage(currentImage);
+    moveInterval = setInterval(() => {
+      let left = parseFloat(currentImage.style.left) || 0;
+      let top = parseFloat(currentImage.style.top) || 0;
+      const contentWidth = preview.getBoundingClientRect().width;
+      const contentHeight = contentWidth;
+      const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
+      const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
 
-      moveInterval = setInterval(() => {
-        let left = parseFloat(currentImage.style.left) || 0;
-        let top = parseFloat(currentImage.style.top) || 0;
-        const contentWidth = preview.getBoundingClientRect().width;
-        const contentHeight = contentWidth;
-        const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
-        const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
+      let leftPx = (left / 100) * contentWidth;
+      let topPx = (top / 100) * contentHeight;
 
-        let leftPx = (left / 100) * contentWidth;
-        let topPx = (top / 100) * contentHeight;
+      if (direction === 'up') topPx -= 1;
+      if (direction === 'down') topPx += 1;
+      if (direction === 'left') leftPx -= 1;
+      if (direction === 'right') leftPx += 1;
 
-        if (direction === 'up') topPx -= 1;
-        if (direction === 'down') topPx += 1;
-        if (direction === 'left') leftPx -= 1;
-        if (direction === 'right') leftPx += 1;
+      leftPx = Math.max(0, Math.min(leftPx, contentWidth - imgWidth));
+      topPx = Math.max(0, Math.min(topPx, contentHeight - imgHeight));
 
-        leftPx = Math.max(0, Math.min(leftPx, contentWidth - imgWidth));
-        topPx = Math.max(0, Math.min(topPx, contentHeight - imgHeight));
+      left = (leftPx / contentWidth) * 100;
+      top = (topPx / contentHeight) * 100;
 
-        left = (leftPx / contentWidth) * 100;
-        top = (topPx / contentHeight) * 100;
-
-        currentImage.style.left = left + '%';
-        currentImage.style.top = top + '%';
-        currentImage.classList.add('dragging');
-        updateCoordinates(currentImage);
-      }, 50);
-    });
-
-    emoji.addEventListener('mouseup', () => {
-      if (moveInterval) {
-        clearInterval(moveInterval);
-        moveInterval = null;
-        if (currentImage) {
-          const traitId = currentImage.id.substring('preview-trait'.length);
-          const trait = TraitManager.getTrait(traitId);
-          const variationName = trait.variants[trait.selected].name;
-          savePosition(currentImage, traitId, variationName);
-          currentImage.classList.remove('dragging');
-          TraitManager.sortTraits();
-        }
-      }
-    });
-
-    emoji.addEventListener('mouseleave', () => {
-      if (moveInterval) {
-        clearInterval(moveInterval);
-        moveInterval = null;
-        if (currentImage) {
-          const traitId = currentImage.id.substring('preview-trait'.length);
-          const trait = TraitManager.getTrait(traitId);
-          const variationName = trait.variants[trait.selected].name;
-          savePosition(currentImage, traitId, variationName);
-          currentImage.classList.remove('dragging');
-          TraitManager.sortTraits();
-        }
-      }
-    });
+      currentImage.style.left = left + '%';
+      currentImage.style.top = top + '%';
+      currentImage.classList.add('dragging');
+      updateCoordinates(currentImage);
+    }, 50);
   });
+
+  emoji.addEventListener('mouseup', () => {
+    if (moveInterval) {
+      clearInterval(moveInterval);
+      moveInterval = null;
+      if (currentImage) {
+        const traitId = currentImage.id.substring('preview-trait'.length);
+        const trait = TraitManager.getTrait(traitId);
+        const variationName = trait.variants[trait.selected].name;
+        savePosition(currentImage, traitId, variationName);
+        currentImage.classList.remove('dragging');
+        TraitManager.sortTraits();
+      }
+    }
+  });
+
+  emoji.addEventListener('mouseleave', () => {
+    if (moveInterval) {
+      clearInterval(moveInterval);
+      moveInterval = null;
+      if (currentImage) {
+        const traitId = currentImage.id.substring('preview-trait'.length);
+        const trait = TraitManager.getTrait(traitId);
+        const variationName = trait.variants[trait.selected].name;
+        savePosition(currentImage, traitId, variationName);
+        currentImage.classList.remove('dragging');
+        TraitManager.sortTraits();
+      }
+    }
+  });
+});
 
   preview.addEventListener('mousemove', debounce((e) => {
     if (!isDragging || !currentImage) return;
@@ -903,6 +899,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
+/* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
+
 function addTrait(trait) {
   const traitSection = document.createElement('div');
   traitSection.id = `trait${trait.id}`;
@@ -996,10 +994,11 @@ function addTrait(trait) {
     traitImages.push(traitImage);
   }
 
+  // Update preview without clearing existing event listeners
   if (preview) {
-    preview.innerHTML = '';
     const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
-    traitImages = sortedTraits.map(trait => {
+    const existingImages = Array.from(preview.children);
+    const newImages = sortedTraits.map(trait => {
       let img = traitImages.find(i => i.id === `preview-trait${trait.id}`);
       if (!img) {
         img = document.createElement('img');
@@ -1007,11 +1006,24 @@ function addTrait(trait) {
         img.src = '';
         img.alt = '';
         img.style.visibility = 'hidden';
+        traitImages.push(img);
       }
       img.style.zIndex = TraitManager.getAllTraits().length - trait.position + 1;
-      preview.appendChild(img);
       return img;
     });
+
+    // Update preview children while preserving event listeners
+    existingImages.forEach(img => {
+      if (!newImages.includes(img)) {
+        preview.removeChild(img);
+      }
+    });
+    newImages.forEach(img => {
+      if (!preview.contains(img)) {
+        preview.appendChild(img);
+      }
+    });
+
     debugLog(`Added trait image ${traitImage.id} to preview, position: ${trait.position}, zIndex: ${traitImage.style.zIndex}`);
   }
 
@@ -1063,7 +1075,51 @@ function removeTrait(traitId) {
   document.body.appendChild(confirmationDialog);
 }
 
+function removeTrait(traitId) {
+  if (TraitManager.getAllTraits().length <= 1) return;
+
+  const confirmationDialog = document.createElement('div');
+  confirmationDialog.className = 'confirmation-dialog';
+  const message = document.createElement('p');
+  message.textContent = `Are you sure you want to delete Trait ${TraitManager.getTrait(traitId).position}?`;
+  const buttonsDiv = document.createElement('div');
+  buttonsDiv.className = 'buttons';
+  const yesButton = document.createElement('button');
+  yesButton.className = 'yes-button';
+  yesButton.textContent = 'Y';
+  const noButton = document.createElement('button');
+  noButton.className = 'no-button';
+  noButton.textContent = 'N';
+
+  yesButton.addEventListener('click', () => {
+    TraitManager.removeTrait(traitId);
+    const traitSection = document.getElementById(`trait${traitId}`);
+    if (traitSection) traitSection.remove();
+    const traitImageIndex = traitImages.findIndex(img => img.id === `preview-trait${traitId}`);
+    if (traitImageIndex !== -1) traitImages.splice(traitImageIndex, 1);
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith(`trait${traitId}-`)) localStorage.removeItem(key);
+    });
+    renumberTraits();
+    updateZIndices();
+    updatePreviewSamples();
+    confirmationDialog.remove();
+  });
+
+  noButton.addEventListener('click', () => confirmationDialog.remove());
+
+  buttonsDiv.appendChild(yesButton);
+  buttonsDiv.appendChild(noButton);
+  confirmationDialog.appendChild(message);
+  confirmationDialog.appendChild(buttonsDiv);
+  document.body.appendChild(confirmationDialog);
+}
+
+
+
 /* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
+
+
 
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
@@ -1474,24 +1530,24 @@ async function selectVariation(traitId, variationId) {
 
 async function setupDragAndDrop(img, traitIndex) {
   if (img) {
-    img.removeEventListener('dragstart', preventDragStart);
-    img.removeEventListener('mousedown', startDragging);
-    img.removeEventListener('mouseup', stopDragging);
-    img.removeEventListener('click', selectImage);
+    // Remove existing listeners to prevent duplicates
+    img.removeEventListener('dragstart', img._preventDragStart);
+    img.removeEventListener('mousedown', img._startDragging);
+    img.removeEventListener('mouseup', img._stopDragging);
+    img.removeEventListener('click', img._selectImage);
 
     function preventDragStart(e) {
       e.preventDefault();
     }
+    img._preventDragStart = preventDragStart;
 
     async function startDragging(e) {
       await applyScalingToImage(img); // Ensure scaling is applied before dragging
       if (!isValidImage(img)) return;
       const targetImg = e.target;
       if (!traitImages.includes(targetImg)) return;
-      const highestZIndex = Math.max(...traitImages.map(i => parseInt(i.style.zIndex) || 0));
-      if (parseInt(targetImg.style.zIndex) < highestZIndex) return;
 
-      currentImage = targetImg;
+      currentImage = targetImg; // Use the clicked image
       isDragging = true;
       const containerRect = currentImage.parentElement.getBoundingClientRect();
       const imageRect = currentImage.getBoundingClientRect();
@@ -1508,6 +1564,7 @@ async function setupDragAndDrop(img, traitIndex) {
 
       document.addEventListener('mousemove', onMouseMove);
     }
+    img._startDragging = startDragging;
 
     function onMouseMove(e) {
       if (isDragging && currentImage) {
@@ -1525,7 +1582,7 @@ async function setupDragAndDrop(img, traitIndex) {
         const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
 
         newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-        newTop = Math.max(0, Math.min(newTop, maxTop));
+        newTop = Math.max(0 meanwhile, newTop, maxTop));
 
         currentImage.style.left = `${newLeft}%`;
         currentImage.style.top = `${newTop}%`;
@@ -1550,8 +1607,10 @@ async function setupDragAndDrop(img, traitIndex) {
         document.removeEventListener('mousemove', onMouseMove);
       }
     }
+    img._stopDragging = stopDragging;
 
     function selectImage(e) {}
+    img._selectImage = selectImage;
 
     img.addEventListener('dragstart', preventDragStart);
     img.addEventListener('mousedown', startDragging);
