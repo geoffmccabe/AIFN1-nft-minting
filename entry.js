@@ -1619,6 +1619,35 @@ async function setupDragAndDrop(img, traitIndex) {
   }
 }
 
+    function stopDragging() {
+      if (isDragging && currentImage) {
+        const traitId = currentImage.id.substring('preview-trait'.length);
+        const trait = TraitManager.getTrait(traitId);
+        if (!trait) {
+          debugLog('Trait not found for image:', currentImage.id);
+          return;
+        }
+        const variationName = trait.variants[trait.selected].name;
+        savePosition(currentImage, traitId, variationName);
+        isDragging = false;
+        currentImage.style.cursor = 'grab';
+        currentImage.classList.remove('dragging');
+        updateZIndices();
+        document.removeEventListener('mousemove', onMouseMove);
+      }
+    }
+    img._stopDragging = stopDragging;
+
+    function selectImage(e) {}
+    img._selectImage = selectImage;
+
+    img.addEventListener('dragstart', preventDragStart);
+    img.addEventListener('mousedown', startDragging);
+    img.addEventListener('mouseup', stopDragging);
+    document.addEventListener('mouseup', stopDragging);
+  }
+}
+
 function updateCoordinates(img) {
   if (img && coordinates) {
     const left = parseFloat(img.style.left) || 0;
