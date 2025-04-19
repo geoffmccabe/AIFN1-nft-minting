@@ -1582,7 +1582,7 @@ async function setupDragAndDrop(img, traitIndex) {
         const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
 
         newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-        newTop = Math.max(0 meanwhile, newTop, maxTop));
+        newTop = Math.max(0, Math.min(newTop, maxTop));
 
         currentImage.style.left = `${newLeft}%`;
         currentImage.style.top = `${newTop}%`;
