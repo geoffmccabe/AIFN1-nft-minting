@@ -1686,11 +1686,29 @@ function updateSamplePositions(traitId, variationId, position) {
   updatePreviewSamples();
 }
 
+/* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
+
+function updateSamplePositions(traitId, variationId, position) {
+  for (let i = 0; i < 16; i++) {
+    const sample = sampleData[i];
+    for (let j = 0; j < sample.length; j++) {
+      if (sample[j].traitId === traitId && sample[j].variantId === variationId) {
+        sample[j].position = position;
+      }
+    }
+  }
+  updatePreviewSamples();
+}
+
 async function updatePreviewSamples() {
-  previewSamplesGrid.innerHTML = '';
+  previewSamplesGrid.innerHTML = "";
   sampleData = Array(16).fill(null).map(() => []);
 
-  const panelWidth = previewSamplesGrid.getBoundingClientRect().width;
+  const panelRect = previewSamplesGrid.getBoundingClientRect();
+  const panelStyle = window.getComputedStyle(previewSamplesGrid);
+  const paddingLeft = parseFloat(panelStyle.paddingLeft) || 0;
+  const paddingRight = parseFloat(panelStyle.paddingRight) || 0;
+  const panelWidth = panelRect.width - paddingLeft - paddingRight;
   const gap = DIMENSIONS.GRID_GAP;
   const columns = 4;
   const totalGap = gap * (columns - 1);
@@ -1698,17 +1716,17 @@ async function updatePreviewSamples() {
   const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE;
 
   for (let i = 0; i < 16; i++) {
-    const sampleContainer = document.createElement('div');
-    sampleContainer.className = 'sample-container';
-    sampleContainer.style.width = containerSize + 'px';
-    sampleContainer.style.height = containerSize + 'px';
+    const sampleContainer = document.createElement("div");
+    sampleContainer.className = "sample-container";
+    sampleContainer.style.width = containerSize + "px";
+    sampleContainer.style.height = containerSize + "px";
 
-    const previewContainer = document.createElement('div');
-    previewContainer.className = 'sample-preview';
-    previewContainer.style.width = DIMENSIONS.BASE_SIZE + 'px';
-    previewContainer.style.height = DIMENSIONS.BASE_SIZE + 'px';
-    previewContainer.style.transform = 'scale(' + scaleFactor + ')';
-    previewContainer.style.transformOrigin = '0 0';
+    const previewContainer = document.createElement("div");
+    previewContainer.className = "sample-preview";
+    previewContainer.style.width = DIMENSIONS.BASE_SIZE + "px";
+    previewContainer.style.height = DIMENSIONS.BASE_SIZE + "px";
+    previewContainer.style.transform = "scale(" + scaleFactor + ")";
+    previewContainer.style.transformOrigin = "0 0";
 
     const traits = TraitManager.getAllTraits().slice().reverse();
     for (let j = 0; j < traits.length; j++) {
@@ -1718,45 +1736,44 @@ async function updatePreviewSamples() {
       const randomIndex = Math.floor(Math.random() * trait.variants.length);
       const variant = trait.variants[randomIndex];
 
-      const img = document.createElement('img');
+      const img = document.createElement("img");
       img.src = variant.url;
-      img.alt = 'Sample ' + (i + 1) + ' - Trait ' + trait.position;
-      img.style.position = 'absolute';
+      img.alt = "Sample " + (i + 1) + " - Trait " + trait.position;
+      img.style.position = "absolute";
       img.style.zIndex = trait.zIndex;
 
-      await applyScalingToImage(img, () => {
-        const key = 'trait' + trait.id + '-position';
-        const savedPosition = localStorage.getItem(key);
-        const previewWidth = preview.getBoundingClientRect().width;
-        const previewHeight = previewWidth; // Assuming square
-        try {
-          if (savedPosition) {
-            const { left, top } = JSON.parse(savedPosition);
-            // Convert percentage positions to pixels for the sample container, adjusted for scaleFactor
-            const leftPx = (left / 100) * previewWidth;
-            const topPx = (top / 100) * previewHeight;
-            // Adjust for the scaling applied to the preview container
-            img.style.left = (leftPx / scaleFactor) + 'px';
-            img.style.top = (topPx / scaleFactor) + 'px';
-          } else {
-            const containerWidth = DIMENSIONS.BASE_SIZE;
-            const containerHeight = DIMENSIONS.BASE_SIZE;
-            const imgWidth = parseFloat(img.style.width) || 0;
-            const imgHeight = parseFloat(img.style.height) || 0;
-            img.style.left = ((containerWidth - imgWidth) / 2) + 'px';
-            img.style.top = ((containerHeight - imgHeight) / 2) + 'px';
+      try {
+        await applyScalingToImage(img, () => {
+          const key = "trait" + trait.id + "-position";
+          const savedPosition = localStorage.getItem(key);
+          try {
+            if (savedPosition) {
+              const { left, top } = JSON.parse(savedPosition);
+              // Convert percentage positions to pixels based on DIMENSIONS.BASE_SIZE (598px)
+              const leftPx = (left / 100) * DIMENSIONS.BASE_SIZE;
+              const topPx = (top / 100) * DIMENSIONS.BASE_SIZE;
+              img.style.left = leftPx + "px";
+              img.style.top = topPx + "px";
+            } else {
+              img.style.left = "0px";
+              img.style.top = "0px";
+            }
+          } catch (e) {
+            debugLog("Invalid position data for sample " + i + ":", e);
+            img.style.left = "0px";
+            img.style.top = "0px";
           }
-        } catch (e) {
-          debugLog('Invalid position data for sample ' + i + ':', e);
-          img.style.left = '0px';
-          img.style.top = '0px';
-        }
-      });
+        });
+      } catch (e) {
+        debugLog("Error applying scaling for sample " + i + ":", e);
+        img.style.left = "0px";
+        img.style.top = "0px";
+      }
 
       sampleData[i].push({
         traitId: trait.id,
         variantId: variant.id,
-        position: { left: parseFloat(img.style.left), top: parseFloat(img.style.top) }
+        position: { left: parseFloat(img.style.left), top: parseFloat(img.style.top) },
       });
 
       previewContainer.appendChild(img);
@@ -1765,28 +1782,28 @@ async function updatePreviewSamples() {
     sampleContainer.appendChild(previewContainer);
     previewSamplesGrid.appendChild(sampleContainer);
 
-    sampleContainer.addEventListener('click', (e) => {
+    sampleContainer.addEventListener("click", (e) => {
       e.stopPropagation();
-      
-      sampleData[i].forEach(sample => {
+
+      sampleData[i].forEach((sample) => {
         const trait = TraitManager.getTrait(sample.traitId);
-        const variantIndex = trait.variants.findIndex(v => v.id === sample.variantId);
-        
+        const variantIndex = trait.variants.findIndex((v) => v.id === sample.variantId);
+
         if (variantIndex !== -1) {
           trait.selected = variantIndex;
-          const previewImg = traitImages.find(ti => ti.id === 'preview-trait' + trait.id);
+          const previewImg = traitImages.find((ti) => ti.id === "preview-trait" + trait.id);
           if (previewImg) {
             previewImg.src = trait.variants[variantIndex].url;
-            previewImg.style.visibility = 'visible';
+            previewImg.style.visibility = "visible";
             applyScalingToImage(previewImg);
           }
-          
-          const grid = document.getElementById('trait' + trait.id + '-grid');
+
+          const grid = document.getElementById("trait" + trait.id + "-grid");
           if (grid) {
-            grid.querySelectorAll('.variation-image-wrapper').forEach(w => w.classList.remove('selected'));
+            grid.querySelectorAll(".variation-image-wrapper").forEach((w) => w.classList.remove("selected"));
             const container = grid.querySelector('[data-variation-id="' + sample.variantId + '"]');
             if (container) {
-              container.querySelector('.variation-image-wrapper')?.classList.add('selected');
+              container.querySelector(".variation-image-wrapper")?.classList.add("selected");
             }
           }
         }
