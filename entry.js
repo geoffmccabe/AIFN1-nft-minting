@@ -483,161 +483,169 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (magnifyEmoji) {
-    magnifyEmoji.addEventListener('click', () => {
-      const magnifyPanel = document.getElementById('magnify-panel');
-      if (magnifyPanel) {
-        magnifyPanel.style.display = 'block';
-        const maxWidth = window.innerWidth * 0.9;
-        const maxHeight = window.innerHeight * 0.9;
-        let scale = 1;
-        if (maxWidth / maxHeight > 1) {
-          enlargedPreview.style.height = `${maxHeight - 60}px`;
-          enlargedPreview.style.width = `${maxHeight - 60}px`;
-          scale = (maxHeight - 60) / DIMENSIONS.BASE_SIZE;
-        } else {
-          enlargedPreview.style.width = `${maxWidth - 60}px`;
-          enlargedPreview.style.height = `${maxWidth - 60}px`;
-          scale = (maxWidth - 60) / DIMENSIONS.BASE_SIZE;
-        }
+  magnifyEmoji.addEventListener("click", () => {
+    const magnifyPanel = document.getElementById("magnify-panel");
+    if (magnifyPanel) {
+      magnifyPanel.style.display = "block";
+      const maxWidth = window.innerWidth * 0.9;
+      const maxHeight = window.innerHeight * 0.9;
+      let scale = 1;
+      const enlargedSize = 900; // #enlarged-preview is 900px
+      if (maxWidth / maxHeight > 1) {
+        enlargedPreview.style.height = `${maxHeight - 60}px`;
+        enlargedPreview.style.width = `${maxHeight - 60}px`;
+        scale = (maxHeight - 60) / enlargedSize;
+      } else {
+        enlargedPreview.style.width = `${maxWidth - 60}px`;
+        enlargedPreview.style.height = `${maxWidth - 60}px`;
+        scale = (maxWidth - 60) / enlargedSize;
+      }
 
-        const controls = document.getElementById('enlarged-preview-controls');
-        if (controls) controls.style.display = 'flex';
+      const controls = document.getElementById("enlarged-preview-controls");
+      if (controls) controls.style.display = "flex";
 
-        const magnifiedState = TraitManager.getAllTraits().map(trait => ({
+      const magnifiedState = TraitManager.getAllTraits()
+        .map((trait) => ({
           id: trait.id,
           variants: [...trait.variants],
           selected: trait.selected,
           position: trait.position,
-          zIndex: trait.zIndex
-        })).sort((a, b) => b.position - a.position);
+          zIndex: trait.zIndex,
+        }))
+        .sort((a, b) => b.position - a.position);
 
-        const updateEnlargedPreview = () => {
-          enlargedPreview.innerHTML = '';
-          magnifiedState.forEach(trait => {
-            const variant = trait.variants[trait.selected];
-            if (variant && variant.url) {
-              const img = document.createElement('img');
-              img.src = variant.url;
-              const key = `trait${trait.id}-position`;
-              const savedPosition = localStorage.getItem(key);
-              let leftPx = 0, topPx = 0;
-              try {
-                if (savedPosition) {
-                  const { left, top } = JSON.parse(savedPosition);
-                  // Convert percentage positions to pixels for #enlarged-preview
-                  const previewWidth = preview.getBoundingClientRect().width;
-                  const previewHeight = previewWidth; // Assuming square
-                  leftPx = (left / 100) * previewWidth * scale;
-                  topPx = (top / 100) * previewHeight * scale;
-                }
-              } catch (e) {
-                debugLog('Invalid position data for magnified trait ' + trait.id + ':', e);
+      const updateEnlargedPreview = () => {
+        enlargedPreview.innerHTML = "";
+        const previewWidth = preview.getBoundingClientRect().width;
+        const sizeScaleFactor = enlargedSize / previewWidth; // Scale factor for size (typically 900/600 = 1.5)
+        magnifiedState.forEach((trait) => {
+          const variant = trait.variants[trait.selected];
+          if (variant && variant.url) {
+            const img = document.createElement("img");
+            img.src = variant.url;
+            const key = `trait${trait.id}-position`;
+            const savedPosition = localStorage.getItem(key);
+            let leftPx = 0,
+              topPx = 0;
+            try {
+              if (savedPosition) {
+                const { left, top } = JSON.parse(savedPosition);
+                // Convert percentage positions to pixels based on #preview dimensions
+                const leftPxInPreview = (left / 100) * previewWidth;
+                const topPxInPreview = (top / 100) * previewWidth;
+                // Scale positions to #enlarged-preview dimensions
+                leftPx = leftPxInPreview * sizeScaleFactor;
+                topPx = topPxInPreview * sizeScaleFactor;
               }
-
-              const scaledWidth = DIMENSIONS.BASE_SIZE * scale;
-              const scaledHeight = DIMENSIONS.BASE_SIZE * scale;
-              img.style.width = `${scaledWidth}px`;
-              img.style.height = `${scaledHeight}px`;
-              img.style.left = `${leftPx}px`;
-              img.style.top = `${topPx}px`;
-              img.style.zIndex = trait.zIndex;
-              img.style.position = 'absolute';
-              img.style.visibility = 'visible';
-              enlargedPreview.appendChild(img);
+            } catch (e) {
+              debugLog("Invalid position data for magnified trait " + trait.id + ":", e);
             }
-          });
-        };
-        updateEnlargedPreview();
 
-        const playEmoji = document.getElementById('play-emoji');
-        const pauseEmoji = document.getElementById('pause-emoji');
-
-        if (playEmoji) {
-          playEmoji.onclick = (e) => {
-            e.stopPropagation();
-            debugLog('Play clicked');
-            if (randomizeInterval) {
-              clearInterval(randomizeInterval);
-              if (currentSpeed === 1000) currentSpeed = 100;
-              else if (currentSpeed === 100) currentSpeed = 10;
-            } else {
-              currentSpeed = 1000;
-            }
-            randomizeInterval = setInterval(() => {
-              const traitIndex = Math.floor(Math.random() * magnifiedState.length);
-              const trait = magnifiedState[traitIndex];
-              if (trait.variants.length > 0) {
-                trait.selected = Math.floor(Math.random() * trait.variants.length);
-                debugLog(`Randomized trait ${trait.id} to variant ${trait.selected}`);
-                const traitInMain = TraitManager.getTrait(trait.id);
-                traitInMain.selected = trait.selected;
-                const previewImage = traitImages.find(img => img.id === `preview-trait${trait.id}`);
-                if (previewImage) {
-                  previewImage.src = trait.variants[trait.selected].url;
-                  applyScalingToImage(previewImage);
-                  const key = `trait${trait.id}-position`;
-                  const savedPosition = localStorage.getItem(key);
-                  try {
-                    if (savedPosition) {
-                      const { left, top } = JSON.parse(savedPosition);
-                      previewImage.style.left = `${left}%`;
-                      previewImage.style.top = `${top}%`;
-                    }
-                  } catch (e) {
-                    debugLog('Invalid position data in playEmoji:', e);
-                    previewImage.style.left = '0%';
-                    previewImage.style.top = '0%';
-                  }
-                }
-                updateEnlargedPreview();
-              }
-            }, currentSpeed);
-          };
-        }
-
-        if (pauseEmoji) {
-          pauseEmoji.onclick = (e) => {
-            e.stopPropagation();
-            if (randomizeInterval) {
-              clearInterval(randomizeInterval);
-              randomizeInterval = null;
-              currentSpeed = 1000;
-            }
-          };
-        }
-
-        enlargedPreview.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          const projectName = document.getElementById('project-name').value || 'Unnamed';
-          let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
-          if (saveCount > 100) {
-            debugLog('Save limit reached');
-            return;
+            // Scale the image size relative to #preview
+            const scaledWidth = (variant.naturalWidth || DIMENSIONS.BASE_SIZE) * sizeScaleFactor;
+            const scaledHeight = (variant.naturalHeight || DIMENSIONS.BASE_SIZE) * sizeScaleFactor;
+            img.style.width = `${scaledWidth}px`;
+            img.style.height = `${scaledHeight}px`;
+            img.style.left = `${leftPx}px`;
+            img.style.top = `${topPx}px`;
+            img.style.zIndex = trait.zIndex;
+            img.style.position = "absolute";
+            img.style.visibility = "visible";
+            enlargedPreview.appendChild(img);
           }
-          localStorage.setItem(`${projectName}_saveCount`, saveCount);
-          const saveKey = `${projectName}_${saveCount}`;
-          const currentState = magnifiedState.map(trait => ({
-            id: trait.id,
-            selected: trait.selected,
-            variants: trait.variants.map(v => ({ id: v.id, name: v.name, url: v.url }))
-          }));
-          localStorage.setItem(saveKey, JSON.stringify(currentState));
-          debugLog(`Saved as ${saveKey}`);
         });
+      };
+      updateEnlargedPreview();
 
-        enlargedPreview.onclick = (e) => {
-          if (e.target === playEmoji || e.target === pauseEmoji) return;
+      const playEmoji = document.getElementById("play-emoji");
+      const pauseEmoji = document.getElementById("pause-emoji");
+
+      if (playEmoji) {
+        playEmoji.onclick = (e) => {
+          e.stopPropagation();
+          debugLog("Play clicked");
+          if (randomizeInterval) {
+            clearInterval(randomizeInterval);
+            if (currentSpeed === 1000) currentSpeed = 100;
+            else if (currentSpeed === 100) currentSpeed = 10;
+          } else {
+            currentSpeed = 1000;
+          }
+          randomizeInterval = setInterval(() => {
+            const traitIndex = Math.floor(Math.random() * magnifiedState.length);
+            const trait = magnifiedState[traitIndex];
+            if (trait.variants.length > 0) {
+              trait.selected = Math.floor(Math.random() * trait.variants.length);
+              debugLog(`Randomized trait ${trait.id} to variant ${trait.selected}`);
+              const traitInMain = TraitManager.getTrait(trait.id);
+              traitInMain.selected = trait.selected;
+              const previewImage = traitImages.find((img) => img.id === `preview-trait${trait.id}`);
+              if (previewImage) {
+                previewImage.src = trait.variants[trait.selected].url;
+                applyScalingToImage(previewImage);
+                const key = `trait${trait.id}-position`;
+                const savedPosition = localStorage.getItem(key);
+                try {
+                  if (savedPosition) {
+                    const { left, top } = JSON.parse(savedPosition);
+                    previewImage.style.left = `${left}%`;
+                    previewImage.style.top = `${top}%`;
+                  }
+                } catch (e) {
+                  debugLog("Invalid position data in playEmoji:", e);
+                  previewImage.style.left = "0%";
+                  previewImage.style.top = "0%";
+                }
+              }
+              updateEnlargedPreview();
+            }
+          }, currentSpeed);
+        };
+      }
+
+      if (pauseEmoji) {
+        pauseEmoji.onclick = (e) => {
+          e.stopPropagation();
           if (randomizeInterval) {
             clearInterval(randomizeInterval);
             randomizeInterval = null;
             currentSpeed = 1000;
           }
-          magnifyPanel.style.display = 'none';
-          controls.style.display = 'none';
         };
       }
-    });
-  }
+
+      enlargedPreview.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        const projectName = document.getElementById("project-name").value || "Unnamed";
+        let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
+        if (saveCount > 100) {
+          debugLog("Save limit reached");
+          return;
+        }
+        localStorage.setItem(`${projectName}_saveCount`, saveCount);
+        const saveKey = `${projectName}_${saveCount}`;
+        const currentState = magnifiedState.map((trait) => ({
+          id: trait.id,
+          selected: trait.selected,
+          variants: trait.variants.map((v) => ({ id: v.id, name: v.name, url: v.url })),
+        }));
+        localStorage.setItem(saveKey, JSON.stringify(currentState));
+        debugLog(`Saved as ${saveKey}`);
+      });
+
+      enlargedPreview.onclick = (e) => {
+        if (e.target === playEmoji || e.target === pauseEmoji) return;
+        if (randomizeInterval) {
+          clearInterval(randomizeInterval);
+          randomizeInterval = null;
+          currentSpeed = 1000;
+        }
+        magnifyPanel.style.display = "none";
+        controls.style.display = "none";
+      };
+    }
+  });
+}
 
   function debounce(func, wait) {
     let timeout;
