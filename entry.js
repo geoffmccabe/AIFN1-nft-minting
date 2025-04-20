@@ -1482,14 +1482,16 @@ async function selectVariation(traitId, variationId) {
       const savedPosition = localStorage.getItem(key);
       const contentWidth = preview.getBoundingClientRect().width;
       const contentHeight = contentWidth;
-      const imgWidth = parseFloat(previewImage.style.width) || contentWidth;
-      const imgHeight = parseFloat(previewImage.style.height) || contentHeight;
-      const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
-      const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
+      const scale = calculateScalingFactor(preview);
+      const imgWidth = (parseFloat(previewImage.style.width) || contentWidth) * scale;
+      const imgHeight = (parseFloat(previewImage.style.height) || contentHeight) * scale;
+      const maxLeft = ((contentWidth - imgWidth) / contentWidth) * 100;
+      const maxTop = ((contentHeight - imgHeight) / contentHeight) * 100;
       try {
         if (savedPosition) {
           const { left, top } = JSON.parse(savedPosition);
           const normalized = normalizePosition(left, top, contentWidth, contentHeight, contentWidth, contentHeight);
+          // Ensure the image is fully visible by clamping positions
           previewImage.style.left = Math.max(0, Math.min(normalized.left, maxLeft)) + "%";
           previewImage.style.top = Math.max(0, Math.min(normalized.top, maxTop)) + "%";
           if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
@@ -1616,10 +1618,11 @@ function updateCoordinates(img) {
 function savePosition(img, traitId, variationName) {
   const contentWidth = preview.getBoundingClientRect().width;
   const contentHeight = contentWidth;
-  const imgWidth = parseFloat(img.style.width) || contentWidth;
-  const imgHeight = parseFloat(img.style.height) || contentHeight;
-  const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
-  const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
+  const scale = calculateScalingFactor(preview);
+  const imgWidth = (parseFloat(img.style.width) || contentWidth) * scale;
+  const imgHeight = (parseFloat(img.style.height) || contentHeight) * scale;
+  const maxLeft = ((contentWidth - imgWidth) / contentWidth) * 100;
+  const maxTop = ((contentHeight - imgHeight) / contentHeight) * 100;
 
   let left = parseFloat(img.style.left) || 0;
   let top = parseFloat(img.style.top) || 0;
