@@ -62,9 +62,6 @@
 
   
 <!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
-
-  
-  
 <style>
   #preview-panel-container { display: flex; flex-wrap: wrap; gap: 30px; width: 100%; }
   #preview-panel-container .panel { min-height: 650px; width: calc(50% - 15px); }
@@ -88,7 +85,10 @@
     width: auto; /* Let JavaScript set the width */
     height: auto; /* Let JavaScript set the height */
   }
-  #preview img.dragging { box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5); }
+  #preview img.dragging { 
+    box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
+    box-sizing: border-box; /* Ensure the shadow aligns with the image size */
+  }
   #controls { align-items: center; display: flex; gap: 10px; justify-content: center; margin-top: 5px; }
   #coordinates { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 500; }
   #coordinates strong { font-weight: bold; }
@@ -180,6 +180,7 @@
     padding-left: 10px; /* Slightly reduce padding for balance */
     padding-right: 10px; /* Slightly reduce padding for balance */
     box-sizing: border-box;
+    min-height: 400px; /* Ensure the grid has a minimum height */
   }
   #preview-samples-grid .sample-container { 
     width: 100%; /* Let grid control width */
@@ -192,6 +193,7 @@
     cursor: pointer; 
     overflow: hidden; 
     position: relative;
+    min-height: 100px; /* Ensure each container has a minimum height */
   }
   #preview-samples-grid .sample-preview {
     position: absolute;
