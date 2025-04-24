@@ -1359,10 +1359,6 @@ async function applyScalingToImage(img, callback) {
     if (callback) callback();
     return;
   }
-  if (img.dataset.scaled === "true") {
-    if (callback) callback();
-    return;
-  }
 
   const tempImg = new Image();
   tempImg.src = img.src;
@@ -1491,7 +1487,6 @@ async function selectVariation(traitId, variationId) {
         if (savedPosition) {
           const { left, top } = JSON.parse(savedPosition);
           const normalized = normalizePosition(left, top, contentWidth, contentHeight, contentWidth, contentHeight);
-          // Ensure the image is fully visible by clamping positions
           previewImage.style.left = Math.max(0, Math.min(normalized.left, maxLeft)) + "%";
           previewImage.style.top = Math.max(0, Math.min(normalized.top, maxTop)) + "%";
           if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
@@ -1519,18 +1514,17 @@ async function selectVariation(traitId, variationId) {
 async function setupDragAndDrop(img, traitIndex) {
   if (!img) return;
 
-  // Define event handler functions
   function preventDragStart(e) {
     e.preventDefault();
   }
 
   async function startDragging(e) {
-    await applyScalingToImage(img); // Ensure scaling is applied before dragging
+    await applyScalingToImage(img);
     if (!isValidImage(img)) return;
     const targetImg = e.target;
     if (!traitImages.includes(targetImg)) return;
 
-    currentImage = targetImg; // Use the clicked image
+    currentImage = targetImg;
     isDragging = true;
     const containerRect = currentImage.parentElement.getBoundingClientRect();
     const imageRect = currentImage.getBoundingClientRect();
@@ -1592,14 +1586,12 @@ async function setupDragAndDrop(img, traitIndex) {
 
   function selectImage(e) {}
 
-  // Remove any existing listeners to prevent duplicates
   img.removeEventListener("dragstart", preventDragStart);
   img.removeEventListener("mousedown", startDragging);
   img.removeEventListener("mouseup", stopDragging);
   img.removeEventListener("click", selectImage);
   document.removeEventListener("mouseup", stopDragging);
 
-  // Add event listeners
   img.addEventListener("dragstart", preventDragStart);
   img.addEventListener("mousedown", startDragging);
   img.addEventListener("mouseup", stopDragging);
@@ -1671,22 +1663,6 @@ function updateZIndices() {
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
-
-
-
-function updateSamplePositions(traitId, variationId, position) {
-  for (let i = 0; i < 16; i++) {
-    const sample = sampleData[i];
-    for (let j = 0; j < sample.length; j++) {
-      if (sample[j].traitId === traitId && sample[j].variantId === variationId) {
-        sample[j].position = position;
-      }
-    }
-  }
-  updatePreviewSamples();
-}
-
-/* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
 function updateSamplePositions(traitId, variationId, position) {
   for (let i = 0; i < 16; i++) {
