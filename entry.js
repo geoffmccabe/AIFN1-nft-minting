@@ -1350,7 +1350,9 @@ function normalizePosition(leftPercent, topPercent, previewWidth, previewHeight,
 }
 
 function calculateScalingFactor(container = preview) {
-  return ScalingManager.getScaleFactor(container.getBoundingClientRect().width);
+  const width = container.getBoundingClientRect().width;
+  debugLog(`calculateScalingFactor: container=${container.id}, width=${width}`);
+  return width / ScalingManager.baseSize;
 }
 
 async function applyScalingToImage(img, callback) {
@@ -1368,8 +1370,9 @@ async function applyScalingToImage(img, callback) {
       img.naturalWidth = tempImg.naturalWidth;
       img.naturalHeight = tempImg.naturalHeight;
       const scale = calculateScalingFactor(img.parentElement);
-      const scaledWidth = img.naturalWidth * scale;
-      const scaledHeight = img.naturalHeight * scale;
+      const expectedWidth = img.parentElement.getBoundingClientRect().width;
+      const scaledWidth = expectedWidth; // Scale to match the container width
+      const scaledHeight = (img.naturalHeight / img.naturalWidth) * scaledWidth; // Maintain aspect ratio
       img.style.width = scaledWidth + "px";
       img.style.height = scaledHeight + "px";
       debugLog(
@@ -1381,19 +1384,19 @@ async function applyScalingToImage(img, callback) {
           img.naturalHeight +
           ", scale=" +
           scale +
+          ", expectedWidth=" +
+          expectedWidth +
           ", scaledWidth=" +
           scaledWidth +
           ", scaledHeight=" +
           scaledHeight
       );
-      img.dataset.scaled = "true";
       resolve();
     };
     tempImg.onerror = () => {
       debugLog("Cannot apply scaling: id=" + (img.id || "") + ", image failed to load");
       img.style.width = DIMENSIONS.BASE_SIZE + "px";
       img.style.height = DIMENSIONS.BASE_SIZE + "px";
-      img.dataset.scaled = "true";
       resolve();
     };
   });
@@ -1461,7 +1464,6 @@ async function selectVariation(traitId, variationId) {
   if (previewImage) {
     previewImage.src = trait.variants[variationIndex].url;
     previewImage.style.visibility = "visible";
-    previewImage.dataset.scaled = "false"; // Reset scaling flag to force re-scaling
     debugLog(
       "Selected variation " +
         variationId +
@@ -1478,9 +1480,8 @@ async function selectVariation(traitId, variationId) {
       const savedPosition = localStorage.getItem(key);
       const contentWidth = preview.getBoundingClientRect().width;
       const contentHeight = contentWidth;
-      const scale = calculateScalingFactor(preview);
-      const imgWidth = (parseFloat(previewImage.style.width) || contentWidth) * scale;
-      const imgHeight = (parseFloat(previewImage.style.height) || contentHeight) * scale;
+      const imgWidth = parseFloat(previewImage.style.width) || contentWidth;
+      const imgHeight = parseFloat(previewImage.style.height) || contentHeight;
       const maxLeft = ((contentWidth - imgWidth) / contentWidth) * 100;
       const maxTop = ((contentHeight - imgHeight) / contentHeight) * 100;
       try {
@@ -1610,9 +1611,8 @@ function updateCoordinates(img) {
 function savePosition(img, traitId, variationName) {
   const contentWidth = preview.getBoundingClientRect().width;
   const contentHeight = contentWidth;
-  const scale = calculateScalingFactor(preview);
-  const imgWidth = (parseFloat(img.style.width) || contentWidth) * scale;
-  const imgHeight = (parseFloat(img.style.height) || contentHeight) * scale;
+  const imgWidth = parseFloat(img.style.width) || contentWidth;
+  const imgHeight = parseFloat(img.style.height) || contentHeight;
   const maxLeft = ((contentWidth - imgWidth) / contentWidth) * 100;
   const maxTop = ((contentHeight - imgHeight) / contentHeight) * 100;
 
