@@ -1660,7 +1660,6 @@ function updateZIndices() {
 }
 
 
-
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
 
