@@ -82,12 +82,12 @@
   #preview img { 
     position: absolute; 
     object-fit: none; /* Prevent distortion */
-    width: auto; /* Let JavaScript set the width */
-    height: auto; /* Let JavaScript set the height */
+    width: auto !important; /* Ensure JavaScript sets the width */
+    height: auto !important; /* Ensure JavaScript sets the height */
   }
   #preview img.dragging { 
     box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
-    box-sizing: border-box; /* Ensure the shadow aligns with the image size */
+    box-sizing: border-box;
   }
   #controls { align-items: center; display: flex; gap: 10px; justify-content: center; margin-top: 5px; }
   #coordinates { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 500; }
@@ -119,8 +119,8 @@
   #enlarged-preview img { 
     position: absolute;
     object-fit: none; /* Prevent distortion */
-    width: auto; /* Let JavaScript set the width */
-    height: auto; /* Let JavaScript set the height */
+    width: auto !important; /* Ensure JavaScript sets the width */
+    height: auto !important; /* Ensure JavaScript sets the height */
   }
   #magnify-header {
     display: flex;
@@ -206,8 +206,8 @@
   #preview-samples-grid img { 
     position: absolute;
     object-fit: none; /* Prevent distortion */
-    width: auto; /* Let JavaScript set the width */
-    height: auto; /* Let JavaScript set the height */
+    width: auto !important; /* Ensure JavaScript sets the width */
+    height: auto !important; /* Ensure JavaScript sets the height */
   }
   #update-previews { 
     background: #ccc; 
