@@ -151,7 +151,7 @@ function debugLog(...args) {
 }
 
 
-<!-- Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS -------------------------------------------------->
+/*-- Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS --------------------------------------------------*/
 
 
 document.addEventListener('DOMContentLoaded', async () => {
