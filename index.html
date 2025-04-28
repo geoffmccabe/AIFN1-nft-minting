@@ -3,9 +3,9 @@
 <head>
   <!-- Section 1 ----------------------------------------- HEAD AND INITIAL SETUP -------------------------------------------------->
   <meta charset="UTF-8">
-  <title>Mint Your AIFN NFT</title>
+  <title>Create and Build your Percs</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="/AIFN1-nft-minting/favicon.ico" rel="icon" type="image/x-icon">
+  <link href="/PercCreator/favicon.ico" rel="icon" type="image/x-icon">
   <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="config.js"></script>
   <script src="entry.js"></script>
@@ -21,7 +21,7 @@
 
   
   <style>
-    body { background-image: url('/AIFN1-nft-minting/images/background.webp'); background-position: center top; background-repeat: repeat-y; background-size: 100% auto; color: black; display: flex; flex-wrap: wrap; font-family: 'Poppins', sans-serif; font-weight: 400; margin: 0; min-height: 100vh; padding: 20px; position: relative; }
+    body { background-image: url('/PercCreator/images/background.webp'); background-position: center top; background-repeat: repeat-y; background-size: 100% auto; color: black; display: flex; flex-wrap: wrap; font-family: 'Poppins', sans-serif; font-weight: 400; margin: 0; min-height: 100vh; padding: 20px; position: relative; }
     #version { color: #333; font-size: 12px; left: 10px; position: absolute; top: 10px; z-index: 10; }
     #logo-container { align-items: center; background-color: transparent; display: flex; height: 200px; justify-content: center; margin: 0 auto 20px; width: 100%; z-index: 1; }
     #logo { display: block; height: 100%; object-fit: contain; width: 100%; }
@@ -242,9 +242,9 @@
     #prompt-section textarea { border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; display: block; font-family: 'Poppins', sans-serif; font-weight: 400; height: 140px; resize: none; width: 100%; }
     #prompt-section label { display: block; font-family: 'Poppins', sans-serif; font-weight: 500; margin-bottom: 5px; }
     #background-details { max-width: 100%; overflow: hidden; text-align: center; width: 100%; }
-    #background-image { aspect-ratio: 1 / 1; background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 10px; max-width: 100%; object-fit: contain; width: 100%; }
+    #background-image { aspect-ratio: 1 / 1; background: url('https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 10px; max-width: 100%; object-fit: contain; width: 100%; }
     #gen-grid { aspect-ratio: 1 / 1; display: grid; gap: 10px; max-width: 100%; overflow: hidden; width: 100%; }
-    .gen-image-container { aspect-ratio: 1 / 1; background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 5px; box-sizing: border-box; cursor: pointer; position: relative; width: 100%; }
+    .gen-image-container { aspect-ratio: 1 / 1; background: url('https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 5px; box-sizing: border-box; cursor: pointer; position: relative; width: 100%; }
     .gen-image-container img { height: 100%; object-fit: contain; width: 100%; }
     .gen-image-container.selected { border: 5px solid #f4c149; }
     .gen-image-full { aspect-ratio: 1 / 1; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 10px; max-width: 100%; object-fit: contain; width: 100%; }
@@ -254,7 +254,7 @@
     #chosen-section h2 { font-family: 'Poppins', sans-serif; font-weight: 600; margin: 0 0 10px; text-align: center; }
     #chosen-controls { align-items: center; display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
     #chosen-grid { display: flex; flex-wrap: wrap; gap: 15px; overflow: hidden; width: 100%; }
-    .chosen-image-container { aspect-ratio: 1 / 1; background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 5px; box-sizing: border-box; margin: 0; min-width: 100px; overflow: hidden; padding: 0; position: relative; width: calc(20% - 12px); }
+    .chosen-image-container { aspect-ratio: 1 / 1; background: url('https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 5px; box-sizing: border-box; margin: 0; min-width: 100px; overflow: hidden; padding: 0; position: relative; width: calc(20% - 12px); }
     .chosen-image-container img { height: 100%; margin: 0; max-height: 100%; max-width: 100%; object-fit: contain; padding: 0; width: 100%; }
     button { background: grey; border: none; border-radius: 5px; color: black; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 500; margin: 10px 0; padding: 10px 20px; }
     button:disabled { cursor: not-allowed; opacity: 0.6; }
@@ -284,7 +284,7 @@
 
   <!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
   <div id="logo-container">
-    <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
+    <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
   </div>
   <div class="project-panel panel">
     <h2>PROJECT PANEL</h2>
@@ -339,7 +339,7 @@
         <h3>Project Banner</h3>
         <input type="file" id="project-banner-upload" accept="image/*" style="display: none;">
         <label for="project-banner-upload" class="file-input-label">Upload Banner</label>
-        <div id="project-banner-preview" style="aspect-ratio: 2 / 1; background: url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 10px; margin-top: 10px; max-width: 100%; overflow: hidden; width: 100%;">
+        <div id="project-banner-preview" style="aspect-ratio: 2 / 1; background: url('https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); background-blend-mode: overlay; background-size: cover; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 10px; margin-top: 10px; max-width: 100%; overflow: hidden; width: 100%;">
           <img id="project-banner-image" src="" alt="Project Banner" style="display: none; height: 100%; object-fit: contain; width: 100%;">
         </div>
       </div>
@@ -423,7 +423,7 @@
           </div>
           <div style="align-items: flex-start; display: flex;">
             <div id="background-details">
-              <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
+              <img id="background-image" src="https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp" alt="AI Background">
               <p id="background-metadata">Loading...</p>
             </div>
             <div id="gen-controls">
