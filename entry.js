@@ -1777,8 +1777,8 @@ async function updatePreviewSamples() {
       };
       img.src = variant.url;
 
-      // Position image (simplified)
-      const savedPos = JSON.parse(localStorage.getItem(`trait${trait.id}-${variant.id}-position`) || { left: 50, top: 50 };
+      // Position image (simplified) - FIXED THIS LINE:
+      const savedPos = JSON.parse(localStorage.getItem(`trait${trait.id}-${variant.id}-position`) || '{"left":50,"top":50}');
       img.style.left = `${savedPos.left}%`;
       img.style.top = `${savedPos.top}%`;
       
