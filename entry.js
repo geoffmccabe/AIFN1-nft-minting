@@ -1769,16 +1769,17 @@ async function updatePreviewSamples() {
       // Style the image
       img.style.position = "absolute";
       img.style.zIndex = trait.zIndex;
-      img.style.visibility = "visible"; // IMPORTANT: Always visible by default
+      img.style.visibility = "visible";
       
       // Load image with fallback
       img.onerror = () => {
-        img.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ0cmFuc3BhcmVudCIvPjwvc3ZnPg=="; // Transparent fallback
+        img.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ0cmFuc3BhcmVudCIvPjwvc3ZnPg==";
       };
       img.src = variant.url;
 
-      // Position image (simplified) - FIXED THIS LINE:
-      const savedPos = JSON.parse(localStorage.getItem(`trait${trait.id}-${variant.id}-position`) || '{"left":50,"top":50}');
+      // CORRECTED POSITION HANDLING - This is the fixed line
+      const savedPosStr = localStorage.getItem(`trait${trait.id}-${variant.id}-position`);
+      const savedPos = savedPosStr ? JSON.parse(savedPosStr) : { left: 50, top: 50 };
       img.style.left = `${savedPos.left}%`;
       img.style.top = `${savedPos.top}%`;
       
