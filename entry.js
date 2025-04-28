@@ -13,6 +13,16 @@ const TraitManager = {
       this.addTrait(i + 1);
     }
     this.sortTraits();
+    // Add placeholder variants to each trait if none exist
+    this.traits.forEach(trait => {
+      if (trait.variants.length === 0) {
+        this.addVariant(trait.id, {
+          name: `Placeholder ${trait.position}`,
+          url: "https://via.placeholder.com/600", // Placeholder image
+          chance: 1.0
+        });
+      }
+    });
     const traitsPanel = document.querySelector('.traits-panel-container .panel-content');
     if (traitsPanel) {
       traitsPanel.style.maxHeight = '400px';
@@ -117,7 +127,12 @@ const TraitManager = {
   }
 };
 
+
+
 /* Section 2 ----------------------------------------- GLOBAL SETUP AND INITIALIZATION ------------------------------------------------*/
+
+
+
 
 let provider, contract, signer, contractWithSigner;
 let traitImages = [];
@@ -1360,7 +1375,7 @@ function updateMintButton() {
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
 
 class ScalingManager {
-  static baseSize = 598;
+  static baseSize = 600;  // Updated to match DIMENSIONS.BASE_SIZE
   static getScaleFactor(currentSize) {
     return currentSize / this.baseSize;
   }
@@ -1422,7 +1437,7 @@ async function applyScalingToImage(img, callback) {
   const natWidth = img.naturalWidth > 0 ? img.naturalWidth : DIMENSIONS.BASE_SIZE;
   const natHeight = img.naturalHeight > 0 ? img.naturalHeight : DIMENSIONS.BASE_SIZE;
 
-  // Calculate scale factor based on container (#preview)
+  // Calculate scale factor based on container (#preview or .sample-preview)
   const scale = calculateScalingFactor(img.parentElement);
 
   const scaledWidth = natWidth * scale;
@@ -1505,7 +1520,9 @@ async function selectVariation(traitId, variationId) {
 
   const previewImage = traitImages.find((img) => img.id === "preview-trait" + traitId);
   if (previewImage) {
-    previewImage.src = trait.variants[variationIndex].url;
+    // Ensure a valid URL is set, even if no variants are available
+    const variantUrl = trait.variants[variationIndex]?.url || "https://via.placeholder.com/600";
+    previewImage.src = variantUrl;
     previewImage.style.visibility = "visible";
     debugLog(
       "Selected variation " +
@@ -1716,6 +1733,8 @@ function updateZIndices() {
   if (preview) preview.offsetHeight;
 }
 
+
+
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
 function updateSamplePositions(traitId, variationId, position) {
@@ -1732,9 +1751,10 @@ function updateSamplePositions(traitId, variationId, position) {
 
 async function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = "";
-  sampleData = Array(16).fill(null).map(() => []);
+  sampleData = Array(16).fill(null).map(() => []); // Reset sample data specific to this run
 
-  const panelWidth = previewSamplesGrid.clientWidth;
+  // --- Calculate Grid Dimensions ---
+  const panelWidth = previewSamplesGrid.clientWidth; // Use clientWidth (excludes padding/border)
   if (panelWidth <= 0) {
     debugLog("Preview samples grid has zero client width. Skipping update.");
     return;
@@ -1747,77 +1767,84 @@ async function updatePreviewSamples() {
     debugLog("Calculated sample container size is zero or negative. Skipping update.");
     return;
   }
-  const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE;
+  const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE; // BASE_SIZE is now 600
   if (!isFinite(scaleFactor) || scaleFactor <= 0) {
     debugLog(`Invalid scaleFactor calculated: ${scaleFactor}. Skipping update.`);
     return;
   }
-
   debugLog(`updatePreviewSamples: panelWidth=${panelWidth}, containerSize=${containerSize}, scaleFactor=${scaleFactor}`);
-  debugLog(`Traits available: ${TraitManager.getAllTraits().length}`);
 
+  // --- Create Sample Promises (Process concurrently) ---
+  const samplePromises = [];
   for (let i = 0; i < 16; i++) {
-    const sampleContainer = document.createElement("div");
-    sampleContainer.className = "sample-container";
-    sampleContainer.style.width = containerSize + "px";
-    sampleContainer.style.height = containerSize + "px";
+    samplePromises.push((async (sampleIndex) => { // Pass index via IIFE parameter
+      const sampleContainer = document.createElement("div");
+      sampleContainer.className = "sample-container";
+      // CSS aspect-ratio + grid handles sizing
 
-    const previewContainer = document.createElement("div");
-    previewContainer.className = "sample-preview";
-    previewContainer.style.width = DIMENSIONS.BASE_SIZE + "px";
-    previewContainer.style.height = DIMENSIONS.BASE_SIZE + "px";
-    previewContainer.style.transform = "scale(" + scaleFactor + ")";
-    previewContainer.style.transformOrigin = "0 0";
+      const previewContainer = document.createElement("div");
+      previewContainer.className = "sample-preview";
+      previewContainer.style.width = DIMENSIONS.BASE_SIZE + "px";
+      previewContainer.style.height = DIMENSIONS.BASE_SIZE + "px";
+      previewContainer.style.transform = "scale(" + scaleFactor + ")";
+      previewContainer.style.transformOrigin = "0 0";
 
-    let sampleHasContent = false;
-    const traits = TraitManager.getAllTraits().slice().reverse();
-    if (traits.length === 0) {
-      debugLog(`No traits available for sample ${i}`);
-      const placeholder = document.createElement("div");
-      placeholder.style.width = "100%";
-      placeholder.style.height = "100%";
-      placeholder.style.backgroundColor = "rgba(255, 0, 0, 0.1)";
-      previewContainer.appendChild(placeholder);
-    }
+      const currentSampleData = []; // Store data for this specific sample index
 
-    for (let j = 0; j < traits.length; j++) {
-      const trait = traits[j];
-      if (trait.variants.length === 0) {
-        debugLog(`No variants for trait ${trait.id} in sample ${i}`);
-        continue;
-      }
+      const traits = TraitManager.getAllTraits().slice().reverse();
 
-      const randomIndex = Math.floor(Math.random() * trait.variants.length);
-      const variant = trait.variants[randomIndex];
+      // Process images for this sample concurrently
+      const imagePromises = traits.map(async (trait, traitIndexInSample) => { // Use traitIndexInSample for variety calc
+        if (trait.variants.length === 0) return null; // Skip this trait
 
-      const img = document.createElement("img");
-      img.alt = "Sample " + (i + 1) + " - Trait " + trait.position;
-      img.style.position = "absolute";
-      img.style.zIndex = trait.zIndex;
+        // Cycle through variants for variety
+        const variantIndex = (sampleIndex + traitIndexInSample) % trait.variants.length;
+        const variant = trait.variants[variantIndex];
+        const variantId = variant.id;
 
-      let imageValid = false;
-      if (variant.url) {
-        try {
-          const response = await fetch(variant.url);
-          if (response.ok) {
-            img.src = variant.url;
-            imageValid = true;
+        const img = document.createElement("img");
+        img.alt = `Sample ${sampleIndex + 1} - Trait ${trait.position}`;
+        img.style.position = "absolute";
+        img.style.zIndex = trait.zIndex;
+        img.style.visibility = "hidden";
+
+        let imgSrc = "https://via.placeholder.com/150/FF0000/FFFFFF?text=Error"; // Default placeholder
+        let isPlaceholder = true; // Assume placeholder initially
+
+        // Validate URL before setting src
+        if (variant.url) {
+          try {
+            const response = await fetch(variant.url);
+            if (response.ok) {
+              imgSrc = variant.url;
+              isPlaceholder = false; // It's a real URL
+            } else {
+              debugLog(`Variant URL fetch failed: ${response.status}, Sample ${sampleIndex}, Trait ${trait.id}`);
+            }
+          } catch (e) {
+            debugLog(`Variant URL fetch error: Sample ${sampleIndex}, Trait ${trait.id}`, e);
           }
-        } catch (e) {
-          debugLog(`Variant ${variant.id} for trait ${trait.id} has invalid URL in sample ${i}: ${variant.url}`, e);
+        } else {
+          debugLog(`Variant has no URL: Sample ${sampleIndex}, Trait ${trait.id}`);
         }
-      }
+        img.src = imgSrc; // Set src (actual or placeholder)
 
-      if (!imageValid) {
-        debugLog(`Using placeholder for variant ${variant.id} in sample ${i}`);
-        img.src = "https://via.placeholder.com/150";
-      }
+        // Apply scaling and positioning after load attempt
+        try {
+          await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; }); // Wait for load/error
 
-      try {
-        await applyScalingToImage(img, () => {
-          sampleHasContent = true;
-          const key = `trait${trait.id}-${variant.id}-position`;
-          const savedPosition = localStorage.getItem(key);
+          await applyScalingToImage(img); // Scale proportionally
+
+          if (!isPlaceholder && (!isValidImage(img) || parseFloat(img.style.width) <= 0)) {
+            debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Invalid image after scaling, switching to placeholder.`);
+            img.src = "https://via.placeholder.com/150/FFFF00/000000?text=ScaleErr"; // Scaling error placeholder
+            await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; }); // Wait for placeholder
+            await applyScalingToImage(img); // Re-scale placeholder
+          }
+
+          // Apply position (per-variant or default center)
+          const key = `trait${trait.id}-${variantId}-position`;
+          const savedPosition = isPlaceholder ? null : localStorage.getItem(key); // Don't use saved pos for placeholders
           let finalLeft = "50%";
           let finalTop = "50%";
           let transform = "translate(-50%, -50%)";
@@ -1830,63 +1857,74 @@ async function updatePreviewSamples() {
               transform = "";
             }
           } catch (e) {
-            debugLog("Invalid position data for sample " + i + ", trait " + trait.id + ":", e);
+            debugLog(`Invalid position JSON: Sample ${sampleIndex}, Trait ${trait.id}`, e);
           }
 
           img.style.left = finalLeft;
           img.style.top = finalTop;
-          if (transform) {
-            img.style.transform = transform;
-          } else {
-            img.style.removeProperty("transform");
-          }
+          if (transform) img.style.transform = transform;
+          else img.style.removeProperty("transform");
 
-          sampleData[i].push({
+          img.style.visibility = "visible";
+
+          currentSampleData.push({
             traitId: trait.id,
             variantId: variant.id,
-            position: { left: finalLeft, top: finalTop },
+            position: { left: finalLeft, top: finalTop }
           });
 
-          previewContainer.appendChild(img);
-          debugLog(`Sample ${i}, Trait ${j}: Image added with src=${img.src}, width=${img.style.width}, height=${img.style.height}`);
-        });
-      } catch (e) {
-        debugLog("Error applying scaling for sample " + i + ":", e);
-        img.src = "https://via.placeholder.com/150";
-        img.style.left = "50%";
-        img.style.top = "50%";
-        img.style.transform = "translate(-50%, -50%)";
-        previewContainer.appendChild(img);
-      }
-    }
+          return img; // Return configured image
 
-    sampleContainer.appendChild(previewContainer);
-    previewSamplesGrid.appendChild(sampleContainer);
-    debugLog(`Sample container ${i} added to grid`);
+        } catch (e) {
+          debugLog(`Error processing image for sample ${sampleIndex}, trait ${trait.id}:`, e);
+          return null;
+        }
+      }); // End map traits
 
-    sampleContainer.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const currentSampleIdx = Array.from(previewSamplesGrid.children).indexOf(sampleContainer);
-      if (sampleData[currentSampleIdx]) {
-        sampleData[currentSampleIdx].forEach(async (sample) => {
-          const trait = TraitManager.getTrait(sample.traitId);
-          if (!trait) return;
-          const variantIndex = trait.variants.findIndex((v) => v.id === sample.variantId);
-          if (variantIndex !== -1) {
-            await selectVariation(trait.id, sample.variantId);
-            const grid = document.getElementById("trait" + trait.id + "-grid");
-            if (grid) {
-              grid.querySelectorAll(".variation-image-wrapper").forEach((w) => w.classList.remove("selected"));
-              const container = grid.querySelector(`[data-variation-id="${sample.variantId}"]`);
-              if (container) container.querySelector(".variation-image-wrapper")?.classList.add("selected");
+      const loadedImages = (await Promise.all(imagePromises)).filter(img => img !== null);
+      loadedImages.forEach(img => previewContainer.appendChild(img));
+
+      sampleContainer.appendChild(previewContainer);
+
+      // Add click listener
+      sampleContainer.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const currentSampleIdx = Array.from(previewSamplesGrid.children).indexOf(sampleContainer); // Find index again just in case
+        if (sampleData[currentSampleIdx]) {
+          sampleData[currentSampleIdx].forEach(async (sample) => {
+            const trait = TraitManager.getTrait(sample.traitId);
+            if (!trait) return;
+            const variantIndex = trait.variants.findIndex((v) => v.id === sample.variantId);
+            if (variantIndex !== -1) {
+              await selectVariation(trait.id, sample.variantId);
+              const grid = document.getElementById("trait" + trait.id + "-grid");
+              if (grid) {
+                grid.querySelectorAll(".variation-image-wrapper").forEach((w) => w.classList.remove("selected"));
+                const container = grid.querySelector(`[data-variation-id="${sample.variantId}"]`);
+                if (container) container.querySelector(".variation-image-wrapper")?.classList.add("selected");
+              }
             }
-          }
-        });
-      }
-    });
-  }
-}
+          });
+        }
+      });
 
+      // Append container immediately for progressive rendering
+      previewSamplesGrid.appendChild(sampleContainer);
+      return currentSampleData;
+
+    })(i)); // Pass index i to IIFE
+  } // End samples loop
+
+  // Wait for all sample data to be processed and store it
+  const sampleDataResults = await Promise.all(samplePromises);
+  sampleDataResults.forEach((data, index) => {
+    if (data) {
+      sampleData[index] = data; // Store sample data at correct index
+    }
+  });
+
+  debugLog("Preview Samples update complete.");
+}
 
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
