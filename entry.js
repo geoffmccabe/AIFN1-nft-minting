@@ -16,11 +16,11 @@ const TraitManager = {
     // Add placeholder variants to each trait if none exist
     this.traits.forEach(trait => {
       if (trait.variants.length === 0) {
-        this.addVariant(trait.id, {
-          name: `Placeholder ${trait.position}`,
-          url: "https://via.placeholder.com/600", // Placeholder image
-          chance: 1.0
-        });
+       this.addVariant(trait.id, {
+        name: `Placeholder ${trait.position}`,
+        url: "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp",
+        chance: 1.0
+       });
       }
     });
     const traitsPanel = document.querySelector('.traits-panel-container .panel-content');
