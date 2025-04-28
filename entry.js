@@ -1140,30 +1140,31 @@ function setupTraitListeners(traitId) {
 
     // CORRECTED FILE UPLOAD HANDLER (no syntax errors)
     fileInput.addEventListener('change', async (event) => {
-      const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
-      if (!files.length) return;
+  const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
+  if (!files.length) return;
 
-      const trait = TraitManager.getTrait(traitId);
-      if (!trait) return;
+  const traitId = event.target.id.replace('trait', '').replace('-files', '');
+  const trait = TraitManager.getTrait(traitId);
+  if (!trait) return;
 
-      trait.variants = [];
-      
-      for (const file of files) {
-        const name = file.name.split('.').slice(0, -1).join('.');
-        const url = URL.createObjectURL(file);
-        const data = await file.arrayBuffer();
-        
-        TraitManager.addVariant(traitId, {
-          name: name,
-          url: url,
-          data: data
-        });
-      }
-
-      if (trait.variants.length > 0) {
-        selectVariation(traitId, trait.variants[0].id);
-      }
+  trait.variants = [];
+  
+  for (const file of files) {
+    const name = file.name.split('.').slice(0, -1).join('.');
+    const url = URL.createObjectURL(file);
+    const data = await file.arrayBuffer();
+    
+    TraitManager.addVariant(traitId, {
+      name: name,
+      url: url,
+      data: data
     });
+  }
+
+  if (trait.variants.length > 0) {
+    selectVariation(traitId, trait.variants[0].id);
+  }
+});
 
     // Arrow button handlers (keep existing)
   const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
