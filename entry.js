@@ -13,16 +13,9 @@ const TraitManager = {
       this.addTrait(i + 1);
     }
     this.sortTraits();
-    // Add placeholder variants to each trait if none exist
-    this.traits.forEach(trait => {
-      if (trait.variants.length === 0) {
-       this.addVariant(trait.id, {
-        name: `Placeholder ${trait.position}`,
-        url: "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp",
-        chance: 1.0
-       });
-      }
-    });
+
+    // Removed placeholder variant addition to prevent background image from being used as a trait
+
     const traitsPanel = document.querySelector('.traits-panel-container .panel-content');
     if (traitsPanel) {
       traitsPanel.style.maxHeight = '400px';
@@ -1795,10 +1788,13 @@ async function updatePreviewSamples() {
 
       // Process images for this sample concurrently
       const imagePromises = traits.map(async (trait, traitIndexInSample) => { // Use traitIndexInSample for variety calc
-        if (trait.variants.length === 0) return null; // Skip this trait
+        if (trait.variants.length === 0) {
+          debugLog(`Skipping trait ${trait.id} in sample ${sampleIndex}: No variants.`);
+          return null; // Skip this trait - only render if actual variants exist
+        }
 
         // Cycle through variants for variety
-        const variantIndex = Math.floor(Math.random() * trait.variants.length);
+        const variantIndex = (sampleIndex + traitIndexInSample) % trait.variants.length;
         const variant = trait.variants[variantIndex];
         const variantId = variant.id;
 
@@ -1809,22 +1805,18 @@ async function updatePreviewSamples() {
         img.style.visibility = "hidden";
 
         // Use variant URL directly
-        img.src = variant.url || "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp";
+        img.src = variant.url;
         previewContainer.appendChild(img); // Append immediately
 
         try {
-          await new Promise(resolve => { img.onload = resolve; img.onerror = () => {
-            img.src = "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp";
-            img.onload = resolve;
-            img.onerror = resolve; // Fallback should load, but resolve anyway
-          }; });
+          await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
 
           await applyScalingToImage(img);
 
           if (!isValidImage(img) || parseFloat(img.style.width) <= 0) {
-            img.src = "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp";
-            await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
-            await applyScalingToImage(img);
+            debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Invalid image after scaling, src=${img.src}`);
+            previewContainer.removeChild(img); // Remove invalid image, show only background
+            return null;
           }
 
           // Apply position
@@ -1861,19 +1853,20 @@ async function updatePreviewSamples() {
           return img;
         } catch (e) {
           debugLog(`Error processing image for sample ${sampleIndex}, trait ${trait.id}:`, e);
+          previewContainer.removeChild(img); // Remove failed image, show only background
           return null;
         }
       }); // End map traits
 
       const loadedImages = (await Promise.all(imagePromises)).filter(img => img !== null);
-      // Images are already appended, no need to append again
+      // Images are already appended or removed
 
       sampleContainer.appendChild(previewContainer);
 
       // Add click listener
       sampleContainer.addEventListener("click", (e) => {
         e.stopPropagation();
-        const currentSampleIdx = Array.from(previewSamplesGrid.children).indexOf(sampleContainer); // Find index again just in case
+        const currentSampleIdx = Array.from(previewSamplesGrid.children).indexOf(sampleContainer);
         if (sampleData[currentSampleIdx]) {
           sampleData[currentSampleIdx].forEach(async (sample) => {
             const trait = TraitManager.getTrait(sample.traitId);
@@ -1909,7 +1902,6 @@ async function updatePreviewSamples() {
 
   debugLog("Preview Samples update complete.");
 }
-
 
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
