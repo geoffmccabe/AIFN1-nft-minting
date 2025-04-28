@@ -1627,6 +1627,7 @@ async function setupDragAndDrop(img, traitIndex) {
       currentImage.style.left = `${newLeft}%`;
       currentImage.style.top = `${newTop}%`;
       updateCoordinates(currentImage);
+      debugLog("onMouseMove: Updated position", { left: newLeft, top: newTop });
     }
   }
 
@@ -1718,7 +1719,16 @@ function savePosition(img, traitId, variationName) {
   const traitIndex = TraitManager.getAllTraits().findIndex((t) => t.id === traitId);
   autoPositioned[traitIndex] = true;
 
-  updateSamplePositions(traitId, variantId, position);
+  // Ensure updateSamplePositions is defined and callable
+  if (typeof updateSamplePositions === "function") {
+    updateSamplePositions(traitId, variantId, position);
+  } else {
+    debugLog("savePosition: updateSamplePositions is not defined yet");
+    // Fallback: directly call updatePreviewSamples to refresh the samples
+    if (typeof updatePreviewSamples === "function") {
+      updatePreviewSamples();
+    }
+  }
 }
 
 function updateZIndices() {
@@ -1736,9 +1746,6 @@ function updateZIndices() {
 
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
-
-
-
 
 function updateSamplePositions(traitId, variationId, position) {
   for (let i = 0; i < 16; i++) {
@@ -1783,15 +1790,29 @@ async function updatePreviewSamples() {
     const traits = [...TraitManager.getAllTraits()].reverse();
     debugLog(`Sample ${i}: Traits available:`, traits);
 
-    traits.forEach(trait => {
+    // Ensure exactly one variant per trait group
+    let hasAllTraits = true;
+    const traitVariants = traits.map(trait => {
       if (!trait.variants.length) {
         debugLog(`Sample ${i}: Trait ${trait.id} has no variants`);
-        return;
+        hasAllTraits = false;
+        return null;
       }
       
       const randomIndex = Math.floor(Math.random() * trait.variants.length);
       const variant = trait.variants[randomIndex];
       debugLog(`Sample ${i}: Trait ${trait.id}, Selected Variant ${variant.id}, URL: ${variant.url}`);
+      return { trait, variant };
+    });
+
+    // Only proceed if all traits have at least one variant
+    if (!hasAllTraits) {
+      debugLog(`Sample ${i}: Skipping due to missing variants in some traits`);
+      continue;
+    }
+
+    traitVariants.forEach(({ trait, variant }) => {
+      if (!variant) return; // Skip if no variant (shouldn't happen due to hasAllTraits check)
 
       const img = document.createElement("img");
       img.alt = `${trait.name || `Trait ${trait.position}`} variant`;
@@ -1813,15 +1834,22 @@ async function updatePreviewSamples() {
         let leftPx = containerSize / 2 - scaledWidth / 2;
         let topPx = containerSize / 2 - scaledHeight / 2;
         
-        const savedPosStr = localStorage.getItem(`trait${trait.id}-${variant.id}-position`);
+        const key = `trait${trait.id}-${variant.id}-position`;
+        const savedPosStr = localStorage.getItem(key);
         try {
           if (savedPosStr) {
             const savedPos = JSON.parse(savedPosStr);
-            leftPx = (savedPos.left / 100) * containerSize - (scaledWidth / 2);
-            topPx = (savedPos.top / 100) * containerSize - (scaledHeight / 2);
+            if (typeof savedPos.left === "number" && typeof savedPos.top === "number") {
+              leftPx = (savedPos.left / 100) * containerSize - (scaledWidth / 2);
+              topPx = (savedPos.top / 100) * containerSize - (scaledHeight / 2);
+            } else {
+              throw new Error("Invalid position format");
+            }
           }
         } catch (e) {
           debugLog(`Sample ${i}: Failed to parse position for Trait ${trait.id}, Variant ${variant.id}:`, e);
+          // Reset the position in localStorage to prevent future errors
+          localStorage.setItem(key, JSON.stringify({ left: 50, top: 50 }));
         }
         
         img.style.left = `${leftPx}px`;
