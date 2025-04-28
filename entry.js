@@ -140,8 +140,8 @@ clickSound.volume = 0.25;
 let initialHtmlUri = '';
 
 const DIMENSIONS = {
-  BASE_SIZE: 598,
-  BORDER_ADJUSTMENT: 2,
+  BASE_SIZE: 600,  // Changed from 598 to 600
+  BORDER_ADJUSTMENT: 0,  // Changed from 2 to 0
   GRID_GAP: 13
 };
 
@@ -150,8 +150,10 @@ function debugLog(...args) {
   if (DEBUG) console.log('[DEBUG]', ...args);
 }
 
-/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 
+<!-- Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS -------------------------------------------------->
+
+<script>
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000;
@@ -483,169 +485,201 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (magnifyEmoji) {
-  magnifyEmoji.addEventListener("click", () => {
-    const magnifyPanel = document.getElementById("magnify-panel");
-    if (magnifyPanel) {
-      magnifyPanel.style.display = "block";
-      const maxWidth = window.innerWidth * 0.9;
-      const maxHeight = window.innerHeight * 0.9;
-      let scale = 1;
-      const enlargedSize = 900; // #enlarged-preview is 900px
-      if (maxWidth / maxHeight > 1) {
-        enlargedPreview.style.height = `${maxHeight - 60}px`;
-        enlargedPreview.style.width = `${maxHeight - 60}px`;
-        scale = (maxHeight - 60) / enlargedSize;
-      } else {
-        enlargedPreview.style.width = `${maxWidth - 60}px`;
-        enlargedPreview.style.height = `${maxWidth - 60}px`;
-        scale = (maxWidth - 60) / enlargedSize;
-      }
+    magnifyEmoji.addEventListener("click", () => {
+      const magnifyPanel = document.getElementById("magnify-panel");
+      if (magnifyPanel) {
+        magnifyPanel.style.display = "block";
+        const maxWidth = window.innerWidth * 0.9;
+        const maxHeight = window.innerHeight * 0.9;
+        let scale = 1;
+        const enlargedSize = 900; // #enlarged-preview is 900px
+        if (maxWidth / maxHeight > 1) {
+          enlargedPreview.style.height = `${maxHeight - 60}px`;
+          enlargedPreview.style.width = `${maxHeight - 60}px`;
+          scale = (maxHeight - 60) / enlargedSize;
+        } else {
+          enlargedPreview.style.width = `${maxWidth - 60}px`;
+          enlargedPreview.style.height = `${maxWidth - 60}px`;
+          scale = (maxWidth - 60) / enlargedSize;
+        }
 
-      const controls = document.getElementById("enlarged-preview-controls");
-      if (controls) controls.style.display = "flex";
+        const controls = document.getElementById("enlarged-preview-controls");
+        if (controls) controls.style.display = "flex";
 
-      const magnifiedState = TraitManager.getAllTraits()
-        .map((trait) => ({
-          id: trait.id,
-          variants: [...trait.variants],
-          selected: trait.selected,
-          position: trait.position,
-          zIndex: trait.zIndex,
-        }))
-        .sort((a, b) => b.position - a.position);
+        const magnifiedState = TraitManager.getAllTraits()
+          .map((trait) => ({
+            id: trait.id,
+            variants: [...trait.variants],
+            selected: trait.selected,
+            position: trait.position,
+            zIndex: trait.zIndex,
+          }))
+          .sort((a, b) => b.position - a.position);
 
-      const updateEnlargedPreview = () => {
-        enlargedPreview.innerHTML = "";
-        const previewWidth = preview.getBoundingClientRect().width;
-        const sizeScaleFactor = enlargedSize / previewWidth; // Scale factor for size (typically 900/600 = 1.5)
-        magnifiedState.forEach((trait) => {
-          const variant = trait.variants[trait.selected];
-          if (variant && variant.url) {
-            const img = document.createElement("img");
-            img.src = variant.url;
-            const key = `trait${trait.id}-position`;
-            const savedPosition = localStorage.getItem(key);
-            let leftPx = 0,
-              topPx = 0;
-            try {
-              if (savedPosition) {
-                const { left, top } = JSON.parse(savedPosition);
-                // Convert percentage positions to pixels based on #preview dimensions
-                const leftPxInPreview = (left / 100) * previewWidth;
-                const topPxInPreview = (top / 100) * previewWidth;
-                // Scale positions to #enlarged-preview dimensions
-                leftPx = leftPxInPreview * sizeScaleFactor;
-                topPx = topPxInPreview * sizeScaleFactor;
-              }
-            } catch (e) {
-              debugLog("Invalid position data for magnified trait " + trait.id + ":", e);
-            }
+        const updateEnlargedPreview = async () => {
+          enlargedPreview.innerHTML = "";
+          const enlargedRect = enlargedPreview.getBoundingClientRect();
+          const enlargedWidth = enlargedRect.width;
+          const sizeScaleFactor = enlargedWidth / DIMENSIONS.BASE_SIZE;
+          debugLog(`Magnify update: enlargedWidth=${enlargedWidth}, sizeScaleFactor=${sizeScaleFactor}`);
 
-            // Scale the image size relative to #preview
-            const scaledWidth = (variant.naturalWidth || DIMENSIONS.BASE_SIZE) * sizeScaleFactor;
-            const scaledHeight = (variant.naturalHeight || DIMENSIONS.BASE_SIZE) * sizeScaleFactor;
-            img.style.width = `${scaledWidth}px`;
-            img.style.height = `${scaledHeight}px`;
-            img.style.left = `${leftPx}px`;
-            img.style.top = `${topPx}px`;
-            img.style.zIndex = trait.zIndex;
-            img.style.position = "absolute";
-            img.style.visibility = "visible";
-            enlargedPreview.appendChild(img);
-          }
-        });
-      };
-      updateEnlargedPreview();
+          const imagePromises = magnifiedState.map(async (trait) => {
+            const variant = trait.variants[trait.selected];
+            if (variant && variant.url) {
+              const img = document.createElement("img");
+              img.style.position = "absolute";
+              img.style.zIndex = trait.zIndex;
+              img.style.visibility = "hidden";
 
-      const playEmoji = document.getElementById("play-emoji");
-      const pauseEmoji = document.getElementById("pause-emoji");
+              let natWidth = DIMENSIONS.BASE_SIZE;
+              let natHeight = DIMENSIONS.BASE_SIZE;
+              const tempImg = new Image();
+              tempImg.src = variant.url;
+              await new Promise((resolve) => {
+                tempImg.onload = () => {
+                  natWidth = tempImg.naturalWidth;
+                  natHeight = tempImg.naturalHeight;
+                  img.src = variant.url;
+                  resolve();
+                };
+                tempImg.onerror = () => {
+                  img.src = "https://via.placeholder.com/150";
+                  resolve();
+                };
+              });
 
-      if (playEmoji) {
-        playEmoji.onclick = (e) => {
-          e.stopPropagation();
-          debugLog("Play clicked");
-          if (randomizeInterval) {
-            clearInterval(randomizeInterval);
-            if (currentSpeed === 1000) currentSpeed = 100;
-            else if (currentSpeed === 100) currentSpeed = 10;
-          } else {
-            currentSpeed = 1000;
-          }
-          randomizeInterval = setInterval(() => {
-            const traitIndex = Math.floor(Math.random() * magnifiedState.length);
-            const trait = magnifiedState[traitIndex];
-            if (trait.variants.length > 0) {
-              trait.selected = Math.floor(Math.random() * trait.variants.length);
-              debugLog(`Randomized trait ${trait.id} to variant ${trait.selected}`);
-              const traitInMain = TraitManager.getTrait(trait.id);
-              traitInMain.selected = trait.selected;
-              const previewImage = traitImages.find((img) => img.id === `preview-trait${trait.id}`);
-              if (previewImage) {
-                previewImage.src = trait.variants[trait.selected].url;
-                applyScalingToImage(previewImage);
-                const key = `trait${trait.id}-position`;
-                const savedPosition = localStorage.getItem(key);
-                try {
-                  if (savedPosition) {
-                    const { left, top } = JSON.parse(savedPosition);
-                    previewImage.style.left = `${left}%`;
-                    previewImage.style.top = `${top}%`;
-                  }
-                } catch (e) {
-                  debugLog("Invalid position data in playEmoji:", e);
-                  previewImage.style.left = "0%";
-                  previewImage.style.top = "0%";
+              const scaledWidth = (natWidth > 0 ? natWidth : DIMENSIONS.BASE_SIZE) * sizeScaleFactor;
+              const scaledHeight = (natHeight > 0 ? natHeight : DIMENSIONS.BASE_SIZE) * sizeScaleFactor;
+              img.style.width = `${scaledWidth}px`;
+              img.style.height = `${scaledHeight}px`;
+
+              const key = `trait${trait.id}-${variant.id}-position`;
+              const savedPosition = localStorage.getItem(key);
+              let finalLeft = "50%";
+              let finalTop = "50%";
+              let transform = "translate(-50%, -50%)";
+              try {
+                if (savedPosition) {
+                  const { left, top } = JSON.parse(savedPosition);
+                  finalLeft = `${left}%`;
+                  finalTop = `${top}%`;
+                  transform = "";
                 }
+              } catch (e) {
+                debugLog("Invalid position data for magnified trait " + trait.id + ":", e);
               }
-              updateEnlargedPreview();
-            }
-          }, currentSpeed);
-        };
-      }
+              img.style.left = finalLeft;
+              img.style.top = finalTop;
+              if (transform) {
+                img.style.transform = transform;
+              } else {
+                img.style.removeProperty("transform");
+              }
 
-      if (pauseEmoji) {
-        pauseEmoji.onclick = (e) => {
-          e.stopPropagation();
+              img.style.visibility = "visible";
+              return img;
+            }
+            return null;
+          });
+
+          const loadedImages = await Promise.all(imagePromises);
+          loadedImages.forEach(img => {
+            if (img) enlargedPreview.appendChild(img);
+          });
+
+          debugLog("Magnify Panel updated with scaled images");
+        };
+        updateEnlargedPreview();
+
+        const playEmoji = document.getElementById("play-emoji");
+        const pauseEmoji = document.getElementById("pause-emoji");
+
+        if (playEmoji) {
+          playEmoji.onclick = (e) => {
+            e.stopPropagation();
+            debugLog("Play clicked");
+            if (randomizeInterval) {
+              clearInterval(randomizeInterval);
+              if (currentSpeed === 1000) currentSpeed = 100;
+              else if (currentSpeed === 100) currentSpeed = 10;
+            } else {
+              currentSpeed = 1000;
+            }
+            randomizeInterval = setInterval(() => {
+              const traitIndex = Math.floor(Math.random() * magnifiedState.length);
+              const trait = magnifiedState[traitIndex];
+              if (trait.variants.length > 0) {
+                trait.selected = Math.floor(Math.random() * trait.variants.length);
+                debugLog(`Randomized trait ${trait.id} to variant ${trait.selected}`);
+                const traitInMain = TraitManager.getTrait(trait.id);
+                traitInMain.selected = trait.selected;
+                const previewImage = traitImages.find((img) => img.id === `preview-trait${trait.id}`);
+                if (previewImage) {
+                  previewImage.src = trait.variants[trait.selected].url;
+                  applyScalingToImage(previewImage);
+                  const key = `trait${trait.id}-position`;
+                  const savedPosition = localStorage.getItem(key);
+                  try {
+                    if (savedPosition) {
+                      const { left, top } = JSON.parse(savedPosition);
+                      previewImage.style.left = `${left}%`;
+                      previewImage.style.top = `${top}%`;
+                    }
+                  } catch (e) {
+                    debugLog("Invalid position data in playEmoji:", e);
+                    previewImage.style.left = "0%";
+                    previewImage.style.top = "0%";
+                  }
+                }
+                updateEnlargedPreview();
+              }
+            }, currentSpeed);
+          };
+        }
+
+        if (pauseEmoji) {
+          pauseEmoji.onclick = (e) => {
+            e.stopPropagation();
+            if (randomizeInterval) {
+              clearInterval(randomizeInterval);
+              randomizeInterval = null;
+              currentSpeed = 1000;
+            }
+          };
+        }
+
+        enlargedPreview.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          const projectName = document.getElementById("project-name").value || "Unnamed";
+          let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
+          if (saveCount > 100) {
+            debugLog("Save limit reached");
+            return;
+          }
+          localStorage.setItem(`${projectName}_saveCount`, saveCount);
+          const saveKey = `${projectName}_${saveCount}`;
+          const currentState = magnifiedState.map((trait) => ({
+            id: trait.id,
+            selected: trait.selected,
+            variants: trait.variants.map((v) => ({ id: v.id, name: v.name, url: v.url })),
+          }));
+          localStorage.setItem(saveKey, JSON.stringify(currentState));
+          debugLog(`Saved as ${saveKey}`);
+        });
+
+        enlargedPreview.onclick = (e) => {
+          if (e.target === playEmoji || e.target === pauseEmoji) return;
           if (randomizeInterval) {
             clearInterval(randomizeInterval);
             randomizeInterval = null;
             currentSpeed = 1000;
           }
+          magnifyPanel.style.display = "none";
+          controls.style.display = "none";
         };
       }
-
-      enlargedPreview.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        const projectName = document.getElementById("project-name").value || "Unnamed";
-        let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
-        if (saveCount > 100) {
-          debugLog("Save limit reached");
-          return;
-        }
-        localStorage.setItem(`${projectName}_saveCount`, saveCount);
-        const saveKey = `${projectName}_${saveCount}`;
-        const currentState = magnifiedState.map((trait) => ({
-          id: trait.id,
-          selected: trait.selected,
-          variants: trait.variants.map((v) => ({ id: v.id, name: v.name, url: v.url })),
-        }));
-        localStorage.setItem(saveKey, JSON.stringify(currentState));
-        debugLog(`Saved as ${saveKey}`);
-      });
-
-      enlargedPreview.onclick = (e) => {
-        if (e.target === playEmoji || e.target === pauseEmoji) return;
-        if (randomizeInterval) {
-          clearInterval(randomizeInterval);
-          randomizeInterval = null;
-          currentSpeed = 1000;
-        }
-        magnifyPanel.style.display = "none";
-        controls.style.display = "none";
-      };
-    }
-  });
-}
+    });
+  }
 
   function debounce(func, wait) {
     let timeout;
@@ -900,6 +934,173 @@ document.addEventListener('DOMContentLoaded', async () => {
   const logo = document.getElementById('logo');
   if (logo) debugLog('Logo URL:', logo.src);
 });
+</script>
+
+<!-- --- RIGHT PANEL STYLES ------------->
+<style>
+  #preview-panel-container { display: flex; flex-wrap: wrap; gap: 30px; width: 100%; }
+  #preview-panel-container .panel { min-height: 650px; width: calc(50% - 15px); }
+  #preview { 
+    aspect-ratio: 1 / 1; 
+    background: url('https://geoffmccabe.github.io/PercCreator/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); 
+    background-blend-mode: overlay; 
+    background-size: cover; 
+    border: 1px solid rgba(0, 0, 0, 0.1); 
+    border-radius: 10px; 
+    margin-bottom: 10px; 
+    width: 600px; /* Hardcode to 600px for testing */
+    height: 600px; /* Hardcode to 600px for testing */
+    overflow: hidden; 
+    position: relative; 
+  }
+  #preview img { 
+    position: absolute; 
+    object-fit: none; /* Prevent distortion */
+    width: auto; /* Removed !important */
+    height: auto; /* Removed !important */
+  }
+  #preview img.dragging { 
+    box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
+    box-sizing: border-box;
+  }
+  #controls { align-items: center; display: flex; gap: 10px; justify-content: center; margin-top: 5px; }
+  #coordinates { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 500; }
+  #coordinates strong { font-weight: bold; }
+  .direction-emoji, .magnify-emoji { background: none; border: none; color: #666; cursor: pointer; font-size: 16px; padding: 0; }
+  .direction-emoji:hover, .magnify-emoji:hover { opacity: 0.8; }
+  #magnify-panel { 
+    background: rgba(240, 240, 240, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    display: none;
+  }
+  #enlarged-preview { 
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1); 
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    width: 900px;
+    height: 900px;
+    box-sizing: border-box;
+  }
+  #enlarged-preview img { 
+    position: absolute;
+    object-fit: none; /* Prevent distortion */
+    width: auto; /* Removed !important */
+    height: auto; /* Removed !important */
+  }
+  #magnify-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0 5px;
+  }
+  #magnify-header h2 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+  }
+  #enlarged-preview-controls { 
+    display: flex; 
+    gap: 10px;
+    align-items: center;
+  }
+  .play-emoji, .pause-emoji { 
+    background: none;
+    border: none;
+    color: #666; 
+    cursor: pointer; 
+    font-size: 24px; 
+    height: 30px; 
+    width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .play-emoji:hover, .pause-emoji:hover { 
+    color: #333;
+  }
+  #preview-samples { 
+    margin-top: 20px; 
+  }
+  #preview-samples-header { 
+    align-items: center; 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 10px; 
+  }
+  #preview-samples h2 { 
+    font-family: 'Poppins', sans-serif; 
+    font-weight: 600; 
+    margin: 0; 
+    text-align: left; 
+  }
+  #preview-samples-grid { 
+    display: grid; 
+    gap: 13px; 
+    grid-template-columns: repeat(4, 1fr); 
+    width: 100%; /* Use full width */
+    padding-left: 10px; /* Slightly reduce padding for balance */
+    padding-right: 10px; /* Slightly reduce padding for balance */
+    box-sizing: border-box;
+    min-height: 400px; /* Ensure the grid has a minimum height */
+  }
+  #preview-samples-grid .sample-container { 
+    width: 100%; /* Let grid control width */
+    aspect-ratio: 1 / 1;
+    background: url('https://geoffmccabe.github.io/PercCreator/images/Preview_Panel_Bkgd_600px.webp') rgba(255, 255, 255, 0.5); 
+    background-blend-mode: overlay; 
+    background-size: cover; 
+    border: 1px solid rgba(0, 0, 0, 0.1); 
+    border-radius: 5px; 
+    cursor: pointer; 
+    overflow: hidden; 
+    position: relative;
+    min-height: 100px; /* Ensure each container has a minimum height */
+  }
+  #preview-samples-grid .sample-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 598px;
+    height: 598px;
+    transform-origin: 0 0;
+  }
+  #preview-samples-grid img { 
+    position: absolute;
+    object-fit: none; /* Prevent distortion */
+    width: auto !important; /* Ensure JavaScript sets the width */
+    height: auto !important; /* Ensure JavaScript sets the height */
+  }
+  #update-previews { 
+    background: #ccc; 
+    border: none; 
+    border-radius: 5px; 
+    color: black; 
+    cursor: pointer; 
+    font-size: 14px; 
+    padding: 5px 10px; 
+  }
+  #update-previews:hover { background: #bbb; }
+  .form-group { margin-bottom: 15px; }
+  .form-group label { display: block; font-family: 'Poppins', sans-serif; font-weight: 500; margin-bottom: 5px; }
+  .form-group input[type="text"], .form-group input[type="number"], .form-group select, .form-group textarea { border: 1px solid #ccc; border-radius: 5px; font-family: 'Poppins', sans-serif; font-weight: 400; max-width: 510px; padding: 8px; width: 100%; }
+  .form-group select:disabled { background: #f0f0f0; color: #666; }
+  .form-group textarea { min-height: 80px; resize: vertical; }
+  .info-tooltip { cursor: pointer; margin-left: 5px; position: relative; }
+  .info-tooltip:hover::after { background: rgba(0, 0, 0, 0.8); border-radius: 5px; color: white; content: attr(title); font-size: 12px; left: 50%; padding: 5px 10px; position: absolute; top: -30px; transform: translateX(-50%); white-space: nowrap; z-index: 1000; }
+</style>
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
@@ -1677,7 +1878,6 @@ function updateZIndices() {
   if (preview) preview.offsetHeight;
 }
 
-
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
 function updateSamplePositions(traitId, variationId, position) {
@@ -1696,16 +1896,24 @@ async function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = "";
   sampleData = Array(16).fill(null).map(() => []);
 
-  const panelRect = previewSamplesGrid.getBoundingClientRect();
-  const panelStyle = window.getComputedStyle(previewSamplesGrid);
-  const paddingLeft = parseFloat(panelStyle.paddingLeft) || 0;
-  const paddingRight = parseFloat(panelStyle.paddingRight) || 0;
-  const panelWidth = panelRect.width - paddingLeft - paddingRight;
+  const panelWidth = previewSamplesGrid.clientWidth;
+  if (panelWidth <= 0) {
+    debugLog("Preview samples grid has zero client width. Skipping update.");
+    return;
+  }
   const gap = DIMENSIONS.GRID_GAP;
   const columns = 4;
   const totalGap = gap * (columns - 1);
   const containerSize = (panelWidth - totalGap) / columns;
+  if (containerSize <= 0) {
+    debugLog("Calculated sample container size is zero or negative. Skipping update.");
+    return;
+  }
   const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE;
+  if (!isFinite(scaleFactor) || scaleFactor <= 0) {
+    debugLog(`Invalid scaleFactor calculated: ${scaleFactor}. Skipping update.`);
+    return;
+  }
 
   debugLog(`updatePreviewSamples: panelWidth=${panelWidth}, containerSize=${containerSize}, scaleFactor=${scaleFactor}`);
   debugLog(`Traits available: ${TraitManager.getAllTraits().length}`);
@@ -1745,56 +1953,64 @@ async function updatePreviewSamples() {
       const variant = trait.variants[randomIndex];
 
       const img = document.createElement("img");
-      img.src = variant.url || "";
       img.alt = "Sample " + (i + 1) + " - Trait " + trait.position;
       img.style.position = "absolute";
       img.style.zIndex = trait.zIndex;
 
-      if (!variant.url) {
-        debugLog(`Variant ${variant.id} for trait ${trait.id} has no URL in sample ${i}`);
+      let imageValid = false;
+      if (variant.url) {
+        try {
+          const response = await fetch(variant.url);
+          if (response.ok) {
+            img.src = variant.url;
+            imageValid = true;
+          }
+        } catch (e) {
+          debugLog(`Variant ${variant.id} for trait ${trait.id} has invalid URL in sample ${i}: ${variant.url}`, e);
+        }
+      }
+
+      if (!imageValid) {
+        debugLog(`Using placeholder for variant ${variant.id} in sample ${i}`);
         img.src = "https://via.placeholder.com/150";
       }
 
       try {
         await applyScalingToImage(img, () => {
-          if (isValidImage(img) && parseFloat(img.style.width) > 0) {
-            sampleHasContent = true;
-            const key = `trait${trait.id}-${variant.id}-position`;
-            const savedPosition = localStorage.getItem(key);
-            let finalLeft = "50%";
-            let finalTop = "50%";
-            let transform = "translate(-50%, -50%)";
+          sampleHasContent = true;
+          const key = `trait${trait.id}-${variant.id}-position`;
+          const savedPosition = localStorage.getItem(key);
+          let finalLeft = "50%";
+          let finalTop = "50%";
+          let transform = "translate(-50%, -50%)";
 
-            try {
-              if (savedPosition) {
-                const { left, top } = JSON.parse(savedPosition);
-                finalLeft = `${left}%`;
-                finalTop = `${top}%`;
-                transform = "";
-              }
-            } catch (e) {
-              debugLog("Invalid position data for sample " + i + ", trait " + trait.id + ":", e);
+          try {
+            if (savedPosition) {
+              const { left, top } = JSON.parse(savedPosition);
+              finalLeft = `${left}%`;
+              finalTop = `${top}%`;
+              transform = "";
             }
-
-            img.style.left = finalLeft;
-            img.style.top = finalTop;
-            if (transform) {
-              img.style.transform = transform;
-            } else {
-              img.style.removeProperty("transform");
-            }
-
-            sampleData[i].push({
-              traitId: trait.id,
-              variantId: variant.id,
-              position: { left: finalLeft, top: finalTop },
-            });
-
-            previewContainer.appendChild(img);
-            debugLog(`Sample ${i}, Trait ${j}: Image added with src=${img.src}, width=${img.style.width}, height=${img.style.height}`);
-          } else {
-            debugLog(`Sample ${i}, Trait ${j}: Invalid image after scaling, src=${img.src}, width=${img.style.width}`);
+          } catch (e) {
+            debugLog("Invalid position data for sample " + i + ", trait " + trait.id + ":", e);
           }
+
+          img.style.left = finalLeft;
+          img.style.top = finalTop;
+          if (transform) {
+            img.style.transform = transform;
+          } else {
+            img.style.removeProperty("transform");
+          }
+
+          sampleData[i].push({
+            traitId: trait.id,
+            variantId: variant.id,
+            position: { left: finalLeft, top: finalTop },
+          });
+
+          previewContainer.appendChild(img);
+          debugLog(`Sample ${i}, Trait ${j}: Image added with src=${img.src}, width=${img.style.width}, height=${img.style.height}`);
         });
       } catch (e) {
         debugLog("Error applying scaling for sample " + i + ":", e);
@@ -1809,6 +2025,27 @@ async function updatePreviewSamples() {
     sampleContainer.appendChild(previewContainer);
     previewSamplesGrid.appendChild(sampleContainer);
     debugLog(`Sample container ${i} added to grid`);
+
+    sampleContainer.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const currentSampleIdx = Array.from(previewSamplesGrid.children).indexOf(sampleContainer);
+      if (sampleData[currentSampleIdx]) {
+        sampleData[currentSampleIdx].forEach(async (sample) => {
+          const trait = TraitManager.getTrait(sample.traitId);
+          if (!trait) return;
+          const variantIndex = trait.variants.findIndex((v) => v.id === sample.variantId);
+          if (variantIndex !== -1) {
+            await selectVariation(trait.id, sample.variantId);
+            const grid = document.getElementById("trait" + trait.id + "-grid");
+            if (grid) {
+              grid.querySelectorAll(".variation-image-wrapper").forEach((w) => w.classList.remove("selected"));
+              const container = grid.querySelector(`[data-variation-id="${sample.variantId}"]`);
+              if (container) container.querySelector(".variation-image-wrapper")?.classList.add("selected");
+            }
+          }
+        });
+      }
+    });
   }
 }
 
