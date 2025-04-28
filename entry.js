@@ -1747,7 +1747,7 @@ async function updatePreviewSamples() {
   sampleData = Array(16).fill(null).map(() => []); // Reset sample data specific to this run
 
   // --- Calculate Grid Dimensions ---
-  const panelWidth = previewSamplesGrid.clientWidth; // Use clientWidth (excludes padding/border)
+  const panelWidth = previewSamplesGrid.clientWidth; // Dynamic width of the panel at runtime
   if (panelWidth <= 0) {
     debugLog("Preview samples grid has zero client width. Skipping update.");
     return;
@@ -1755,7 +1755,7 @@ async function updatePreviewSamples() {
   const gap = DIMENSIONS.GRID_GAP;
   const columns = 4;
   const totalGap = gap * (columns - 1);
-  const containerSize = (panelWidth - totalGap) / columns;
+  const containerSize = (panelWidth - totalGap) / columns; // Dynamically calculated size
   if (containerSize <= 0) {
     debugLog("Calculated sample container size is zero or negative. Skipping update.");
     return;
@@ -1804,12 +1804,19 @@ async function updatePreviewSamples() {
         img.style.zIndex = trait.zIndex;
         img.style.visibility = "hidden";
 
-        // Use variant URL directly
+        // Use variant URL directly and log for debugging
+        debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Attempting to load variant URL: ${variant.url}`);
         img.src = variant.url;
         previewContainer.appendChild(img); // Append immediately
 
         try {
-          await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+          await new Promise(resolve => { img.onload = () => {
+            debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Variant URL loaded successfully: ${variant.url}`);
+            resolve();
+          }; img.onerror = () => {
+            debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Variant URL failed to load: ${variant.url}`);
+            resolve();
+          }; });
 
           await applyScalingToImage(img);
 
@@ -1902,7 +1909,6 @@ async function updatePreviewSamples() {
 
   debugLog("Preview Samples update complete.");
 }
-
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
 
