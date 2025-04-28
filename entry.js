@@ -1630,15 +1630,13 @@ async function updatePreviewSamples() {
       if (!trait.variants.length) return;
       
       const variant = trait.variants[Math.floor(Math.random() * trait.variants.length)];
-      const img = document.createElement("img");
+      const img = document.createElement("img"); // Fixed: straight quotes
       img.alt = `${trait.name || `Trait ${trait.position}`} variant`;
       
-      // Set scaling to fit container
       const scale = containerSize / DIMENSIONS.BASE_SIZE;
       img.style.width = `${DIMENSIONS.BASE_SIZE * scale}px`;
       img.style.height = `${DIMENSIONS.BASE_SIZE * scale}px`;
       
-      // Center if no position saved
       const savedPos = JSON.parse(localStorage.getItem(`trait${trait.id}-${variant.id}-position`) || '{"left":50,"top":50}');
       img.style.left = `${(savedPos.left/100) * containerSize}px`;
       img.style.top = `${(savedPos.top/100) * containerSize}px`;
