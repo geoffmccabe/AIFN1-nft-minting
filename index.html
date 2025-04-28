@@ -235,20 +235,20 @@
 .sample-container {
   position: relative;
   width: 100%;
+  aspect-ratio: 1/1;
+  overflow: hidden;
+  background-color: #f0f0f0;
 }
 
 .sample-preview {
   position: relative;
   width: 100%;
-  height: 0;
-  padding-bottom: 100%; /* Maintain aspect ratio */
-  overflow: hidden;
-  background-color: #f0f0f0;
+  height: 100%;
 }
 
 .sample-preview img {
   position: absolute;
-  transform-origin: top left;
+  image-rendering: -webkit-optimize-contrast;
 }
   
 </style>
