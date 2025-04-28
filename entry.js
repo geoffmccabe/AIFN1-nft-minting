@@ -1365,49 +1365,44 @@ async function applyScalingToImage(img, callback) {
   const tempImg = new Image();
   tempImg.src = img.src;
 
-  await new Promise((resolve, reject) => {
+  await new Promise((resolve) => {
     tempImg.onload = () => {
-      img.naturalWidth = tempImg.naturalWidth || DIMENSIONS.BASE_SIZE;
-      img.naturalHeight = tempImg.naturalHeight || DIMENSIONS.BASE_SIZE;
-      const containerWidth = img.parentElement.getBoundingClientRect().width;
-      const scaledWidth = containerWidth; // Match the container width
-      const aspectRatio = img.naturalHeight / img.naturalWidth;
-      const scaledHeight = scaledWidth * aspectRatio;
-
-      img.style.width = scaledWidth + "px";
-      img.style.height = scaledHeight + "px";
-
-      const computedStyle = window.getComputedStyle(img);
-      debugLog(
-        "Applied scaling: id=" + (img.id || "") +
-        ", containerWidth=" + containerWidth +
-        ", naturalWidth=" + img.naturalWidth +
-        ", naturalHeight=" + img.naturalHeight +
-        ", aspectRatio=" + aspectRatio +
-        ", scaledWidth=" + scaledWidth +
-        ", scaledHeight=" + scaledHeight +
-        ", computedWidth=" + computedStyle.width +
-        ", computedHeight=" + computedStyle.height
-      );
-
+      img.naturalWidth = tempImg.naturalWidth;
+      img.naturalHeight = tempImg.naturalHeight;
       resolve();
     };
     tempImg.onerror = () => {
       debugLog("Cannot apply scaling: id=" + (img.id || "") + ", image failed to load, src=" + img.src);
       img.naturalWidth = DIMENSIONS.BASE_SIZE;
       img.naturalHeight = DIMENSIONS.BASE_SIZE;
-      const containerWidth = img.parentElement.getBoundingClientRect().width;
-      img.style.width = containerWidth + "px";
-      img.style.height = containerWidth + "px"; // Assume square for fallback
-      debugLog(
-        "Applied fallback scaling: id=" + (img.id || "") +
-        ", containerWidth=" + containerWidth +
-        ", scaledWidth=" + containerWidth +
-        ", scaledHeight=" + containerWidth
-      );
       resolve();
     };
   });
+
+  // Perform scaling calculation after await
+  const natWidth = img.naturalWidth > 0 ? img.naturalWidth : DIMENSIONS.BASE_SIZE;
+  const natHeight = img.naturalHeight > 0 ? img.naturalHeight : DIMENSIONS.BASE_SIZE;
+
+  // Calculate scale factor based on container (#preview)
+  const scale = calculateScalingFactor(img.parentElement);
+
+  const scaledWidth = natWidth * scale;
+  const scaledHeight = natHeight * scale;
+
+  img.style.width = scaledWidth + "px";
+  img.style.height = scaledHeight + "px";
+
+  const computedStyle = window.getComputedStyle(img);
+  debugLog(
+    "Applied PROPORTIONAL scaling: id=" + (img.id || "") +
+    ", naturalWidth=" + natWidth +
+    ", naturalHeight=" + natHeight +
+    ", scale=" + scale +
+    ", scaledWidth=" + scaledWidth +
+    ", scaledHeight=" + scaledHeight +
+    ", computedWidth=" + computedStyle.width +
+    ", computedHeight=" + computedStyle.height
+  );
 
   if (callback) callback();
 }
@@ -1441,7 +1436,8 @@ function initializePositions() {
     const img = traitImages.find((ti) => ti.id === "preview-trait" + trait.id);
     if (img && img.src && img.src !== "") {
       applyScalingToImage(img, () => {
-        const key = "trait" + trait.id + "-position";
+        const variantId = trait.variants[trait.selected]?.id || "";
+        const key = `trait${trait.id}-${variantId}-position`;
         const savedPosition = localStorage.getItem(key);
         try {
           if (savedPosition) {
@@ -1486,7 +1482,7 @@ async function selectVariation(traitId, variationId) {
     );
 
     await applyScalingToImage(previewImage, () => {
-      const key = "trait" + traitId + "-position";
+      const key = `trait${traitId}-${variationId}-position`;
       const savedPosition = localStorage.getItem(key);
       const contentWidth = preview.getBoundingClientRect().width;
       const contentHeight = contentWidth;
@@ -1530,27 +1526,34 @@ async function setupDragAndDrop(img, traitIndex) {
   }
 
   async function startDragging(e) {
-    await applyScalingToImage(img);
-    if (!isValidImage(img)) return;
     const targetImg = e.target;
-    if (!traitImages.includes(targetImg)) return;
+    if (!isValidImage(targetImg) || !traitImages.includes(targetImg)) {
+      debugLog("startDragging: Invalid target or not in traitImages", targetImg);
+      return;
+    }
 
+    // Set state critical for dragging *before* awaiting scaling
     currentImage = targetImg;
     isDragging = true;
     const containerRect = currentImage.parentElement.getBoundingClientRect();
     const imageRect = currentImage.getBoundingClientRect();
-
     const pointerX = e.clientX - imageRect.left;
     const pointerY = e.clientY - imageRect.top;
-
     offsetX = pointerX / containerRect.width * 100;
     offsetY = pointerY / containerRect.height * 100;
-
     currentImage.style.cursor = "grabbing";
     currentImage.classList.add("dragging");
     updateCoordinates(currentImage);
-
     document.addEventListener("mousemove", onMouseMove);
+
+    // Now, attempt scaling asynchronously
+    try {
+      await applyScalingToImage(img);
+      debugLog("startDragging: Scaling applied after drag start for", img.id);
+    } catch (scaleError) {
+      console.error("startDragging: Error during async scaling", scaleError);
+      // Dragging continues with unscaled size
+    }
   }
 
   function onMouseMove(e) {
@@ -1619,6 +1622,10 @@ function updateCoordinates(img) {
 }
 
 function savePosition(img, traitId, variationName) {
+  const trait = TraitManager.getTrait(traitId);
+  if (!trait || trait.variants.length === 0) return;
+  const variantId = trait.variants[trait.selected].id;
+
   const contentWidth = preview.getBoundingClientRect().width;
   const contentHeight = contentWidth;
   const imgWidth = parseFloat(img.style.width) || contentWidth;
@@ -1638,11 +1645,13 @@ function savePosition(img, traitId, variationName) {
     absWidth: imgWidth,
     absHeight: imgHeight,
   };
-  const key = `trait${traitId}-position`;
-  if (!variantHistories[key]) variantHistories[key] = [];
-  variantHistories[key].push(position);
-  if (variantHistories[key].length > 20) {
-    variantHistories[key].shift();
+
+  const key = `trait${traitId}-${variantId}-position`;
+  const historyKey = "trait" + traitId + "-position";
+  if (!variantHistories[historyKey]) variantHistories[historyKey] = [];
+  variantHistories[historyKey].push(position);
+  if (variantHistories[historyKey].length > 20) {
+    variantHistories[historyKey].shift();
   }
   localStorage.setItem(key, JSON.stringify(position));
   localStorage.setItem(`trait${traitId}-manuallyMoved`, "true");
@@ -1650,11 +1659,10 @@ function savePosition(img, traitId, variationName) {
   img.style.left = left + "%";
   img.style.top = top + "%";
 
-  const trait = TraitManager.getTrait(traitId);
   const traitIndex = TraitManager.getAllTraits().findIndex((t) => t.id === traitId);
   autoPositioned[traitIndex] = true;
 
-  updateSamplePositions(traitId, trait.variants[trait.selected].id, position);
+  updateSamplePositions(traitId, variantId, position);
 }
 
 function updateZIndices() {
@@ -1671,7 +1679,6 @@ function updateZIndices() {
 
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
-
 
 function updateSamplePositions(traitId, variationId, position) {
   for (let i = 0; i < 16; i++) {
@@ -1700,6 +1707,9 @@ async function updatePreviewSamples() {
   const containerSize = (panelWidth - totalGap) / columns;
   const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE;
 
+  debugLog(`updatePreviewSamples: panelWidth=${panelWidth}, containerSize=${containerSize}, scaleFactor=${scaleFactor}`);
+  debugLog(`Traits available: ${TraitManager.getAllTraits().length}`);
+
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement("div");
     sampleContainer.className = "sample-container";
@@ -1713,87 +1723,92 @@ async function updatePreviewSamples() {
     previewContainer.style.transform = "scale(" + scaleFactor + ")";
     previewContainer.style.transformOrigin = "0 0";
 
+    let sampleHasContent = false;
     const traits = TraitManager.getAllTraits().slice().reverse();
+    if (traits.length === 0) {
+      debugLog(`No traits available for sample ${i}`);
+      const placeholder = document.createElement("div");
+      placeholder.style.width = "100%";
+      placeholder.style.height = "100%";
+      placeholder.style.backgroundColor = "rgba(255, 0, 0, 0.1)";
+      previewContainer.appendChild(placeholder);
+    }
+
     for (let j = 0; j < traits.length; j++) {
       const trait = traits[j];
-      if (trait.variants.length === 0) continue;
+      if (trait.variants.length === 0) {
+        debugLog(`No variants for trait ${trait.id} in sample ${i}`);
+        continue;
+      }
 
       const randomIndex = Math.floor(Math.random() * trait.variants.length);
       const variant = trait.variants[randomIndex];
 
       const img = document.createElement("img");
-      img.src = variant.url;
+      img.src = variant.url || "";
       img.alt = "Sample " + (i + 1) + " - Trait " + trait.position;
       img.style.position = "absolute";
       img.style.zIndex = trait.zIndex;
 
+      if (!variant.url) {
+        debugLog(`Variant ${variant.id} for trait ${trait.id} has no URL in sample ${i}`);
+        img.src = "https://via.placeholder.com/150";
+      }
+
       try {
         await applyScalingToImage(img, () => {
-          const key = "trait" + trait.id + "-position";
-          const savedPosition = localStorage.getItem(key);
-          try {
-            if (savedPosition) {
-              const { left, top } = JSON.parse(savedPosition);
-              // Convert percentage positions to pixels based on DIMENSIONS.BASE_SIZE (598px)
-              const leftPx = (left / 100) * DIMENSIONS.BASE_SIZE;
-              const topPx = (top / 100) * DIMENSIONS.BASE_SIZE;
-              img.style.left = leftPx + "px";
-              img.style.top = topPx + "px";
-            } else {
-              img.style.left = "0px";
-              img.style.top = "0px";
+          if (isValidImage(img) && parseFloat(img.style.width) > 0) {
+            sampleHasContent = true;
+            const key = `trait${trait.id}-${variant.id}-position`;
+            const savedPosition = localStorage.getItem(key);
+            let finalLeft = "50%";
+            let finalTop = "50%";
+            let transform = "translate(-50%, -50%)";
+
+            try {
+              if (savedPosition) {
+                const { left, top } = JSON.parse(savedPosition);
+                finalLeft = `${left}%`;
+                finalTop = `${top}%`;
+                transform = "";
+              }
+            } catch (e) {
+              debugLog("Invalid position data for sample " + i + ", trait " + trait.id + ":", e);
             }
-          } catch (e) {
-            debugLog("Invalid position data for sample " + i + ":", e);
-            img.style.left = "0px";
-            img.style.top = "0px";
+
+            img.style.left = finalLeft;
+            img.style.top = finalTop;
+            if (transform) {
+              img.style.transform = transform;
+            } else {
+              img.style.removeProperty("transform");
+            }
+
+            sampleData[i].push({
+              traitId: trait.id,
+              variantId: variant.id,
+              position: { left: finalLeft, top: finalTop },
+            });
+
+            previewContainer.appendChild(img);
+            debugLog(`Sample ${i}, Trait ${j}: Image added with src=${img.src}, width=${img.style.width}, height=${img.style.height}`);
+          } else {
+            debugLog(`Sample ${i}, Trait ${j}: Invalid image after scaling, src=${img.src}, width=${img.style.width}`);
           }
         });
       } catch (e) {
         debugLog("Error applying scaling for sample " + i + ":", e);
-        img.style.left = "0px";
-        img.style.top = "0px";
+        img.src = "https://via.placeholder.com/150";
+        img.style.left = "50%";
+        img.style.top = "50%";
+        img.style.transform = "translate(-50%, -50%)";
+        previewContainer.appendChild(img);
       }
-
-      sampleData[i].push({
-        traitId: trait.id,
-        variantId: variant.id,
-        position: { left: parseFloat(img.style.left), top: parseFloat(img.style.top) },
-      });
-
-      previewContainer.appendChild(img);
     }
 
     sampleContainer.appendChild(previewContainer);
     previewSamplesGrid.appendChild(sampleContainer);
-
-    sampleContainer.addEventListener("click", (e) => {
-      e.stopPropagation();
-
-      sampleData[i].forEach((sample) => {
-        const trait = TraitManager.getTrait(sample.traitId);
-        const variantIndex = trait.variants.findIndex((v) => v.id === sample.variantId);
-
-        if (variantIndex !== -1) {
-          trait.selected = variantIndex;
-          const previewImg = traitImages.find((ti) => ti.id === "preview-trait" + trait.id);
-          if (previewImg) {
-            previewImg.src = trait.variants[variantIndex].url;
-            previewImg.style.visibility = "visible";
-            applyScalingToImage(previewImg);
-          }
-
-          const grid = document.getElementById("trait" + trait.id + "-grid");
-          if (grid) {
-            grid.querySelectorAll(".variation-image-wrapper").forEach((w) => w.classList.remove("selected"));
-            const container = grid.querySelector('[data-variation-id="' + sample.variantId + '"]');
-            if (container) {
-              container.querySelector(".variation-image-wrapper")?.classList.add("selected");
-            }
-          }
-        }
-      });
-    });
+    debugLog(`Sample container ${i} added to grid`);
   }
 }
 
