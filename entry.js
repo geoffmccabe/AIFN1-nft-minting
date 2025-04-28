@@ -1544,7 +1544,7 @@ async function setupDragAndDrop(img, traitIndex) {
     }
   }
 
-  function selectImage(e) {}
+  function selectImage(e) {
 
   img.removeEventListener("dragstart", preventDragStart);
   img.removeEventListener("mousedown", startDragging);
