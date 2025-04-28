@@ -1505,66 +1505,37 @@ function initializePositions() {
 async function selectVariation(traitId, variationId) {
   const trait = TraitManager.getTrait(traitId);
   const variationIndex = trait.variants.findIndex((v) => v.id === variationId);
+  
   if (variationIndex === -1) {
-    debugLog("Variation " + variationId + " not found in Trait " + traitId);
+    console.warn("Variation not found:", variationId);
     return;
   }
+
   trait.selected = variationIndex;
-
   const previewImage = traitImages.find((img) => img.id === "preview-trait" + traitId);
+  
   if (previewImage) {
-    // Ensure a valid URL is set, even if no variants are available
-    const variantUrl = trait.variants[variationIndex]?.url || "https://via.placeholder.com/600";
-    previewImage.src = variantUrl;
+    const variant = trait.variants[variationIndex];
+    previewImage.src = variant.url || "";
     previewImage.style.visibility = "visible";
-    debugLog(
-      "Selected variation " +
-        variationId +
-        " for trait " +
-        traitId +
-        ", src: " +
-        previewImage.src +
-        ", visibility: " +
-        previewImage.style.visibility +
-        ", previewWidth: " +
-        preview.getBoundingClientRect().width
-    );
 
-    await applyScalingToImage(previewImage, () => {
-      const key = `trait${traitId}-${variationId}-position`;
-      const savedPosition = localStorage.getItem(key);
-      const contentWidth = preview.getBoundingClientRect().width;
-      const contentHeight = contentWidth;
-      const imgWidth = parseFloat(previewImage.style.width) || contentWidth;
-      const imgHeight = parseFloat(previewImage.style.height) || contentHeight;
-      const maxLeft = ((contentWidth - imgWidth) / contentWidth) * 100;
-      const maxTop = ((contentHeight - imgHeight) / contentHeight) * 100;
-      try {
-        if (savedPosition) {
-          const { left, top } = JSON.parse(savedPosition);
-          const normalized = normalizePosition(left, top, contentWidth, contentHeight, contentWidth, contentHeight);
-          previewImage.style.left = Math.max(0, Math.min(normalized.left, maxLeft)) + "%";
-          previewImage.style.top = Math.max(0, Math.min(normalized.top, maxTop)) + "%";
-          if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
-        } else {
-          previewImage.style.left = "0%";
-          previewImage.style.top = "0%";
-          variantHistories[key] = [{ left: 0, top: 0 }];
-          localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
-        }
-      } catch (e) {
-        debugLog("Invalid position data for trait " + traitId + ":", e);
-        previewImage.style.left = "0%";
-        previewImage.style.top = "0%";
-      }
-      currentImage = previewImage;
-      updateZIndices();
-      updateCoordinates(previewImage);
-      applyScalingToSamples();
-    });
-  } else {
-    debugLog("Preview image for trait " + traitId + " not found in traitImages");
+    // Apply scaling
+    await applyScalingToImage(previewImage);
+    
+    // Apply saved position or center
+    const key = `trait${traitId}-${variant.id}-position`;
+    const savedPos = JSON.parse(localStorage.getItem(key) || '{"left":50,"top":50}');
+    previewImage.style.left = `${savedPos.left}%`;
+    previewImage.style.top = `${savedPos.top}%`;
+
+    // Update UI
+    refreshTraitGrid(traitId);
+    updateCoordinates(previewImage);
+    updateZIndices();
   }
+
+  // THIS IS THE CRITICAL ADDITION:
+  updatePreviewSamples(); // Update the 4x4 grid
 }
 
 async function setupDragAndDrop(img, traitIndex) {
@@ -1672,46 +1643,30 @@ function updateCoordinates(img) {
 
 function savePosition(img, traitId, variationName) {
   const trait = TraitManager.getTrait(traitId);
-  if (!trait || trait.variants.length === 0) return;
-  const variantId = trait.variants[trait.selected].id;
+  if (!trait || !trait.variants.length) return;
 
-  const contentWidth = preview.getBoundingClientRect().width;
+  const variant = trait.variants[trait.selected];
+  const contentWidth = preview.clientWidth;
   const contentHeight = contentWidth;
-  const imgWidth = parseFloat(img.style.width) || contentWidth;
-  const imgHeight = parseFloat(img.style.height) || contentHeight;
-  const maxLeft = ((contentWidth - imgWidth) / contentWidth) * 100;
-  const maxTop = ((contentHeight - imgHeight) / contentHeight) * 100;
-
+  
+  // Calculate position percentages
   let left = parseFloat(img.style.left) || 0;
   let top = parseFloat(img.style.top) || 0;
-
-  left = Math.max(0, Math.min(left, maxLeft));
-  top = Math.max(0, Math.min(top, maxTop));
-
-  const position = {
-    left,
-    top,
-    absWidth: imgWidth,
-    absHeight: imgHeight,
-  };
-
-  const key = `trait${traitId}-${variantId}-position`;
-  const historyKey = "trait" + traitId + "-position";
-  if (!variantHistories[historyKey]) variantHistories[historyKey] = [];
-  variantHistories[historyKey].push(position);
-  if (variantHistories[historyKey].length > 20) {
-    variantHistories[historyKey].shift();
-  }
+  
+  // Save to localStorage
+  const position = { left, top };
+  const key = `trait${traitId}-${variant.id}-position`;
   localStorage.setItem(key, JSON.stringify(position));
-  localStorage.setItem(`trait${traitId}-manuallyMoved`, "true");
+  
+  // Update history
+  const historyKey = `trait${traitId}-position-history`;
+  let history = JSON.parse(localStorage.getItem(historyKey) || [];
+  history.push(position);
+  if (history.length > 20) history.shift();
+  localStorage.setItem(historyKey, JSON.stringify(history));
 
-  img.style.left = left + "%";
-  img.style.top = top + "%";
-
-  const traitIndex = TraitManager.getAllTraits().findIndex((t) => t.id === traitId);
-  autoPositioned[traitIndex] = true;
-
-  updateSamplePositions(traitId, variantId, position);
+  // THIS IS THE CRITICAL ADDITION:
+  updatePreviewSamples(); // Update the 4x4 grid
 }
 
 function updateZIndices() {
