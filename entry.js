@@ -1743,30 +1743,37 @@ function updateSamplePositions(traitId, variationId, position) {
 }
 
 async function updatePreviewSamples() {
+  if (!previewSamplesGrid) return;
+  
   // Clear existing samples
   previewSamplesGrid.innerHTML = "";
   
-  // Create 4x4 grid
+  // Get container dimensions
+  const containerSize = previewSamplesGrid.clientWidth / 4 - 13; // Account for gap
+  
+  // Create 16 sample containers
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement("div");
     sampleContainer.className = "sample-container";
     
     const previewContainer = document.createElement("div");
     previewContainer.className = "sample-preview";
+    previewContainer.style.width = `${containerSize}px`;
+    previewContainer.style.height = `${containerSize}px`;
     
-    // Get all traits in correct z-order (reverse position)
+    // Process traits in reverse z-order
     const traits = [...TraitManager.getAllTraits()].reverse();
-
-    // Add each trait layer
+    
     traits.forEach(trait => {
       if (!trait.variants.length) return;
       
-      // Cycle through variants for variety
-      const variant = trait.variants[i % trait.variants.length];
+      // Randomly select variant (respecting chances if set)
+      const variant = getRandomVariant(trait);
+      
       const img = document.createElement("img");
       img.alt = `${trait.name || `Trait ${trait.position}`} variant`;
       
-      // Style the image
+      // Set basic styles
       img.style.position = "absolute";
       img.style.zIndex = trait.zIndex;
       img.style.visibility = "visible";
@@ -1776,19 +1783,51 @@ async function updatePreviewSamples() {
         img.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ0cmFuc3BhcmVudCIvPjwvc3ZnPg==";
       };
       img.src = variant.url;
-
-      // CORRECTED POSITION HANDLING - This is the fixed line
-      const savedPosStr = localStorage.getItem(`trait${trait.id}-${variant.id}-position`);
-      const savedPos = savedPosStr ? JSON.parse(savedPosStr) : { left: 50, top: 50 };
-      img.style.left = `${savedPos.left}%`;
-      img.style.top = `${savedPos.top}%`;
+      
+      // Apply scaling and positioning
+      applySampleImageStyles(img, trait, variant, containerSize);
       
       previewContainer.appendChild(img);
     });
-
+    
     sampleContainer.appendChild(previewContainer);
     previewSamplesGrid.appendChild(sampleContainer);
   }
+}
+
+function getRandomVariant(trait) {
+  // If chances are set, use weighted random
+  if (trait.variants.some(v => v.chance !== undefined)) {
+    const total = trait.variants.reduce((sum, v) => sum + (v.chance || 0), 0);
+    let random = Math.random() * total;
+    for (const variant of trait.variants) {
+      if (random < (variant.chance || 0)) return variant;
+      random -= variant.chance || 0;
+    }
+  }
+  // Otherwise pure random
+  return trait.variants[Math.floor(Math.random() * trait.variants.length)];
+}
+
+function applySampleImageStyles(img, trait, variant, containerSize) {
+  // Calculate scaling
+  const scale = containerSize / DIMENSIONS.BASE_SIZE;
+  
+  // Set dimensions
+  img.style.width = `${DIMENSIONS.BASE_SIZE * scale}px`;
+  img.style.height = `${DIMENSIONS.BASE_SIZE * scale}px`;
+  
+  // Get saved position or use center
+  const savedPosStr = localStorage.getItem(`trait${trait.id}-${variant.id}-position`);
+  const savedPos = savedPosStr ? JSON.parse(savedPosStr) : { left: 50, top: 50 };
+  
+  // Apply position (convert % to px)
+  const left = (savedPos.left / 100) * containerSize;
+  const top = (savedPos.top / 100) * containerSize;
+  
+  img.style.left = `${left}px`;
+  img.style.top = `${top}px`;
+  img.style.transform = "none";
 }
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
