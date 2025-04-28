@@ -1771,7 +1771,7 @@ async function updatePreviewSamples() {
       img.style.zIndex = trait.zIndex;
       img.style.visibility = "visible"; // IMPORTANT: Always visible by default
       
-      // Load image with fallback
+// Load image with fallback
       img.onerror = () => {
         img.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ0cmFuc3BhcmVudCIvPjwvc3ZnPg=="; // Transparent fallback
       };
