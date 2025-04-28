@@ -153,7 +153,7 @@ function debugLog(...args) {
 
 <!-- Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS -------------------------------------------------->
 
-<script>
+
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000;
@@ -934,7 +934,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const logo = document.getElementById('logo');
   if (logo) debugLog('Logo URL:', logo.src);
 });
-</script>
+
 
 
 
