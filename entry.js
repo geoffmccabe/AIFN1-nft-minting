@@ -1767,7 +1767,7 @@ async function updatePreviewSamples() {
     debugLog("Calculated sample container size is zero or negative. Skipping update.");
     return;
   }
-  const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE; // BASE_SIZE is now 600
+  const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE; // BASE_SIZE is 600
   if (!isFinite(scaleFactor) || scaleFactor <= 0) {
     debugLog(`Invalid scaleFactor calculated: ${scaleFactor}. Skipping update.`);
     return;
@@ -1797,8 +1797,8 @@ async function updatePreviewSamples() {
       const imagePromises = traits.map(async (trait, traitIndexInSample) => { // Use traitIndexInSample for variety calc
         if (trait.variants.length === 0) return null; // Skip this trait
 
-        // Cycle through variants for variety
-        const variantIndex = (sampleIndex + traitIndexInSample) % trait.variants.length;
+        // Cycle through variants for variety (use random selection for more variety)
+        const variantIndex = Math.floor(Math.random() * trait.variants.length);
         const variant = trait.variants[variantIndex];
         const variantId = variant.id;
 
@@ -1808,26 +1808,20 @@ async function updatePreviewSamples() {
         img.style.zIndex = trait.zIndex;
         img.style.visibility = "hidden";
 
-        let imgSrc = "https://via.placeholder.com/150/FF0000/FFFFFF?text=Error"; // Default placeholder
+        let imgSrc = "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Perceptrons_Logo_Perc_Creator_600px.webp"; // Default placeholder
         let isPlaceholder = true; // Assume placeholder initially
 
-        // Validate URL before setting src
+        // Use the variant URL directly (skip fetch for blob: URLs)
         if (variant.url) {
-          try {
-            const response = await fetch(variant.url);
-            if (response.ok) {
-              imgSrc = variant.url;
-              isPlaceholder = false; // It's a real URL
-            } else {
-              debugLog(`Variant URL fetch failed: ${response.status}, Sample ${sampleIndex}, Trait ${trait.id}`);
-            }
-          } catch (e) {
-            debugLog(`Variant URL fetch error: Sample ${sampleIndex}, Trait ${trait.id}`, e);
-          }
+          imgSrc = variant.url; // Could be a blob: URL or placeholder URL
+          isPlaceholder = !variant.url.startsWith("blob:");
         } else {
           debugLog(`Variant has no URL: Sample ${sampleIndex}, Trait ${trait.id}`);
         }
         img.src = imgSrc; // Set src (actual or placeholder)
+
+        // Append image to DOM before scaling to avoid getBoundingClientRect error
+        previewContainer.appendChild(img);
 
         // Apply scaling and positioning after load attempt
         try {
@@ -1837,7 +1831,7 @@ async function updatePreviewSamples() {
 
           if (!isPlaceholder && (!isValidImage(img) || parseFloat(img.style.width) <= 0)) {
             debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Invalid image after scaling, switching to placeholder.`);
-            img.src = "https://via.placeholder.com/150/FFFF00/000000?text=ScaleErr"; // Scaling error placeholder
+            img.src = "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Perceptrons_Logo_Perc_Creator_600px.webp";
             await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; }); // Wait for placeholder
             await applyScalingToImage(img); // Re-scale placeholder
           }
@@ -1882,7 +1876,7 @@ async function updatePreviewSamples() {
       }); // End map traits
 
       const loadedImages = (await Promise.all(imagePromises)).filter(img => img !== null);
-      loadedImages.forEach(img => previewContainer.appendChild(img));
+      // Images are already appended, no need to append again
 
       sampleContainer.appendChild(previewContainer);
 
@@ -1925,6 +1919,7 @@ async function updatePreviewSamples() {
 
   debugLog("Preview Samples update complete.");
 }
+
 
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
