@@ -1728,24 +1728,26 @@ function updateZIndices() {
 
 
 
-/* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
-
-function updateSamplePositions(traitId, variationId, position) {
-  for (let i = 0; i < 16; i++) {
-    const sample = sampleData[i];
-    for (let j = 0; j < sample.length; j++) {
-      if (sample[j].traitId === traitId && sample[j].variantId === variationId) {
-        sample[j].position = position;
-      }
-    }
-  }
-  updatePreviewSamples();
-}
-
 async function updatePreviewSamples() {
-  // Clear existing samples
   previewSamplesGrid.innerHTML = "";
   
+  // Calculate dynamic container size based on grid width
+  const gridWidth = previewSamplesGrid.clientWidth;
+  if (gridWidth <= 0) {
+    debugLog("Preview samples grid has zero width. Skipping update.");
+    return;
+  }
+  const columns = 4;
+  const gap = DIMENSIONS.GRID_GAP;
+  const totalGap = gap * (columns - 1);
+  const containerSize = (gridWidth - totalGap) / columns;
+  if (containerSize <= 0) {
+    debugLog("Calculated container size is zero or negative. Skipping update.");
+    return;
+  }
+  const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE;
+  debugLog(`Grid width: ${gridWidth}, Container size: ${containerSize}, Scale factor: ${scaleFactor}`);
+
   // Create 4x4 grid
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement("div");
@@ -1753,34 +1755,57 @@ async function updatePreviewSamples() {
     
     const previewContainer = document.createElement("div");
     previewContainer.className = "sample-preview";
+    previewContainer.style.transform = `scale(${scaleFactor})`;
+    previewContainer.style.transformOrigin = "0 0";
     
     // Get all traits in correct z-order (reverse position)
     const traits = [...TraitManager.getAllTraits()].reverse();
+    debugLog(`Sample ${i}: Traits available:`, traits);
 
-    // Add each trait layer
+    // Add each trait layer with randomization
     traits.forEach(trait => {
-      if (!trait.variants.length) return;
+      if (!trait.variants.length) {
+        debugLog(`Sample ${i}: Trait ${trait.id} has no variants`);
+        return;
+      }
       
-      // Cycle through variants for variety
-      const variant = trait.variants[i % trait.variants.length];
+      // Randomly select a variant
+      const randomIndex = Math.floor(Math.random() * trait.variants.length);
+      const variant = trait.variants[randomIndex];
+      debugLog(`Sample ${i}: Trait ${trait.id}, Variant ${variant.id}, URL: ${variant.url}`);
+      
       const img = document.createElement("img");
       img.alt = `${trait.name || `Trait ${trait.position}`} variant`;
       
       // Style the image
       img.style.position = "absolute";
       img.style.zIndex = trait.zIndex;
-      img.style.visibility = "visible"; // IMPORTANT: Always visible by default
+      img.style.visibility = "hidden"; // Hide until loaded
       
-// Load image with fallback
+      // Load image with fallback
       img.onerror = () => {
-        img.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ0cmFuc3BhcmVudCIvPjwvc3ZnPg=="; // Transparent fallback
+        debugLog(`Sample ${i}: Image failed to load for Trait ${trait.id}, Variant ${variant.id}`);
+        img.src = "https://via.placeholder.com/150?text=Image+Failed"; // Visible fallback
+        img.style.visibility = "visible";
+      };
+      img.onload = () => {
+        // Center the image based on saved position
+        const savedPos = JSON.parse(localStorage.getItem(`trait${trait.id}-${variant.id}-position`) || { left: 50, top: 50 });
+        const scaledWidth = img.naturalWidth * scaleFactor;
+        const scaledHeight = img.naturalHeight * scaleFactor;
+        img.style.width = `${scaledWidth}px`;
+        img.style.height = `${scaledHeight}px`;
+        
+        // Adjust position to center the image
+        const leftPx = (savedPos.left / 100) * containerSize - (scaledWidth / 2);
+        const topPx = (savedPos.top / 100) * containerSize - (scaledHeight / 2);
+        img.style.left = `${leftPx}px`;
+        img.style.top = `${topPx}px`;
+        
+        img.style.visibility = "visible";
+        debugLog(`Sample ${i}: Image loaded for Trait ${trait.id}, Variant ${variant.id}, Size: ${scaledWidth}x${scaledHeight}, Position: ${leftPx},${topPx}`);
       };
       img.src = variant.url;
-
-      // Position image (simplified)
-      const savedPos = JSON.parse(localStorage.getItem(`trait${trait.id}-${variant.id}-position`) || { left: 50, top: 50 });
-      img.style.left = `${savedPos.left}%`;
-      img.style.top = `${savedPos.top}%`;
       
       previewContainer.appendChild(img);
     });
@@ -1790,7 +1815,10 @@ async function updatePreviewSamples() {
   }
 }
 
+
+
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
+
 
 
 
