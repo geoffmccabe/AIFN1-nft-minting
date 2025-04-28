@@ -1743,171 +1743,51 @@ function updateSamplePositions(traitId, variationId, position) {
 }
 
 async function updatePreviewSamples() {
+  // Clear existing samples
   previewSamplesGrid.innerHTML = "";
-  sampleData = Array(16).fill(null).map(() => []); // Reset sample data specific to this run
-
-  // --- Calculate Grid Dimensions ---
-  const panelWidth = previewSamplesGrid.clientWidth; // Dynamic width of the panel at runtime
-  if (panelWidth <= 0) {
-    debugLog("Preview samples grid has zero client width. Skipping update.");
-    return;
-  }
-  const gap = DIMENSIONS.GRID_GAP;
-  const columns = 4;
-  const totalGap = gap * (columns - 1);
-  const containerSize = (panelWidth - totalGap) / columns; // Dynamically calculated size
-  if (containerSize <= 0) {
-    debugLog("Calculated sample container size is zero or negative. Skipping update.");
-    return;
-  }
-  const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE; // BASE_SIZE is 600
-  if (!isFinite(scaleFactor) || scaleFactor <= 0) {
-    debugLog(`Invalid scaleFactor calculated: ${scaleFactor}. Skipping update.`);
-    return;
-  }
-  debugLog(`updatePreviewSamples: panelWidth=${panelWidth}, containerSize=${containerSize}, scaleFactor=${scaleFactor}`);
-
-  // --- Create Sample Promises (Process concurrently) ---
-  const samplePromises = [];
+  
+  // Create 4x4 grid
   for (let i = 0; i < 16; i++) {
-    samplePromises.push((async (sampleIndex) => { // Pass index via IIFE parameter
-      const sampleContainer = document.createElement("div");
-      sampleContainer.className = "sample-container";
-      // CSS aspect-ratio + grid handles sizing
+    const sampleContainer = document.createElement("div");
+    sampleContainer.className = "sample-container";
+    
+    const previewContainer = document.createElement("div");
+    previewContainer.className = "sample-preview";
+    
+    // Get all traits in correct z-order (reverse position)
+    const traits = [...TraitManager.getAllTraits()].reverse();
 
-      const previewContainer = document.createElement("div");
-      previewContainer.className = "sample-preview";
-      previewContainer.style.width = DIMENSIONS.BASE_SIZE + "px";
-      previewContainer.style.height = DIMENSIONS.BASE_SIZE + "px";
-      previewContainer.style.transform = "scale(" + scaleFactor + ")";
-      previewContainer.style.transformOrigin = "0 0";
+    // Add each trait layer
+    traits.forEach(trait => {
+      if (!trait.variants.length) return;
+      
+      // Cycle through variants for variety
+      const variant = trait.variants[i % trait.variants.length];
+      const img = document.createElement("img");
+      img.alt = `${trait.name || `Trait ${trait.position}`} variant`;
+      
+      // Style the image
+      img.style.position = "absolute";
+      img.style.zIndex = trait.zIndex;
+      img.style.visibility = "visible"; // IMPORTANT: Always visible by default
+      
+      // Load image with fallback
+      img.onerror = () => {
+        img.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ0cmFuc3BhcmVudCIvPjwvc3ZnPg=="; // Transparent fallback
+      };
+      img.src = variant.url;
 
-      const currentSampleData = []; // Store data for this specific sample index
+      // Position image (simplified)
+      const savedPos = JSON.parse(localStorage.getItem(`trait${trait.id}-${variant.id}-position`) || { left: 50, top: 50 };
+      img.style.left = `${savedPos.left}%`;
+      img.style.top = `${savedPos.top}%`;
+      
+      previewContainer.appendChild(img);
+    });
 
-      const traits = TraitManager.getAllTraits().slice().reverse();
-
-      // Process images for this sample concurrently
-      const imagePromises = traits.map(async (trait, traitIndexInSample) => { // Use traitIndexInSample for variety calc
-        if (trait.variants.length === 0) {
-          debugLog(`Skipping trait ${trait.id} in sample ${sampleIndex}: No variants.`);
-          return null; // Skip this trait - only render if actual variants exist
-        }
-
-        // Cycle through variants for variety
-        const variantIndex = (sampleIndex + traitIndexInSample) % trait.variants.length;
-        const variant = trait.variants[variantIndex];
-        const variantId = variant.id;
-
-        const img = document.createElement("img");
-        img.alt = `Sample ${sampleIndex + 1} - Trait ${trait.position}`;
-        img.style.position = "absolute";
-        img.style.zIndex = trait.zIndex;
-        img.style.visibility = "hidden";
-
-        // Use variant URL directly and log for debugging
-        debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Attempting to load variant URL: ${variant.url}`);
-        img.src = variant.url;
-        previewContainer.appendChild(img); // Append immediately
-
-        try {
-          await new Promise(resolve => { img.onload = () => {
-            debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Variant URL loaded successfully: ${variant.url}`);
-            resolve();
-          }; img.onerror = () => {
-            debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Variant URL failed to load: ${variant.url}`);
-            resolve();
-          }; });
-
-          await applyScalingToImage(img);
-
-          if (!isValidImage(img) || parseFloat(img.style.width) <= 0) {
-            debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Invalid image after scaling, src=${img.src}`);
-            previewContainer.removeChild(img); // Remove invalid image, show only background
-            return null;
-          }
-
-          // Apply position
-          const key = `trait${trait.id}-${variantId}-position`;
-          const savedPosition = localStorage.getItem(key);
-          let finalLeft = "50%";
-          let finalTop = "50%";
-          let transform = "translate(-50%, -50%)";
-
-          try {
-            if (savedPosition) {
-              const { left, top } = JSON.parse(savedPosition);
-              finalLeft = `${left}%`;
-              finalTop = `${top}%`;
-              transform = "";
-            }
-          } catch (e) {
-            debugLog(`Invalid position JSON: Sample ${sampleIndex}, Trait ${trait.id}`, e);
-          }
-
-          img.style.left = finalLeft;
-          img.style.top = finalTop;
-          if (transform) img.style.transform = transform;
-          else img.style.removeProperty("transform");
-
-          img.style.visibility = "visible";
-
-          currentSampleData.push({
-            traitId: trait.id,
-            variantId: variant.id,
-            position: { left: finalLeft, top: finalTop }
-          });
-
-          return img;
-        } catch (e) {
-          debugLog(`Error processing image for sample ${sampleIndex}, trait ${trait.id}:`, e);
-          previewContainer.removeChild(img); // Remove failed image, show only background
-          return null;
-        }
-      }); // End map traits
-
-      const loadedImages = (await Promise.all(imagePromises)).filter(img => img !== null);
-      // Images are already appended or removed
-
-      sampleContainer.appendChild(previewContainer);
-
-      // Add click listener
-      sampleContainer.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const currentSampleIdx = Array.from(previewSamplesGrid.children).indexOf(sampleContainer);
-        if (sampleData[currentSampleIdx]) {
-          sampleData[currentSampleIdx].forEach(async (sample) => {
-            const trait = TraitManager.getTrait(sample.traitId);
-            if (!trait) return;
-            const variantIndex = trait.variants.findIndex((v) => v.id === sample.variantId);
-            if (variantIndex !== -1) {
-              await selectVariation(trait.id, sample.variantId);
-              const grid = document.getElementById("trait" + trait.id + "-grid");
-              if (grid) {
-                grid.querySelectorAll(".variation-image-wrapper").forEach((w) => w.classList.remove("selected"));
-                const container = grid.querySelector(`[data-variation-id="${sample.variantId}"]`);
-                if (container) container.querySelector(".variation-image-wrapper")?.classList.add("selected");
-              }
-            }
-          });
-        }
-      });
-
-      // Append container immediately for progressive rendering
-      previewSamplesGrid.appendChild(sampleContainer);
-      return currentSampleData;
-
-    })(i)); // Pass index i to IIFE
-  } // End samples loop
-
-  // Wait for all sample data to be processed and store it
-  const sampleDataResults = await Promise.all(samplePromises);
-  sampleDataResults.forEach((data, index) => {
-    if (data) {
-      sampleData[index] = data; // Store sample data at correct index
-    }
-  });
-
-  debugLog("Preview Samples update complete.");
+    sampleContainer.appendChild(previewContainer);
+    previewSamplesGrid.appendChild(sampleContainer);
+  }
 }
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
