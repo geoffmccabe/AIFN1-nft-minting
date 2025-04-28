@@ -1357,7 +1357,7 @@ function calculateScalingFactor(container = preview) {
 
 async function applyScalingToImage(img, callback) {
   if (!img || !img.src || img.src === "") {
-    debugLog("Cannot apply scaling: id=" + (img ? img.id : "undefined") + ", invalid image");
+    debugLog("Cannot apply scaling: id=" + (img ? img.id : "undefined") + ", invalid image, src=" + (img ? img.src : "undefined"));
     if (callback) callback();
     return;
   }
@@ -1367,36 +1367,44 @@ async function applyScalingToImage(img, callback) {
 
   await new Promise((resolve, reject) => {
     tempImg.onload = () => {
-      img.naturalWidth = tempImg.naturalWidth;
-      img.naturalHeight = tempImg.naturalHeight;
-      const scale = calculateScalingFactor(img.parentElement);
-      const expectedWidth = img.parentElement.getBoundingClientRect().width;
-      const scaledWidth = expectedWidth; // Scale to match the container width
-      const scaledHeight = (img.naturalHeight / img.naturalWidth) * scaledWidth; // Maintain aspect ratio
+      img.naturalWidth = tempImg.naturalWidth || DIMENSIONS.BASE_SIZE;
+      img.naturalHeight = tempImg.naturalHeight || DIMENSIONS.BASE_SIZE;
+      const containerWidth = img.parentElement.getBoundingClientRect().width;
+      const scaledWidth = containerWidth; // Match the container width
+      const aspectRatio = img.naturalHeight / img.naturalWidth;
+      const scaledHeight = scaledWidth * aspectRatio;
+
       img.style.width = scaledWidth + "px";
       img.style.height = scaledHeight + "px";
+
+      const computedStyle = window.getComputedStyle(img);
       debugLog(
-        "Applied scaling: id=" +
-          (img.id || "") +
-          ", naturalWidth=" +
-          img.naturalWidth +
-          ", naturalHeight=" +
-          img.naturalHeight +
-          ", scale=" +
-          scale +
-          ", expectedWidth=" +
-          expectedWidth +
-          ", scaledWidth=" +
-          scaledWidth +
-          ", scaledHeight=" +
-          scaledHeight
+        "Applied scaling: id=" + (img.id || "") +
+        ", containerWidth=" + containerWidth +
+        ", naturalWidth=" + img.naturalWidth +
+        ", naturalHeight=" + img.naturalHeight +
+        ", aspectRatio=" + aspectRatio +
+        ", scaledWidth=" + scaledWidth +
+        ", scaledHeight=" + scaledHeight +
+        ", computedWidth=" + computedStyle.width +
+        ", computedHeight=" + computedStyle.height
       );
+
       resolve();
     };
     tempImg.onerror = () => {
-      debugLog("Cannot apply scaling: id=" + (img.id || "") + ", image failed to load");
-      img.style.width = DIMENSIONS.BASE_SIZE + "px";
-      img.style.height = DIMENSIONS.BASE_SIZE + "px";
+      debugLog("Cannot apply scaling: id=" + (img.id || "") + ", image failed to load, src=" + img.src);
+      img.naturalWidth = DIMENSIONS.BASE_SIZE;
+      img.naturalHeight = DIMENSIONS.BASE_SIZE;
+      const containerWidth = img.parentElement.getBoundingClientRect().width;
+      img.style.width = containerWidth + "px";
+      img.style.height = containerWidth + "px"; // Assume square for fallback
+      debugLog(
+        "Applied fallback scaling: id=" + (img.id || "") +
+        ", containerWidth=" + containerWidth +
+        ", scaledWidth=" + containerWidth +
+        ", scaledHeight=" + containerWidth
+      );
       resolve();
     };
   });
@@ -1472,7 +1480,9 @@ async function selectVariation(traitId, variationId) {
         ", src: " +
         previewImage.src +
         ", visibility: " +
-        previewImage.style.visibility
+        previewImage.style.visibility +
+        ", previewWidth: " +
+        preview.getBoundingClientRect().width
     );
 
     await applyScalingToImage(previewImage, () => {
