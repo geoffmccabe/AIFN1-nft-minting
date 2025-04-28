@@ -1504,37 +1504,24 @@ function initializePositions() {
 
 async function selectVariation(traitId, variationId) {
   const trait = TraitManager.getTrait(traitId);
-  const variationIndex = trait.variants.findIndex((v) => v.id === variationId);
-  
-  if (variationIndex === -1) {
-    console.warn("Variation not found:", variationId);
-    return;
-  }
+  if (!trait) return;
+
+  const variationIndex = trait.variants.findIndex(v => v.id === variationId);
+  if (variationIndex === -1) return;
 
   trait.selected = variationIndex;
-  const previewImage = traitImages.find((img) => img.id === "preview-trait" + traitId);
+  const previewImage = traitImages.find(img => img.id === `preview-trait${traitId}`);
   
   if (previewImage) {
-    const variant = trait.variants[variationIndex];
-    previewImage.src = variant.url || "";
+    previewImage.src = trait.variants[variationIndex].url;
     previewImage.style.visibility = "visible";
-
-    // Apply scaling
     await applyScalingToImage(previewImage);
     
-    // Apply saved position or center
-    const key = `trait${traitId}-${variant.id}-position`;
-    const savedPos = JSON.parse(localStorage.getItem(key) || '{"left":50,"top":50}');
+    const savedPos = JSON.parse(localStorage.getItem(`trait${trait.id}-${variationId}-position`) || '{"left":50,"top":50}');
     previewImage.style.left = `${savedPos.left}%`;
     previewImage.style.top = `${savedPos.top}%`;
-
-    // Update UI
-    refreshTraitGrid(traitId);
-    updateCoordinates(previewImage);
-    updateZIndices();
   }
 
-  // THIS IS THE CRITICAL ADDITION:
   updatePreviewSamples(); // Update the 4x4 grid
 }
 
@@ -1646,27 +1633,13 @@ function savePosition(img, traitId, variationName) {
   if (!trait || !trait.variants.length) return;
 
   const variant = trait.variants[trait.selected];
-  const contentWidth = preview.clientWidth;
-  const contentHeight = contentWidth;
+  const position = {
+    left: parseFloat(img.style.left) || 50,
+    top: parseFloat(img.style.top) || 50
+  };
   
-  // Calculate position percentages
-  let left = parseFloat(img.style.left) || 0;
-  let top = parseFloat(img.style.top) || 0;
-  
-  // Save to localStorage
-  const position = { left, top };
-  const key = `trait${traitId}-${variant.id}-position`;
-  localStorage.setItem(key, JSON.stringify(position));
-  
-  // Update history
-  const historyKey = `trait${traitId}-position-history`;
-  let history = JSON.parse(localStorage.getItem(historyKey) || [];
-  history.push(position);
-  if (history.length > 20) history.shift();
-  localStorage.setItem(historyKey, JSON.stringify(history));
-
-  // THIS IS THE CRITICAL ADDITION:
-  updatePreviewSamples(); // Update the 4x4 grid
+  localStorage.setItem(`trait${traitId}-${variant.id}-position`, JSON.stringify(position));
+  updatePreviewSamples(); // CRITICAL ADDITION
 }
 
 function updateZIndices() {
@@ -1700,13 +1673,9 @@ function updateSamplePositions(traitId, variationId, position) {
 async function updatePreviewSamples() {
   if (!previewSamplesGrid) return;
   
-  // Clear existing samples
   previewSamplesGrid.innerHTML = "";
-  
-  // Get container dimensions
-  const containerSize = previewSamplesGrid.clientWidth / 4 - 13; // Account for gap
-  
-  // Create 16 sample containers
+  const containerSize = previewSamplesGrid.clientWidth / 4 - 13;
+
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement("div");
     sampleContainer.className = "sample-container";
@@ -1716,31 +1685,28 @@ async function updatePreviewSamples() {
     previewContainer.style.width = `${containerSize}px`;
     previewContainer.style.height = `${containerSize}px`;
     
-    // Process traits in reverse z-order
     const traits = [...TraitManager.getAllTraits()].reverse();
     
     traits.forEach(trait => {
       if (!trait.variants.length) return;
       
-      // Randomly select variant (respecting chances if set)
-      const variant = getRandomVariant(trait);
-      
+      const variant = trait.variants[Math.floor(Math.random() * trait.variants.length)];
       const img = document.createElement("img");
       img.alt = `${trait.name || `Trait ${trait.position}`} variant`;
       
-      // Set basic styles
+      // Set scaling to fit container
+      const scale = containerSize / DIMENSIONS.BASE_SIZE;
+      img.style.width = `${DIMENSIONS.BASE_SIZE * scale}px`;
+      img.style.height = `${DIMENSIONS.BASE_SIZE * scale}px`;
+      
+      // Center if no position saved
+      const savedPos = JSON.parse(localStorage.getItem(`trait${trait.id}-${variant.id}-position`) || '{"left":50,"top":50}');
+      img.style.left = `${(savedPos.left/100) * containerSize}px`;
+      img.style.top = `${(savedPos.top/100) * containerSize}px`;
+      
       img.style.position = "absolute";
       img.style.zIndex = trait.zIndex;
-      img.style.visibility = "visible";
-      
-      // Load image with fallback
-      img.onerror = () => {
-        img.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ0cmFuc3BhcmVudCIvPjwvc3ZnPg==";
-      };
       img.src = variant.url;
-      
-      // Apply scaling and positioning
-      applySampleImageStyles(img, trait, variant, containerSize);
       
       previewContainer.appendChild(img);
     });
