@@ -80,8 +80,8 @@
   #preview img { 
     position: absolute; 
     object-fit: none; /* Prevent distortion */
-    width: auto !important; /* Ensure JavaScript sets the width */
-    height: auto !important; /* Ensure JavaScript sets the height */
+    width: auto; /* Removed !important */
+    height: auto; /* Removed !important */
   }
   #preview img.dragging { 
     box-shadow: 0 0 3px 2px rgba(255, 255, 255, 0.5);
@@ -117,8 +117,8 @@
   #enlarged-preview img { 
     position: absolute;
     object-fit: none; /* Prevent distortion */
-    width: auto !important; /* Ensure JavaScript sets the width */
-    height: auto !important; /* Ensure JavaScript sets the height */
+    width: auto; /* Removed !important */
+    height: auto; /* Removed !important */
   }
   #magnify-header {
     display: flex;
