@@ -1362,80 +1362,49 @@ async function applyScalingToImage(img, callback) {
     return;
   }
 
-  return new Promise((resolve) => {
-    requestAnimationFrame(async () => {
-      const tempImg = new Image();
-      tempImg.src = img.src;
+  const tempImg = new Image();
+  tempImg.src = img.src;
 
-      tempImg.onload = () => {
-        const naturalWidth = tempImg.naturalWidth > 0 ? tempImg.naturalWidth : DIMENSIONS.BASE_SIZE;
-        const naturalHeight = tempImg.naturalHeight > 0 ? tempImg.naturalHeight : DIMENSIONS.BASE_SIZE;
-        img.naturalWidth = naturalWidth;
-        img.naturalHeight = naturalHeight;
-
-        const container = img.parentElement;
-        const containerWidth = container.getBoundingClientRect().width;
-        const containerHeight = container.getBoundingClientRect().height;
-
-        const widthScale = containerWidth / naturalWidth;
-        const heightScale = containerHeight / naturalHeight;
-        const scale = Math.min(widthScale, heightScale);
-
-        const scaledWidth = naturalWidth * scale;
-        const scaledHeight = naturalHeight * scale;
-
-        img.style.width = `${scaledWidth}px`;
-        img.style.height = `${scaledHeight}px`;
-
-        if (!img.style.left && !img.style.top) {
-          img.style.left = `${(containerWidth - scaledWidth) / 2}px`;
-          img.style.top = `${(containerHeight - scaledHeight) / 2}px`;
-        }
-
-        const computedStyle = window.getComputedStyle(img);
-        debugLog(
-          "Applied scaling: id=" + (img.id || "") +
-          ", containerWidth=" + containerWidth +
-          ", containerHeight=" + containerHeight +
-          ", naturalWidth=" + naturalWidth +
-          ", naturalHeight=" + naturalHeight +
-          ", scale=" + scale +
-          ", scaledWidth=" + scaledWidth +
-          ", scaledHeight=" + scaledHeight +
-          ", computedWidth=" + computedStyle.width +
-          ", computedHeight=" + computedStyle.height +
-          ", left=" + img.style.left +
-          ", top=" + img.style.top
-        );
-
-        resolve();
-        if (callback) callback();
-      };
-
-      tempImg.onerror = () => {
-        debugLog("Cannot apply scaling: id=" + (img.id || "") + ", image failed to load, src=" + img.src);
-        const container = img.parentElement;
-        const containerWidth = container.getBoundingClientRect().width;
-        img.naturalWidth = DIMENSIONS.BASE_SIZE;
-        img.naturalHeight = DIMENSIONS.BASE_SIZE;
-
-        img.style.width = `${containerWidth}px`;
-        img.style.height = `${containerWidth}px`;
-        img.style.left = "0px";
-        img.style.top = "0px";
-
-        debugLog(
-          "Applied fallback scaling: id=" + (img.id || "") +
-          ", containerWidth=" + containerWidth +
-          ", scaledWidth=" + containerWidth +
-          ", scaledHeight=" + containerWidth
-        );
-
-        resolve();
-        if (callback) callback();
-      };
-    });
+  await new Promise((resolve) => {
+    tempImg.onload = () => {
+      img.naturalWidth = tempImg.naturalWidth;
+      img.naturalHeight = tempImg.naturalHeight;
+      resolve();
+    };
+    tempImg.onerror = () => {
+      debugLog("Cannot apply scaling: id=" + (img.id || "") + ", image failed to load, src=" + img.src);
+      img.naturalWidth = DIMENSIONS.BASE_SIZE;
+      img.naturalHeight = DIMENSIONS.BASE_SIZE;
+      resolve();
+    };
   });
+
+  // Perform scaling calculation after await
+  const natWidth = img.naturalWidth > 0 ? img.naturalWidth : DIMENSIONS.BASE_SIZE;
+  const natHeight = img.naturalHeight > 0 ? img.naturalHeight : DIMENSIONS.BASE_SIZE;
+
+  // Calculate scale factor based on container (#preview)
+  const scale = calculateScalingFactor(img.parentElement);
+
+  const scaledWidth = natWidth * scale;
+  const scaledHeight = natHeight * scale;
+
+  img.style.width = scaledWidth + "px";
+  img.style.height = scaledHeight + "px";
+
+  const computedStyle = window.getComputedStyle(img);
+  debugLog(
+    "Applied PROPORTIONAL scaling: id=" + (img.id || "") +
+    ", naturalWidth=" + natWidth +
+    ", naturalHeight=" + natHeight +
+    ", scale=" + scale +
+    ", scaledWidth=" + scaledWidth +
+    ", scaledHeight=" + scaledHeight +
+    ", computedWidth=" + computedStyle.width +
+    ", computedHeight=" + computedStyle.height
+  );
+
+  if (callback) callback();
 }
 
 function applyScalingToTraits() {
@@ -1497,10 +1466,6 @@ async function selectVariation(traitId, variationId) {
 
   const previewImage = traitImages.find((img) => img.id === "preview-trait" + traitId);
   if (previewImage) {
-    if (previewImage.src.startsWith("blob:")) {
-      URL.revokeObjectURL(previewImage.src);
-    }
-
     previewImage.src = trait.variants[variationIndex].url;
     previewImage.style.visibility = "visible";
     debugLog(
@@ -1567,42 +1532,52 @@ async function setupDragAndDrop(img, traitIndex) {
       return;
     }
 
-    const rect = targetImg.getBoundingClientRect();
-    const containerRect = targetImg.parentElement.getBoundingClientRect();
-
-    offsetX = (e.clientX - rect.left) / rect.width;
-    offsetY = (e.clientY - rect.top) / rect.height;
-
+    // Set state critical for dragging *before* awaiting scaling
     currentImage = targetImg;
     isDragging = true;
+    const containerRect = currentImage.parentElement.getBoundingClientRect();
+    const imageRect = currentImage.getBoundingClientRect();
+    const pointerX = e.clientX - imageRect.left;
+    const pointerY = e.clientY - imageRect.top;
+    offsetX = pointerX / containerRect.width * 100;
+    offsetY = pointerY / containerRect.height * 100;
     currentImage.style.cursor = "grabbing";
     currentImage.classList.add("dragging");
     updateCoordinates(currentImage);
     document.addEventListener("mousemove", onMouseMove);
 
+    // Now, attempt scaling asynchronously
     try {
       await applyScalingToImage(img);
       debugLog("startDragging: Scaling applied after drag start for", img.id);
     } catch (scaleError) {
       console.error("startDragging: Error during async scaling", scaleError);
+      // Dragging continues with unscaled size
     }
   }
 
   function onMouseMove(e) {
-    if (!isDragging || !currentImage) return;
+    if (isDragging && currentImage) {
+      const containerRect = currentImage.parentElement.getBoundingClientRect();
+      const borderAdjustment = DIMENSIONS.BORDER_ADJUSTMENT;
+      const contentWidth = containerRect.width - borderAdjustment;
+      const contentHeight = containerRect.height - borderAdjustment;
 
-    const containerRect = currentImage.parentElement.getBoundingClientRect();
-    const imgRect = currentImage.getBoundingClientRect();
+      let newLeft = ((e.clientX - containerRect.left) / contentWidth) * 100 - offsetX;
+      let newTop = ((e.clientY - containerRect.top) / contentHeight) * 100 - offsetY;
 
-    let newLeft = (e.clientX - containerRect.left - (offsetX * imgRect.width)) / containerRect.width * 100;
-    let newTop = (e.clientY - containerRect.top - (offsetY * imgRect.height)) / containerRect.height * 100;
+      const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
+      const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
+      const maxLeft = ((contentWidth - imgWidth) / contentWidth) * 100;
+      const maxTop = ((contentHeight - imgHeight) / contentHeight) * 100;
 
-    newLeft = Math.max(0, Math.min(newLeft, 100 - (imgRect.width / containerRect.width * 100)));
-    newTop = Math.max(0, Math.min(newTop, 100 - (imgRect.height / containerRect.height * 100)));
+      newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+      newTop = Math.max(0, Math.min(newTop, maxTop));
 
-    currentImage.style.left = `${newLeft}%`;
-    currentImage.style.top = `${newTop}%`;
-    updateCoordinates(currentImage);
+      currentImage.style.left = `${newLeft}%`;
+      currentImage.style.top = `${newTop}%`;
+      updateCoordinates(currentImage);
+    }
   }
 
   function stopDragging() {
@@ -1691,11 +1666,11 @@ function savePosition(img, traitId, variationName) {
 }
 
 function updateZIndices() {
-  const sortedTraits = [...TraitManager.getAllTraits()].sort((a, b) => a.position - b.position);
-  sortedTraits.forEach((trait, index) => {
-    const img = traitImages.find((img) => img.id === `preview-trait${trait.id}`);
+  const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
+  traitImages.forEach((img, index) => {
     if (img) {
-      img.style.zIndex = index + 1;
+      const trait = sortedTraits[index];
+      img.style.zIndex = TraitManager.getAllTraits().length - trait.position + 1;
       debugLog(`Setting zIndex for Trait ${trait.position} (ID: ${trait.id}): ${img.style.zIndex}`);
     }
   });
