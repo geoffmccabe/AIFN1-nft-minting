@@ -949,8 +949,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
 
-
-
 function addTrait(trait) {
   const traitSection = document.createElement("div");
   traitSection.id = `trait${trait.id}`;
@@ -1044,7 +1042,6 @@ function addTrait(trait) {
     traitImages.push(traitImage);
   }
 
-  // Update preview without clearing existing event listeners
   if (preview) {
     const sortedTraits = TraitManager.getAllTraits().sort((a, b) => a.position - b.position);
     const existingImages = Array.from(preview.children);
@@ -1062,7 +1059,6 @@ function addTrait(trait) {
       return img;
     });
 
-    // Update preview children while preserving event listeners
     existingImages.forEach((img) => {
       if (!newImages.includes(img)) {
         preview.removeChild(img);
@@ -1129,8 +1125,6 @@ function removeTrait(traitId) {
 
 /* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
 
-
-
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
   const fileInput = document.getElementById(`trait${traitId}-files`);
@@ -1170,6 +1164,13 @@ function setupTraitListeners(traitId) {
       trait.variants = [];
       grid.innerHTML = '';
 
+      // Clear old position data for this trait
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(`trait${traitId}-`)) {
+          localStorage.removeItem(key);
+        }
+      });
+
       for (const file of files) {
         const variationName = file.name.split('.').slice(0, -1).join('.');
         const url = URL.createObjectURL(file);
@@ -1207,16 +1208,17 @@ function setupTraitListeners(traitId) {
 
         grid.appendChild(container);
 
-        const key = `${traitId}-${variationName}`;
+        const key = `trait${traitId}-${variant.id}-position`;
         if (!variantHistories[key]) {
           variantHistories[key] = [{ left: 0, top: 0 }];
-          localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify({ left: 0, top: 0 }));
+          localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
           localStorage.removeItem(`trait${traitId}-${variationName}-manuallyMoved`);
         }
       }
 
       if (trait.variants.length > 0) {
-        selectVariation(traitId, trait.variants[0].id);
+        const randomIndex = Math.floor(Math.random() * trait.variants.length);
+        selectVariation(traitId, trait.variants[randomIndex].id);
         const firstWrapper = grid.querySelector('.variation-image-wrapper');
         if (firstWrapper) firstWrapper.classList.add('selected');
         autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
@@ -1224,7 +1226,7 @@ function setupTraitListeners(traitId) {
       }
 
       updateMintButton();
-      updatePreviewSamples();
+      debouncedUpdatePreviewSamples();
     });
   }
 
@@ -1324,8 +1326,8 @@ function refreshTraitGrid(traitId) {
 
   const previewImage = traitImages.find(img => img.id === `preview-trait${traitId}`);
   if (previewImage && isValidImage(previewImage) && trait.variants[trait.selected]) {
-    const key = `${traitId}-${trait.variants[trait.selected].name}`;
-    const savedPosition = localStorage.getItem(`trait${traitId}-${trait.variants[trait.selected].name}-position`);
+    const key = `trait${traitId}-${trait.variants[trait.selected].id}-position`;
+    const savedPosition = localStorage.getItem(key);
     if (savedPosition) {
       try {
         const { left, top } = JSON.parse(savedPosition);
@@ -1362,7 +1364,6 @@ function updateMintButton() {
   const mintBtn = document.getElementById('mintButton');
   if (mintBtn) mintBtn.disabled = !allTraitsSet;
 }
-
 
 
 /* Section 6 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 1) ------------------------------------------------*/
@@ -1426,11 +1427,9 @@ async function applyScalingToImage(img, callback) {
     };
   });
 
-  // Perform scaling calculation after await
   const natWidth = img.naturalWidth > 0 ? img.naturalWidth : DIMENSIONS.BASE_SIZE;
   const natHeight = img.naturalHeight > 0 ? img.naturalHeight : DIMENSIONS.BASE_SIZE;
 
-  // Calculate scale factor based on container (#preview or .sample-preview)
   const scale = calculateScalingFactor(img.parentElement);
 
   const scaledWidth = natWidth * scale;
@@ -1513,7 +1512,6 @@ async function selectVariation(traitId, variationId) {
 
   const previewImage = traitImages.find((img) => img.id === "preview-trait" + traitId);
   if (previewImage) {
-    // Ensure a valid URL is set, even if no variants are available
     const variantUrl = trait.variants[variationIndex]?.url || "https://via.placeholder.com/600";
     previewImage.src = variantUrl;
     previewImage.style.visibility = "visible";
@@ -1568,7 +1566,10 @@ async function selectVariation(traitId, variationId) {
 }
 
 async function setupDragAndDrop(img, traitIndex) {
-  if (!img) return;
+  if (!img) {
+    debugLog("setupDragAndDrop: No image provided for trait index", traitIndex);
+    return;
+  }
 
   function preventDragStart(e) {
     e.preventDefault();
@@ -1581,27 +1582,27 @@ async function setupDragAndDrop(img, traitIndex) {
       return;
     }
 
-    // Set state critical for dragging *before* awaiting scaling
-    currentImage = targetImg;
-    isDragging = true;
-    const containerRect = currentImage.parentElement.getBoundingClientRect();
-    const imageRect = currentImage.getBoundingClientRect();
-    const pointerX = e.clientX - imageRect.left;
-    const pointerY = e.clientY - imageRect.top;
-    offsetX = pointerX / containerRect.width * 100;
-    offsetY = pointerY / containerRect.height * 100;
-    currentImage.style.cursor = "grabbing";
-    currentImage.classList.add("dragging");
-    updateCoordinates(currentImage);
-    document.addEventListener("mousemove", onMouseMove);
-
-    // Now, attempt scaling asynchronously
     try {
+      currentImage = targetImg;
+      isDragging = true;
+      const containerRect = currentImage.parentElement.getBoundingClientRect();
+      const imageRect = currentImage.getBoundingClientRect();
+      const pointerX = e.clientX - imageRect.left;
+      const pointerY = e.clientY - imageRect.top;
+      offsetX = pointerX / containerRect.width * 100;
+      offsetY = pointerY / containerRect.height * 100;
+      currentImage.style.cursor = "grabbing";
+      currentImage.classList.add("dragging");
+      updateCoordinates(currentImage);
+      document.addEventListener("mousemove", onMouseMove);
+      debugLog("startDragging: Started dragging", currentImage.id);
+
       await applyScalingToImage(img);
       debugLog("startDragging: Scaling applied after drag start for", img.id);
     } catch (scaleError) {
       console.error("startDragging: Error during async scaling", scaleError);
-      // Dragging continues with unscaled size
+      isDragging = false;
+      currentImage = null;
     }
   }
 
@@ -1634,7 +1635,7 @@ async function setupDragAndDrop(img, traitIndex) {
       const traitId = currentImage.id.substring("preview-trait".length);
       const trait = TraitManager.getTrait(traitId);
       if (!trait) {
-        debugLog("Trait not found for image:", currentImage.id);
+        debugLog("stopDragging: Trait not found for image:", currentImage.id);
         return;
       }
       const variationName = trait.variants[trait.selected].name;
@@ -1644,10 +1645,15 @@ async function setupDragAndDrop(img, traitIndex) {
       currentImage.classList.remove("dragging");
       updateZIndices();
       document.removeEventListener("mousemove", onMouseMove);
+      debugLog("stopDragging: Stopped dragging", currentImage.id);
+    } else {
+      debugLog("stopDragging: No dragging in progress or no current image");
     }
   }
 
-  function selectImage(e) {}
+  function selectImage(e) {
+    debugLog("selectImage: Image clicked", img.id);
+  }
 
   img.removeEventListener("dragstart", preventDragStart);
   img.removeEventListener("mousedown", startDragging);
@@ -1660,6 +1666,7 @@ async function setupDragAndDrop(img, traitIndex) {
   img.addEventListener("mouseup", stopDragging);
   img.addEventListener("click", selectImage);
   document.addEventListener("mouseup", stopDragging);
+  debugLog("setupDragAndDrop: Event listeners set up for", img.id);
 }
 
 function updateCoordinates(img) {
@@ -1728,10 +1735,26 @@ function updateZIndices() {
 
 
 
+/* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
+
+
+
+
+function updateSamplePositions(traitId, variationId, position) {
+  for (let i = 0; i < 16; i++) {
+    const sample = sampleData[i];
+    for (let j = 0; j < sample.length; j++) {
+      if (sample[j].traitId === traitId && sample[j].variantId === variationId) {
+        sample[j].position = position;
+      }
+    }
+  }
+  updatePreviewSamples();
+}
+
 async function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = "";
   
-  // Calculate dynamic container size based on grid width
   const gridWidth = previewSamplesGrid.clientWidth;
   if (gridWidth <= 0) {
     debugLog("Preview samples grid has zero width. Skipping update.");
@@ -1748,7 +1771,6 @@ async function updatePreviewSamples() {
   const scaleFactor = containerSize / DIMENSIONS.BASE_SIZE;
   debugLog(`Grid width: ${gridWidth}, Container size: ${containerSize}, Scale factor: ${scaleFactor}`);
 
-  // Create 4x4 grid
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement("div");
     sampleContainer.className = "sample-container";
@@ -1758,47 +1780,50 @@ async function updatePreviewSamples() {
     previewContainer.style.transform = `scale(${scaleFactor})`;
     previewContainer.style.transformOrigin = "0 0";
     
-    // Get all traits in correct z-order (reverse position)
     const traits = [...TraitManager.getAllTraits()].reverse();
     debugLog(`Sample ${i}: Traits available:`, traits);
 
-    // Add each trait layer with randomization
     traits.forEach(trait => {
       if (!trait.variants.length) {
         debugLog(`Sample ${i}: Trait ${trait.id} has no variants`);
         return;
       }
       
-      // Randomly select a variant
       const randomIndex = Math.floor(Math.random() * trait.variants.length);
       const variant = trait.variants[randomIndex];
-      debugLog(`Sample ${i}: Trait ${trait.id}, Variant ${variant.id}, URL: ${variant.url}`);
-      
+      debugLog(`Sample ${i}: Trait ${trait.id}, Selected Variant ${variant.id}, URL: ${variant.url}`);
+
       const img = document.createElement("img");
       img.alt = `${trait.name || `Trait ${trait.position}`} variant`;
-      
-      // Style the image
       img.style.position = "absolute";
       img.style.zIndex = trait.zIndex;
-      img.style.visibility = "hidden"; // Hide until loaded
+      img.style.visibility = "hidden";
       
-      // Load image with fallback
       img.onerror = () => {
         debugLog(`Sample ${i}: Image failed to load for Trait ${trait.id}, Variant ${variant.id}`);
-        img.src = "https://via.placeholder.com/150?text=Image+Failed"; // Visible fallback
+        img.src = "https://via.placeholder.com/150?text=Image+Failed";
         img.style.visibility = "visible";
       };
       img.onload = () => {
-        // Center the image based on saved position
-        const savedPos = JSON.parse(localStorage.getItem(`trait${trait.id}-${variant.id}-position`) || { left: 50, top: 50 });
         const scaledWidth = img.naturalWidth * scaleFactor;
         const scaledHeight = img.naturalHeight * scaleFactor;
         img.style.width = `${scaledWidth}px`;
         img.style.height = `${scaledHeight}px`;
         
-        // Adjust position to center the image
-        const leftPx = (savedPos.left / 100) * containerSize - (scaledWidth / 2);
-        const topPx = (savedPos.top / 100) * containerSize - (scaledHeight / 2);
+        let leftPx = containerSize / 2 - scaledWidth / 2;
+        let topPx = containerSize / 2 - scaledHeight / 2;
+        
+        const savedPosStr = localStorage.getItem(`trait${trait.id}-${variant.id}-position`);
+        try {
+          if (savedPosStr) {
+            const savedPos = JSON.parse(savedPosStr);
+            leftPx = (savedPos.left / 100) * containerSize - (scaledWidth / 2);
+            topPx = (savedPos.top / 100) * containerSize - (scaledHeight / 2);
+          }
+        } catch (e) {
+          debugLog(`Sample ${i}: Failed to parse position for Trait ${trait.id}, Variant ${variant.id}:`, e);
+        }
+        
         img.style.left = `${leftPx}px`;
         img.style.top = `${topPx}px`;
         
@@ -1814,7 +1839,6 @@ async function updatePreviewSamples() {
     previewSamplesGrid.appendChild(sampleContainer);
   }
 }
-
 
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
