@@ -1797,7 +1797,7 @@ async function updatePreviewSamples() {
       const imagePromises = traits.map(async (trait, traitIndexInSample) => { // Use traitIndexInSample for variety calc
         if (trait.variants.length === 0) return null; // Skip this trait
 
-        // Cycle through variants for variety (use random selection for more variety)
+        // Cycle through variants for variety
         const variantIndex = Math.floor(Math.random() * trait.variants.length);
         const variant = trait.variants[variantIndex];
         const variantId = variant.id;
@@ -1808,37 +1808,28 @@ async function updatePreviewSamples() {
         img.style.zIndex = trait.zIndex;
         img.style.visibility = "hidden";
 
-        let imgSrc = "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Perceptrons_Logo_Perc_Creator_600px.webp"; // Default placeholder
-        let isPlaceholder = true; // Assume placeholder initially
+        // Use variant URL directly
+        img.src = variant.url || "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp";
+        previewContainer.appendChild(img); // Append immediately
 
-        // Use the variant URL directly (skip fetch for blob: URLs)
-        if (variant.url) {
-          imgSrc = variant.url; // Could be a blob: URL or placeholder URL
-          isPlaceholder = !variant.url.startsWith("blob:");
-        } else {
-          debugLog(`Variant has no URL: Sample ${sampleIndex}, Trait ${trait.id}`);
-        }
-        img.src = imgSrc; // Set src (actual or placeholder)
-
-        // Append image to DOM before scaling to avoid getBoundingClientRect error
-        previewContainer.appendChild(img);
-
-        // Apply scaling and positioning after load attempt
         try {
-          await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; }); // Wait for load/error
+          await new Promise(resolve => { img.onload = resolve; img.onerror = () => {
+            img.src = "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp";
+            img.onload = resolve;
+            img.onerror = resolve; // Fallback should load, but resolve anyway
+          }; });
 
-          await applyScalingToImage(img); // Scale proportionally
+          await applyScalingToImage(img);
 
-          if (!isPlaceholder && (!isValidImage(img) || parseFloat(img.style.width) <= 0)) {
-            debugLog(`Sample ${sampleIndex}, Trait ${trait.id}: Invalid image after scaling, switching to placeholder.`);
-            img.src = "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Perceptrons_Logo_Perc_Creator_600px.webp";
-            await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; }); // Wait for placeholder
-            await applyScalingToImage(img); // Re-scale placeholder
+          if (!isValidImage(img) || parseFloat(img.style.width) <= 0) {
+            img.src = "https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp";
+            await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+            await applyScalingToImage(img);
           }
 
-          // Apply position (per-variant or default center)
+          // Apply position
           const key = `trait${trait.id}-${variantId}-position`;
-          const savedPosition = isPlaceholder ? null : localStorage.getItem(key); // Don't use saved pos for placeholders
+          const savedPosition = localStorage.getItem(key);
           let finalLeft = "50%";
           let finalTop = "50%";
           let transform = "translate(-50%, -50%)";
@@ -1867,8 +1858,7 @@ async function updatePreviewSamples() {
             position: { left: finalLeft, top: finalTop }
           });
 
-          return img; // Return configured image
-
+          return img;
         } catch (e) {
           debugLog(`Error processing image for sample ${sampleIndex}, trait ${trait.id}:`, e);
           return null;
