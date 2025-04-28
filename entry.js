@@ -7,20 +7,16 @@ function generateId() {
 
 const TraitManager = {
   traits: [],
+  
   initialize() {
     this.traits = [];
     for (let i = 0; i < 3; i++) {
       this.addTrait(i + 1);
     }
     this.sortTraits();
-
-    // Removed placeholder variant addition to prevent background image from being used as a trait
-
-    const traitsPanel = document.querySelector('.traits-panel-container .panel-content');
-    if (traitsPanel) {
-      traitsPanel.style.maxHeight = '400px';
-    }
+    updatePreviewSamples();
   },
+
   addTrait(position) {
     const newTrait = {
       id: generateId(),
@@ -28,95 +24,82 @@ const TraitManager = {
       name: '',
       variants: [],
       selected: 0,
-      zIndex: this.traits.length + 1 - position,
-      createdAt: Date.now()
+      zIndex: this.traits.length + 1 - position
     };
+    
     this.traits.forEach(trait => {
       if (trait.position >= position) {
         trait.position++;
         trait.zIndex = this.traits.length + 1 - trait.position;
       }
     });
+    
     this.traits.push(newTrait);
     this.sortTraits();
-    if (this.traits.length > 3) {
-      const traitsPanel = document.querySelector('.traits-panel-container .panel-content');
-      if (traitsPanel) {
-        traitsPanel.style.maxHeight = 'max(70vh, 2400px)';
-      }
-    }
+    updatePreviewSamples();
     return newTrait;
   },
-  sortTraits() {
-    this.traits.sort((a, b) => a.position - b.position);
-    this.traits.forEach((trait, idx) => {
-      trait.zIndex = this.traits.length - idx;
-    });
-  },
-  removeTrait(traitId) {
-    const traitIndex = this.traits.findIndex(trait => trait.id === traitId);
-    if (traitIndex === -1) return;
-    const removedTrait = this.traits[traitIndex];
-    const removedPosition = removedTrait.position;
-    this.traits.splice(traitIndex, 1);
-    this.traits.forEach(trait => {
-      if (trait.position > removedPosition) {
-        trait.position--;
-        trait.zIndex = this.traits.length + 1 - trait.position;
-      }
-    });
-  },
-  moveTrait(traitId, newPosition) {
-    const trait = this.traits.find(t => t.id === traitId);
-    if (!trait) return;
-    const oldPosition = trait.position;
-    if (newPosition < oldPosition) {
-      this.traits.forEach(t => {
-        if (t.position >= newPosition && t.position < oldPosition) t.position++;
-      });
-    } else if (newPosition > oldPosition) {
-      this.traits.forEach(t => {
-        if (t.position > oldPosition && t.position <= newPosition) t.position--;
-      });
-    }
-    trait.position = newPosition;
-    this.sortTraits();
-  },
+
   addVariant(traitId, variantData) {
-    const trait = this.traits.find(t => t.id === traitId);
+    const trait = this.getTrait(traitId);
     if (!trait) return;
+    
     const newVariant = {
       id: generateId(),
       name: variantData.name,
       url: variantData.url,
-      chance: variantData.chance || 0.5,
-      createdAt: Date.now()
+      chance: variantData.chance || 0.5
     };
+    
     trait.variants.push(newVariant);
+    updatePreviewSamples();
     return newVariant;
   },
+
   removeVariant(traitId, variantId) {
-    const trait = this.traits.find(t => t.id === traitId);
+    const trait = this.getTrait(traitId);
     if (!trait) return;
-    const variantIndex = trait.variants.findIndex(v => v.id === variantId);
-    if (variantIndex === -1) return;
-    trait.variants.splice(variantIndex, 1);
-    if (trait.selected >= trait.variants.length) {
-      trait.selected = Math.max(0, trait.variants.length - 1);
+    
+    const index = trait.variants.findIndex(v => v.id === variantId);
+    if (index !== -1) {
+      trait.variants.splice(index, 1);
+      if (trait.selected >= trait.variants.length) {
+        trait.selected = Math.max(0, trait.variants.length - 1);
+      }
+      updatePreviewSamples();
     }
   },
-  updateVariantChance(traitId, variantId, chance) {
-    const trait = this.traits.find(t => t.id === traitId);
-    if (!trait) return;
-    const variant = trait.variants.find(v => v.id === variantId);
-    if (!variant) return;
-    variant.chance = chance;
+
+  removeTrait(traitId) {
+    const index = this.traits.findIndex(t => t.id === traitId);
+    if (index === -1) return;
+    
+    const position = this.traits[index].position;
+    this.traits.splice(index, 1);
+    
+    this.traits.forEach(trait => {
+      if (trait.position > position) {
+        trait.position--;
+        trait.zIndex = this.traits.length + 1 - trait.position;
+      }
+    });
+    
+    updatePreviewSamples();
   },
+
   getTrait(traitId) {
     return this.traits.find(t => t.id === traitId);
   },
+
   getAllTraits() {
     return [...this.traits];
+  },
+
+  sortTraits() {
+    this.traits.sort((a, b) => a.position - b.position);
+    this.traits.forEach((trait, i) => {
+      trait.zIndex = this.traits.length - i;
+    });
   }
 };
 
@@ -1155,79 +1138,34 @@ function setupTraitListeners(traitId) {
       title.textContent = `TRAIT ${position}${trait.name ? ` - ${trait.name}` : ''}`;
     });
 
+    // CORRECTED FILE UPLOAD HANDLER (no syntax errors)
     fileInput.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
 
       const trait = TraitManager.getTrait(traitId);
-      const position = Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1;
-      const placeholderPattern = `Trait Name (e.g., ${position === 1 ? 'Eyes' : position === 2 ? 'Hair' : 'Accessories'})`;
-      if (nameInput.dataset.userEntered !== 'true') {
-        trait.name = '';
-        nameInput.value = placeholderPattern;
-      }
+      if (!trait) return;
 
       trait.variants = [];
-      grid.innerHTML = '';
-
+      
       for (const file of files) {
-        const variationName = file.name.split('.').slice(0, -1).join('.');
+        const name = file.name.split('.').slice(0, -1).join('.');
         const url = URL.createObjectURL(file);
         const data = await file.arrayBuffer();
-        const variant = TraitManager.addVariant(traitId, { name: variationName, url });
-        variant.data = data;
-
-        const container = document.createElement('div');
-        container.className = 'variation-container';
-        container.dataset.traitId = traitId;
-        container.dataset.variationId = variant.id;
-
-        const imageWrapper = document.createElement('div');
-        imageWrapper.className = 'variation-image-wrapper';
-
-        const img = document.createElement('img');
-        img.src = url;
-        img.alt = variationName;
-        img.className = 'variation';
-
-        const filename = document.createElement('div');
-        filename.className = 'variation-filename';
-        filename.textContent = file.name;
-
-        imageWrapper.appendChild(img);
-        container.appendChild(imageWrapper);
-        container.appendChild(filename);
-        container.addEventListener('click', () => {
-          debugLog(`Clicked variant: Trait ${traitId}, Variation ${variationName}`);
-          const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
-          allWrappers.forEach(w => w.classList.remove('selected'));
-          imageWrapper.classList.add('selected');
-          selectVariation(traitId, variant.id);
+        
+        TraitManager.addVariant(traitId, {
+          name: name,
+          url: url,
+          data: data
         });
-
-        grid.appendChild(container);
-
-        const key = `${traitId}-${variationName}`;
-        if (!variantHistories[key]) {
-          variantHistories[key] = [{ left: 0, top: 0 }];
-          localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify({ left: 0, top: 0 }));
-          localStorage.removeItem(`trait${traitId}-${variationName}-manuallyMoved`);
-        }
       }
 
       if (trait.variants.length > 0) {
         selectVariation(traitId, trait.variants[0].id);
-        const firstWrapper = grid.querySelector('.variation-image-wrapper');
-        if (firstWrapper) firstWrapper.classList.add('selected');
-        autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
-        fileInputLabel.textContent = 'Choose New Files';
       }
-
-      updateMintButton();
-      updatePreviewSamples();
     });
-  }
 
+    // Arrow button handlers (keep existing)
   const upArrow = document.querySelector(`.up-arrow[data-trait="${traitId}"]`);
   const downArrow = document.querySelector(`.down-arrow[data-trait="${traitId}"]`);
   const addTraitBtn = document.querySelector(`.add-trait[data-trait="${traitId}"]`);
