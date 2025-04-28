@@ -1477,6 +1477,7 @@ async function setupDragAndDrop(img, traitIndex) {
       debugLog("startDragging: Invalid target or not in traitImages", targetImg);
       return;
     }
+  }
 
     // Set state critical for dragging *before* awaiting scaling
     currentImage = targetImg;
