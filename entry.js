@@ -149,6 +149,9 @@ clickSound.volume = 0.25;
 
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
 
+
+
+
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000;
@@ -481,15 +484,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       const maxWidth = window.innerWidth * 0.9;
       const maxHeight = window.innerHeight * 0.9;
       let scale = 1;
+      let magnifySize;
       // Adjust the size of the enlargedPreview (inner content area) based on the window size
       if (maxWidth / maxHeight > 1) {
         enlargedPreview.style.height = `${maxHeight - 60}px`; // Subtract padding/margins
         enlargedPreview.style.width = `${maxHeight - 60}px`;
-        scale = (maxHeight - 60) / 600; // Scale relative to the base 600px size
+        magnifySize = maxHeight - 60;
+        scale = magnifySize / 600; // Scale relative to the base 600px size
       } else {
         enlargedPreview.style.width = `${maxWidth - 60}px`;
         enlargedPreview.style.height = `${maxWidth - 60}px`;
-        scale = (maxWidth - 60) / 600;
+        magnifySize = maxWidth - 60;
+        scale = magnifySize / 600;
       }
 
       const controls = document.getElementById('enlarged-preview-controls');
@@ -515,14 +521,43 @@ document.addEventListener('DOMContentLoaded', async () => {
             const img = document.createElement('img');
             img.src = variant.url;
             const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
-            img.style.width = `${parseFloat(baseImg.style.width || '600') * scale}px`;
-            img.style.height = `${parseFloat(baseImg.style.height || '600') * scale}px`;
-            img.style.left = `${parseFloat(baseImg.style.left || '0') * scale}px`;
-            img.style.top = `${parseFloat(baseImg.style.top || '0') * scale}px`;
-            img.style.zIndex = trait.zIndex;
-            img.style.position = 'absolute';
-            img.style.visibility = 'visible';
-            enlargedPreview.appendChild(img);
+
+            // Load the image to get its natural dimensions if style dimensions aren't set
+            const tempImg = new Image();
+            tempImg.src = variant.url;
+            tempImg.onload = () => {
+              // Use the natural dimensions if style dimensions aren't set
+              const baseWidth = parseFloat(baseImg.style.width) || tempImg.naturalWidth || 600;
+              const baseHeight = parseFloat(baseImg.style.height) || tempImg.naturalHeight || 600;
+              const baseLeft = parseFloat(baseImg.style.left) || 0;
+              const baseTop = parseFloat(baseImg.style.top) || 0;
+
+              // Scale the dimensions and positions
+              img.style.width = `${baseWidth * scale}px`;
+              img.style.height = `${baseHeight * scale}px`;
+              img.style.left = `${baseLeft * scale}px`;
+              img.style.top = `${baseTop * scale}px`;
+              img.style.zIndex = trait.zIndex;
+              img.style.position = 'absolute';
+              img.style.visibility = 'visible';
+              enlargedPreview.appendChild(img);
+            };
+            tempImg.onerror = () => {
+              // Fallback if the image fails to load
+              const baseWidth = parseFloat(baseImg.style.width) || 600;
+              const baseHeight = parseFloat(baseImg.style.height) || 600;
+              const baseLeft = parseFloat(baseImg.style.left) || 0;
+              const baseTop = parseFloat(baseImg.style.top) || 0;
+
+              img.style.width = `${baseWidth * scale}px`;
+              img.style.height = `${baseHeight * scale}px`;
+              img.style.left = `${baseLeft * scale}px`;
+              img.style.top = `${baseTop * scale}px`;
+              img.style.zIndex = trait.zIndex;
+              img.style.position = 'absolute';
+              img.style.visibility = 'visible';
+              enlargedPreview.appendChild(img);
+            };
           }
         });
       };
