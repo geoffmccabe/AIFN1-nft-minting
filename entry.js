@@ -1642,7 +1642,7 @@ async function fetchMultipleBackgrounds(count) {
       container.dataset.index = i;
 
       const img = document.createElement('img');
-      img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+      img.src = 'https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp';
       img.draggable = true;
       img.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', img.src);
@@ -1672,10 +1672,10 @@ async function fetchMultipleBackgrounds(count) {
         img.src = data.imageUrl;
       } catch (error) {
         console.error(`Error fetching background ${i + 1}:`, error);
-        imageUrls[i] = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+        imageUrls[i] = 'https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp';
         const container = grid.querySelector(`.gen-image-container[data-index="${i}"]`);
         const img = container.querySelector('img');
-        img.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
+        img.src = 'https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp';
       }
     }
 
@@ -1721,7 +1721,7 @@ async function fetchMultipleBackgrounds(count) {
       fullImg.addEventListener('click', () => {
         backgroundDetails.innerHTML = '';
         backgroundDetails.appendChild(grid);
-        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp')`;
         preview.style.backgroundSize = 'cover';
       });
 
@@ -1767,8 +1767,8 @@ async function fetchMultipleBackgrounds(count) {
         backgroundDetails.appendChild(grid);
         const containerToUpdate = grid.querySelector(`.gen-image-container[data-index="${index}"]`);
         const imgToUpdate = containerToUpdate.querySelector('img');
-        imgToUpdate.src = 'https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp';
-        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        imgToUpdate.src = 'https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp';
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp')`;
         preview.style.backgroundSize = 'cover';
       };
 
@@ -1776,7 +1776,7 @@ async function fetchMultipleBackgrounds(count) {
         addToChosenGrid(fullImg.src);
         backgroundDetails.innerHTML = '';
         backgroundDetails.appendChild(grid);
-        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/AIFN1-nft-minting/main/images/Preview_Panel_Bkgd_600px.webp')`;
+        preview.style.background = `url('https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Preview_Panel_Bkgd_600px.webp')`;
         preview.style.backgroundSize = 'cover';
       };
     });
