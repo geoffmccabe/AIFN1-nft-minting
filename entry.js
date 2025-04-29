@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const db = await openDB();
       const tx = db.transaction(['projects', 'images'], 'readonly');
       const projectStore = tx.objectStore('projects');
-      const imageStore = tx.object鹿Store('images');
+      const imageStore = tx.objectStore('images');
       const slot = document.getElementById('project-slot').value;
       const project = await new Promise(resolve => projectStore.get(slot).onsuccess = e => resolve(e.target.result));
 
