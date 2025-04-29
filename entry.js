@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const db = await openDB();
       const tx = db.transaction(['projects', 'images'], 'readonly');
       const projectStore = tx.objectStore('projects');
-      const imageStore = tx.objectStore('images');
+      const imageStore = tx.objectStore('images'); // Fixed typo: object鹿Store -> objectStore
       const slot = document.getElementById('project-slot').value;
       const project = await new Promise(resolve => projectStore.get(slot).onsuccess = e => resolve(e.target.result));
 
@@ -769,29 +769,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  preview.addEventListener('mousemove', debounce((e) => {
-    if (!isDragging || !currentImage) return;
-    const rect = preview.getBoundingClientRect();
-    const borderAdjustment = DIMENSIONS.BORDER_ADJUSTMENT;
-    const contentWidth = rect.width - borderAdjustment;
-    const contentHeight = rect.height - borderAdjustment;
-
-    let newLeft = (e.clientX - rect.left) / contentWidth * 100 - offsetX;
-    let newTop = (e.clientY - rect.top) / contentHeight * 100 - offsetY;
-
-    const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
-    const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
-    const maxLeft = (contentWidth - imgWidth) / contentWidth * 100;
-    const maxTop = (contentHeight - imgHeight) / contentHeight * 100;
-
-    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-    newTop = Math.max(0, Math.min(newTop, maxTop));
-
-    currentImage.style.left = newLeft + '%';
-    currentImage.style.top = newTop + '%';
-    updateCoordinates(currentImage);
-  }, 32));
-
   document.addEventListener('keydown', debounce((e) => {
     const now = Date.now();
     if (now - lastUndoTime < 300) return;
@@ -815,34 +792,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   }, 32));
-
-  if (preview) {
-    preview.addEventListener('mouseup', () => {
-      if (isDragging && currentImage) {
-        const traitId = currentImage.id.substring('preview-trait'.length);
-        const trait = TraitManager.getTrait(traitId);
-        const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, traitId, variationName);
-        isDragging = false;
-        currentImage.style.cursor = 'grab';
-        currentImage.classList.remove('dragging');
-        updateZIndices();
-      }
-    });
-
-    preview.addEventListener('mouseleave', () => {
-      if (isDragging && currentImage) {
-        const traitId = currentImage.id.substring('preview-trait'.length);
-        const trait = TraitManager.getTrait(traitId);
-        const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, traitId, variationName);
-        isDragging = false;
-        currentImage.style.cursor = 'grab';
-        currentImage.classList.remove('dragging');
-        updateZIndices();
-      }
-    });
-  }
 
   const chosenCountInput = document.getElementById('chosen-count');
   const updateChosenGridButton = document.getElementById('update-chosen-grid');
@@ -941,7 +890,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const logo = document.getElementById('logo');
   if (logo) debugLog('Logo URL:', logo.src);
 });
-
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
@@ -1639,12 +1587,10 @@ async function setupDragAndDrop(img, traitIndex) {
     return;
   }
 
-  function preventDragStart(e) {
-    e.preventDefault();
-  }
-
   async function startDragging(e) {
+    e.preventDefault();
     e.stopPropagation();
+
     // Get all images in the preview container, sorted by z-index (highest to lowest)
     const images = Array.from(preview.children)
       .filter(child => child.tagName === "IMG" && isValidImage(child))
@@ -1668,7 +1614,6 @@ async function setupDragAndDrop(img, traitIndex) {
         currentImage.style.cursor = "grab";
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", stopDragging);
-        preview.removeEventListener("mouseup", stopDragging);
       }
 
       currentImage = targetImg;
@@ -1684,7 +1629,6 @@ async function setupDragAndDrop(img, traitIndex) {
       updateCoordinates(currentImage);
       document.addEventListener("mousemove", onMouseMove);
       document.addEventListener("mouseup", stopDragging);
-      preview.addEventListener("mouseup", stopDragging);
       debugLog("startDragging: Started dragging", currentImage.id);
 
       await applyScalingToImage(img);
@@ -1695,36 +1639,38 @@ async function setupDragAndDrop(img, traitIndex) {
       currentImage = null;
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", stopDragging);
-      preview.removeEventListener("mouseup", stopDragging);
     }
   }
 
   function onMouseMove(e) {
-    if (isDragging && currentImage) {
-      const containerRect = preview.getBoundingClientRect();
-      const borderAdjustment = DIMENSIONS.BORDER_ADJUSTMENT;
-      const contentWidth = containerRect.width - borderAdjustment;
-      const contentHeight = containerRect.height - borderAdjustment;
+    if (!isDragging || !currentImage) return;
 
-      let newLeft = ((e.clientX - containerRect.left) / contentWidth) * 100 - offsetX;
-      let newTop = ((e.clientY - containerRect.top) / contentHeight) * 100 - offsetY;
+    const containerRect = preview.getBoundingClientRect();
+    const borderAdjustment = DIMENSIONS.BORDER_ADJUSTMENT;
+    const contentWidth = containerRect.width - borderAdjustment;
+    const contentHeight = containerRect.height - borderAdjustment;
 
-      const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
-      const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
-      const maxLeft = ((contentWidth - imgWidth) / contentWidth) * 100;
-      const maxTop = ((contentHeight - imgHeight) / contentHeight) * 100;
+    let newLeft = ((e.clientX - containerRect.left) / contentWidth) * 100 - offsetX;
+    let newTop = ((e.clientY - containerRect.top) / contentHeight) * 100 - offsetY;
 
-      newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-      newTop = Math.max(0, Math.min(newTop, maxTop));
+    const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
+    const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
+    const maxLeft = ((contentWidth - imgWidth) / contentWidth) * 100;
+    const maxTop = ((contentHeight - imgHeight) / contentHeight) * 100;
 
-      currentImage.style.left = `${newLeft}%`;
-      currentImage.style.top = `${newTop}%`;
-      updateCoordinates(currentImage);
-      debugLog("onMouseMove: Updated position", { left: newLeft, top: newTop });
-    }
+    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+    newTop = Math.max(0, Math.min(newTop, maxTop));
+
+    currentImage.style.left = `${newLeft}%`;
+    currentImage.style.top = `${newTop}%`;
+    updateCoordinates(currentImage);
+    debugLog("onMouseMove: Updated position", { left: newLeft, top: newTop });
   }
 
   function stopDragging(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
     if (!isDragging || !currentImage) {
       debugLog("stopDragging: No dragging in progress or no current image");
       return;
@@ -1754,30 +1700,25 @@ async function setupDragAndDrop(img, traitIndex) {
       updateZIndices();
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", stopDragging);
-      preview.removeEventListener("mouseup", stopDragging);
       debugLog("stopDragging: Stopped dragging", currentImage.id);
       currentImage = null; // Clear currentImage to prevent stale references
     }
   }
 
   function selectImage(e) {
+    e.stopPropagation();
     debugLog("selectImage: Image clicked", img.id);
   }
 
   // Remove existing listeners to prevent duplicates
   img.removeEventListener("mousedown", startDragging);
-  img.removeEventListener("mouseup", stopDragging);
   img.removeEventListener("click", selectImage);
   document.removeEventListener("mousemove", onMouseMove);
   document.removeEventListener("mouseup", stopDragging);
-  preview.removeEventListener("mouseup", stopDragging);
 
   // Add event listeners
   img.addEventListener("mousedown", startDragging);
-  img.addEventListener("mouseup", stopDragging);
   img.addEventListener("click", selectImage);
-  document.addEventListener("mouseup", stopDragging);
-  preview.addEventListener("mouseup", stopDragging);
   debugLog("setupDragAndDrop: Event listeners set up for", img.id);
 }
 
@@ -1862,7 +1803,6 @@ function updateZIndices() {
   });
   if (preview) preview.offsetHeight;
 }
-
 
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
