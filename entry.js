@@ -1672,7 +1672,8 @@ async function setupDragAndDrop(img, traitIndex) {
       currentImage.classList.add("dragging");
       updateCoordinates(currentImage);
       document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", stopDragging); // Ensure document-level mouseup
+      document.addEventListener("mouseup", stopDragging);
+      preview.addEventListener("mouseup", stopDragging); // Ensure preview-level mouseup
       debugLog("startDragging: Started dragging", currentImage.id);
 
       await applyScalingToImage(img);
@@ -1681,6 +1682,9 @@ async function setupDragAndDrop(img, traitIndex) {
       console.error("startDragging: Error during async scaling", scaleError);
       isDragging = false;
       currentImage = null;
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", stopDragging);
+      preview.removeEventListener("mouseup", stopDragging);
     }
   }
 
@@ -1709,7 +1713,7 @@ async function setupDragAndDrop(img, traitIndex) {
     }
   }
 
-  function stopDragging() {
+  function stopDragging(e) {
     if (isDragging && currentImage) {
       const traitId = currentImage.id.substring("preview-trait".length);
       const trait = TraitManager.getTrait(traitId);
@@ -1725,6 +1729,7 @@ async function setupDragAndDrop(img, traitIndex) {
       updateZIndices();
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", stopDragging);
+      preview.removeEventListener("mouseup", stopDragging);
       debugLog("stopDragging: Stopped dragging", currentImage.id);
     } else {
       debugLog("stopDragging: No dragging in progress or no current image");
@@ -1740,12 +1745,14 @@ async function setupDragAndDrop(img, traitIndex) {
   img.removeEventListener("mouseup", stopDragging);
   img.removeEventListener("click", selectImage);
   document.removeEventListener("mouseup", stopDragging);
+  preview.removeEventListener("mouseup", stopDragging);
 
   img.addEventListener("dragstart", preventDragStart);
   img.addEventListener("mousedown", startDragging);
   img.addEventListener("mouseup", stopDragging);
   img.addEventListener("click", selectImage);
   document.addEventListener("mouseup", stopDragging);
+  preview.addEventListener("mouseup", stopDragging);
   debugLog("setupDragAndDrop: Event listeners set up for", img.id);
 }
 
@@ -1826,12 +1833,14 @@ function updateZIndices() {
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
-function updateSamplePositions(traitId, variationId, position) {
+
+
+function updateSamplePositions(traitId, variantId, position) {
   for (let i = 0; i < 16; i++) {
     const sample = sampleData[i] || [];
     let updated = false;
     for (let j = 0; j < sample.length; j++) {
-      if (sample[j].traitId === traitId && sample[j].variantId === variationId) {
+      if (sample[j].traitId === traitId && sample[j].variantId === variantId) {
         sample[j].position = position;
         updated = true;
         break;
@@ -1842,7 +1851,7 @@ function updateSamplePositions(traitId, variationId, position) {
     }
     sampleData[i] = sample;
   }
-  debugLog(`updateSamplePositions: Updated position for Trait ${traitId}, Variant ${variationId}`, position);
+  debugLog(`updateSamplePositions: Updated position for Trait ${traitId}, Variant ${variantId}`, position);
   updatePreviewSamples();
 }
 
@@ -1971,8 +1980,6 @@ async function updatePreviewSamples() {
     previewSamplesGrid.appendChild(sampleContainer);
   }
 }
-
-
 
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
