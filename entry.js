@@ -1441,30 +1441,83 @@ function applyScalingToSamples() {
 }
 
 function initializePositions() {
-  TraitManager.getAllTraits().forEach((trait) => {
-    const img = traitImages.find((ti) => ti.id === "preview-trait" + trait.id);
-    if (img && img.src && img.src !== "") {
-      applyScalingToImage(img).then(() => {
-        const variantId = trait.variants[trait.selected]?.id || "";
-        const key = `trait${trait.id}-${variantId}-position`;
-        const savedPosition = localStorage.getItem(key);
-        try {
-          if (savedPosition) {
-            const { left, top } = JSON.parse(savedPosition);
-            img.style.left = left + "%";
-            img.style.top = top + "%";
-          } else {
-            img.style.left = "0%";
-            img.style.top = "0%";
-          }
-        } catch (e) {
-          debugLog("Invalid position data for trait " + trait.id + ":", e);
-          img.style.left = "0%";
-          img.style.top = "0%";
+    debugLog("Running initializePositions..."); // Added log
+    TraitManager.getAllTraits().forEach((trait) => {
+        const img = traitImages.find((ti) => ti.id === "preview-trait" + trait.id);
+
+        // Ensure trait, image, variants exist and selection is valid
+        if (img && trait.variants && trait.variants.length > 0 && trait.selected >= 0 && trait.selected < trait.variants.length) {
+            const selectedVariant = trait.variants[trait.selected];
+
+            // *** Get the name of the selected variant ***
+            const variantName = selectedVariant.name;
+
+            if (!variantName) {
+                 console.error(`initializePositions: Variant name is missing for selected variant index ${trait.selected} in trait ${trait.id}`);
+                 img.style.visibility = "hidden"; // Hide if data is inconsistent
+                 return; // Skip this trait image
+            }
+
+             debugLog(`initializePositions: Processing Trait ${trait.id}, Selected Variant Name: ${variantName}`);
+
+             // Apply scaling first (ensure it completes if async)
+            applyScalingToImage(img).then(() => { // Assuming applyScalingToImage might be async
+                // *** MODIFIED: Use variantName for the localStorage key lookup ***
+                const key = `trait${trait.id}-${variantName}-position`;
+                const savedPosition = localStorage.getItem(key);
+                 debugLog(`initializePositions: Looking for key "${key}" in localStorage. Found: ${savedPosition ? 'Yes' : 'No'}`);
+
+                try {
+                    if (savedPosition) {
+                        const { left, top } = JSON.parse(savedPosition);
+                        // Optional: Add boundary checks based on scaled size if necessary
+                        img.style.left = left + "%";
+                        img.style.top = top + "%";
+                        debugLog(`initializePositions: Applied position for Trait ${trait.id}, Variant ${variantName}: left=${left}%, top=${top}%`);
+                    } else {
+                        // Default position if not found in localStorage
+                        img.style.left = "0%";
+                        img.style.top = "0%";
+                        debugLog(`initializePositions: No position found for Trait ${trait.id}, Variant ${variantName}. Defaulting to 0%, 0%.`);
+                    }
+                } catch (e) {
+                    console.error(`initializePositions: Invalid position data for trait ${trait.id}, Variant ${variantName}:`, e, `Raw data: "${savedPosition}"`);
+                    img.style.left = "0%";
+                    img.style.top = "0%";
+                    localStorage.removeItem(key); // Clear invalid data
+                }
+                 // Ensure image visibility matches its state after potentially loading src in loadProject/selectVariation
+                 if (img.src && img.src !== "" && !img.src.includes('placeholder.com') && selectedVariant.url === img.src) {
+                      img.style.visibility = "visible";
+                 } else {
+                      img.style.visibility = "hidden";
+                      if (selectedVariant.url !== img.src) {
+                           debugLog(`initializePositions: Hiding image ${img.id} because its src (${img.src}) doesn't match selected variant URL (${selectedVariant.url})`);
+                      }
+                 }
+            }).catch(error => {
+                 console.error(`Error applying scaling during initializePositions for ${img.id}:`, error);
+                 // Handle scaling error, maybe default position and hide?
+                 img.style.left = "0%";
+                 img.style.top = "0%";
+                 img.style.visibility = "hidden";
+            });
+
+        } else if (img) {
+             // Handle cases where the image element exists but trait/variant data is inconsistent after load
+             img.style.visibility = "hidden";
+             img.style.left = "0%";
+             img.style.top = "0%";
+             if(!trait.variants || trait.variants.length === 0) {
+                debugLog(`initializePositions: Trait ${trait.id} has no variants.`);
+             } else {
+                debugLog(`initializePositions: Trait ${trait.id} has invalid selected index: ${trait.selected}`);
+             }
+        } else {
+             debugLog(`initializePositions: Preview image not found for trait ${trait.id}`);
         }
-      });
-    }
-  });
+    });
+     debugLog("Finished initializePositions."); // Added log
 }
 
 async function selectVariation(traitId, variationId) {
