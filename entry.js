@@ -1565,7 +1565,6 @@ async function selectVariation(traitId, variationId) {
       updateZIndices();
       updateCoordinates(previewImage);
       applyScalingToSamples();
-      // Ensure the samples grid reflects the updated position
       if (typeof updatePreviewSamples === "function") {
         updatePreviewSamples();
       }
@@ -1573,6 +1572,65 @@ async function selectVariation(traitId, variationId) {
   } else {
     debugLog("Preview image for trait " + traitId + " not found in traitImages");
   }
+}
+
+// Helper function to determine if a click is on a transparent pixel
+async function isTransparentClick(img, clickX, clickY) {
+  if (!img || !img.src) return false;
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  ctx.drawImage(img, 0, 0);
+
+  // Adjust click coordinates to the image's natural dimensions
+  const rect = img.getBoundingClientRect();
+  const scaleX = img.naturalWidth / rect.width;
+  const scaleY = img.naturalHeight / rect.height;
+  const adjustedX = (clickX - rect.left) * scaleX;
+  const adjustedY = (clickY - rect.top) * scaleY;
+
+  const pixelData = ctx.getImageData(adjustedX, adjustedY, 1, 1).data;
+  const alpha = pixelData[3]; // Alpha channel (0 = fully transparent, 255 = fully opaque)
+  return alpha === 0;
+}
+
+// Helper function to find the topmost non-transparent image at a click position
+async function findImageAtPosition(images, clickX, clickY) {
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    if (!isValidImage(img)) continue;
+
+    const rect = img.getBoundingClientRect();
+    if (
+      clickX >= rect.left &&
+      clickX <= rect.right &&
+      clickY >= rect.top &&
+      clickY <= rect.bottom
+    ) {
+      const isTransparent = await isTransparentClick(img, clickX, clickY);
+      if (!isTransparent) {
+        return img;
+      }
+    }
+  }
+  // If no non-transparent image is found, return the topmost image at the position
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    if (!isValidImage(img)) continue;
+
+    const rect = img.getBoundingClientRect();
+    if (
+      clickX >= rect.left &&
+      clickX <= rect.right &&
+      clickY >= rect.top &&
+      clickY <= rect.bottom
+    ) {
+      return img;
+    }
+  }
+  return null;
 }
 
 async function setupDragAndDrop(img, traitIndex) {
@@ -1586,16 +1644,25 @@ async function setupDragAndDrop(img, traitIndex) {
   }
 
   async function startDragging(e) {
-    const targetImg = e.target;
-    if (!isValidImage(targetImg) || !traitImages.includes(targetImg)) {
-      debugLog("startDragging: Invalid target or not in traitImages", targetImg);
+    // Get all images in the preview container, sorted by z-index (highest to lowest)
+    const images = Array.from(preview.children)
+      .filter(child => child.tagName === "IMG" && isValidImage(child))
+      .sort((a, b) => parseInt(b.style.zIndex || 0) - parseInt(a.style.zIndex || 0));
+
+    const clickX = e.clientX;
+    const clickY = e.clientY;
+
+    // Find the topmost non-transparent image at the click position
+    const targetImg = await findImageAtPosition(images, clickX, clickY);
+    if (!targetImg) {
+      debugLog("startDragging: No valid image found at click position", { clickX, clickY });
       return;
     }
 
     try {
       currentImage = targetImg;
       isDragging = true;
-      const containerRect = currentImage.parentElement.getBoundingClientRect();
+      const containerRect = preview.getBoundingClientRect();
       const imageRect = currentImage.getBoundingClientRect();
       const pointerX = e.clientX - imageRect.left;
       const pointerY = e.clientY - imageRect.top;
@@ -1605,6 +1672,7 @@ async function setupDragAndDrop(img, traitIndex) {
       currentImage.classList.add("dragging");
       updateCoordinates(currentImage);
       document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", stopDragging); // Ensure document-level mouseup
       debugLog("startDragging: Started dragging", currentImage.id);
 
       await applyScalingToImage(img);
@@ -1618,7 +1686,7 @@ async function setupDragAndDrop(img, traitIndex) {
 
   function onMouseMove(e) {
     if (isDragging && currentImage) {
-      const containerRect = currentImage.parentElement.getBoundingClientRect();
+      const containerRect = preview.getBoundingClientRect();
       const borderAdjustment = DIMENSIONS.BORDER_ADJUSTMENT;
       const contentWidth = containerRect.width - borderAdjustment;
       const contentHeight = containerRect.height - borderAdjustment;
@@ -1656,6 +1724,7 @@ async function setupDragAndDrop(img, traitIndex) {
       currentImage.classList.remove("dragging");
       updateZIndices();
       document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", stopDragging);
       debugLog("stopDragging: Stopped dragging", currentImage.id);
     } else {
       debugLog("stopDragging: No dragging in progress or no current image");
@@ -1728,6 +1797,8 @@ function savePosition(img, traitId, variationName) {
 
   const traitIndex = TraitManager.getAllTraits().findIndex((t) => t.id === traitId);
   autoPositioned[traitIndex] = true;
+
+  debugLog(`savePosition: Saved position for Trait ${traitId}, Variant ${variantId}`, position);
 
   if (typeof updateSamplePositions === "function") {
     updateSamplePositions(traitId, variantId, position);
