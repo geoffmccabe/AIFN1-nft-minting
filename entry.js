@@ -1331,13 +1331,17 @@ function refreshTraitGrid(traitId) {
     if (savedPosition) {
       try {
         const { left, top } = JSON.parse(savedPosition);
-        previewImage.style.left = `${left}px`;
-        previewImage.style.top = `${top}px`;
+        previewImage.style.left = `${left}%`;
+        previewImage.style.top = `${top}%`;
+        debugLog(`refreshTraitGrid: Applied position for Trait ${traitId}, Variant ${trait.variants[trait.selected].id}: left=${left}%, top=${top}%`);
       } catch (e) {
         debugLog('Invalid position data in refreshTraitGrid:', e);
-        previewImage.style.left = '0px';
-        previewImage.style.top = '0px';
+        previewImage.style.left = '0%';
+        previewImage.style.top = '0%';
       }
+    } else {
+      previewImage.style.left = '0%';
+      previewImage.style.top = '0%';
     }
   }
 }
@@ -1544,6 +1548,7 @@ async function selectVariation(traitId, variationId) {
           previewImage.style.left = Math.max(0, Math.min(normalized.left, maxLeft)) + "%";
           previewImage.style.top = Math.max(0, Math.min(normalized.top, maxTop)) + "%";
           if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
+          debugLog(`selectVariation: Applied position for Trait ${traitId}, Variant ${variationId}: left=${normalized.left}%, top=${normalized.top}%`);
         } else {
           previewImage.style.left = "0%";
           previewImage.style.top = "0%";
@@ -1554,11 +1559,16 @@ async function selectVariation(traitId, variationId) {
         debugLog("Invalid position data for trait " + traitId + ":", e);
         previewImage.style.left = "0%";
         previewImage.style.top = "0%";
+        localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
       }
       currentImage = previewImage;
       updateZIndices();
       updateCoordinates(previewImage);
       applyScalingToSamples();
+      // Ensure the samples grid reflects the updated position
+      if (typeof updatePreviewSamples === "function") {
+        updatePreviewSamples();
+      }
     });
   } else {
     debugLog("Preview image for trait " + traitId + " not found in traitImages");
@@ -1719,12 +1729,10 @@ function savePosition(img, traitId, variationName) {
   const traitIndex = TraitManager.getAllTraits().findIndex((t) => t.id === traitId);
   autoPositioned[traitIndex] = true;
 
-  // Ensure updateSamplePositions is defined and callable
   if (typeof updateSamplePositions === "function") {
     updateSamplePositions(traitId, variantId, position);
   } else {
     debugLog("savePosition: updateSamplePositions is not defined yet");
-    // Fallback: directly call updatePreviewSamples to refresh the samples
     if (typeof updatePreviewSamples === "function") {
       updatePreviewSamples();
     }
@@ -1749,13 +1757,21 @@ function updateZIndices() {
 
 function updateSamplePositions(traitId, variationId, position) {
   for (let i = 0; i < 16; i++) {
-    const sample = sampleData[i];
+    const sample = sampleData[i] || [];
+    let updated = false;
     for (let j = 0; j < sample.length; j++) {
       if (sample[j].traitId === traitId && sample[j].variantId === variationId) {
         sample[j].position = position;
+        updated = true;
+        break;
       }
     }
+    if (!updated) {
+      sample.push({ traitId, variantId, position });
+    }
+    sampleData[i] = sample;
   }
+  debugLog(`updateSamplePositions: Updated position for Trait ${traitId}, Variant ${variationId}`, position);
   updatePreviewSamples();
 }
 
@@ -1790,7 +1806,13 @@ async function updatePreviewSamples() {
     const traits = [...TraitManager.getAllTraits()].reverse();
     debugLog(`Sample ${i}: Traits available:`, traits);
 
-    // Ensure exactly one variant per trait group
+    // If no traits are loaded, render an empty sample with background
+    if (!traits.length) {
+      sampleContainer.appendChild(previewContainer);
+      previewSamplesGrid.appendChild(sampleContainer);
+      continue;
+    }
+
     let hasAllTraits = true;
     const traitVariants = traits.map(trait => {
       if (!trait.variants.length) {
@@ -1805,14 +1827,13 @@ async function updatePreviewSamples() {
       return { trait, variant };
     });
 
-    // Only proceed if all traits have at least one variant
     if (!hasAllTraits) {
       debugLog(`Sample ${i}: Skipping due to missing variants in some traits`);
       continue;
     }
 
     traitVariants.forEach(({ trait, variant }) => {
-      if (!variant) return; // Skip if no variant (shouldn't happen due to hasAllTraits check)
+      if (!variant) return;
 
       const img = document.createElement("img");
       img.alt = `${trait.name || `Trait ${trait.position}`} variant`;
@@ -1831,27 +1852,39 @@ async function updatePreviewSamples() {
         img.style.width = `${scaledWidth}px`;
         img.style.height = `${scaledHeight}px`;
         
-        let leftPx = containerSize / 2 - scaledWidth / 2;
-        let topPx = containerSize / 2 - scaledHeight / 2;
+        // Base container size before scaling (600x600px)
+        const baseContainerSize = DIMENSIONS.BASE_SIZE;
+        let leftPx = baseContainerSize / 2 - img.naturalWidth / 2;
+        let topPx = baseContainerSize / 2 - img.naturalHeight / 2;
         
         const key = `trait${trait.id}-${variant.id}-position`;
         const savedPosStr = localStorage.getItem(key);
+        const sampleEntry = (sampleData[i] || []).find(entry => entry.traitId === trait.id && entry.variantId === variant.id);
+        
         try {
-          if (savedPosStr) {
-            const savedPos = JSON.parse(savedPosStr);
-            if (typeof savedPos.left === "number" && typeof savedPos.top === "number") {
-              leftPx = (savedPos.left / 100) * containerSize - (scaledWidth / 2);
-              topPx = (savedPos.top / 100) * containerSize - (scaledHeight / 2);
-            } else {
+          let savedPos;
+          if (sampleEntry && sampleEntry.position) {
+            savedPos = sampleEntry.position;
+            debugLog(`Sample ${i}: Using position from sampleData for Trait ${trait.id}, Variant ${variant.id}`, savedPos);
+          } else if (savedPosStr) {
+            savedPos = JSON.parse(savedPosStr);
+            if (typeof savedPos.left !== "number" || typeof savedPos.top !== "number") {
               throw new Error("Invalid position format");
             }
           }
+          
+          if (savedPos) {
+            // Positions are stored as percentages relative to 600x600px
+            // Convert percentage to pixels in the base container size (600px)
+            leftPx = (savedPos.left / 100) * baseContainerSize - (img.naturalWidth / 2);
+            topPx = (savedPos.top / 100) * baseContainerSize - (img.naturalHeight / 2);
+          }
         } catch (e) {
           debugLog(`Sample ${i}: Failed to parse position for Trait ${trait.id}, Variant ${variant.id}:`, e);
-          // Reset the position in localStorage to prevent future errors
           localStorage.setItem(key, JSON.stringify({ left: 50, top: 50 }));
         }
         
+        // The transform: scale(scaleFactor) will handle the scaling of positions
         img.style.left = `${leftPx}px`;
         img.style.top = `${topPx}px`;
         
@@ -1867,6 +1900,8 @@ async function updatePreviewSamples() {
     previewSamplesGrid.appendChild(sampleContainer);
   }
 }
+
+
 
 
 /* Section 8 ----------------------------------------- BACKGROUND GENERATION AND MINTING ------------------------------------------------*/
