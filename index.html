@@ -260,6 +260,28 @@
   position: absolute;
   image-rendering: -webkit-optimize-contrast;
 }
+
+#preview {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 100%; /* Maintain aspect ratio */
+  overflow: hidden;
+  touch-action: none; /* Prevent touch scrolling during drag */
+}
+
+#preview img {
+  position: absolute;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+#preview img.dragging {
+  cursor: grabbing;
+  pointer-events: none;
+}
+
   
 </style>
   
