@@ -148,10 +148,6 @@ clickSound.volume = 0.25;
 
 
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-/* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------*/
-
-
-
 
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
@@ -175,11 +171,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   widthInput = document.getElementById('width-input');
   heightInput = document.getElementById('height-input');
 
-  console.log('DOM Elements:', { traitContainer, previewSamplesGrid, chosenGrid: document.getElementById('chosen-grid') });
+  // Add reference to magnifyPanel
+  const magnifyPanel = document.getElementById('magnify-panel');
+
+  console.log('DOM Elements:', { traitContainer, previewSamplesGrid, chosenGrid: document.getElementById('chosen-grid'), magnifyEmoji, magnifyPanel, enlargedPreview });
 
   if (!traitContainer || !previewSamplesGrid) {
     console.error('Critical DOM elements missing:', { traitContainer, previewSamplesGrid });
     return;
+  }
+
+  // Check for magnify-related elements
+  if (!magnifyEmoji) {
+    console.error('Magnify button (.magnify-emoji) not found in the DOM');
+  }
+  if (!magnifyPanel) {
+    console.error('Magnify panel (#magnify-panel) not found in the DOM');
+  }
+  if (!enlargedPreview) {
+    console.error('Enlarged preview (#enlarged-preview) not found in the DOM');
   }
 
   variantHistories = {};
@@ -458,116 +468,144 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  magnifyEmoji.addEventListener('click', () => {
-    enlargedPreview.style.display = 'block';
-    const maxWidth = window.innerWidth * 0.9;
-    const maxHeight = window.innerHeight * 0.9;
-    let scale = 1;
-    if (maxWidth / maxHeight > 1) {
-      enlargedPreview.style.height = `${maxHeight}px`;
-      enlargedPreview.style.width = `${maxHeight}px`;
-      scale = maxHeight / 600;
-    } else {
-      enlargedPreview.style.width = `${maxWidth}px`;
-      enlargedPreview.style.height = `${maxWidth}px`;
-      scale = maxWidth / 600;
-    }
-
-    const controls = document.getElementById('enlarged-preview-controls');
-    controls.style.display = 'flex';
-
-    const magnifiedState = TraitManager.getAllTraits().map(trait => ({
-      id: trait.id,
-      variants: [...trait.variants],
-      selected: trait.selected,
-      position: trait.position,
-      zIndex: trait.zIndex
-    })).sort((a, b) => b.position - a.position);
-
-    const updateEnlargedPreview = () => {
-      enlargedPreview.innerHTML = '';
-      magnifiedState.forEach(trait => {
-        const variant = trait.variants[trait.selected];
-        if (variant && variant.url) {
-          const img = document.createElement('img');
-          img.src = variant.url;
-          const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
-          img.style.width = `${parseFloat(baseImg.style.width || '600') * scale}px`;
-          img.style.height = `${parseFloat(baseImg.style.height || '600') * scale}px`;
-          img.style.left = `${parseFloat(baseImg.style.left || '0') * scale}px`;
-          img.style.top = `${parseFloat(baseImg.style.top || '0') * scale}px`;
-          img.style.zIndex = trait.zIndex;
-          img.style.position = 'absolute';
-          img.style.visibility = 'visible';
-          enlargedPreview.appendChild(img);
-        }
-      });
-    };
-    updateEnlargedPreview();
-
-    const playEmoji = document.getElementById('play-emoji');
-    const pauseEmoji = document.getElementById('pause-emoji');
-
-    playEmoji.onclick = (e) => {
-      e.stopPropagation();
-      console.log('Play clicked');
-      if (randomizeInterval) {
-        clearInterval(randomizeInterval);
-        if (currentSpeed === 1000) currentSpeed = 100;
-        else if (currentSpeed === 100) currentSpeed = 10;
+  if (magnifyEmoji) {
+    magnifyEmoji.addEventListener('click', () => {
+      // Fix: Show the magnify panel instead of enlargedPreview
+      if (magnifyPanel) {
+        magnifyPanel.style.display = 'block';
       } else {
-        currentSpeed = 1000;
-      }
-      randomizeInterval = setInterval(() => {
-        const traitIndex = Math.floor(Math.random() * magnifiedState.length);
-        const trait = magnifiedState[traitIndex];
-        if (trait.variants.length > 0) {
-          trait.selected = Math.floor(Math.random() * trait.variants.length);
-          console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
-          updateEnlargedPreview();
-        }
-      }, currentSpeed);
-    };
-
-    pauseEmoji.onclick = (e) => {
-      e.stopPropagation();
-      if (randomizeInterval) {
-        clearInterval(randomizeInterval);
-        randomizeInterval = null;
-        currentSpeed = 1000;
-      }
-    };
-
-    enlargedPreview.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      const projectName = document.getElementById('project-name').value || 'Unnamed';
-      let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
-      if (saveCount > 100) {
-        console.warn('Save limit reached');
+        console.error('Magnify panel not found when trying to open');
         return;
       }
-      localStorage.setItem(`${projectName}_saveCount`, saveCount);
-      const saveKey = `${projectName}_${saveCount}`;
-      const currentState = magnifiedState.map(trait => ({
-        id: trait.id,
-        selected: trait.selected,
-        variants: trait.variants.map(v => ({ id: v.id, name: v.name, url: v.url }))
-      }));
-      localStorage.setItem(saveKey, JSON.stringify(currentState));
-      console.log(`Saved as ${saveKey}`);
-    });
 
-    enlargedPreview.onclick = (e) => {
-      if (e.target === playEmoji || e.target === pauseEmoji) return;
-      if (randomizeInterval) {
-        clearInterval(randomizeInterval);
-        randomizeInterval = null;
-        currentSpeed = 1000;
+      const maxWidth = window.innerWidth * 0.9;
+      const maxHeight = window.innerHeight * 0.9;
+      let scale = 1;
+      // Adjust the size of the enlargedPreview (inner content area) based on the window size
+      if (maxWidth / maxHeight > 1) {
+        enlargedPreview.style.height = `${maxHeight - 60}px`; // Subtract padding/margins
+        enlargedPreview.style.width = `${maxHeight - 60}px`;
+        scale = (maxHeight - 60) / 600; // Scale relative to the base 600px size
+      } else {
+        enlargedPreview.style.width = `${maxWidth - 60}px`;
+        enlargedPreview.style.height = `${maxWidth - 60}px`;
+        scale = (maxWidth - 60) / 600;
       }
-      enlargedPreview.style.display = 'none';
-      controls.style.display = 'none';
-    };
-  });
+
+      const controls = document.getElementById('enlarged-preview-controls');
+      if (controls) {
+        controls.style.display = 'flex';
+      } else {
+        console.error('Enlarged preview controls not found');
+      }
+
+      const magnifiedState = TraitManager.getAllTraits().map(trait => ({
+        id: trait.id,
+        variants: [...trait.variants],
+        selected: trait.selected,
+        position: trait.position,
+        zIndex: trait.zIndex
+      })).sort((a, b) => b.position - a.position);
+
+      const updateEnlargedPreview = () => {
+        enlargedPreview.innerHTML = '';
+        magnifiedState.forEach(trait => {
+          const variant = trait.variants[trait.selected];
+          if (variant && variant.url) {
+            const img = document.createElement('img');
+            img.src = variant.url;
+            const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
+            img.style.width = `${parseFloat(baseImg.style.width || '600') * scale}px`;
+            img.style.height = `${parseFloat(baseImg.style.height || '600') * scale}px`;
+            img.style.left = `${parseFloat(baseImg.style.left || '0') * scale}px`;
+            img.style.top = `${parseFloat(baseImg.style.top || '0') * scale}px`;
+            img.style.zIndex = trait.zIndex;
+            img.style.position = 'absolute';
+            img.style.visibility = 'visible';
+            enlargedPreview.appendChild(img);
+          }
+        });
+      };
+      updateEnlargedPreview();
+
+      const playEmoji = document.getElementById('play-emoji');
+      const pauseEmoji = document.getElementById('pause-emoji');
+
+      if (playEmoji) {
+        playEmoji.onclick = (e) => {
+          e.stopPropagation();
+          console.log('Play clicked');
+          if (randomizeInterval) {
+            clearInterval(randomizeInterval);
+            if (currentSpeed === 1000) currentSpeed = 100;
+            else if (currentSpeed === 100) currentSpeed = 10;
+          } else {
+            currentSpeed = 1000;
+          }
+          randomizeInterval = setInterval(() => {
+            const traitIndex = Math.floor(Math.random() * magnifiedState.length);
+            const trait = magnifiedState[traitIndex];
+            if (trait.variants.length > 0) {
+              trait.selected = Math.floor(Math.random() * trait.variants.length);
+              console.log(`Randomized trait ${trait.id} to variant ${trait.selected}`);
+              updateEnlargedPreview();
+            }
+          }, currentSpeed);
+        };
+      } else {
+        console.error('Play emoji not found');
+      }
+
+      if (pauseEmoji) {
+        pauseEmoji.onclick = (e) => {
+          e.stopPropagation();
+          if (randomizeInterval) {
+            clearInterval(randomizeInterval);
+            randomizeInterval = null;
+            currentSpeed = 1000;
+          }
+        };
+      } else {
+        console.error('Pause emoji not found');
+      }
+
+      enlargedPreview.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const projectName = document.getElementById('project-name').value || 'Unnamed';
+        let saveCount = parseInt(localStorage.getItem(`${projectName}_saveCount`) || 0) + 1;
+        if (saveCount > 100) {
+          console.warn('Save limit reached');
+          return;
+        }
+        localStorage.setItem(`${projectName}_saveCount`, saveCount);
+        const saveKey = `${projectName}_${saveCount}`;
+        const currentState = magnifiedState.map(trait => ({
+          id: trait.id,
+          selected: trait.selected,
+          variants: trait.variants.map(v => ({ id: v.id, name: v.name, url: v.url }))
+        }));
+        localStorage.setItem(saveKey, JSON.stringify(currentState));
+        console.log(`Saved as ${saveKey}`);
+      });
+
+      enlargedPreview.onclick = (e) => {
+        if (e.target === playEmoji || e.target === pauseEmoji) return;
+        if (randomizeInterval) {
+          clearInterval(randomizeInterval);
+          randomizeInterval = null;
+          currentSpeed = 1000;
+        }
+        if (magnifyPanel) {
+          magnifyPanel.style.display = 'none';
+        }
+        if (controls) {
+          controls.style.display = 'none';
+        }
+      };
+    });
+  } else {
+    console.error('Magnify emoji button not found');
+  }
 
   directionEmojis.forEach(emoji => {
     const direction = emoji.getAttribute('data-direction');
@@ -750,9 +788,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const existingImg = target.querySelector('img');
       if (existingImg) {
         const index = chosenImages.indexOf(existingImg.src);
-        if (index !== -1) {
-          chosenImages.splice(index, 1);
-        }
+        if (index !== -1) chosenImages.splice(index, 1);
         existingImg.remove();
       }
       const img = document.createElement('img');
@@ -795,7 +831,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     option.text = `Slot ${index + 1}${projectName ? ` - ${projectName}` : ''}`;
   });
 });
-
 
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
