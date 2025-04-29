@@ -161,7 +161,6 @@ function debugLog(...args) {
 
 /* Section 3 ----------------------------------------- GLOBAL EVENT LISTENERS ------------------------------------------------ */
 
-
 document.addEventListener('DOMContentLoaded', async () => {
   let randomizeInterval = null;
   let currentSpeed = 1000;
@@ -213,6 +212,48 @@ document.addEventListener('DOMContentLoaded', async () => {
   initializePositions();
   updatePreviewSamples();
   await populateProjectSlots();
+
+  // Add dragover and drop event listeners to preview
+  if (preview) {
+    preview.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      debugLog("dragover: Drag over preview");
+    });
+
+    preview.addEventListener('drop', (e) => {
+      e.preventDefault();
+      debugLog("drop: Drop event triggered on preview");
+      if (isDragging && currentImage) {
+        const traitId = currentImage.id.substring("preview-trait".length);
+        const trait = TraitManager.getTrait(traitId);
+        if (!trait) {
+          debugLog("drop: Trait not found for image:", currentImage.id);
+          return;
+        }
+
+        const variationName = trait.variants[trait.selected]?.name;
+        if (!variationName) {
+          debugLog("drop: No selected variant for trait", traitId);
+          return;
+        }
+
+        try {
+          savePosition(currentImage, traitId, variationName);
+        } catch (error) {
+          debugLog("drop: Error saving position", error);
+        } finally {
+          isDragging = false;
+          currentImage.style.cursor = "grab";
+          currentImage.classList.remove("dragging");
+          updateZIndices();
+          debugLog("drop: Drop completed", currentImage.id);
+          currentImage = null;
+        }
+      } else {
+        debugLog("drop: No dragging in progress or no current image");
+      }
+    });
+  }
 
   async function openDB() {
     return new Promise((resolve, reject) => {
@@ -385,7 +426,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       });
       initializePositions();
-      updatePreviewSamples();
+      debouncedUpdatePreviewSamples();
 
       debugLog('Loaded project:', project);
       await populateProjectSlots();
@@ -403,7 +444,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const projectStore = tx.objectStore('projects');
       const imageStore = tx.objectStore('images');
 
-      const project = await new Promise(resolve => projectStore.get(slot).onsuccess = e => resolve(e.target.result));
+      const project = await new Promise(resolve => projectStore.get(slot).onsuccess = () => resolve(e.target.result));
       if (!project) {
         alert('No project found in ' + slot);
         return;
@@ -698,77 +739,77 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   directionEmojis.forEach(emoji => {
-  const direction = emoji.getAttribute('data-direction');
-  emoji.addEventListener('mousedown', async () => {
-    // Use the currently selected trait (currentImage)
-    if (!currentImage || !isValidImage(currentImage)) {
-      // Fallback to first valid image if none selected
-      currentImage = traitImages.find(img => isValidImage(img));
-    }
-    if (!currentImage) return;
-
-    // Ensure the image is scaled before moving
-    await applyScalingToImage(currentImage);
-
-    moveInterval = setInterval(() => {
-      let left = parseFloat(currentImage.style.left) || 0;
-      let top = parseFloat(currentImage.style.top) || 0;
-      const contentWidth = preview.getBoundingClientRect().width;
-      const contentHeight = contentWidth;
-      const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
-      const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
-
-      let leftPx = (left / 100) * contentWidth;
-      let topPx = (top / 100) * contentHeight;
-
-      if (direction === 'up') topPx -= 1;
-      if (direction === 'down') topPx += 1;
-      if (direction === 'left') leftPx -= 1;
-      if (direction === 'right') leftPx += 1;
-
-      leftPx = Math.max(0, Math.min(leftPx, contentWidth - imgWidth));
-      topPx = Math.max(0, Math.min(topPx, contentHeight - imgHeight));
-
-      left = (leftPx / contentWidth) * 100;
-      top = (topPx / contentHeight) * 100;
-
-      currentImage.style.left = left + '%';
-      currentImage.style.top = top + '%';
-      currentImage.classList.add('dragging');
-      updateCoordinates(currentImage);
-    }, 50);
-  });
-
-  emoji.addEventListener('mouseup', () => {
-    if (moveInterval) {
-      clearInterval(moveInterval);
-      moveInterval = null;
-      if (currentImage) {
-        const traitId = currentImage.id.substring('preview-trait'.length);
-        const trait = TraitManager.getTrait(traitId);
-        const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, traitId, variationName);
-        currentImage.classList.remove('dragging');
-        TraitManager.sortTraits();
+    const direction = emoji.getAttribute('data-direction');
+    emoji.addEventListener('mousedown', async () => {
+      // Use the currently selected trait (currentImage)
+      if (!currentImage || !isValidImage(currentImage)) {
+        // Fallback to first valid image if none selected
+        currentImage = traitImages.find(img => isValidImage(img));
       }
-    }
-  });
+      if (!currentImage) return;
 
-  emoji.addEventListener('mouseleave', () => {
-    if (moveInterval) {
-      clearInterval(moveInterval);
-      moveInterval = null;
-      if (currentImage) {
-        const traitId = currentImage.id.substring('preview-trait'.length);
-        const trait = TraitManager.getTrait(traitId);
-        const variationName = trait.variants[trait.selected].name;
-        savePosition(currentImage, traitId, variationName);
-        currentImage.classList.remove('dragging');
-        TraitManager.sortTraits();
+      // Ensure the image is scaled before moving
+      await applyScalingToImage(currentImage);
+
+      moveInterval = setInterval(() => {
+        let left = parseFloat(currentImage.style.left) || 0;
+        let top = parseFloat(currentImage.style.top) || 0;
+        const contentWidth = preview.getBoundingClientRect().width;
+        const contentHeight = contentWidth;
+        const imgWidth = parseFloat(currentImage.style.width) || contentWidth;
+        const imgHeight = parseFloat(currentImage.style.height) || contentHeight;
+
+        let leftPx = (left / 100) * contentWidth;
+        let topPx = (top / 100) * contentHeight;
+
+        if (direction === 'up') topPx -= 1;
+        if (direction === 'down') topPx += 1;
+        if (direction === 'left') leftPx -= 1;
+        if (direction === 'right') leftPx += 1;
+
+        leftPx = Math.max(0, Math.min(leftPx, contentWidth - imgWidth));
+        topPx = Math.max(0, Math.min(topPx, contentHeight - imgHeight));
+
+        left = (leftPx / contentWidth) * 100;
+        top = (topPx / contentHeight) * 100;
+
+        currentImage.style.left = left + '%';
+        currentImage.style.top = top + '%';
+        currentImage.classList.add('dragging');
+        updateCoordinates(currentImage);
+      }, 50);
+    });
+
+    emoji.addEventListener('mouseup', () => {
+      if (moveInterval) {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (currentImage) {
+          const traitId = currentImage.id.substring('preview-trait'.length);
+          const trait = TraitManager.getTrait(traitId);
+          const variationName = trait.variants[trait.selected].name;
+          savePosition(currentImage, traitId, variationName);
+          currentImage.classList.remove('dragging');
+          TraitManager.sortTraits();
+        }
       }
-    }
+    });
+
+    emoji.addEventListener('mouseleave', () => {
+      if (moveInterval) {
+        clearInterval(moveInterval);
+        moveInterval = null;
+        if (currentImage) {
+          const traitId = currentImage.id.substring('preview-trait'.length);
+          const trait = TraitManager.getTrait(traitId);
+          const variationName = trait.variants[trait.selected].name;
+          savePosition(currentImage, traitId, variationName);
+          currentImage.classList.remove('dragging');
+          TraitManager.sortTraits();
+        }
+      }
+    });
   });
-});
 
   preview.addEventListener('mousemove', debounce((e) => {
     if (!isDragging || !currentImage) return;
@@ -945,9 +986,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-
-
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
+
+
+
 
 function addTrait(trait) {
   const traitSection = document.createElement("div");
@@ -1643,7 +1685,8 @@ async function setupDragAndDrop(img, traitIndex) {
     e.preventDefault();
   }
 
-  async function startDragging(e) {
+  function handleDragStart(e) {
+    e.stopPropagation();
     // Get all images in the preview container, sorted by z-index (highest to lowest)
     const images = Array.from(preview.children)
       .filter(child => child.tagName === "IMG" && isValidImage(child))
@@ -1653,39 +1696,47 @@ async function setupDragAndDrop(img, traitIndex) {
     const clickY = e.clientY;
 
     // Find the topmost non-transparent image at the click position
-    const targetImg = await findImageAtPosition(images, clickX, clickY);
-    if (!targetImg) {
-      debugLog("startDragging: No valid image found at click position", { clickX, clickY });
-      return;
-    }
+    findImageAtPosition(images, clickX, clickY).then(targetImg => {
+      if (!targetImg) {
+        debugLog("handleDragStart: No valid image found at click position", { clickX, clickY });
+        return;
+      }
 
-    try {
-      currentImage = targetImg;
-      isDragging = true;
-      const containerRect = preview.getBoundingClientRect();
-      const imageRect = currentImage.getBoundingClientRect();
-      const pointerX = e.clientX - imageRect.left;
-      const pointerY = e.clientY - imageRect.top;
-      offsetX = pointerX / containerRect.width * 100;
-      offsetY = pointerY / containerRect.height * 100;
-      currentImage.style.cursor = "grabbing";
-      currentImage.classList.add("dragging");
-      updateCoordinates(currentImage);
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", stopDragging);
-      preview.addEventListener("mouseup", stopDragging); // Ensure preview-level mouseup
-      debugLog("startDragging: Started dragging", currentImage.id);
+      try {
+        // Clear any existing drag state
+        if (isDragging && currentImage) {
+          debugLog("handleDragStart: Clearing existing drag state");
+          currentImage.classList.remove("dragging");
+          currentImage.style.cursor = "grab";
+          document.removeEventListener("mousemove", onMouseMove);
+        }
 
-      await applyScalingToImage(img);
-      debugLog("startDragging: Scaling applied after drag start for", img.id);
-    } catch (scaleError) {
-      console.error("startDragging: Error during async scaling", scaleError);
-      isDragging = false;
-      currentImage = null;
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", stopDragging);
-      preview.removeEventListener("mouseup", stopDragging);
-    }
+        currentImage = targetImg;
+        isDragging = true;
+        const containerRect = preview.getBoundingClientRect();
+        const imageRect = currentImage.getBoundingClientRect();
+        const pointerX = e.clientX - imageRect.left;
+        const pointerY = e.clientY - imageRect.top;
+        offsetX = pointerX / containerRect.width * 100;
+        offsetY = pointerY / containerRect.height * 100;
+        currentImage.style.cursor = "grabbing";
+        currentImage.classList.add("dragging");
+        updateCoordinates(currentImage);
+        // Set data for HTML5 drag-and-drop API
+        e.dataTransfer.setData("text/plain", currentImage.id);
+        document.addEventListener("mousemove", onMouseMove);
+        debugLog("handleDragStart: Started dragging", currentImage.id);
+
+        applyScalingToImage(img).then(() => {
+          debugLog("handleDragStart: Scaling applied after drag start for", img.id);
+        });
+      } catch (scaleError) {
+        console.error("handleDragStart: Error during async scaling", scaleError);
+        isDragging = false;
+        currentImage = null;
+        document.removeEventListener("mousemove", onMouseMove);
+      }
+    });
   }
 
   function onMouseMove(e) {
@@ -1713,46 +1764,18 @@ async function setupDragAndDrop(img, traitIndex) {
     }
   }
 
-  function stopDragging(e) {
-    if (isDragging && currentImage) {
-      const traitId = currentImage.id.substring("preview-trait".length);
-      const trait = TraitManager.getTrait(traitId);
-      if (!trait) {
-        debugLog("stopDragging: Trait not found for image:", currentImage.id);
-        return;
-      }
-      const variationName = trait.variants[trait.selected].name;
-      savePosition(currentImage, traitId, variationName);
-      isDragging = false;
-      currentImage.style.cursor = "grab";
-      currentImage.classList.remove("dragging");
-      updateZIndices();
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", stopDragging);
-      preview.removeEventListener("mouseup", stopDragging);
-      debugLog("stopDragging: Stopped dragging", currentImage.id);
-    } else {
-      debugLog("stopDragging: No dragging in progress or no current image");
-    }
-  }
-
   function selectImage(e) {
     debugLog("selectImage: Image clicked", img.id);
   }
 
-  img.removeEventListener("dragstart", preventDragStart);
-  img.removeEventListener("mousedown", startDragging);
-  img.removeEventListener("mouseup", stopDragging);
+  // Remove existing listeners to prevent duplicates
+  img.removeEventListener("dragstart", handleDragStart);
   img.removeEventListener("click", selectImage);
-  document.removeEventListener("mouseup", stopDragging);
-  preview.removeEventListener("mouseup", stopDragging);
+  document.removeEventListener("mousemove", onMouseMove);
 
-  img.addEventListener("dragstart", preventDragStart);
-  img.addEventListener("mousedown", startDragging);
-  img.addEventListener("mouseup", stopDragging);
+  // Add event listeners
+  img.addEventListener("dragstart", handleDragStart);
   img.addEventListener("click", selectImage);
-  document.addEventListener("mouseup", stopDragging);
-  preview.addEventListener("mouseup", stopDragging);
   debugLog("setupDragAndDrop: Event listeners set up for", img.id);
 }
 
@@ -1766,8 +1789,17 @@ function updateCoordinates(img) {
 
 function savePosition(img, traitId, variationName) {
   const trait = TraitManager.getTrait(traitId);
-  if (!trait || trait.variants.length === 0) return;
-  const variantId = trait.variants[trait.selected].id;
+  if (!trait || trait.variants.length === 0) {
+    debugLog("savePosition: Invalid trait or no variants", traitId);
+    return;
+  }
+
+  const selectedVariant = trait.variants[trait.selected];
+  if (!selectedVariant || !selectedVariant.id) {
+    debugLog("savePosition: No selected variant or variant ID for trait", traitId);
+    return;
+  }
+  const variantId = selectedVariant.id;
 
   const contentWidth = preview.getBoundingClientRect().width;
   const contentHeight = contentWidth;
