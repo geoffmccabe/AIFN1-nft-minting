@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           input.value = trait.name || input.placeholder;
           input.dataset.userEntered = trait.name ? 'true' : 'false';
           refreshTraitGrid(trait.id);
-          if (trait.variants.length > 0) selectVariation(trait.id, trait.variants[trait.selected].id);
+          if (trait.variants.length > 0) (trait.id, trait.variants[trait.selected].id);
         }
       });
 
@@ -1183,7 +1183,7 @@ function setupTraitListeners(traitId) {
           const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
           allWrappers.forEach(w => w.classList.remove('selected'));
           imageWrapper.classList.add('selected');
-          selectVariation(traitId, variant.id);
+          (traitId, variant.id);
         });
 
         grid.appendChild(container);
@@ -1198,7 +1198,7 @@ function setupTraitListeners(traitId) {
 
       if (trait.variants.length > 0) {
         const randomIndex = Math.floor(Math.random() * trait.variants.length);
-        selectVariation(traitId, trait.variants[randomIndex].id);
+        (traitId, trait.variants[randomIndex].id);
         const firstWrapper = grid.querySelector('.variation-image-wrapper');
         if (firstWrapper) firstWrapper.classList.add('selected');
         autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
@@ -1294,7 +1294,7 @@ function refreshTraitGrid(traitId) {
       const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
       allWrappers.forEach(w => w.classList.remove('selected'));
       imageWrapper.classList.add('selected');
-      selectVariation(traitId, variant.id);
+      (traitId, variant.id);
     });
 
     grid.appendChild(container);
@@ -1474,16 +1474,24 @@ async function selectVariation(traitId, variationId) {
     debugLog("Variation " + variationId + " not found in Trait " + traitId);
     return;
   }
-  trait.selected = variationIndex;
+  trait.selected = variationIndex; // Keep track of selection for the trait manager grid
+
+  const selectedVariant = trait.variants[variationIndex]; // Get the selected variant object
+  const variantName = selectedVariant.name; // Get its stable name
 
   const previewImage = traitImages.find((img) => img.id === "preview-trait" + traitId);
   if (previewImage) {
-    const variantUrl = trait.variants[variationIndex]?.url || "https://via.placeholder.com/600";
+    const variantUrl = selectedVariant.url || "https://via.placeholder.com/600";
     previewImage.src = variantUrl;
+
+    // *** ADDED: Store the stable variant name on the image element ***
+    previewImage.dataset.variantName = variantName;
+
     previewImage.style.visibility = "visible";
     debugLog(
       "Selected variation " +
-        variationId +
+        variationId + // Log original ID for debugging context if needed
+        " (Name: " + variantName + ")" + // Log the name used for keys
         " for trait " +
         traitId +
         ", src: " +
@@ -1494,41 +1502,65 @@ async function selectVariation(traitId, variationId) {
         preview.getBoundingClientRect().width
     );
 
+    // Ensure image is scaled before applying position
     await applyScalingToImage(previewImage);
-    const key = `trait${traitId}-${variationId}-position`;
+
+    // *** MODIFIED: Use variantName for the localStorage key ***
+    const key = `trait${traitId}-${variantName}-position`;
     const savedPosition = localStorage.getItem(key);
+    const historyKey = `trait${traitId}-${variantName}-history`; // History key also uses name
+
     const contentWidth = preview.getBoundingClientRect().width;
     const contentHeight = contentWidth;
     const imgWidth = parseFloat(previewImage.style.width) || contentWidth;
     const imgHeight = parseFloat(previewImage.style.height) || contentHeight;
     const maxLeft = ((contentWidth - imgWidth) / contentWidth) * 100;
     const maxTop = ((contentHeight - imgHeight) / contentHeight) * 100;
+
     try {
       if (savedPosition) {
         const { left, top } = JSON.parse(savedPosition);
-        const normalized = normalizePosition(left, top, contentWidth, contentHeight, contentWidth, contentHeight);
-        previewImage.style.left = Math.max(0, Math.min(normalized.left, maxLeft)) + "%";
-        previewImage.style.top = Math.max(0, Math.min(normalized.top, maxTop)) + "%";
-        if (!variantHistories[key]) variantHistories[key] = [{ left, top }];
-        debugLog(`selectVariation: Applied position for Trait ${traitId}, Variant ${variationId}: left=${normalized.left}%, top=${normalized.top}%`);
+        // Apply boundaries if needed (normalizePosition could be used if necessary)
+        const boundedLeft = Math.max(0, Math.min(left, maxLeft));
+        const boundedTop = Math.max(0, Math.min(top, maxTop));
+
+        previewImage.style.left = boundedLeft + "%";
+        previewImage.style.top = boundedTop + "%";
+
+        // Initialize history if it doesn't exist based on localStorage
+        if (!variantHistories[historyKey]) {
+           try {
+             const storedHistory = localStorage.getItem(historyKey);
+             variantHistories[historyKey] = storedHistory ? JSON.parse(storedHistory) : [{ left: boundedLeft, top: boundedTop }];
+           } catch (e) {
+             variantHistories[historyKey] = [{ left: boundedLeft, top: boundedTop }];
+           }
+        }
+        debugLog(`selectVariation: Applied position for Trait ${traitId}, Variant ${variantName}: left=${boundedLeft}%, top=${boundedTop}%`);
       } else {
+        // Default position if nothing is saved
         previewImage.style.left = "0%";
         previewImage.style.top = "0%";
-        variantHistories[key] = [{ left: 0, top: 0 }];
-        localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
+        // Initialize history
+        variantHistories[historyKey] = [{ left: 0, top: 0 }];
+        // Optionally save the default 0,0 position to localStorage immediately
+        // localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
       }
     } catch (e) {
-      debugLog("Invalid position data for trait " + traitId + ":", e);
+      debugLog("Invalid position data for trait " + traitId + ", Variant " + variantName + ":", e);
       previewImage.style.left = "0%";
       previewImage.style.top = "0%";
-      localStorage.setItem(key, JSON.stringify({ left: 0, top: 0 }));
+      variantHistories[historyKey] = [{ left: 0, top: 0 }];
+      localStorage.removeItem(key); // Clear corrupted data
+      localStorage.removeItem(historyKey);
     }
-    currentImage = previewImage;
+
+    currentImage = previewImage; // Update global reference if needed for other controls
     updateZIndices();
     updateCoordinates(previewImage);
-    applyScalingToSamples();
+    applyScalingToSamples(); // Update samples if needed
     if (typeof updatePreviewSamples === "function") {
-      updatePreviewSamples();
+      updatePreviewSamples(); // Ensure samples reflect the change
     }
   } else {
     debugLog("Preview image for trait " + traitId + " not found in traitImages");
@@ -1688,49 +1720,74 @@ async function setupDragAndDrop(img, traitIndex) {
     }
   }
 
-  function stopDragging(e) {
-    e.preventDefault();
-    e.stopPropagation();
+function stopDragging(e) {
+  e.preventDefault();
+  e.stopPropagation();
 
-    // Check if the left mouse button is actually released (e.buttons === 0 means no buttons pressed)
-    if (e.buttons !== 0) {
-      debugLog("stopDragging: Mouse button still pressed, ignoring event", e.buttons);
-      return;
-    }
+  // Check if the left mouse button is actually released (e.buttons === 0 means no buttons pressed)
+  // Note: Some edge cases might exist with specific mouse/trackpad drivers, but this is generally reliable.
+  if (e.buttons !== 0 && e.type === 'mouseup') { // Check button state specifically on mouseup
+     debugLog("stopDragging (mouseup): Mouse button potentially still pressed, ignoring event", e.buttons);
+     return;
+  }
 
-    if (!isDragging || !currentImage) {
-      debugLog("stopDragging: No dragging in progress or no current image");
-      return;
-    }
-
-    try {
-      const traitId = currentImage.id.substring("preview-trait".length);
-      const trait = TraitManager.getTrait(traitId);
-      if (!trait) {
-        debugLog("stopDragging: Trait not found for image:", currentImage.id);
-        throw new Error("Trait not found");
-      }
-
-      const variationName = trait.variants[trait.selected]?.name;
-      if (!variationName) {
-        debugLog("stopDragging: No selected variant for trait", traitId);
-        throw new Error("No selected variant");
-      }
-
-      savePosition(currentImage, traitId, variationName);
-    } catch (error) {
-      debugLog("stopDragging: Error saving position", error);
-    } finally {
-      isDragging = false;
-      if (currentImage) {
+  if (!isDragging || !currentImage) {
+    // debugLog("stopDragging: No dragging in progress or no current image"); // Can be noisy
+    // Reset states just in case they are stuck
+    isDragging = false;
+    if(currentImage) {
         currentImage.style.cursor = "grab";
         currentImage.classList.remove("dragging");
-        updateZIndices();
-        debugLog("stopDragging: Stopped dragging", currentImage?.id || "unknown");
-        currentImage = null;
-      }
+    }
+    currentImage = null;
+    return;
+  }
+
+  debugLog("stopDragging: Attempting to stop drag for", currentImage?.id);
+
+  try {
+    const traitId = currentImage.id.substring("preview-trait".length);
+
+    // *** MODIFIED: Get the identifier directly from the dragged image's data attribute ***
+    const draggedVariantName = currentImage.dataset.variantName;
+
+    if (!draggedVariantName) {
+      console.error("stopDragging: Could not determine variant name for dragged image:", currentImage.id, "Source:", currentImage.src);
+      // Fallback attempt (optional): Try matching the src
+      // const trait = TraitManager.getTrait(traitId);
+      // const matchedVariant = trait?.variants.find(v => v.url === currentImage.src);
+      // if (!matchedVariant) {
+      //    throw new Error("Cannot identify dragged variant via data attribute or src match.");
+      // }
+      // console.warn("stopDragging: Identified variant via src match as fallback:", matchedVariant.name);
+      // draggedVariantName = matchedVariant.name;
+      throw new Error("Missing variant name (data-variant-name) on dragged image element."); // Fail fast
+    }
+
+    debugLog(`stopDragging: Identified dragged image as Trait ${traitId}, Variant Name: ${draggedVariantName}`);
+
+    // *** Call savePosition with the CORRECT identifier ***
+    savePosition(currentImage, traitId, draggedVariantName);
+
+  } catch (error) {
+    console.error("stopDragging: Error during stop/save process", error);
+    // Ensure UI resets even if save fails
+     handleDragError(error); // Make sure handleDragError exists or implement reset here
+  } finally {
+    // Reset dragging state regardless of success or failure inside try block
+    isDragging = false;
+    if (currentImage) { // Check currentImage again as it might be nullified by handleDragError
+      currentImage.style.cursor = "grab";
+      currentImage.classList.remove("dragging");
+      updateZIndices(); // Update z-index based on final state if needed
+      debugLog("stopDragging: Finalized state reset for", currentImage?.id || "image already nullified", "Variant Name:", currentImage?.dataset?.variantName);
+      currentImage = null; // Clear the reference to the dragged image *after* saving attempt
+    } else {
+       debugLog("stopDragging: Finalized state reset, currentImage was null.");
     }
   }
+}
+
 
   function selectImage(e) {
     e.stopPropagation();
