@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     magnifyEmoji.addEventListener('click', () => {
       // Fix: Show the magnify panel instead of enlargedPreview
       if (magnifyPanel) {
-        magnifyPanel.style.display = 'block';
+        magnifyPanel.classList.add('visible');
       } else {
         console.error('Magnify panel not found when trying to open');
         return;
@@ -596,7 +596,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           currentSpeed = 1000;
         }
         if (magnifyPanel) {
-          magnifyPanel.style.display = 'none';
+          magnifyPanel.classList.remove('visible');
         }
         if (controls) {
           controls.style.display = 'none';
