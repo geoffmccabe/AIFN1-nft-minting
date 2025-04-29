@@ -213,48 +213,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   updatePreviewSamples();
   await populateProjectSlots();
 
-  // Add dragover and drop event listeners to preview
-  if (preview) {
-    preview.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      debugLog("dragover: Drag over preview");
-    });
-
-    preview.addEventListener('drop', (e) => {
-      e.preventDefault();
-      debugLog("drop: Drop event triggered on preview");
-      if (isDragging && currentImage) {
-        const traitId = currentImage.id.substring("preview-trait".length);
-        const trait = TraitManager.getTrait(traitId);
-        if (!trait) {
-          debugLog("drop: Trait not found for image:", currentImage.id);
-          return;
-        }
-
-        const variationName = trait.variants[trait.selected]?.name;
-        if (!variationName) {
-          debugLog("drop: No selected variant for trait", traitId);
-          return;
-        }
-
-        try {
-          savePosition(currentImage, traitId, variationName);
-        } catch (error) {
-          debugLog("drop: Error saving position", error);
-        } finally {
-          isDragging = false;
-          currentImage.style.cursor = "grab";
-          currentImage.classList.remove("dragging");
-          updateZIndices();
-          debugLog("drop: Drop completed", currentImage.id);
-          currentImage = null;
-        }
-      } else {
-        debugLog("drop: No dragging in progress or no current image");
-      }
-    });
-  }
-
   async function openDB() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('NFTProjectDB', 1);
@@ -365,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const db = await openDB();
       const tx = db.transaction(['projects', 'images'], 'readonly');
       const projectStore = tx.objectStore('projects');
-      const imageStore = tx.objectStore('images');
+      const imageStore = tx.object鹿Store('images');
       const slot = document.getElementById('project-slot').value;
       const project = await new Promise(resolve => projectStore.get(slot).onsuccess = e => resolve(e.target.result));
 
@@ -1685,7 +1643,7 @@ async function setupDragAndDrop(img, traitIndex) {
     e.preventDefault();
   }
 
-  function handleDragStart(e) {
+  async function startDragging(e) {
     e.stopPropagation();
     // Get all images in the preview container, sorted by z-index (highest to lowest)
     const images = Array.from(preview.children)
@@ -1696,47 +1654,49 @@ async function setupDragAndDrop(img, traitIndex) {
     const clickY = e.clientY;
 
     // Find the topmost non-transparent image at the click position
-    findImageAtPosition(images, clickX, clickY).then(targetImg => {
-      if (!targetImg) {
-        debugLog("handleDragStart: No valid image found at click position", { clickX, clickY });
-        return;
-      }
+    const targetImg = await findImageAtPosition(images, clickX, clickY);
+    if (!targetImg) {
+      debugLog("startDragging: No valid image found at click position", { clickX, clickY });
+      return;
+    }
 
-      try {
-        // Clear any existing drag state
-        if (isDragging && currentImage) {
-          debugLog("handleDragStart: Clearing existing drag state");
-          currentImage.classList.remove("dragging");
-          currentImage.style.cursor = "grab";
-          document.removeEventListener("mousemove", onMouseMove);
-        }
-
-        currentImage = targetImg;
-        isDragging = true;
-        const containerRect = preview.getBoundingClientRect();
-        const imageRect = currentImage.getBoundingClientRect();
-        const pointerX = e.clientX - imageRect.left;
-        const pointerY = e.clientY - imageRect.top;
-        offsetX = pointerX / containerRect.width * 100;
-        offsetY = pointerY / containerRect.height * 100;
-        currentImage.style.cursor = "grabbing";
-        currentImage.classList.add("dragging");
-        updateCoordinates(currentImage);
-        // Set data for HTML5 drag-and-drop API
-        e.dataTransfer.setData("text/plain", currentImage.id);
-        document.addEventListener("mousemove", onMouseMove);
-        debugLog("handleDragStart: Started dragging", currentImage.id);
-
-        applyScalingToImage(img).then(() => {
-          debugLog("handleDragStart: Scaling applied after drag start for", img.id);
-        });
-      } catch (scaleError) {
-        console.error("handleDragStart: Error during async scaling", scaleError);
-        isDragging = false;
-        currentImage = null;
+    try {
+      // Clear any existing drag state
+      if (isDragging && currentImage) {
+        debugLog("startDragging: Clearing existing drag state");
+        currentImage.classList.remove("dragging");
+        currentImage.style.cursor = "grab";
         document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", stopDragging);
+        preview.removeEventListener("mouseup", stopDragging);
       }
-    });
+
+      currentImage = targetImg;
+      isDragging = true;
+      const containerRect = preview.getBoundingClientRect();
+      const imageRect = currentImage.getBoundingClientRect();
+      const pointerX = e.clientX - imageRect.left;
+      const pointerY = e.clientY - imageRect.top;
+      offsetX = pointerX / containerRect.width * 100;
+      offsetY = pointerY / containerRect.height * 100;
+      currentImage.style.cursor = "grabbing";
+      currentImage.classList.add("dragging");
+      updateCoordinates(currentImage);
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", stopDragging);
+      preview.addEventListener("mouseup", stopDragging);
+      debugLog("startDragging: Started dragging", currentImage.id);
+
+      await applyScalingToImage(img);
+      debugLog("startDragging: Scaling applied after drag start for", img.id);
+    } catch (scaleError) {
+      console.error("startDragging: Error during async scaling", scaleError);
+      isDragging = false;
+      currentImage = null;
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", stopDragging);
+      preview.removeEventListener("mouseup", stopDragging);
+    }
   }
 
   function onMouseMove(e) {
@@ -1764,18 +1724,60 @@ async function setupDragAndDrop(img, traitIndex) {
     }
   }
 
+  function stopDragging(e) {
+    if (!isDragging || !currentImage) {
+      debugLog("stopDragging: No dragging in progress or no current image");
+      return;
+    }
+
+    const traitId = currentImage.id.substring("preview-trait".length);
+    const trait = TraitManager.getTrait(traitId);
+    if (!trait) {
+      debugLog("stopDragging: Trait not found for image:", currentImage.id);
+      return;
+    }
+
+    try {
+      const variationName = trait.variants[trait.selected]?.name;
+      if (!variationName) {
+        debugLog("stopDragging: No selected variant for trait", traitId);
+        throw new Error("No selected variant");
+      }
+      savePosition(currentImage, traitId, variationName);
+    } catch (error) {
+      debugLog("stopDragging: Error saving position", error);
+    } finally {
+      // Always reset drag state
+      isDragging = false;
+      currentImage.style.cursor = "grab";
+      currentImage.classList.remove("dragging");
+      updateZIndices();
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", stopDragging);
+      preview.removeEventListener("mouseup", stopDragging);
+      debugLog("stopDragging: Stopped dragging", currentImage.id);
+      currentImage = null; // Clear currentImage to prevent stale references
+    }
+  }
+
   function selectImage(e) {
     debugLog("selectImage: Image clicked", img.id);
   }
 
   // Remove existing listeners to prevent duplicates
-  img.removeEventListener("dragstart", handleDragStart);
+  img.removeEventListener("mousedown", startDragging);
+  img.removeEventListener("mouseup", stopDragging);
   img.removeEventListener("click", selectImage);
   document.removeEventListener("mousemove", onMouseMove);
+  document.removeEventListener("mouseup", stopDragging);
+  preview.removeEventListener("mouseup", stopDragging);
 
   // Add event listeners
-  img.addEventListener("dragstart", handleDragStart);
+  img.addEventListener("mousedown", startDragging);
+  img.addEventListener("mouseup", stopDragging);
   img.addEventListener("click", selectImage);
+  document.addEventListener("mouseup", stopDragging);
+  preview.addEventListener("mouseup", stopDragging);
   debugLog("setupDragAndDrop: Event listeners set up for", img.id);
 }
 
