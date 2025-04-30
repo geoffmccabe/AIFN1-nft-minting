@@ -879,13 +879,13 @@ function addTrait(trait) {
   traitHeader.className = 'trait-header';
 
   const title = document.createElement('h2');
-  title.textContent = `TRAIT ${traitContainer.children.length + 1} - `;
+  title.textContent = `TRAIT ${traitContainer.children.length + 1}: `;
   
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.id = `trait${trait.id}-name`;
   nameInput.className = 'trait-name-input';
-  nameInput.placeholder = `Trait Name (e.g., ${traitContainer.children.length + 1 === 1 ? 'Eyes' : traitContainer.children.length + 1 === 2 ? 'Hair' : 'Accessories'})`;
+  nameInput.placeholder = 'Enter Trait Name';
   nameInput.value = trait.name || '';
 
   const fileInput = document.createElement('input');
@@ -897,7 +897,12 @@ function addTrait(trait) {
   const fileInputLabel = document.createElement('label');
   fileInputLabel.className = 'file-input-label';
   fileInputLabel.htmlFor = `trait${trait.id}-files`;
-  fileInputLabel.textContent = 'Choose Files';
+  fileInputLabel.textContent = 'Load Variants';
+
+  const addVariantsBtn = document.createElement('button');
+  addVariantsBtn.className = 'add-variants-btn';
+  addVariantsBtn.textContent = '[Add Variants]';
+  addVariantsBtn.setAttribute('data-trait', trait.id);
 
   const controls = document.createElement('div');
   controls.className = 'trait-controls';
@@ -922,12 +927,13 @@ function addTrait(trait) {
   controls.appendChild(upArrow);
   controls.appendChild(downArrow);
   controls.appendChild(addTraitBtn);
-  controls.appendChild(  removeTraitBtn);
+  controls.appendChild(removeTraitBtn);
 
   traitHeader.appendChild(title);
   traitHeader.appendChild(nameInput);
   traitHeader.appendChild(fileInputLabel);
   traitHeader.appendChild(fileInput); // Hidden input
+  traitHeader.appendChild(addVariantsBtn);
   traitHeader.appendChild(controls);
 
   const grid = document.createElement('div');
