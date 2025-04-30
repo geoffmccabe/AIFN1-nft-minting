@@ -1490,9 +1490,6 @@ function savePosition(img, traitId, variationName) {
 
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
-
-
-
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
   const currentTrait = TraitManager.getTrait(currentTraitId);
   const currentTraitIndex = TraitManager.getAllTraits().findIndex(t => t.id === currentTraitId);
@@ -1555,6 +1552,10 @@ function updatePreviewSamples() {
   previewSamplesGrid.innerHTML = '';
   sampleData = Array(16).fill(null).map(() => []);
 
+  // Calculate the sample container size: 600px grid width, 4 columns, 13px gaps
+  const sampleSize = (600 - 3 * 13) / 4; // ≈ 140px
+  const scale = sampleSize / 600; // Scaling ratio from Preview Panel (600px) to sample container (140px)
+
   for (let i = 0; i < 16; i++) {
     const sampleContainer = document.createElement('div');
     sampleContainer.className = 'sample-container';
@@ -1577,9 +1578,6 @@ function updatePreviewSamples() {
       let position;
       if (savedPosition) {
         position = JSON.parse(savedPosition);
-        const scale = 140 / 600;
-        img.style.left = `${position.left * scale}px`;
-        img.style.top = `${position.top * scale}px`;
         if (!variantHistories[key]) variantHistories[key] = [{ left: position.left, top: position.top }];
       } else {
         let lastPosition = null;
@@ -1591,24 +1589,51 @@ function updatePreviewSamples() {
             lastPosition = variantHistories[otherKey][variantHistories[otherKey].length - 1];
           }
         }
-        const scale = 140 / 600;
         if (lastPosition) {
           position = lastPosition;
-          img.style.left = `${lastPosition.left * scale}px`;
-          img.style.top = `${lastPosition.top * scale}px`;
           variantHistories[key] = [{ left: lastPosition.left, top: lastPosition.top }];
           localStorage.setItem(`trait${trait.id}-${variant.name}-position`, JSON.stringify(lastPosition));
         } else {
           position = { left: 0, top: 0 };
-          img.style.left = '0px';
-          img.style.top = '0px';
           variantHistories[key] = [{ left: 0, top: 0 }];
           localStorage.setItem(`trait${trait.id}-${variant.name}-position`, JSON.stringify({ left: 0, top: 0 }));
         }
       }
 
+      // Load the image to get its natural dimensions
+      const tempImg = new Image();
+      tempImg.src = variant.url;
+      tempImg.onload = () => {
+        const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
+        // Use the natural dimensions if style dimensions aren't set
+        const baseWidth = parseFloat(baseImg.style.width) || tempImg.naturalWidth || 600;
+        const baseHeight = parseFloat(baseImg.style.height) || tempImg.naturalHeight || 600;
+        const baseLeft = parseFloat(baseImg.style.left) || position.left || 0;
+        const baseTop = parseFloat(baseImg.style.top) || position.top || 0;
+
+        // Scale the dimensions and positions
+        img.style.width = `${baseWidth * scale}px`;
+        img.style.height = `${baseHeight * scale}px`;
+        img.style.left = `${baseLeft * scale}px`;
+        img.style.top = `${baseTop * scale}px`;
+        sampleContainer.appendChild(img);
+      };
+      tempImg.onerror = () => {
+        // Fallback if the image fails to load
+        const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
+        const baseWidth = parseFloat(baseImg.style.width) || 600;
+        const baseHeight = parseFloat(baseImg.style.height) || 600;
+        const baseLeft = parseFloat(baseImg.style.left) || position.left || 0;
+        const baseTop = parseFloat(baseImg.style.top) || position.top || 0;
+
+        img.style.width = `${baseWidth * scale}px`;
+        img.style.height = `${baseHeight * scale}px`;
+        img.style.left = `${baseLeft * scale}px`;
+        img.style.top = `${baseTop * scale}px`;
+        sampleContainer.appendChild(img);
+      };
+
       sampleData[i].push({ traitId: trait.id, variantId: variant.id, position });
-      sampleContainer.appendChild(img);
     }
 
     sampleContainer.addEventListener('click', () => {
