@@ -4,7 +4,6 @@
 
   <!-- Section 1 ----------------------------------------- HEAD AND INITIAL SETUP -------------------------------------------------->
 
-
   <meta charset="UTF-8">
   <title>Design your PERCs</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -17,7 +16,6 @@
 <body>
 
 <!-- Section 2 ----------------------------------------- LEFT PANEL STYLES -------------------------------------------------->
-
 
 <style>
   body { background-image: url('/PercCreator/images/background.webp'); background-position: center top; background-repeat: repeat-y; background-size: 100% auto; color: black; display: flex; flex-wrap: wrap; font-family: 'Poppins', sans-serif; font-weight: 400; margin: 0; min-height: 100vh; padding: 20px; position: relative; }
@@ -57,7 +55,6 @@
   ::-webkit-scrollbar:horizontal { height: 0 !important; }
 </style>
 
-
 <!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
 
 <style>
@@ -83,9 +80,9 @@
     z-index: 1000;
     display: none;
   }
-#magnify-panel.visible {
+  #magnify-panel.visible {
     display: block;
-}
+  }
   #enlarged-preview { 
     background: white;
     border: 1px solid rgba(0, 0, 0, 0.1); 
@@ -173,8 +170,7 @@
   }
   #preview-samples-grid img { 
     position: absolute;
-    width: 100%;
-    height: 100%;
+    /* Remove width: 100%; height: 100%; to allow scaled dimensions */
     object-fit: contain;
     top: 0;
     left: 0;
@@ -199,7 +195,6 @@
 </style>
   
   <!-- Section 4 ----------------------------------------- BACKGROUND AND CHOSEN STYLES -------------------------------------------------->
-
 
   <style>
     #background-section h2 { font-family: 'Poppins', sans-serif; font-weight: 600; margin: 0 0 10px; text-align: left; }
@@ -248,9 +243,7 @@
     }
   </style>
 
-
 <!-- Section 5 ----------------------------------------- LEFT PANEL CONTENT -------------------------------------------------->
-
 
 <div id="logo-container">
   <img id="logo" src="https://raw.githubusercontent.com/geoffmccabe/PercCreator/main/images/Perceptrons_Logo_Perc_Creator_600px.webp" alt="Perceptrons Project Logo" onerror="console.error('Logo failed to load'); this.src='https://via.placeholder.com/600x200?text=Logo+Missing';">
@@ -363,11 +356,7 @@
   <div id="enlarged-preview"></div>
 </div>
 
-
-
-
   <!-- Section 7 ----------------------------------------- FULL WIDTH SECTION -------------------------------------------------->
-
 
 <div id="full-width-section" style="display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px; width: 100%;">
   <div class="panel" style="width: calc(50% - 15px);">
@@ -428,7 +417,6 @@
 </div>
 
   <!-- Section 8 ----------------------------------------- MINTING PANEL -------------------------------------------------->
-
 
   <div class="panel" style="height: 600px; width: 100%;">
     <h2>MINTING PANEL</h2>
