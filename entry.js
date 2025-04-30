@@ -1050,23 +1050,21 @@ function removeTrait(traitId) {
 
 /* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
 
-
-
-
 function setupTraitListeners(traitId) {
   const nameInput = document.getElementById(`trait${traitId}-name`);
   const fileInput = document.getElementById(`trait${traitId}-files`);
+  const fileInputAdd = document.getElementById(`trait${traitId}-files-add`);
   const fileInputLabel = document.querySelector(`label[for="trait${traitId}-files"]`);
+  const addVariantsBtn = document.querySelector(`label[for="trait${traitId}-files-add"]`);
   const grid = document.getElementById(`trait${traitId}-grid`);
 
-  if (fileInput && nameInput && grid && fileInputLabel) {
+  if (fileInput && nameInput && grid && fileInputLabel && addVariantsBtn && fileInputAdd) {
     nameInput.dataset.userEntered = 'false';
     nameInput.addEventListener('input', () => {
       const trait = TraitManager.getTrait(traitId);
       const position = Array.from(traitContainer.children).indexOf(nameInput.parentElement) + 1;
-      const placeholderPattern = `Trait Name (e.g., ${position === 1 ? 'Eyes' : position === 2 ? 'Hair' : 'Accessories'})`;
       const trimmedValue = nameInput.value.trim();
-      if (trimmedValue && trimmedValue !== placeholderPattern) {
+      if (trimmedValue) {
         nameInput.dataset.userEntered = 'true';
         trait.name = trimmedValue;
       } else {
@@ -1074,19 +1072,19 @@ function setupTraitListeners(traitId) {
         trait.name = '';
       }
       const title = nameInput.parentElement.querySelector('h2');
-      title.textContent = `TRAIT ${position}${trait.name ? ` - ${trait.name}` : ''}`;
+      title.textContent = `TRAIT ${position}: `;
     });
 
+    // Handler for "Load Variants" (replaces existing variants)
     fileInput.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
       if (!files.length) return;
 
       const trait = TraitManager.getTrait(traitId);
       const position = Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1;
-      const placeholderPattern = `Trait Name (e.g., ${position === 1 ? 'Eyes' : position === 2 ? 'Hair' : 'Accessories'})`;
       if (nameInput.dataset.userEntered !== 'true') {
         trait.name = '';
-        nameInput.value = placeholderPattern;
+        nameInput.value = '';
       }
 
       trait.variants = [];
@@ -1142,7 +1140,75 @@ function setupTraitListeners(traitId) {
         const firstWrapper = grid.querySelector('.variation-image-wrapper');
         if (firstWrapper) firstWrapper.classList.add('selected');
         autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
-        fileInputLabel.textContent = 'Choose New Files';
+        fileInputLabel.textContent = 'Load Variants';
+      }
+
+      updateMintButton();
+      updatePreviewSamples();
+    });
+
+    // Handler for "Add Variants" (appends to existing variants)
+    fileInputAdd.addEventListener('change', async (event) => {
+      const files = Array.from(event.target.files).sort((a, b) => a.name.localeCompare(b.name));
+      if (!files.length) return;
+
+      const trait = TraitManager.getTrait(traitId);
+      const position = Array.from(traitContainer.children).indexOf(fileInput.parentElement) + 1;
+      if (nameInput.dataset.userEntered !== 'true') {
+        trait.name = '';
+        nameInput.value = '';
+      }
+
+      for (const file of files) {
+        const variationName = file.name.split('.').slice(0, -1).join('.');
+        const url = URL.createObjectURL(file);
+        const data = await file.arrayBuffer();
+        const variant = TraitManager.addVariant(traitId, { name: variationName, url });
+        variant.data = data;
+
+        const container = document.createElement('div');
+        container.className = 'variation-container';
+        container.dataset.traitId = traitId;
+        container.dataset.variationId = variant.id;
+
+        const imageWrapper = document.createElement('div');
+        imageWrapper.className = 'variation-image-wrapper';
+
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = variationName;
+        img.className = 'variation';
+
+        const filename = document.createElement('div');
+        filename.className = 'variation-filename';
+        filename.textContent = file.name;
+
+        imageWrapper.appendChild(img);
+        container.appendChild(imageWrapper);
+        container.appendChild(filename);
+        container.addEventListener('click', () => {
+          console.log(`Clicked variant: Trait ${traitId}, Variation ${variationName}`);
+          const allWrappers = grid.querySelectorAll('.variation-image-wrapper');
+          allWrappers.forEach(w => w.classList.remove('selected'));
+          imageWrapper.classList.add('selected');
+          selectVariation(traitId, variant.id);
+        });
+
+        grid.appendChild(container);
+
+        const key = `${traitId}-${variationName}`;
+        if (!variantHistories[key]) {
+          variantHistories[key] = [{ left: 0, top: 0 }];
+          localStorage.setItem(`trait${traitId}-${variationName}-position`, JSON.stringify({ left: 0, top: 0 }));
+          localStorage.removeItem(`trait${traitId}-${variationName}-manuallyMoved`);
+        }
+      }
+
+      if (trait.variants.length > 0 && !grid.querySelector('.variation-image-wrapper.selected')) {
+        selectVariation(traitId, trait.variants[0].id);
+        const firstWrapper = grid.querySelector('.variation-image-wrapper');
+        if (firstWrapper) firstWrapper.classList.add('selected');
+        autoPositioned[TraitManager.getAllTraits().findIndex(t => t.id === traitId)] = false;
       }
 
       updateMintButton();
@@ -1290,7 +1356,7 @@ function renumberTraits() {
   sections.forEach((section, index) => {
     const traitId = section.id.replace('trait', '');
     const trait = TraitManager.getTrait(traitId);
-    section.querySelector('h2').textContent = `TRAIT ${index + 1}${trait.name ? ` - ${trait.name}` : ''}`;
+    section.querySelector('h2').textContent = `TRAIT ${index + 1}: `;
     section.querySelector('input[type="text"]').id = `trait${traitId}-name`;
     section.querySelector('input[type="file"]').id = `trait${traitId}-files`;
     section.querySelector('.file-input-label').htmlFor = `trait${traitId}-files`;
