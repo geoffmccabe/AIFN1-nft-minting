@@ -1487,7 +1487,6 @@ function savePosition(img, traitId, variationName) {
 
 
 
-
 /* Section 7 ----------------------------------------- PREVIEW AND POSITION MANAGEMENT (PART 2) ------------------------------------------------*/
 
 function updateSubsequentTraits(currentTraitId, currentVariationName, position) {
@@ -1608,8 +1607,9 @@ function updatePreviewSamples() {
         // Use the natural dimensions if style dimensions aren't set
         const baseWidth = parseFloat(baseImg.style.width) || tempImg.naturalWidth || 600;
         const baseHeight = parseFloat(baseImg.style.height) || tempImg.naturalHeight || 600;
-        const baseLeft = parseFloat(baseImg.style.left) || position.left || 0;
-        const baseTop = parseFloat(baseImg.style.top) || position.top || 0;
+        // Use the saved position directly, not the current Preview Panel position
+        const baseLeft = position.left || 0;
+        const baseTop = position.top || 0;
 
         // Scale the dimensions and positions
         img.style.width = `${baseWidth * scale}px`;
@@ -1623,8 +1623,8 @@ function updatePreviewSamples() {
         const baseImg = traitImages.find(i => i.id === `preview-trait${trait.id}`);
         const baseWidth = parseFloat(baseImg.style.width) || 600;
         const baseHeight = parseFloat(baseImg.style.height) || 600;
-        const baseLeft = parseFloat(baseImg.style.left) || position.left || 0;
-        const baseTop = parseFloat(baseImg.style.top) || position.top || 0;
+        const baseLeft = position.left || 0;
+        const baseTop = position.top || 0;
 
         img.style.width = `${baseWidth * scale}px`;
         img.style.height = `${baseHeight * scale}px`;
