@@ -894,15 +894,21 @@ function addTrait(trait) {
   fileInput.accept = 'image/png,image/webp';
   fileInput.multiple = true;
 
+  const fileInputAdd = document.createElement('input');
+  fileInputAdd.type = 'file';
+  fileInputAdd.id = `trait${trait.id}-files-add`;
+  fileInputAdd.accept = 'image/png,image/webp';
+  fileInputAdd.multiple = true;
+
   const fileInputLabel = document.createElement('label');
   fileInputLabel.className = 'file-input-label';
   fileInputLabel.htmlFor = `trait${trait.id}-files`;
   fileInputLabel.textContent = 'Load Variants';
 
-  const addVariantsBtn = document.createElement('button');
+  const addVariantsBtn = document.createElement('label');
   addVariantsBtn.className = 'add-variants-btn';
-  addVariantsBtn.textContent = '[Add Variants]';
-  addVariantsBtn.setAttribute('data-trait', trait.id);
+  addVariantsBtn.htmlFor = `trait${trait.id}-files-add`;
+  addVariantsBtn.textContent = 'Add Variants';
 
   const controls = document.createElement('div');
   controls.className = 'trait-controls';
@@ -932,8 +938,9 @@ function addTrait(trait) {
   traitHeader.appendChild(title);
   traitHeader.appendChild(nameInput);
   traitHeader.appendChild(fileInputLabel);
-  traitHeader.appendChild(fileInput); // Hidden input
+  traitHeader.appendChild(fileInput); // Hidden input for Load Variants
   traitHeader.appendChild(addVariantsBtn);
+  traitHeader.appendChild(fileInputAdd); // Hidden input for Add Variants
   traitHeader.appendChild(controls);
 
   const grid = document.createElement('div');
@@ -1044,8 +1051,6 @@ function removeTrait(traitId) {
   confirmationDialog.appendChild(buttonsDiv);
   document.body.appendChild(confirmationDialog);
 }
-
-
 
 
 /* Section 5 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 2) ------------------------------------------------*/
