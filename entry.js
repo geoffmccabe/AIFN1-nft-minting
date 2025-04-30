@@ -870,9 +870,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 /* Section 4 ----------------------------------------- TRAIT MANAGEMENT FUNCTIONS (PART 1) ------------------------------------------------*/
 
-
-
-
 function addTrait(trait) {
   const traitSection = document.createElement('div');
   traitSection.id = `trait${trait.id}`;
@@ -880,11 +877,28 @@ function addTrait(trait) {
 
   const traitHeader = document.createElement('div');
   traitHeader.className = 'trait-header';
+
   const title = document.createElement('h2');
-  title.textContent = `TRAIT ${traitContainer.children.length + 1}`;
-  if (trait.name) {
-    title.textContent += ` - ${trait.name}`;
-  }
+  title.textContent = `TRAIT ${traitContainer.children.length + 1} - `;
+  
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.id = `trait${trait.id}-name`;
+  nameInput.className = 'trait-name-input';
+  nameInput.placeholder = `Trait Name (e.g., ${traitContainer.children.length + 1 === 1 ? 'Eyes' : traitContainer.children.length + 1 === 2 ? 'Hair' : 'Accessories'})`;
+  nameInput.value = trait.name || '';
+
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.id = `trait${trait.id}-files`;
+  fileInput.accept = 'image/png,image/webp';
+  fileInput.multiple = true;
+
+  const fileInputLabel = document.createElement('label');
+  fileInputLabel.className = 'file-input-label';
+  fileInputLabel.htmlFor = `trait${trait.id}-files`;
+  fileInputLabel.textContent = 'Choose Files';
+
   const controls = document.createElement('div');
   controls.className = 'trait-controls';
   const upArrow = document.createElement('span');
@@ -908,35 +922,19 @@ function addTrait(trait) {
   controls.appendChild(upArrow);
   controls.appendChild(downArrow);
   controls.appendChild(addTraitBtn);
-  controls.appendChild(removeTraitBtn);
+  controls.appendChild(  removeTraitBtn);
+
   traitHeader.appendChild(title);
+  traitHeader.appendChild(nameInput);
+  traitHeader.appendChild(fileInputLabel);
+  traitHeader.appendChild(fileInput); // Hidden input
   traitHeader.appendChild(controls);
-
-  const nameInput = document.createElement('input');
-  nameInput.type = 'text';
-  nameInput.id = `trait${trait.id}-name`;
-  nameInput.placeholder = `Trait Name (e.g., ${traitContainer.children.length + 1 === 1 ? 'Eyes' : traitContainer.children.length + 1 === 2 ? 'Hair' : 'Accessories'})`;
-  nameInput.value = trait.name || '';
-
-  const fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.id = `trait${trait.id}-files`;
-  fileInput.accept = 'image/png,image/webp';
-  fileInput.multiple = true;
-
-  const fileInputLabel = document.createElement('label');
-  fileInputLabel.className = 'file-input-label';
-  fileInputLabel.htmlFor = `trait${trait.id}-files`;
-  fileInputLabel.textContent = 'Choose Files';
 
   const grid = document.createElement('div');
   grid.id = `trait${trait.id}-grid`;
   grid.className = 'trait-grid';
 
   traitSection.appendChild(traitHeader);
-  traitSection.appendChild(nameInput);
-  traitSection.appendChild(fileInput);
-  traitSection.appendChild(fileInputLabel);
   traitSection.appendChild(grid);
 
   const existingSections = traitContainer.querySelectorAll('.trait-section');
