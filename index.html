@@ -26,24 +26,28 @@
     #logo { height: 100px; width: 300px; }
     #logo-container { height: 100px; width: 300px; }
   }
-  .trait-section { margin-bottom: 20px; min-height: 100px; width: 100%; } /* Reduced min-height to save space */
-  .trait-header { align-items: center; display: flex; margin-bottom: 5px; gap: 10px; } /* Adjusted for single-line layout */
-  .trait-section h2 { font-family: 'Poppins', sans-serif; font-weight: 600; margin: 0; font-size: 16px; } /* Smaller font size */
+  .trait-section { margin-bottom: 20px; min-height: 100px; width: 100%; }
+  .trait-header { align-items: center; display: flex; margin-bottom: 5px; gap: 10px; }
+  .trait-section h2 { font-family: 'Poppins', sans-serif; font-weight: 600; margin: 0; font-size: 16px; }
   .trait-name-input { 
-    flex-grow: 1; 
     border: 1px solid #ccc; 
     border-radius: 5px; 
     box-sizing: border-box; 
     height: 32px; 
     padding: 5px; 
     font-family: 'Poppins', sans-serif; 
-    font-weight: 600; /* Bold for Trait Name */
+    font-weight: 600; 
     font-size: 14px; 
+    width: 30ch; /* Approximately 30 characters wide */
+  }
+  .trait-name-input::placeholder {
+    color: #ccc; /* Light grey placeholder text */
+    font-weight: 400; /* Normal weight for placeholder */
   }
   .trait-controls { display: flex; gap: 5px; position: relative; }
   .trait-controls span { color: #666; cursor: pointer; font-size: 16px; }
   .trait-controls span:hover { opacity: 0.8; }
-  .trait-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); margin-top: 5px; } /* Reduced margin */
+  .trait-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); margin-top: 5px; }
   .variation-container { align-items: center; cursor: pointer; display: flex; flex-direction: column; }
   .variation-image-wrapper { align-items: center; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 5px; box-sizing: border-box; display: flex; height: 110px; justify-content: center; width: 110px; }
   .variation-image-wrapper.selected { border: 5px solid #f4c149; }
@@ -51,7 +55,7 @@
   .variation-filename { font-family: 'Poppins', sans-serif; font-size: 8px; font-weight: 500; margin-top: 5px; text-align: center; word-break: break-all; }
   input[type="text"] { border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; height: 32px; margin-bottom: 5px; padding: 5px; width: 100%; }
   input[type="file"] { display: none; }
-  .file-input-label { 
+  .file-input-label, .add-variants-btn { 
     background: #ccc; 
     border: none; 
     border-radius: 5px; 
@@ -68,7 +72,7 @@
     vertical-align: middle; 
     white-space: nowrap; 
   }
-  .file-input-label:hover { background: #bbb; }
+  .file-input-label:hover, .add-variants-btn:hover { background: #bbb; }
   .up-arrow:hover::after { background: #333; border-radius: 5px; color: white; content: attr(data-tooltip); font-size: 12px; left: 50%; padding: 5px 10px; position: absolute; top: -30px; transform: translateX(-50%); white-space: nowrap; z-index: 1000; }
   .up-arrow:hover::before { border: 5px solid transparent; border-top-color: #333; content: ''; left: 50%; position: absolute; top: -10px; transform: translateX(-50%); z-index: 1000; }
   .down-arrow:hover::after { background: #333; border-radius: 5px; color: white; content: attr(data-tooltip); font-size: 12px; left: 50%; padding: 5px 10px; position: absolute; top: -30px; transform: translateX(-50%); white-space: nowrap; z-index: 1000; }
@@ -82,8 +86,12 @@
   ::-webkit-scrollbar:horizontal { height: 0 !important; }
 </style>
 
+  
+
 <!-- Section 3 ----------------------------------------- RIGHT PANEL STYLES -------------------------------------------------->
 
+
+  
 <style>
   #preview-panel-container { display: flex; flex-wrap: wrap; gap: 30px; width: 100%; }
   #preview-panel-container .panel { min-height: 650px; width: calc(50% - 15px); }
